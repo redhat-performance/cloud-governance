@@ -8,7 +8,8 @@ deploying cloud management policies and controls at scale.
 * cluster_tags: Script that update cluster tags according to cluster name
 
 * The cloud-governance package is placed in [PyPi](TBD)
-* Thecloud-governance pipeline is placed in [Jenkins](TBD)
+* The cloud-governance pipeline is placed in [Jenkins](TBD)
+
 
 
 How to install?
