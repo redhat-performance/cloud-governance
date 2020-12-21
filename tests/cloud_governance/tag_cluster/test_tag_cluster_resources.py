@@ -8,7 +8,8 @@ cluster_name = 'ocs-test-jlhpd'
 
 # input tags
 mandatory_tags = {
-  "Owner1": "Eli Battat",
+  "Name": "test-opc464",
+  "Owner": "Eli Battat",
   "Email": "ebattat@redhat.com",
   "Purpose": "test",
   "Date": strftime("%Y/%m/%d %H:%M:%S")
@@ -31,7 +32,7 @@ def test_cluster_instance():
     This method return all cluster instances
     :return:
     """
-    tag_cluster_resources.cluster_instance()
+    print(tag_cluster_resources.cluster_instance())
 
 
 def test_cluster_volume():
@@ -39,7 +40,7 @@ def test_cluster_volume():
     This method return all cluster volumes
     :return:
     """
-    tag_cluster_resources.cluster_volume()
+    print(tag_cluster_resources.cluster_volume())
 
 
 def test_cluster_ami():
@@ -47,7 +48,7 @@ def test_cluster_ami():
     This method return all cluster ami
     :return:
     """
-    tag_cluster_resources.cluster_ami()
+    print(tag_cluster_resources.cluster_ami())
 
 
 def test_cluster_snapshot():
@@ -55,7 +56,7 @@ def test_cluster_snapshot():
     This method return all cluster snapshot
     :return:
     """
-    tag_cluster_resources.cluster_ami()
+    print(tag_cluster_resources.cluster_snapshot())
 
 
 def test_cluster_security_group():

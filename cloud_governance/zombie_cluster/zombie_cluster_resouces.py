@@ -12,9 +12,9 @@ region = 'us-east-2'
 #     results.extend(response["serverList"])
 
 
-class TagClusterResources:
+class ZombieClusterResources:
     """
-    This class filter cluster resources by cluster name, and update tags when passing input_tags
+    This class filter zombie cluster resources
     """
 
     def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None):
@@ -28,111 +28,32 @@ class TagClusterResources:
         self.cluster_key = f'{self.cluster_prefix}{self.cluster_name}'
         self.input_tags = input_tags
 
-    def __generate_cluster_resource_stamp_key_by_cluster_name(self, resources_list: list, tags: str = 'Tags'):
+    def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags='Tags'):
         """
-        This method scan for full cluster stamp key according to input resource id
+        This method return all cluster resources keys that start with cluster prefix
         :param resources_list:
         :param tags:
-        :return: cluster stamp key or False if not found
+        :return: dictionary of the resources key and id
         """
-        for resource in resources_list:
-            if resource.get(tags):
-                for tag in resource[tags]:
-                    if tag['Key'].startswith(self.cluster_key):
-                        return tag['Key']
-        return False
-
-    def init_cluster_name(self):
-        """
-        This method find the cluster full stamp key according to user cluster name.
-        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
-        :return: cluster stamp name or None if not exist
-        """
-        return self.__scan_cluster_instance_security_groups()
-
-    def __input_tags_list_builder(self):
-        """ This method build tags list according to input tags dictionary"""
-        tags_list = []
-        for key, value in self.input_tags.items():
-            tags_list.append({'Key': key, 'Value': value})
-        return tags_list
-
-    def __append_input_tags(self, current_tags: list = None):
-        """
-        This method append the input tags to the current tags, and return the input tags
-        :param current_tags:
-        :return: return concat of current tags with input tags
-        """
-        input_tags = self.__input_tags_list_builder()
-        if current_tags:
-            for current_item in current_tags:
-                if self.input_tags.get(current_item['Key']):
-                    for input_item in input_tags:
-                        if current_item['Key'] == input_item['Key']:
-                            current_item['Value'] = input_item['Value']
-                else:
-                    input_tags.append(current_item)
-        return input_tags
-
-    def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str, tags: str = 'Tags'):
-        """
-        This method return resource list that related to input resource id according to cluster's tag name
-        """
-        result_resources_list = []
+        result_resources_key_id = {}
         for resource in resources_list:
             resource_id = resource[input_resource_id]
             if resource.get(tags):
                 for tag in resource[tags]:
-                    if tag['Key'] == self.cluster_key:
-                        if self.input_tags:
-                            all_tags = self.__append_input_tags(current_tags=resource[tags])
-                            self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
-                        result_resources_list.append(resource_id)
-        return result_resources_list
-
-    def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
-        """
-        This method return resource list that related to input resource id according to cluster's vpc id
-        """
-        result_resources_list = []
-        for resource in resources_list:
-            resource_id = resource[input_resource_id]
-            if resource.get('VpcId'):
-                for vpc_id in self.cluster_vpc():
-                    if resource.get('VpcId') == vpc_id:
-                        if self.input_tags:
-                            all_tags = self.__append_input_tags()
-                            self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
-                        result_resources_list.append(resource_id)
-        return result_resources_list
-
-    def __scan_cluster_instance_security_groups(self):
-        """
-        This method scan for cluster stamp key in instances and security group, if not found return false
-        :return: cluster stamp key or false
-        """
-        instances = self.__get_instances_data()
-        security_groups = self.__get_security_group_data()
-        if instances:
-            # scan instance for cluster stamp key
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=instances)
-        elif security_groups:
-            # scan security group for cluster stamp key
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
-        return False
+                    if tag['Key'].startswith(self.cluster_prefix):
+                        result_resources_key_id[tag['Key']] = resource_id
+        return result_resources_key_id
 
     def __get_instances_data(self):
         """
         This method go over all instances
         :return:
         """
-        instances_list = []
         ec2s = self.ec2_client.describe_instances()
         ec2s_data = ec2s['Reservations']
         for items in ec2s_data:
             if items.get('Instances'):
-                instances_list.append(items['Instances'])
-        return instances_list
+                return items['Instances']
 
     def cluster_instance(self):
         """
@@ -142,9 +63,7 @@ class TagClusterResources:
         instance_list = []
         instances = self.__get_instances_data()
         if instances:
-            for instance in instances:
-                instance_list.extend(
-                    self.__generate_cluster_resources_list_by_tag(resources_list=instance, input_resource_id='InstanceId'))
+                self.__get_cluster_resources(resources_list=instances, input_resource_id='InstanceId')
 
         return instance_list
 
@@ -181,22 +100,13 @@ class TagClusterResources:
         security_groups = self.ec2_client.describe_security_groups()
         return security_groups['SecurityGroups']
 
-    def __scan_cluster_security_group(self):
-        """
-        This method return list of cluster's security group according to cluster tag name
-        :return:
-        """
-        security_groups = self.__get_security_group_data()
-        if security_groups:
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
-
     def cluster_security_group(self):
         """
         This method return list of cluster's security group according to cluster tag name
         :return:
         """
-        return self.__generate_cluster_resources_list_by_tag(resources_list=self.__get_security_group_data(),
-                                                             input_resource_id='GroupId')
+        return self.__get_cluster_resources(resources_list=self.__get_security_group_data(),
+                                            input_resource_id='GroupId')
 
     def cluster_elastic_ip(self):
         """
