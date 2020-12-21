@@ -1,8 +1,10 @@
 import boto3
+from cloud_governance.common.logger.init_logger import logger
+
 
 region = 'us-east-2'
 
-
+# @todo add next token
 # response = client.get_servers()
 # results = response["serverList"]
 # while "NextToken" in response:
@@ -10,18 +12,64 @@ region = 'us-east-2'
 #     results.extend(response["serverList"])
 
 
-class ClusterResources:
+class TagClusterResources:
+    """
+    This class filter cluster resources by cluster name, and update tags when passing input_tags
+    """
 
-    def __init__(self, cluster_prefix, cluster_name):
+    def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None):
         self.ec2_client = boto3.client('ec2', region_name=region)
-        self.elb_client = boto3.client('elbv2', region_name=region)
+        self.elb_client = boto3.client('elb', region_name=region)
+        self.elbv2_client = boto3.client('elbv2', region_name=region)
         self.iam_client = boto3.client('iam', region_name=region)
         self.s3_client = boto3.client('s3')
         self.cluster_prefix = cluster_prefix
         self.cluster_name = cluster_name
         self.cluster_key = f'{self.cluster_prefix}{self.cluster_name}'
+        self.input_tags = input_tags
 
-    def __generate_cluster_resources_list_by_tag(self, resources_list, input_resource_id, tags='Tags'):
+    def __generate_cluster_resource_stamp_key_by_cluster_name(self, resources_list: list, tags='Tags'):
+        """
+        This method scan for full cluster stamp key according to input resource id
+        :param resources_list:
+        :param tags:
+        :return: cluster stamp key or False if not found
+        """
+        for resource in resources_list:
+            if resource.get(tags):
+                for tag in resource[tags]:
+                    if tag['Key'].startswith(self.cluster_key):
+                        return tag['Key']
+        return False
+
+    def init_cluster_name(self):
+        """
+        This method find the cluster full stamp key according to user cluster name.
+        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
+        :return: cluster stamp name or None if not exist
+        """
+        return self.__scan_cluster_instance_security_groups()
+
+    def __input_tags_list_builder(self):
+        """ This method build tags list according to input tags dictionary"""
+        tags_list = []
+        for key, value in self.input_tags.items():
+            tags_list.append({'Key': key, 'Value': value})
+        return tags_list
+
+    def __append_input_tags(self, current_tags: list = None):
+        """
+        This method append the input tags to the current tags, and return the input tags
+        :param current_tags:
+        :return: return concat of current tags with input tags
+        """
+        input_tags = self.__input_tags_list_builder()
+        if current_tags:
+            for item in current_tags:
+                input_tags.append(item)
+        return input_tags
+
+    def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str, tags:str ='Tags'):
         """
         This method return resource list that related to input resource id according to cluster's tag name
         """
@@ -31,10 +79,13 @@ class ClusterResources:
             if resource.get(tags):
                 for tag in resource[tags]:
                     if tag['Key'] == self.cluster_key:
+                        if self.input_tags:
+                            all_tags = self.__append_input_tags(current_tags=resource[tags])
+                            self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
                         result_resources_list.append(resource_id)
         return result_resources_list
 
-    def __generate_cluster_resources_list_by_vpc(self, resources_list, input_resource_id):
+    def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
         """
         This method return resource list that related to input resource id according to cluster's vpc id
         """
@@ -44,21 +95,49 @@ class ClusterResources:
             if resource.get('VpcId'):
                 for vpc_id in self.cluster_vpc():
                     if resource.get('VpcId') == vpc_id:
+                        if self.input_tags:
+                            all_tags = self.__append_input_tags()
+                            self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
                         result_resources_list.append(resource_id)
         return result_resources_list
 
-    def cluster_instance(self):
+    def __scan_cluster_instance_security_groups(self):
         """
-        This method return list of cluster's instance according to cluster tag name
+        This method scan for cluster stamp key in instances and security group, if not found return false
+        :return: cluster stamp key or false
         """
-        instance_list = []
+        instances = self.__get_instances_data()
+        security_groups = self.__get_security_group_data()
+        if instances:
+            # scan instance for cluster stamp key
+            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=instances)
+        elif security_groups:
+            # scan security group for cluster stamp key
+            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
+        return False
+
+    def __get_instances_data(self):
+        """
+        This method go over all instances
+        :return:
+        """
         ec2s = self.ec2_client.describe_instances()
         ec2s_data = ec2s['Reservations']
         for items in ec2s_data:
             if items.get('Instances'):
-                instances = items['Instances']
+                return items['Instances']
+
+    def cluster_instance(self):
+        """
+        This method return list of cluster's instance according to cluster tag name
+        :return:
+        """
+        instance_list = []
+        instances = self.__get_instances_data()
+        if instances:
             instance_list.extend(
                 self.__generate_cluster_resources_list_by_tag(resources_list=instances, input_resource_id='InstanceId'))
+
         return instance_list
 
     def cluster_volume(self):
@@ -86,13 +165,29 @@ class ClusterResources:
         return self.__generate_cluster_resources_list_by_tag(resources_list=snapshots_data,
                                                              input_resource_id='SnapshotId')
 
+    def __get_security_group_data(self):
+        """
+        This method return security group data
+        :return:
+        """
+        security_groups = self.ec2_client.describe_security_groups()
+        return security_groups['SecurityGroups']
+
+    def __scan_cluster_security_group(self):
+        """
+        This method return list of cluster's security group according to cluster tag name
+        :return:
+        """
+        security_groups = self.__get_security_group_data()
+        if security_groups:
+            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
+
     def cluster_security_group(self):
         """
         This method return list of cluster's security group according to cluster tag name
+        :return:
         """
-        security_groups = self.ec2_client.describe_security_groups()
-        security_groups_data = security_groups['SecurityGroups']
-        return self.__generate_cluster_resources_list_by_tag(resources_list=security_groups_data,
+        return self.__generate_cluster_resources_list_by_tag(resources_list=self.__get_security_group_data(),
                                                              input_resource_id='GroupId')
 
     def cluster_elastic_ip(self):
@@ -118,11 +213,48 @@ class ClusterResources:
         """
         This method return list of cluster's load balancer according to cluster vpc
         """
+        result_resources_list = []
+        response = ''
         load_balancers = self.elb_client.describe_load_balancers()
+        load_balancers_data = load_balancers['LoadBalancerDescriptions']
+        for resource in load_balancers_data:
+            resource_id = resource['LoadBalancerName']
+            tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id])
+            for item in tags['TagDescriptions']:
+                if item.get('Tags'):
+                    for tag in item['Tags']:
+                        if tag['Key'] == self.cluster_key:
+                            if self.input_tags:
+                                all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                                try:
+                                    response = self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
+                                except Exception as err:
+                                    logger.exception(f'Tags are already updated, {err}')
+                            result_resources_list.append(resource_id)
+        return result_resources_list
+
+    def cluster_load_balancer_v2(self):
+        """
+        This method return list of cluster's load balancer according to cluster vpc
+        """
+        result_resources_list =[]
+        load_balancers = self.elbv2_client.describe_load_balancers()
         load_balancers_data = load_balancers['LoadBalancers']
-        return self.__generate_cluster_resources_list_by_vpc(resources_list=load_balancers_data,
-                                                             input_resource_id='LoadBalancerArn')
-        return load_balancer_list
+        for resource in load_balancers_data:
+            resource_id = resource['LoadBalancerArn']
+            tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id])
+            for item in tags['TagDescriptions']:
+                if item.get('Tags'):
+                    for tag in item['Tags']:
+                        if tag['Key'] == self.cluster_key:
+                            if self.input_tags:
+                                all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                                try:
+                                    self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
+                                except Exception as err:
+                                    logger.exception(f'Tags are already updated, {err}')
+                            result_resources_list.append(resource_id)
+        return result_resources_list
 
     def cluster_vpc(self):
         """
@@ -206,11 +338,18 @@ class ClusterResources:
 
         for role_name in role_name_list:
             try:
-                role = self.iam_client.get_role(RoleName=f'{self.cluster_name}-master-role')
+                role = self.iam_client.get_role(RoleName=role_name)
                 role_data = role['Role']
                 result_role_list.append(role_data['Arn'])
-            except Exception:
-               print(f'Missing cluster role name: {role_name}')
+                if self.input_tags:
+                    all_tags = self.__append_input_tags(current_tags=role_data['Tags'])
+                    try:
+                        self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
+                    except Exception as err:
+                        logger.exception(f'Tags are already updated, {err}')
+
+            except Exception as err:
+                logger.exception(f'Missing cluster role name: {role_name}, {err}')
 
         return result_role_list
 
