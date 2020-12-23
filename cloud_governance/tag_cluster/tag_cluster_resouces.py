@@ -17,6 +17,14 @@ class TagClusterResources:
     This class filter cluster resources by cluster name, and update tags when passing input_tags
     """
 
+    def __init_cluster_name(self):
+        """
+        This method find the cluster full stamp key according to user cluster name, scan instance and if not found scan security group
+        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
+        :return: cluster stamp name or empty if not exist
+        """
+        return self.__scan_cluster_instance_security_groups()
+
     def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
@@ -36,19 +44,12 @@ class TagClusterResources:
         :return: cluster stamp key or False if not found
         """
         for resource in resources_list:
-            if resource.get(tags):
-                for tag in resource[tags]:
-                    if tag['Key'].startswith(self.cluster_key):
-                        return tag['Key']
-        return False
-
-    def init_cluster_name(self):
-        """
-        This method find the cluster full stamp key according to user cluster name.
-        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
-        :return: cluster stamp name or None if not exist
-        """
-        return self.__scan_cluster_instance_security_groups()
+            for item in resource:
+                if item.get(tags):
+                    for tag in item[tags]:
+                        if tag['Key'].startswith(f'{self.cluster_key}'):
+                            return tag['Key']
+        return ''
 
     def __input_tags_list_builder(self):
         """ This method build tags list according to input tags dictionary"""
@@ -108,8 +109,8 @@ class TagClusterResources:
 
     def __scan_cluster_instance_security_groups(self):
         """
-        This method scan for cluster stamp key in instances and security group, if not found return false
-        :return: cluster stamp key or false
+        This method scan for cluster stamp key in instances and security group, if not found return empty string
+        :return: cluster stamp key or empty string
         """
         instances = self.__get_instances_data()
         security_groups = self.__get_security_group_data()
@@ -119,7 +120,7 @@ class TagClusterResources:
         elif security_groups:
             # scan security group for cluster stamp key
             return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
-        return False
+        return ''
 
     def __get_instances_data(self):
         """
@@ -136,17 +137,26 @@ class TagClusterResources:
 
     def cluster_instance(self):
         """
-        This method return list of cluster's instance according to cluster tag name
+        This method return list of cluster's instance according to cluster tag name,
+        it will search for full cluster name (including random suffix string) in case of user input cluster name was given
         :return:
         """
-        instance_list = []
-        instances = self.__get_instances_data()
-        if instances:
-            for instance in instances:
-                instance_list.extend(
-                    self.__generate_cluster_resources_list_by_tag(resources_list=instance, input_resource_id='InstanceId'))
-
-        return instance_list
+        self.cluster_key = self.__init_cluster_name()
+        result_instance_list = []
+        instances_list = self.__get_instances_data()
+        if instances_list:
+            for instance in instances_list:
+                for item in instance:
+                    if item.get('InstanceId'):
+                        instance_id = item['InstanceId']
+                if item.get('Tags'):
+                    for tag in item['Tags']:
+                        if tag['Key'] == self.cluster_key:
+                            if self.input_tags:
+                                all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                                self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
+                            result_instance_list.append(instance_id)
+        return result_instance_list
 
     def cluster_volume(self):
         """
@@ -245,7 +255,7 @@ class TagClusterResources:
         """
         This method return list of cluster's load balancer according to cluster vpc
         """
-        result_resources_list =[]
+        result_resources_list = []
         load_balancers = self.elbv2_client.describe_load_balancers()
         load_balancers_data = load_balancers['LoadBalancers']
         for resource in load_balancers_data:
@@ -330,6 +340,7 @@ class TagClusterResources:
     def cluster_network_acl(self):
         """
         This method return list of cluster's network acl according to cluster vpc id
+        Missing OpenShift Tags for it based on VPCs
         """
         network_acls = self.ec2_client.describe_network_acls()
         network_acls_data = network_acls['NetworkAcls']
@@ -342,7 +353,8 @@ class TagClusterResources:
         """
         # tag_role
         result_role_list = []
-        role_name_list = [f'{self.cluster_name}-master-role', f'{self.cluster_name}-worker-role']
+        # starts with cluster name
+        role_name_list = [f"{self.cluster_key.replace(self.cluster_prefix, '')}-master-role", f"{self.cluster_key.replace(self.cluster_prefix, '')}-worker-role"]
 
         for role_name in role_name_list:
             try:
@@ -369,7 +381,8 @@ class TagClusterResources:
         response = self.s3_client.list_buckets()
 
         for bucket in response['Buckets']:
-            if bucket['Name'].startswith(self.cluster_name):
+            # starts with cluster name
+            if bucket['Name'].startswith(self.cluster_key.replace(self.cluster_prefix, '')):
                 bucket_result_list.append(bucket['Name'])
 
         return bucket_result_list
