@@ -20,10 +20,10 @@ need to run it as root
 aws configure
 git clone https://github.com/redhat-performance/cloud-governance
 python3 -m venv governance
+source governance/bin/activate
 python -m pip install --upgrade pip
 pip3 install wheel
-source governance/bin/activate
-pip3 install /cloud-governance/cloud_governance-1.0.0-py3-none-any.whl
+pip3 install cloud-governance/cloud_governance-1.0.0-py3-none-any.whl
 python3
 >> from cloud_governance.zombie_cluster import run_zombie_cluster_resources
 >> run_zombie_cluster_resources.zombie_cluster_resource()
