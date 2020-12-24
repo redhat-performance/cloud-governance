@@ -2,13 +2,13 @@ from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResource
 from time import gmtime, strftime
 
 
-def scan_cluster_resource(cluster_name: str):
+def scan_cluster_resource(cluster_name: str, region: str = 'us-east-2'):
     """
     This method scan for cluster name in all the cluster resources
     :return: list of cluster resources according to cluster name
     """
 
-    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name)
+    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name, region=region)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,
@@ -36,14 +36,14 @@ def scan_cluster_resource(cluster_name: str):
         print(f'{func.__name__} count: {len(func())}, {func()}')
 
 
-def tag_cluster_resource(cluster_name: str, mandatory_tags: dict):
+def tag_cluster_resource(cluster_name: str, mandatory_tags: dict, region: str = 'us-east-2'):
     """
     This method scan for cluster name in all the cluster resources
     :return: list of cluster resources according to cluster name
     """
 
     tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
-                                                input_tags=mandatory_tags)
+                                                input_tags=mandatory_tags, region=region)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,

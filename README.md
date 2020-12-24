@@ -27,7 +27,7 @@ _**Table of Contents**_
 ## Installation
 
 ```sh
-# need to run it as root
+# need to run it as root and aws admin user
 aws configure
 git clone https://github.com/redhat-performance/cloud-governance
 python3 -m venv governance
@@ -44,6 +44,8 @@ python3
 ```sh
 >> from cloud_governance.tag_cluster.run_tag_cluster_resouces import scan_cluster_resource, tag_cluster_resource
 >> from time import gmtime, strftime
+# Choose region
+>> region = 'us-east-2'
 # Cluster name to be tagged
 >> cluster_name = 'test'
 # mandatory tags for all cluster resources
@@ -55,19 +57,21 @@ python3
     }
     
 # dry run: scan for cluster resources 
->> scan_cluster_resource(cluster_name=cluster_name)
+>> scan_cluster_resource(cluster_name=cluster_name, region=region)
 # update tags 
->> tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags)
+>> tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
 ```
 
 ## Delete Cluster Zombies
 
 ```sh
 >> from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource, delete_zombie_cluster_resource
+# Choose region
+>> region = 'us-east-2'
 # dry run: scan for zombie clusters resource 
->> zombie_cluster_resource()
+>> zombie_cluster_resource(delete=False, region=region)
 # delete zombie clusters resource 
->> delete_zombie_cluster_resource()
+>> delete_zombie_cluster_resource(delete=True, region=region)
 ```
 
 ## Policies

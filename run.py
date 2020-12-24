@@ -4,10 +4,10 @@
 #
 #
 # def main():
-#
+#     region = 'us-east-2'
 #     # scan cluster resources
 #     cluster_name = 'ocs-test-jlhpd'
-#     scan_cluster_resource(cluster_name=cluster_name)
+#     scan_cluster_resource(cluster_name=cluster_name, region=region)
 #
 #     # cluster resources tag
 #     # input tags
@@ -18,9 +18,10 @@
 #         "Purpose": "test",
 #         "Date": strftime("%Y/%m/%d %H:%M:%S")
 #     }
-#     tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags)
+#     tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
 #
 #     # zombie cluster resource
-#     zombie_cluster_resource()
+#     zombie_cluster_resource(delete=False, region=region)
+#     #delete_zombie_cluster_resource(delete=True, region=region)
 #
 # main()

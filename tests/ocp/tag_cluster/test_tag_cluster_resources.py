@@ -16,7 +16,7 @@ mandatory_tags = {
 }
 #print(strftime("%Y/%m/%d %H:%M:%S", gmtime()))
 
-tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name, input_tags=mandatory_tags)
+tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name, input_tags=mandatory_tags, region='us-east-2')
 
 
 def test_init_cluster_name():

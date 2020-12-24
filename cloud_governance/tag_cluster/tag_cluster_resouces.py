@@ -2,8 +2,6 @@ import boto3
 from cloud_governance.common.logger.init_logger import logger
 
 
-region = 'us-east-2'
-
 # @todo add next token
 # response = client.get_servers()
 # results = response["serverList"]
@@ -17,15 +15,7 @@ class TagClusterResources:
     This class filter cluster resources by cluster name, and update tags when passing input_tags
     """
 
-    def __init_cluster_name(self):
-        """
-        This method find the cluster full stamp key according to user cluster name, scan instance and if not found scan security group
-        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
-        :return: cluster stamp name or empty if not exist
-        """
-        return self.__scan_cluster_instance_security_groups()
-
-    def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None):
+    def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None, region: str = 'us-east-2'):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)
@@ -35,6 +25,14 @@ class TagClusterResources:
         self.cluster_name = cluster_name
         self.cluster_key = f'{self.cluster_prefix}{self.cluster_name}'
         self.input_tags = input_tags
+
+    def __init_cluster_name(self):
+        """
+        This method find the cluster full stamp key according to user cluster name, scan instance and if not found scan security group
+        i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
+        :return: cluster stamp name or empty if not exist
+        """
+        return self.__scan_cluster_instance_security_groups()
 
     def __generate_cluster_resource_stamp_key_by_cluster_name(self, resources_list: list, tags: str = 'Tags'):
         """

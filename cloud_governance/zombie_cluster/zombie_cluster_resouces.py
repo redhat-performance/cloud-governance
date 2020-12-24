@@ -2,8 +2,6 @@ import boto3
 from cloud_governance.common.logger.init_logger import logger
 
 
-region = 'us-east-2'
-
 # @todo add next token
 # response = client.get_servers()
 # results = response["serverList"]
@@ -17,7 +15,7 @@ class ZombieClusterResources:
     This class filter zombie cluster resources
     """
 
-    def __init__(self, cluster_prefix: str = None, delete: bool = False):
+    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2'):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)

@@ -1,14 +1,14 @@
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
-def zombie_cluster_resource(delete: bool = False):
+def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2'):
     """
     This method return zombie cluster resources,
     How its works? if not exist an instance cluster, the resource is zombie
     if delete true it will delete the zombie resource
     :return: list of zombie resources
     """
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete, region=region)
     func_resource_list = [zombie_cluster_resources.zombie_cluster_volume,
                           zombie_cluster_resources.zombie_cluster_ami,
                           zombie_cluster_resources.zombie_cluster_snapshot,
@@ -32,7 +32,7 @@ def zombie_cluster_resource(delete: bool = False):
         print(f'{func.__name__} count: {len(func())}, {func()}')
 
 
-def delete_zombie_cluster_resource(delete: bool = True):
+def delete_zombie_cluster_resource(delete: bool = True, region: str = 'us-east-2'):
     """
     This method return zombie cluster resources,
     How its works? if not exist an instance cluster, the resource is zombie
@@ -46,7 +46,7 @@ def delete_zombie_cluster_resource(delete: bool = True):
     # zombie_cluster_internet_gateway
     # zombie_cluster_dhcp_option
     """
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete, region=region)
     func_resource_list = [zombie_cluster_resources.zombie_cluster_volume,
                           zombie_cluster_resources.zombie_cluster_ami,
                           zombie_cluster_resources.zombie_cluster_snapshot,
