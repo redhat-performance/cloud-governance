@@ -28,6 +28,8 @@ python3
 >> from cloud_governance.zombie_cluster import run_zombie_cluster_resources
 >> run_zombie_cluster_resources.zombie_cluster_resource()
 >> run_zombie_cluster_resources.delete_zombie_cluster_resource()
+deactivate
+rm -rf governance
 ```
 
 How to run pytest?
