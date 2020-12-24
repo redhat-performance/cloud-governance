@@ -30,7 +30,7 @@ setup(
     zip_safe=False,
 
     # Find all packages (__init__.py)
-    packages=find_packages(include=['ocp', 'ocp.*']),
+    packages=find_packages(include=['cloud_governance', 'cloud_governance.*']),
 
     install_requires=[
         'typing',

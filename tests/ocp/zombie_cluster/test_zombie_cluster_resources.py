@@ -1,4 +1,4 @@
-from ocp.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
 zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True)
