@@ -1,5 +1,5 @@
 import boto3
-from cloud_governance.common.logger.init_logger import logger
+from ocp.common.logger.init_logger import logger
 
 
 region = 'us-east-2'

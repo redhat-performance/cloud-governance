@@ -1,4 +1,4 @@
-from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
+from ocp.tag_cluster.tag_cluster_resouces import TagClusterResources
 
 from time import gmtime, strftime
 

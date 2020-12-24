@@ -1,15 +1,15 @@
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from ocp.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
-zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/')
+zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True)
 
 
 def test_cluster_instance():
     """
-    This method return all cluster instances
+    This method return all cluster instances, its a private method
     :return:
     """
-    assert len(zombie_cluster_resources._ZombieClusterResources__cluster_instance()) >= 0
+    assert len(zombie_cluster_resources._cluster_instance()) >= 0
 
 
 def test_zombie_cluster_volume():
@@ -41,7 +41,7 @@ def test_zombie_cluster_security_group():
     This method return all cluster security_group
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_security_group()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_security_group())
 
 
 def test_zombie_cluster_elastic_ip():
@@ -49,7 +49,7 @@ def test_zombie_cluster_elastic_ip():
     This method return all cluster elastic_ip
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_elastic_ip()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_elastic_ip())
 
 
 def test_zombie_cluster_network_interface():
@@ -81,7 +81,7 @@ def test_zombie_cluster_cluster_vpc():
     This method return all cluster cluster_vpc
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_vpc()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_vpc())
 
 
 def test_zombie_cluster_subnet():
@@ -97,7 +97,7 @@ def test_zombie_cluster_route_table():
     This method return all cluster route_table
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_route_table()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_route_table())
 
 
 def test_zombie_cluster_internet_gateway():
@@ -105,7 +105,7 @@ def test_zombie_cluster_internet_gateway():
     This method return all cluster internet_gateway
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_internet_gateway()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_internet_gateway())
 
 
 def test_zombie_cluster_dhcp_option():
@@ -113,7 +113,7 @@ def test_zombie_cluster_dhcp_option():
     This method return all cluster dhcp_option
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_dhcp_option()) >= 0
+    print(zombie_cluster_resources.zombie_cluster_dhcp_option())
 
 
 def test_zombie_cluster_vpc_endpoint():
@@ -121,7 +121,7 @@ def test_zombie_cluster_vpc_endpoint():
     This method return all cluster vpc_endpoint
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_vpc_endpoint()) >= 0
+    assert len(zombie_cluster_resources.zombie_cluster_vpc_endpoint())
 
 
 def test_zombie_cluster_nat_gateway():
