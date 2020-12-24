@@ -81,6 +81,8 @@ python3 -m venv custodian
 source custodian/bin/activate
 (custodian) $ pip install c7n
 custodian run --dryrun -s s3://redhat-custodian/logs -l /cloud-custodian/policies /home/user/custodian_policy/ebs_available.yml
+deactivate
+rm -rf custodian
 ```
 
 ## Pytest
