@@ -26,8 +26,8 @@ class ZombieClusterResources:
 
     def _cluster_instance(self):
         """
-        This method return list of cluster's instance according to cluster tag name
-        :return:
+        This method return list of cluster's instance tag name that contains openshift tag prefix
+        :return: list of cluster's instance tag name
         """
         instances_list = []
         result_instance = {}
@@ -46,6 +46,7 @@ class ZombieClusterResources:
                             result_instance[instance_id] = tag['Key']
 
         return result_instance
+
 
     def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags: str ='Tags'):
         """
@@ -444,15 +445,17 @@ class ZombieClusterResources:
         cluster_instance_tag_list = []
         response = self.s3_client.list_buckets()
 
+        # Fet all bucket with stamp
         for bucket in response['Buckets']:
             if cluster_stamp in bucket['Name']:
                 bucket_name_list.append(bucket['Name'])
-        exist_cluster_instance = self._cluster_instance()
+        security_groups = self.ec2_client.describe_security_groups()
+        exist_security_group = self.__get_cluster_resources(resources_list=security_groups['SecurityGroups'],
+                                                            input_resource_id='GroupId')
 
         # Get all cluster instance name without cluster prefix
-        for cluster_instance_tag in exist_cluster_instance.values():
-            for value in cluster_instance_tag:
-                cluster_instance_tag_list.append(value.replace(self.cluster_prefix, ''))
+        for cluster_instance_tag in exist_security_group.values():
+            cluster_instance_tag_list.append(cluster_instance_tag.replace(self.cluster_prefix, ''))
 
         # find all buckets that contains cluster name
         for bucket_name in bucket_name_list:

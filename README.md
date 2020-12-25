@@ -17,7 +17,7 @@ _**Table of Contents**_
 <!-- TOC -->
 - [Installation](#installation)
 - [Update Cluster Tags](#update-cluster-tags)
-- [Delete Cluster Zombies](#delete-cluster-zombies)
+- [Delete Zombie Cluster](#delete-zombie-cluster)
 - [Policies](#policies)
 - [Pytest](#pytest)
 - [Post Installation](#post-installation)
@@ -62,7 +62,7 @@ python3
 >> tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
 ```
 
-## Delete Cluster Zombies
+## Delete Zombie Cluster
 
 ```sh
 >> from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource, delete_zombie_cluster_resource

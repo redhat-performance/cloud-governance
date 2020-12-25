@@ -1,7 +1,6 @@
 import boto3
 from cloud_governance.common.logger.init_logger import logger
 
-
 # @todo add next token
 # response = client.get_servers()
 # results = response["serverList"]
@@ -23,7 +22,7 @@ class TagClusterResources:
         self.s3_client = boto3.client('s3')
         self.cluster_prefix = cluster_prefix
         self.cluster_name = cluster_name
-        self.cluster_key = f'{self.cluster_prefix}{self.cluster_name}'
+        self.cluster_key = self.__init_cluster_name()
         self.input_tags = input_tags
 
     def __init_cluster_name(self):
@@ -32,22 +31,7 @@ class TagClusterResources:
         i.e.: user cluster name = test , cluster stamp key =  kubernetes.io/cluster/test-jlhpd
         :return: cluster stamp name or empty if not exist
         """
-        return self.__scan_cluster_instance_security_groups()
-
-    def __generate_cluster_resource_stamp_key_by_cluster_name(self, resources_list: list, tags: str = 'Tags'):
-        """
-        This method scan for full cluster stamp key according to input resource id
-        :param resources_list:
-        :param tags:
-        :return: cluster stamp key or False if not found
-        """
-        for resource in resources_list:
-            for item in resource:
-                if item.get(tags):
-                    for tag in item[tags]:
-                        if tag['Key'].startswith(f'{self.cluster_key}'):
-                            return tag['Key']
-        return ''
+        return self.__scan_cluster_security_groups()
 
     def __input_tags_list_builder(self):
         """ This method build tags list according to input tags dictionary"""
@@ -105,20 +89,28 @@ class TagClusterResources:
                         result_resources_list.append(resource_id)
         return result_resources_list
 
-    def __scan_cluster_instance_security_groups(self):
+    def __scan_resource_for_cluster_fullname(self, resources_list: list, tags: str = 'Tags'):
+        """
+         This method scan for full cluster name according in input resource by input cluster name.
+        :param resources_list:
+        :param tags:
+        :return:
+        """
+        for resource in resources_list:
+            if resource.get(tags):
+                for tag in resource[tags]:
+                    if tag['Key'].startswith(f'{self.cluster_prefix}{self.cluster_name}'):
+                        return tag['Key']
+        return ''
+
+    def __scan_cluster_security_groups(self):
         """
         This method scan for cluster stamp key in instances and security group, if not found return empty string
         :return: cluster stamp key or empty string
         """
-        instances = self.__get_instances_data()
         security_groups = self.__get_security_group_data()
-        if instances:
-            # scan instance for cluster stamp key
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=instances)
-        elif security_groups:
-            # scan security group for cluster stamp key
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
-        return ''
+        # scan security group for cluster stamp key
+        return self.__scan_resource_for_cluster_fullname(resources_list=security_groups)
 
     def __get_instances_data(self):
         """
@@ -136,6 +128,7 @@ class TagClusterResources:
     def cluster_instance(self):
         """
         This method return list of cluster's instance according to cluster tag name,
+        The instances list is different from other resources
         it will search for full cluster name (including random suffix string) in case of user input cluster name was given
         :return:
         """
@@ -188,15 +181,6 @@ class TagClusterResources:
         """
         security_groups = self.ec2_client.describe_security_groups()
         return security_groups['SecurityGroups']
-
-    def __scan_cluster_security_group(self):
-        """
-        This method return list of cluster's security group according to cluster tag name
-        :return:
-        """
-        security_groups = self.__get_security_group_data()
-        if security_groups:
-            return self.__generate_cluster_resource_stamp_key_by_cluster_name(resources_list=security_groups)
 
     def cluster_security_group(self):
         """

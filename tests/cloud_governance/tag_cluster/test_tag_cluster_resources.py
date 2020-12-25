@@ -3,7 +3,8 @@ from time import gmtime, strftime
 
 
 cluster_prefix = 'kubernetes.io/cluster/'
-cluster_name = 'ocs-test-jlhpd'
+#cluster_name = 'ocs-test-jlhpd'
+cluster_name = 'ocs-test'
 #cluster_name = 'opc464-k7jml'
 
 # input tags
@@ -64,7 +65,7 @@ def test_cluster_security_group():
     This method return all cluster security_group
     :return:
     """
-    assert len(tag_cluster_resources.cluster_security_group()) >= 0
+    print(tag_cluster_resources.cluster_security_group())
 
 
 def test_cluster_elastic_ip():

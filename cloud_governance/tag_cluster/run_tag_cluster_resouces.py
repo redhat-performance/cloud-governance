@@ -13,7 +13,6 @@ def scan_cluster_resource(cluster_name: str, region: str = 'us-east-2'):
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,
                           tag_cluster_resources.cluster_ami,
-                          tag_cluster_resources.cluster_ami,
                           tag_cluster_resources.cluster_snapshot,
                           tag_cluster_resources.cluster_security_group,
                           tag_cluster_resources.cluster_elastic_ip,
@@ -47,7 +46,6 @@ def tag_cluster_resource(cluster_name: str, mandatory_tags: dict, region: str = 
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,
-                          tag_cluster_resources.cluster_ami,
                           tag_cluster_resources.cluster_ami,
                           tag_cluster_resources.cluster_snapshot,
                           tag_cluster_resources.cluster_security_group,
