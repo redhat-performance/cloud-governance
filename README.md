@@ -35,7 +35,6 @@ source governance/bin/activate
 python -m pip install --upgrade pip
 pip3 install wheel
 pip3 install cloud-governance/cloud_governance-1.0.0-py3-none-any.whl
-
 python3
 ```
 
