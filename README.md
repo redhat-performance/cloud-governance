@@ -8,7 +8,6 @@ deploying cloud management policies and OpenShift management capabilities.
 * tag_cluster_resource: Update cluster tags by cluster name 
 * zombie_cluster_resource: Delete cluster's zombies resources
 
-TBD:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance pipeline is placed in [Jenkins](TBD)
 
