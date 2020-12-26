@@ -17,6 +17,7 @@ setup(
     version=__version__,
     description='Cloud Governance Tool',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Red Hat',
     author_email='ebattat@redhat.com',
     url='',

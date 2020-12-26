@@ -9,7 +9,7 @@ deploying cloud management policies and OpenShift management capabilities.
 * zombie_cluster_resource: Delete cluster's zombies resources
 
 TBD:
-* The cloud-governance package is placed in [PyPi](TBD)
+* The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance pipeline is placed in [Jenkins](TBD)
 
 _**Table of Contents**_
