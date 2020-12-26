@@ -17,9 +17,9 @@ _**Table of Contents**_
 - [Installation](#installation)
 - [Update Cluster Tags](#update-cluster-tags)
 - [Delete Zombies Clusters](#delete-zombies-clusters)
-- [Policies](#policies)
-- [Pytest](#pytest)
 - [Post Installation](#post-installation)
+- [Pytest](#pytest)
+- [Policies](#policies)
 <!-- /TOC -->
 
 
@@ -31,7 +31,6 @@ aws configure
 python3 -m venv governance
 source governance/bin/activate
 python -m pip install --upgrade pip
-pip3 install wheel
 pip3 install cloud-governance
 python3
 ```
@@ -71,6 +70,21 @@ python3
 >> delete_zombie_cluster_resource(delete=True, region=region)
 ```
 
+## Post Installation
+
+```sh
+deactivate
+rm -rf governance
+```
+
+## Pytest
+
+```sh
+pip install coverage
+pip install pytest
+coverage run -m pytest
+```
+
 ## Policies
 
 ec2_idle.yml
@@ -84,19 +98,4 @@ source custodian/bin/activate
 custodian run --dryrun -s s3://redhat-custodian/logs -l /cloud-custodian/policies /home/user/custodian_policy/ebs_available.yml
 deactivate
 rm -rf custodian
-```
-
-## Pytest
-
-```sh
-pip install coverage
-pip install pytest
-coverage run -m pytest
-```
-
-## Post Installation
-
-```sh
-deactivate
-rm -rf governance
 ```
