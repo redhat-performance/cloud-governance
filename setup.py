@@ -2,7 +2,7 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 here = path.abspath(path.dirname(__file__))
 
 
@@ -35,11 +35,12 @@ setup(
 
     install_requires=[
         'typing',
-        'boto3',
+        'boto3',  # ec2 client
+        'c7n'  # custodian
 
     ],
 
-    setup_requires=['pytest', 'pytest-runner', 'wheel'],
+    setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
 
     include_package_data=True,
 

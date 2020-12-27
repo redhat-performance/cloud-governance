@@ -15,11 +15,12 @@ _**Table of Contents**_
 
 <!-- TOC -->
 - [Installation](#installation)
+- [Policies](#policies)
 - [Update Cluster Tags](#update-cluster-tags)
 - [Delete Zombies Clusters](#delete-zombies-clusters)
-- [Post Installation](#post-installation)
 - [Pytest](#pytest)
-- [Policies](#policies)
+- [Post Installation](#post-installation)
+
 <!-- /TOC -->
 
 
@@ -32,12 +33,22 @@ python3 -m venv governance
 source governance/bin/activate
 python -m pip install --upgrade pip
 pip3 install cloud-governance
-python3
+```
+
+## Policies
+
+ec2_idle.yml
+ebs_unattached.yml
+
+run steps:
+```sh
+(governance) $ custodian run --dryrun -s s3://redhat-custodian/logs -l /cloud-custodian/policies /home/user/custodian_policy/ebs_available.yml
 ```
 
 ##  Update Cluster Tags
 
 ```sh
+(governance) $ python3
 >> from cloud_governance.tag_cluster.run_tag_cluster_resouces import scan_cluster_resource, tag_cluster_resource
 >> from time import gmtime, strftime
 # Choose region
@@ -61,6 +72,7 @@ python3
 ## Delete Zombies Clusters
 
 ```sh
+(governance) $ python3
 >> from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource, delete_zombie_cluster_resource
 # Choose region
 >> region = 'us-east-2'
@@ -70,32 +82,17 @@ python3
 >> delete_zombie_cluster_resource(delete=True, region=region)
 ```
 
+## Pytest
+
+```sh
+(governance) $ pip install coverage
+(governance) $ pip install pytest
+(governance) $ coverage run -m pytest
+```
+
 ## Post Installation
 
 ```sh
 deactivate
 rm -rf governance
-```
-
-## Pytest
-
-```sh
-pip install coverage
-pip install pytest
-coverage run -m pytest
-```
-
-## Policies
-
-ec2_idle.yml
-ebs_unattached.yml
-
-Installation steps:
-```sh
-python3 -m venv custodian
-source custodian/bin/activate
-(custodian) $ pip install c7n
-custodian run --dryrun -s s3://redhat-custodian/logs -l /cloud-custodian/policies /home/user/custodian_policy/ebs_available.yml
-deactivate
-rm -rf custodian
 ```
