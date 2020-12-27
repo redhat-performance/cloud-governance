@@ -43,7 +43,7 @@ ebs_unattached.yml
 
 run steps:
 ```sh
-(governance) $ https://github.com/redhat-performance/cloud-governance
+(governance) $ git clone https://github.com/redhat-performance/cloud-governance
 (governance) $ mkdir governance_output
 (governance) $ custodian run --dryrun -s governance_output cloud-governance/policies/ebs_unattached.yml
 ```
