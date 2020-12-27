@@ -90,6 +90,8 @@ run steps:
 ```sh
 (governance) $ pip install coverage
 (governance) $ pip install pytest
+(governance) $ git clone https://github.com/redhat-performance/cloud-governance
+(governance) $ cd cloud-governance
 (governance) $ coverage run -m pytest
 ```
 
