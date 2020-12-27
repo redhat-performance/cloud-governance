@@ -42,7 +42,7 @@ ebs_unattached.yml
 
 run steps:
 ```sh
-(governance) $ custodian run --dryrun -s s3://redhat-custodian/logs -l /cloud-custodian/policies /home/user/custodian_policy/ebs_available.yml
+(governance) $ custodian run --dryrun -s /home/user/custodian_output /home/user/custodian_policy/ebs_available.yml
 ```
 
 ##  Update Cluster Tags
