@@ -440,6 +440,7 @@ class ZombieClusterResources:
         """
         This method return list of cluster's s3 bucket according to cluster name
         """
+        # @todo add scan by tag
         bucket_name_list = []
         bucket_result_list = []
         cluster_instance_tag_list = []
