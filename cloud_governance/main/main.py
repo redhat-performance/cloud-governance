@@ -10,7 +10,7 @@ from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['action'] = 'tag_cluster_resource'
-# os.environ['policies_output'] ='s3://redhat-custodian/logs'
+# os.environ['policy_output'] ='s3://redhat-custodian/logs'
 # os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached.yml'
 # os.environ['action'] = 'tag_cluster_resource'
@@ -38,15 +38,15 @@ def main():
             dry_run = ''
         else:  # default dry run
             dry_run = '--dryrun'
-        policies_output = os.environ['policies_output']
+        policy_output = os.environ['policy_output']
         policy = os.environ['policy']
         policies_path = os.path.join(os.path.dirname(__file__), f'{action}')
         if policy == 'all':  # all policy
             policy_files = [f for f in listdir(policies_path) if isfile(join(policies_path, f))]
             for policy in policy_files:
-                os.system(f'custodian run {dry_run} -s {policies_output} {policies_path}/{policy}')
+                os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}')
         elif policy and policy != 'all': # single policy
-            os.system(f'custodian run {dry_run} -s {policies_output} {policies_path}/{policy}')
+            os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}')
     # Tag
     elif action == 'tag_cluster_resource':
         cluster_name = os.environ['cluster_name']

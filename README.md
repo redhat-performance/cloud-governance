@@ -4,10 +4,15 @@ deploying cloud management policies and OpenShift management capabilities.
 
 **General**
 
-* policies: The policies that run by cloud custodian tool
+This tool run the following actions using podman.
+Each action run in separate container based on downloaded cloud-governance image from quay.io 
+and remove it at the end.
+
+* policy: Run policy per account and region
 * tag_cluster_resource: Update cluster tags by cluster name 
 * zombie_cluster_resource: Delete cluster's zombies resources
 
+Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance quay.io is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
 * The cloud-governance pipeline is placed in [Jenkins](TBD)
@@ -16,7 +21,7 @@ _**Table of Contents**_
 
 <!-- TOC -->
 - [Installation](#installation)
-- [Policies](#policies)
+- [Policy](#policy)
 - [Update Cluster Tags](#update-cluster-tags)
 - [Delete Zombies Clusters](#delete-zombies-clusters)
 - [Pytest](#pytest)
@@ -27,78 +32,110 @@ _**Table of Contents**_
 
 ## Installation
 
+####Download cloud-governance image from quay.io
 ```sh
-# need to run it as root and aws admin user
-aws configure
-python3 -m venv governance
-source governance/bin/activate
-python -m pip install --upgrade pip
-pip3 install cloud-governance
+# Need to run it as root using podman
+sudo podman pull quay.io/ebattat/cloud-governance
 ```
 
-## Policies
+## Policy
+####Run policy per account and region
+####Existing policies: 
 
-ec2_idle.yml
+1. ec2_idle.yml - scan account/region for idle ec2
 
-ebs_unattached.yml
+2. ebs_unattached.yml - scan account/region for unattached ebs
 
-run steps:
+####Fill the following Parameters in podman command:
+
+AWS_ACCESS_KEY_ID=awsaccesskeyid
+
+AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+
+AWS_DEFAULT_REGION=us-east-2
+
+action=policy
+
+dry_run=yes/no
+
+policies_output=s3://redhat-cloud-governance/logs
+
+policy=ebs_unattached.yml/all
+
+####Run one policy
 ```sh
-(governance) $ git clone https://github.com/redhat-performance/cloud-governance
-(governance) $ mkdir governance_output
-(governance) $ custodian run --dryrun -s governance_output cloud-governance/policy/ebs_unattached.yml
+
+sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=policy -e dry_run=yes -e policies_output=s3://redhat-cloud-governance/logs -e policy=ebs_unattached.yml quay.io/ebattat/cloud-governance
+
 ```
 
+#####Run all policies
+```sh
+
+sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=policy -e dry_run=yes -e policies_output=s3://redhat-cloud-governance/logs -e policy=all quay.io/ebattat/cloud-governance
+
+```
 ##  Update Cluster Tags
+####Update cluster tags by cluster name 
+####Fill the following Parameters in podman command:
 
+AWS_ACCESS_KEY_ID=awsaccesskeyid
+
+AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+
+AWS_DEFAULT_REGION=us-east-2
+
+action=tag_cluster_resource
+
+dry_run=yes
+
+cluster_name=ocs-test
+
+mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
+
+#####Update Cluster Tags
 ```sh
-(governance) $ python3
->>> from cloud_governance.tag_cluster.run_tag_cluster_resouces import scan_cluster_resource, tag_cluster_resource
->>> from time import gmtime, strftime
-# Choose region
->>> region = 'us-east-2'
-# Cluster name to be tagged
->>> cluster_name = 'test'
-# mandatory tags for all cluster resources
->>> mandatory_tags = {
-        "Owner": "Name",
-        "Email": "name@redhat.com",
-        "Purpose": "test",
-        "Date": strftime("%Y/%m/%d %H:%M:%S")
-    }
-    
-# dry run: scan for cluster resources 
->>> scan_cluster_resource(cluster_name=cluster_name, region=region)
-# update tags 
->>> tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
+sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=tag_cluster_resource -e dry_run=yes -e cluster_name=ocs-test -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" quay.io/ebattat/cloud-governance
+
 ```
 
 ## Delete Zombies Clusters
+####Delete cluster's zombies resources
+####Fill the following Parameters in podman command:
 
+AWS_ACCESS_KEY_ID=awsaccesskeyid
+
+AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+
+AWS_DEFAULT_REGION=us-east-2
+
+action=zombie_cluster_resource
+
+dry_run=yes
+
+####Delete Zombies Clusters
 ```sh
-(governance) $ python3
->>> from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource, delete_zombie_cluster_resource
-# Choose region
->>> region = 'us-east-2'
-# dry run: scan for zombie clusters resource 
->>> zombie_cluster_resource(delete=False, region=region)
-# delete zombie clusters resource 
->>> delete_zombie_cluster_resource(delete=True, region=region)
+sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=zombie_cluster_resource -e dry_run=yes quay.io/ebattat/cloud-governance
 ```
 
 ## Pytest
 
 ```sh
+python3 -m venv governance
+source governance/bin/activate
+(governance) $ python -m pip install --upgrade pip
 (governance) $ pip install coverage
 (governance) $ pip install pytest
 (governance) $ git clone https://github.com/redhat-performance/cloud-governance
 (governance) $ cd cloud-governance
 (governance) $ coverage run -m pytest
+(governance) $ deactivate
+rm -rf *governance*
 ```
 
 ## Post Installation
 
+####Delete cloud-governance image
 ```sh
-deactivate
-rm -rf *governance*
+sudo podman rmi quay.io/ebattat/cloud-governance
 ```
