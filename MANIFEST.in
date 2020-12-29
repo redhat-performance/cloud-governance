@@ -1,4 +1,4 @@
-include cloud_governance/policies/*.yml
+include cloud_governance/policy/*.yml
 
 
 

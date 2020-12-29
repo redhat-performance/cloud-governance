@@ -41,7 +41,7 @@ def main():
         policies_output = os.environ['policies_output']
         policy = os.environ['policy']
         policies_path = os.path.join(os.path.dirname(__file__), f'{action}')
-        if policy == 'all':  # all policies
+        if policy == 'all':  # all policy
             policy_files = [f for f in listdir(policies_path) if isfile(join(policies_path, f))]
             for policy in policy_files:
                 os.system(f'custodian run {dry_run} -s {policies_output} {policies_path}/{policy}')

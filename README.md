@@ -9,6 +9,7 @@ deploying cloud management policies and OpenShift management capabilities.
 * zombie_cluster_resource: Delete cluster's zombies resources
 
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
+* The cloud-governance quay.io is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
 * The cloud-governance pipeline is placed in [Jenkins](TBD)
 
 _**Table of Contents**_
@@ -45,7 +46,7 @@ run steps:
 ```sh
 (governance) $ git clone https://github.com/redhat-performance/cloud-governance
 (governance) $ mkdir governance_output
-(governance) $ custodian run --dryrun -s governance_output cloud-governance/policies/ebs_unattached.yml
+(governance) $ custodian run --dryrun -s governance_output cloud-governance/policy/ebs_unattached.yml
 ```
 
 ##  Update Cluster Tags
