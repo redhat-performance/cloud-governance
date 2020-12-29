@@ -29,7 +29,6 @@ _**Table of Contents**_
 
 <!-- /TOC -->
 
-
 ## Installation
 
 #### Download cloud-governance image from quay.io
