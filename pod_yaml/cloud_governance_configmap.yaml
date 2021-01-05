@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-governance-config
+  namespace: default
+data:
+  cloud-governance.region: "us-east-2"
+  cloud-governance.action: "zombie_cluster_resource"
+  cloud-governance.dry_run: "yes"
+  cloud-governance.log_level: "INFO"

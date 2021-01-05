@@ -51,17 +51,17 @@ AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 AWS_SECRET_ACCESS_KEY=awssecretaccesskey
 
-AWS_DEFAULT_REGION=us-east-2/all
+(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
 
 action=policy
 
-dry_run=yes/no
+(optional)dry_run=yes/no (default = yes)
 
 policy_output=s3://redhat-cloud-governance/logs
 
 policy=ebs_unattached.yml/all
 
-log_level=INFO
+(optional)log_level=INFO (default = INFO)
 
 #### Run one policy
 ```sh
@@ -84,17 +84,17 @@ AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 AWS_SECRET_ACCESS_KEY=awssecretaccesskey
 
-AWS_DEFAULT_REGION=us-east-2/all
+(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
 
 action=tag_cluster_resource
 
-dry_run=yes
+(optional)dry_run=yes/no (default = yes)
 
 cluster_name=ocs-test
 
 mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
 
-log_level=INFO
+(optional)log_level=INFO (default = INFO)
 
 #### Update Cluster Tags
 ```sh
@@ -110,13 +110,13 @@ AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 AWS_SECRET_ACCESS_KEY=awssecretaccesskey
 
-AWS_DEFAULT_REGION=us-east-2/all
+(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
 
 action=zombie_cluster_resource
 
-dry_run=yes
+(optional)dry_run=yes/no (default = yes)
 
-log_level=INFO
+(optional)log_level=INFO (default = INFO)
 
 #### Delete Zombies Clusters
 ```sh

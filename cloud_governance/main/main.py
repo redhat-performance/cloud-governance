@@ -48,7 +48,6 @@ def run_action(action: str, region: str, dry_run: str):
     # Tag
     elif action == 'tag_cluster_resource':
         cluster_name = os.environ['cluster_name']
-        dry_run = os.environ.get('dry_run', 'yes')
         mandatory_tags = os.environ['mandatory_tags']
         if dry_run == 'no':
             mandatory_tags = literal_eval(mandatory_tags)
@@ -58,7 +57,6 @@ def run_action(action: str, region: str, dry_run: str):
             tag_cluster_resource(cluster_name=cluster_name, region=region)
     # Zombie
     elif action == 'zombie_cluster_resource':
-        dry_run = os.environ.get('dry_run', 'yes')
         if dry_run == 'no':
             zombie_cluster_resource(delete=True, region=region)
         else:  # default: yes or other
@@ -71,12 +69,13 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = os.environ['AWS_DEFAULT_REGION']
-    action_env = os.environ['action']
+    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
-    LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-    logger.setLevel(level=LOGLEVEL)
+    log_level = os.environ.get('log_level', 'INFO').upper()
+    action_env = os.environ['action']
+    logger.setLevel(level=log_level)
     if region_env == 'all':
+        # must be set for bot03 client default region
         os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
         ec2 = boto3.client('ec2')
         regions_data = ec2.describe_regions()

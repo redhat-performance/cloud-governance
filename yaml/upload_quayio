@@ -1,5 +1,0 @@
-# upload to quay.io
-# sudo podman build --layers=false -t cloud-governance:v1.0.16 .
-# sudo podman login quay.io
-# sudo podman push localhost/cloud-governance:v1.0.16 quay.io/ebattat/cloud-governance
-# sudo podman pull quay.io/ebattat/cloud-governance
