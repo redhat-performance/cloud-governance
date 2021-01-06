@@ -21,9 +21,8 @@ _**Table of Contents**_
 
 <!-- TOC -->
 - [Installation](#installation)
-- [Policy](#policy)
-- [Update Cluster Tags](#update-cluster-tags)
-- [Delete Zombies Clusters](#delete-zombies-clusters)
+- [Run Policy Using Podman](#run-policy-using-podman)
+- [Run Policy Using Pod](#run-policy-using-pod)
 - [Pytest](#pytest)
 - [Post Installation](#post-installation)
 
@@ -37,91 +36,59 @@ _**Table of Contents**_
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
 
-## Policy
+## Run Policy Using Podman
+
 #### Run policy per account and region
-#### Existing policies: 
+#### Support policy: 
 
-1. ec2_idle.yml - scan account/region for idle ec2
+1. ec2_idle - scan account/region for idle ec2
 
-2. ebs_unattached.yml - scan account/region for unattached ebs
+2. ebs_unattached - scan account/region for unattached ebs
+
+3. tag_cluster_resource - tag all cluster resource
+
+4. zombie_cluster_resource - zombie cluster resource
 
 #### Fill the following Parameters in podman command:
 
-AWS_ACCESS_KEY_ID=awsaccesskeyid
+(mandatory)AWS_ACCESS_KEY_ID=awsaccesskeyid
 
-AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+(mandatory)AWS_SECRET_ACCESS_KEY=awssecretaccesskey
 
-(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
+(mandatory)policy=ebs_unattached / ec2_idle / tag_cluster_resource / zombie_cluster_resource
 
-action=policy
+(mandatory)policy_output=s3://redhat-cloud-governance/logs
 
-(optional)dry_run=yes/no (default = yes)
+(policy:tag_cluster_resource)cluster_name=ocs-test
 
-policy_output=s3://redhat-cloud-governance/logs
-
-policy=ebs_unattached.yml/all
-
-(optional)log_level=INFO (default = INFO)
-
-#### Run one policy
-```sh
-
-sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=policy -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e policy=ebs_unattached.yml -e log_level=INFO quay.io/ebattat/cloud-governance
-
-```
-
-#### Run all policies
-```sh
-
-sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=policy -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e policy=all -e log_level=INFO quay.io/ebattat/cloud-governance
-
-```
-##  Update Cluster Tags
-#### Update cluster tags by cluster name 
-#### Fill the following Parameters in podman command:
-
-AWS_ACCESS_KEY_ID=awsaccesskeyid
-
-AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+(policy:tag_cluster_resource)mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
 
 (optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
-
-action=tag_cluster_resource
-
-(optional)dry_run=yes/no (default = yes)
-
-cluster_name=ocs-test
-
-mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
-
-(optional)log_level=INFO (default = INFO)
-
-#### Update Cluster Tags
-```sh
-sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=tag_cluster_resource -e dry_run=yes -e cluster_name=ocs-test -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO quay.io/ebattat/cloud-governance
-
-```
-
-## Delete Zombies Clusters
-#### Delete cluster's zombies resources
-#### Fill the following Parameters in podman command:
-
-AWS_ACCESS_KEY_ID=awsaccesskeyid
-
-AWS_SECRET_ACCESS_KEY=awssecretaccesskey
-
-(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
-
-action=zombie_cluster_resource
 
 (optional)dry_run=yes/no (default = yes)
 
 (optional)log_level=INFO (default = INFO)
 
-#### Delete Zombies Clusters
+#### Run policy
 ```sh
-sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e action=zombie_cluster_resource -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+
+sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e policy=ebs_unattached -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
 ```
+
+## Run Policy Using Pod
+
+#### Run as a pod job via OpenShift
+
+Job Pod: cloud-governance.yaml [here](pod_yaml/cloud-governance.yaml)
+
+Configmaps: cloud_governance_configmap.yaml [here](pod_yaml/cloud_governance_configmap.yaml)
+
+Quay.io Secret: quayio_secret.sh [here](pod_yaml/quayio_secret.sh)
+
+AWS Secret: cloud_governance_secret.yaml [here](pod_yaml/cloud_governance_secret.yaml)
+
+Need to convert secret key to base64 [here](pod_yaml/run_base64.py)
 
 ## Pytest
 
