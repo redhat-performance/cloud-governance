@@ -47,7 +47,10 @@ sudo podman pull quay.io/ebattat/cloud-governance
 
 3. tag_cluster_resource - tag all cluster resource
 
-4. zombie_cluster_resource - zombie cluster resource
+4. tag_ec2_resource - update tag for instance, volume, ami, snapshot
+   
+5. zombie_cluster_resource - zombie cluster resource
+
 
 #### Fill the following Parameters in podman command:
 
