@@ -1,25 +1,24 @@
+
 import os
 from time import gmtime, strftime  # date tag
 from ast import literal_eval  # str to dict
-from os import listdir
-from os.path import isfile, join  # list files
 import boto3  # regions
 from cloud_governance.common.logger.init_logger import logger, logging
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 
-#  env tests
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
-#os.environ['AWS_DEFAULT_REGION'] = 'all'
-#os.environ['policy'] = 'tag_cluster_resource'
-os.environ['policy'] = 'zombie_cluster_resource'
-#os.environ['action'] = 'tag_cluster_resource'
-os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
-os.environ['dry_run'] = 'yes'
-#os.environ['policy'] = 'ebs_unattached'
-os.environ['cluster_name'] = 'ocs-test'
-os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
-os.environ['mandatory_tags'] = ''
+# #  env tests
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# #os.environ['AWS_DEFAULT_REGION'] = 'all'
+# #os.environ['policy'] = 'tag_cluster_resource'
+# os.environ['policy'] = 'zombie_cluster_resource'
+# #os.environ['action'] = 'tag_cluster_resource'
+# os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
+# os.environ['dry_run'] = 'yes'
+# #os.environ['policy'] = 'ebs_unattached'
+# os.environ['cluster_name'] = 'ocs-test'
+# os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
+# os.environ['mandatory_tags'] = ''
 
 
 def run_policy(policy: str, region: str, dry_run: str):
@@ -70,7 +69,10 @@ def main():
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
     log_level = os.environ.get('log_level', 'INFO').upper()
-    policy = os.environ['policy']
+    policy = os.environ.get('policy', '')
+    if not policy:
+        raise Exception(f'Missing Policy name: "{policy}"')
+        logger.exception(f'Missing Policy name: "{policy}"')
     logger.setLevel(level=log_level)
     if region_env == 'all':
         # must be set for bot03 client default region
