@@ -1,5 +1,6 @@
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
+from cloud_governance.tag_cluster.ec2_update_tags import UpdateEc2Tags
 
 
 def tag_cluster_resource(cluster_name: str, mandatory_tags: dict = None, region: str = 'us-east-2'):
@@ -39,3 +40,12 @@ def tag_cluster_resource(cluster_name: str, mandatory_tags: dict = None, region:
     for func in func_resource_list:
         logger.info(f'{func.__name__} count: {len(func())}, {func()}')
 
+
+def tag_ec2_resource(instance_name: str, mandatory_tags: dict = None, region: str = 'us-east-2'):
+    """
+    This method update tags of ec2: instance, volume, ami, snapshot
+    """
+
+    header = {'content-type': 'application/json'}
+    update_tags = UpdateEc2Tags(region=region)
+    return update_tags.update_ec2(headers=header, data=mandatory_tags)

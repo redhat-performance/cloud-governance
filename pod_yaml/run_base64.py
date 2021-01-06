@@ -1,4 +1,4 @@
-
+#gitleaks -r https://github.com/gitleakstest/gronit -v
 import base64
 
 data = "test"

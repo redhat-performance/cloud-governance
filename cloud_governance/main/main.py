@@ -4,20 +4,21 @@ from time import gmtime, strftime  # date tag
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.init_logger import logger, logging
-from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource
+from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, tag_ec2_resource
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 
 # # env tests
 # #os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# #os.environ['policy'] = 'tag_cluster_resource'
-# #os.environ['policy'] = 'zombie_cluster_resource'
+#os.environ['policy'] = 'tag_ec2_resource'
+#os.environ['policy'] = 'zombie_cluster_resource'
 # #os.environ['action'] = 'tag_cluster_resource'
 # os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
 # os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['cluster_name'] = 'ocs-test'
-# os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
+#os.environ['resource_name'] = 'ocp-orch-perf'
+#os.environ['resource_name'] = 'ocs-test'
+#os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 
 
@@ -28,10 +29,10 @@ def run_policy(policy: str, region: str, dry_run: str):
     """
     # Custom policy Tag
     if policy == 'tag_cluster_resource':
-        cluster_name = os.environ['cluster_name']
+        cluster_name = os.environ['resource_name']
         if dry_run == 'no':
             mandatory_tags = os.environ.get('mandatory_tags', {})
-            mandatory_tags = literal_eval(mandatory_tags)
+            mandatory_tags = literal_eval(mandatory_tags)  # str to dict
             mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
         else:  # default: yes or other
@@ -42,6 +43,17 @@ def run_policy(policy: str, region: str, dry_run: str):
             zombie_cluster_resource(delete=True, region=region)
         else:  # default: yes or other
             zombie_cluster_resource(region=region)
+    elif policy == 'tag_ec2_resource':
+        instance_name = os.environ['resource_name']
+        mandatory_tags = os.environ.get('mandatory_tags', {})
+        mandatory_tags = literal_eval(mandatory_tags)  # str to dict
+        mandatory_tags['Name'] = instance_name
+        mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
+        if dry_run == 'no':
+            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
+        else:
+            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
+        logger.info(response)
     else:  # default policy of cloud custodian - yaml file
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
