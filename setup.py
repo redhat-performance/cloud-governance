@@ -2,7 +2,7 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
-__version__ = '1.0.35'
+__version__ = '1.0.37'
 here = path.abspath(path.dirname(__file__))
 
 
@@ -36,7 +36,8 @@ setup(
     install_requires=[
         'typing',
         'boto3',  # ec2 client
-        'c7n'  # custodian
+        'c7n',  # custodian
+        'requests'  # rest api
 
     ],
 
