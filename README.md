@@ -80,7 +80,7 @@ sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 #### Run as a pod job via OpenShift
 
-Job Pod:[cloud-governance.yaml](pod_yaml/cloud-governance.yaml)
+Job Pod: [cloud-governance.yaml](pod_yaml/cloud-governance.yaml)
 
 Configmaps: [cloud_governance_configmap.yaml](pod_yaml/cloud_governance_configmap.yaml)
 
