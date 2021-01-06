@@ -7,18 +7,18 @@ from cloud_governance.common.logger.init_logger import logger, logging
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 
-# #  env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
-# #os.environ['AWS_DEFAULT_REGION'] = 'all'
-# #os.environ['policy'] = 'tag_cluster_resource'
-# os.environ['policy'] = 'zombie_cluster_resource'
-# #os.environ['action'] = 'tag_cluster_resource'
-# os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
-# os.environ['dry_run'] = 'yes'
-# #os.environ['policy'] = 'ebs_unattached'
-# os.environ['cluster_name'] = 'ocs-test'
-# os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
-# os.environ['mandatory_tags'] = ''
+#  env tests
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+#os.environ['AWS_DEFAULT_REGION'] = 'all'
+#os.environ['policy'] = 'tag_cluster_resource'
+#os.environ['policy'] = 'zombie_cluster_resource'
+#os.environ['action'] = 'tag_cluster_resource'
+os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
+os.environ['dry_run'] = 'yes'
+os.environ['policy'] = 'ebs_unattached'
+os.environ['cluster_name'] = 'ocs-test'
+os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
+os.environ['mandatory_tags'] = ''
 
 
 def run_policy(policy: str, region: str, dry_run: str):
@@ -51,13 +51,13 @@ def run_policy(policy: str, region: str, dry_run: str):
         else:  # default dry run
             dry_run = '--dryrun'
         policy_output = os.environ['policy_output']
-        # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{action}')
-        policies_path = os.path.join(os.path.dirname(__file__), f'{policy}.yaml')
-        if os.path.isfile(f'{policies_path}/{policy}.yaml'):
-            os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yaml')
+        # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
+        policy_full_path = f'{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/policy/{policy}.yml'
+        if os.path.isfile(policy_full_path):
+            os.system(f'custodian run {dry_run} -s {policy_output} {policy_full_path}')
         else:
-            raise Exception(f'Missing Policy name: {policy}')
-            logger.exception(f'Missing Policy name: {policy}')
+            raise Exception(f'Missing Policy name: {policy_full_path}')
+            logger.exception(f'Missing Policy name: {policy_full_path}')
 
 
 def main():
