@@ -80,15 +80,15 @@ sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 #### Run as a pod job via OpenShift
 
-Job Pod: cloud-governance.yaml [here](pod_yaml/cloud-governance.yaml)
+Job Pod: cloud-governance.yaml [cloud-governance.yaml](pod_yaml/cloud-governance.yaml)
 
-Configmaps: cloud_governance_configmap.yaml [here](pod_yaml/cloud_governance_configmap.yaml)
+Configmaps: cloud_governance_configmap.yaml [cloud_governance_configmap.yaml](pod_yaml/cloud_governance_configmap.yaml)
 
-Quay.io Secret: quayio_secret.sh [here](pod_yaml/quayio_secret.sh)
+Quay.io Secret: quayio_secret.sh [quayio_secret.sh](pod_yaml/quayio_secret.sh)
 
-AWS Secret: cloud_governance_secret.yaml [here](pod_yaml/cloud_governance_secret.yaml)
+AWS Secret: cloud_governance_secret.yaml [cloud_governance_secret.yaml](pod_yaml/cloud_governance_secret.yaml)
 
-Need to convert secret key to base64 [here](pod_yaml/run_base64.py)
+    * Need to convert secret key to base64 [run_base64.py](pod_yaml/run_base64.py)
 
 ## Pytest
 
