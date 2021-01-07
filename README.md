@@ -3,7 +3,6 @@ This tool provides an engineer with a lightweight and flexible framework for
 deploying cloud management policies and OpenShift management capabilities.
 
 **General**
-
 This tool support the following policies:
 
 * ec2_idle: idle ec2
