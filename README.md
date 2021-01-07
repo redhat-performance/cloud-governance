@@ -4,13 +4,13 @@ deploying cloud management policies and OpenShift management capabilities.
 
 **General**
 
-This tool support the following actions:
+This tool support the following policies:
 
-* policy: Run policy per account and region
-* tag_cluster_resource: Update cluster tags by cluster name 
+* ec2_idle: idle ec2
+* ebs_unattached: volumes that did not connect to instance, volume in available status 
+* tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombies resources
-
-each action run in seperate container using podman
+* tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
@@ -32,7 +32,7 @@ _**Table of Contents**_
 
 #### Download cloud-governance image from quay.io
 ```sh
-# Need to run it with root privileges using podman
+# Need to run it with root privileges
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
 
@@ -41,47 +41,47 @@ sudo podman pull quay.io/ebattat/cloud-governance
 #### Run policy per account and region
 #### Support policy: 
 
-1. ec2_idle - scan account/region for idle ec2
-
-2. ebs_unattached - scan account/region for unattached ebs
-
-3. tag_cluster_resource - tag all cluster resource
-
-4. tag_ec2_resource - update tag for instance, volume, ami, snapshot
-   
-5. zombie_cluster_resource - zombie cluster resource
-
-
-#### Fill the following Parameters in podman command:
+#### Fill the following environment variables using Podman command:
 
 (mandatory)AWS_ACCESS_KEY_ID=awsaccesskeyid
 
 (mandatory)AWS_SECRET_ACCESS_KEY=awssecretaccesskey
 
-(mandatory)policy=ebs_unattached / ec2_idle / tag_cluster_resource / zombie_cluster_resource
+##### Policy name:
+(mandatory)policy=ebs_unattached / ec2_idle / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
 
+##### Policy logs output
 (mandatory)policy_output=s3://redhat-cloud-governance/logs
 
+##### Cluster or instance name:
 (policy:tag_cluster_resource)resource_name=ocs-test
 
+##### Cluster or instance tags:
 (policy:tag_cluster_resource)mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
 
+##### Choose a specific region or all for all the regions, default : us-east-2
 (optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
 
+##### Choose dry run or not, default yes
 (optional)dry_run=yes/no (default = yes)
 
+##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
 
 #### Run policy examples
 ```sh
 # policy=ebs_unattached
 sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e policy=ebs_unattached -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
 # policy=ec2_idle
 sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e policy=ec2_idle -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
 # policy=tag_cluster_resource
 sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e policy=tag_cluster_resource -e dry_run=yes -e resource_name=ocs-test -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO quay.io/ebattat/cloud-governance
-# policy=tag_ec2_resource
-sudo podman run --rm --name cloud-governance  -e AWS_DEFAULT_REGION=us-east-2 -e policy=tag_ec2_resource -e dry_run=yes -e resource_name=ocp-orch-perf -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# policy=tag_ec2_resource (no need pass AWS_ACCESS_KEY_ID/ AWS_SECRET_ACCESS_KEY using role)
+sudo podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION=us-east-2 -e policy=tag_ec2_resource -e dry_run=no -e resource_name=ocp-orch-perf -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO quay.io/ebattat/cloud-governance
+
 # policy=zombie_cluster_resource
 sudo podman run --rm --name cloud-governance -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e policy=zombie_cluster_resource -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance
 
@@ -103,6 +103,7 @@ AWS Secret: [cloud_governance_secret.yaml](pod_yaml/cloud_governance_secret.yaml
 
 ## Pytest
 
+##### Cloud-governance integration tests using pytest
 ```sh
 python3 -m venv governance
 source governance/bin/activate

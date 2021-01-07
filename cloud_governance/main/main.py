@@ -1,6 +1,6 @@
 
 import os
-from time import gmtime, strftime  # date tag
+from datetime import datetime, timezone # local datetime tag
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.init_logger import logger, logging
@@ -33,7 +33,8 @@ def run_policy(policy: str, region: str, dry_run: str):
         if dry_run == 'no':
             mandatory_tags = os.environ.get('mandatory_tags', {})
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-            mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
+            utc_dt = datetime.now(timezone.utc)
+            mandatory_tags['Date'] = utc_dt.astimezone()
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
         else:  # default: yes or other
             tag_cluster_resource(cluster_name=cluster_name, region=region)
@@ -48,7 +49,8 @@ def run_policy(policy: str, region: str, dry_run: str):
         mandatory_tags = os.environ.get('mandatory_tags', {})
         mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         mandatory_tags['Name'] = instance_name
-        mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
+        utc_dt = datetime.now(timezone.utc)
+        mandatory_tags['Date'] = utc_dt.astimezone()
         if dry_run == 'no':
             response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
         else:
