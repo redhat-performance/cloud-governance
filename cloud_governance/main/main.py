@@ -8,15 +8,15 @@ from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_re
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 
 # # env tests
-# #os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-#os.environ['policy'] = 'tag_ec2_resource'
+# os.environ['policy'] = 'tag_ec2_resource'
 #os.environ['policy'] = 'zombie_cluster_resource'
 # #os.environ['action'] = 'tag_cluster_resource'
 # os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
 # os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached'
-#os.environ['resource_name'] = 'ocp-orch-perf'
+# os.environ['resource_name'] = 'ocp-orch-perf'
 #os.environ['resource_name'] = 'ocs-test'
 #os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
@@ -34,7 +34,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             mandatory_tags = os.environ.get('mandatory_tags', {})
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
             utc_dt = datetime.now(timezone.utc)
-            mandatory_tags['Date'] = utc_dt.astimezone()
+            mandatory_tags['Date'] = utc_dt.astimezone().isoformat()
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
         else:  # default: yes or other
             tag_cluster_resource(cluster_name=cluster_name, region=region)
@@ -50,7 +50,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         mandatory_tags['Name'] = instance_name
         utc_dt = datetime.now(timezone.utc)
-        mandatory_tags['Date'] = utc_dt.astimezone()
+        mandatory_tags['Date'] = utc_dt.astimezone().isoformat()
         if dry_run == 'no':
             response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
         else:
