@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloud-governance
+spec:
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      name: cloud-governance
+    spec:
+      containers:
+      - env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: cloud-governance-secret
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cloud-governance-secret
+              key: aws_secret_access_key
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: cloud-governance-config
+              key: cloud-governance.region
+        - name: policy
+          valueFrom:
+            configMapKeyRef:
+              name: cloud-governance-config
+              key: cloud-governance.policy
+        - name: dry_run
+          valueFrom:
+            configMapKeyRef:
+              name: cloud-governance-config
+              key: cloud-governance.dry_run
+        - name: log_level
+          valueFrom:
+            configMapKeyRef:
+              name: cloud-governance-config
+              key: cloud-governance.log_level
+        image: quay.io/ebattat/cloud-governance
+        name: cloud-governance
+      restartPolicy: OnFailure
+
+
+

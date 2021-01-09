@@ -1,0 +1,11 @@
+policies:
+ - name: ebs-unattached
+   resource: ebs
+   comments: |
+     Delete availabe EBS, Detach Volumes 
+   filters:
+     - type: value 
+       key: "State"
+       value: "available"
+   actions:
+     - delete

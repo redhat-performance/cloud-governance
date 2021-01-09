@@ -1,0 +1,22 @@
+policies:
+  - name: ec2-idle
+    resource: ec2
+    description: stop EC2 instances in idle mode, CPU less than 2 percent and network less than 5MB for last 14 days
+    filters:
+      - type: metrics
+        name: CPUUtilization
+        value: 2
+        op: lt
+        days: 14
+      - type: metrics
+        name: NetworkIn
+        value: 5000
+        op: lt
+        days: 14
+      - type: metrics
+        name: NetworkOut
+        value: 5000
+        op: lt
+        days: 14
+    actions:
+      - stop
