@@ -1,6 +1,6 @@
 ![](images/cloud_governance.png)
 
-This tool provides a lightweight and flexible framework for deploying cloud management policies focus on 
+This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
 cost optimize and security.
 
 This tool support the following policies:
@@ -11,6 +11,7 @@ This tool support the following policies:
 * zombie_cluster_resource: Delete cluster's zombies resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * gitleaks: scan repository git leak  
+
 
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
