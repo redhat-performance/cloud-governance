@@ -1,9 +1,7 @@
 ![](images/cloud_governance.png)
 
-This tool provides an engineer with a lightweight and flexible framework for 
-deploying cloud management policies and OpenShift management capabilities.
-
-**General**
+This tool provides a lightweight and flexible framework for deploying cloud management policies and for 
+cost optimize and security.
 
 This tool support the following policies:
 
