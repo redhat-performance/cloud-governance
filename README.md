@@ -1,6 +1,6 @@
 ![](images/cloud_governance.png)
 
-This tool provides a lightweight and flexible framework for deploying cloud management policies and for 
+This tool provides a lightweight and flexible framework for deploying cloud management policies focus on 
 cost optimize and security.
 
 This tool support the following policies:
