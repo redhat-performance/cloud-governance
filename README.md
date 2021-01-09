@@ -1,4 +1,3 @@
-![](images/cloud.gif)
 ![](images/cloud_governance.png)
 
 This tool provides a lightweight and flexible framework for deploying cloud management policies and for 
