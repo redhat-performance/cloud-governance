@@ -39,10 +39,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 
 ## Run Policy Using Podman
 
-#### Run policy per account and region
-#### Support policy: 
-
-#### Fill the following environment variables using Podman command:
+#### Environment variables description:
 
 (mandatory)AWS_ACCESS_KEY_ID=awsaccesskeyid
 
