@@ -47,7 +47,7 @@ class ZombieClusterResources:
                         if tag['Key'].startswith(self.cluster_prefix):
                             result_instance[instance_id] = tag['Key']
 
-        return sorted(result_instance)
+        return result_instance
 
     def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags: str ='Tags'):
         """
