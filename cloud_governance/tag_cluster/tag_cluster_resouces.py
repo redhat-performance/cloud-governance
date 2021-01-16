@@ -71,7 +71,7 @@ class TagClusterResources:
                             all_tags = self.__append_input_tags(current_tags=resource[tags])
                             self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
                         result_resources_list.append(resource_id)
-        return result_resources_list
+        return sorted(result_resources_list)
 
     def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
         """
@@ -87,7 +87,7 @@ class TagClusterResources:
                             all_tags = self.__append_input_tags()
                             self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
                         result_resources_list.append(resource_id)
-        return result_resources_list
+        return sorted(result_resources_list)
 
     def __scan_resource_for_cluster_fullname(self, resources_list: list, tags: str = 'Tags'):
         """
@@ -147,7 +147,7 @@ class TagClusterResources:
                                 all_tags = self.__append_input_tags(current_tags=item['Tags'])
                                 self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
                             result_instance_list.append(instance_id)
-        return result_instance_list
+        return sorted(result_instance_list)
 
     def cluster_volume(self):
         """
@@ -231,7 +231,7 @@ class TagClusterResources:
                                 except Exception as err:
                                     logger.exception(f'Tags are already updated, {err}')
                             result_resources_list.append(resource_id)
-        return result_resources_list
+        return sorted(result_resources_list)
 
     def cluster_load_balancer_v2(self):
         """
@@ -254,7 +254,7 @@ class TagClusterResources:
                                 except Exception as err:
                                     logger.exception(f'Tags are already updated, {err}')
                             result_resources_list.append(resource_id)
-        return result_resources_list
+        return sorted(result_resources_list)
 
     def cluster_vpc(self):
         """
@@ -355,7 +355,7 @@ class TagClusterResources:
                 except Exception as err:
                     logger.exception(f'Missing cluster role name: {role_name}, {err}')
 
-        return result_role_list
+        return sorted(result_role_list)
 
     def cluster_s3_bucket(self):
         """
@@ -370,5 +370,5 @@ class TagClusterResources:
                 if bucket['Name'].startswith(self.cluster_key.replace(self.cluster_prefix, '')):
                     bucket_result_list.append(bucket['Name'])
 
-        return bucket_result_list
+        return sorted(bucket_result_list)
 

@@ -11,7 +11,7 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 # # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_ec2_resource'
+# os.environ['policy'] = 'tag_ec2'
 #os.environ['policy'] = 'zombie_cluster_resource'
 # #os.environ['action'] = 'tag_cluster_resource'
 # os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
@@ -49,7 +49,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             zombie_cluster_resource(delete=True, region=region)
         else:  # default: yes or other
             zombie_cluster_resource(region=region)
-    elif policy == 'tag_ec2_resource':
+    elif policy == 'tag_ec2':
         instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
         mandatory_tags = literal_eval(mandatory_tags)  # str to dict
@@ -75,7 +75,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             logger.info(git_leaks.scan_repo())
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
-    elif policy == 'ec2_idle' or policy == 'ebs_unattached': # default policy of cloud custodian - yaml file
+    elif policy == 'ec2_idle' or policy == 'ebs_unattached':  # default policy of cloud custodian - yaml file
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -91,9 +91,21 @@ def run_policy(policy: str, region: str, dry_run: str):
         else:
             raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
             logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
-    else:  # policy does not exist
-        raise Exception(f'Missing Policy name: {policy}')
-        logger.exception(f'Missing Policy name: {policy}')
+    else:  # custom policy
+        # default is dry run - change it to custodian dry run format
+        if dry_run == 'yes':
+            dry_run = '--dryrun'
+        elif dry_run == 'no':
+            dry_run = ''
+        else:  # default dry run
+            dry_run = '--dryrun'
+        policy_output = os.environ['policy_output']
+        # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
+        if os.path.isfile(policy):
+            os.system(f'custodian run {dry_run} -s {policy_output} {policy}')
+        else:
+            raise Exception(f'Missing Policy name: {policy}')
+            logger.exception(f'Missing Policy name: {policy}')
 
 
 def main():
