@@ -9,7 +9,7 @@ This tool support the following policies:
 * ec2_idle: idle ec2 [ec2_idle](cloud_governance/policy/ec2_idle.yml)
 * ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
 * tag_cluster_resource: Update cluster tags by input cluster name 
-* zombie_cluster_resource: Delete cluster's zombies resourcessource 
+* zombie_cluster_resource: Delete cluster's zombies resource
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * gitleaks: scan repository git leak  
 
