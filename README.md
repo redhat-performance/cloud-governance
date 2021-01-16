@@ -1,22 +1,27 @@
-![](images/cloud_governance.png)
+![](images/cloud_governance1.png)
 
 This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
 cost optimize and security.
 
 This tool support the following policies:
+[policy](cloud_governance/policy)
 
-* ec2_idle: idle ec2
-* ebs_unattached: volumes that did not connect to instance, volume in available status 
+* ec2_idle: idle ec2 [idle ec2](cloud_governance/policy/idle_ec2.yml)
+* ebs_unattached: volumes that did not connect to instance, volume in available status[ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
 * tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombies resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * gitleaks: scan repository git leak  
 
+** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
+   and run it (see 'custom cloud custodian policy' in [Policy Example](#policy-examples)).
 
+![](images/quay.io.png)
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
 * The cloud-governance pipeline is placed in [Jenkins](TBD)
+
 
 _**Table of Contents**_
 
@@ -41,9 +46,9 @@ sudo podman pull quay.io/ebattat/cloud-governance
 
 #### Environment variables description:
 
-(mandatory)AWS_ACCESS_KEY_ID=awsaccesskeyid
+(mandatory)AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 
-(mandatory)AWS_SECRET_ACCESS_KEY=awssecretaccesskey
+(mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 ##### Policy name:
 (mandatory)policy=ebs_unattached / ec2_idle / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
@@ -58,7 +63,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (mandatory policy:tag_cluster_resource)mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
 
 ##### gitleaks
-(mandatory policy: gitleaks)git_access_token=gitaccesstoken
+(mandatory policy: gitleaks)git_access_token=$git_access_token
 (mandatory policy: gitleaks)git_repo=https://github.com/redhat-performance/cloud-governance
 (optional policy: gitleaks)several_repos=yes/no (default = no)
 
@@ -71,25 +76,28 @@ sudo podman pull quay.io/ebattat/cloud-governance
 ##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
 
-#### Run policy examples
+## Policy Examples
 ```sh
 # policy=ebs_unattached
-sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
 # policy=ec2_idle
-sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
-
-# policy=tag_cluster_resource
-sudo podman run --rm --name cloud-governance -e policy=tag_cluster_resource -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e resource_name=ocs-test -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
-
-# policy=tag_ec2_resource (no need pass AWS_ACCESS_KEY_ID/ AWS_SECRET_ACCESS_KEY using role)
-sudo podman run --rm --name cloud-governance -e policy=tag_ec2_resource -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=no -e resource_name=ocp-orch-perf -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
 # policy=zombie_cluster_resource
-sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -e AWS_ACCESS_KEY_ID=awsaccesskeyid -e AWS_SECRET_ACCESS_KEY=awssecretaccesskey -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# policy=tag_cluster_resource
+sudo podman run --rm --name cloud-governance -e policy=tag_cluster_resource -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e resource_name=ocs-test -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
+
+# policy=tag_ec2 (no need pass AWS_ACCESS_KEY_ID/ AWS_SECRET_ACCESS_KEY using role)
+sudo podman run --rm --name cloud-governance -e policy=tag_ec2 -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=no -e resource_name=ocp-orch-perf -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
 
 # policy=gitleaks
-sudo podman run --rm --name cloud-governance -e policy=gitleaks -e git_access_token=gitaccesstoken -e git_repo=https://github.com/redhat-performance/cloud-governance -e several_repos=no -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=gitleaks -e git_access_token=$git_access_token -e git_repo=https://github.com/redhat-performance/cloud-governance -e several_repos=no -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# custom cloud custodian policy (path for custom policy: -v /home/user/custodian_policy:/custodian_policy)
+sudo podman run --rm --name cloud-governance -e policy=/custodian_policy/policy.yml -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO -v /home/user/custodian_policy:/custodian_policy --privileged quay.io/ebattat/cloud-governance
 
 ```
 

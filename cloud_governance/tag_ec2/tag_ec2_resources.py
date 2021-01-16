@@ -3,7 +3,7 @@ import json
 import requests
 
 
-class UpdateEc2Tags:
+class TagEc2Resources:
     """
     This class update tags
     """
