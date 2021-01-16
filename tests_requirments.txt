@@ -1,6 +1,1 @@
-pytest
-coverage
-pytest-pythonpath
-pytest-html
-pytest-runner
-wheel
+requests
