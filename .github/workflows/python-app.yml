@@ -39,7 +39,8 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        python setup.py sdist bdist_wheel twine
+        pip install setuptools wheel twine
+        python setup.py sdist bdist_wheel
         twine upload dist/*
     - name: Automated Version Bump
       run: |
