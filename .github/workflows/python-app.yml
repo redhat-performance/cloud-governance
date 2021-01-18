@@ -53,9 +53,9 @@ jobs:
         git config --global user.name  ${{ secrets.NAME }}
         bumpversion patch
         git commit .bumpversion.cfg setup.py -m 'bump version to exist version'
-        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPO}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance master
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance --tag
+        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@{{ secrets.GIT_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@{{ secrets.GIT_REPOSITORY}} --tag
     - name: 'Upload quay.io'
       run: |
         version=$(python3 setup.py --version)
