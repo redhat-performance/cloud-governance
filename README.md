@@ -16,7 +16,6 @@ This tool support the following policies:
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
    and run it (see 'custom cloud custodian policy' in [Policy Example](#policy-examples)).
 
-
 ![](images/quay.io.png)
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
