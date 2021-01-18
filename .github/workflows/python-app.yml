@@ -23,7 +23,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        sudo podman build --layers=false -t cloud-governance:v1.0.46 .
+        version=$(python3 setup.py --version)
+        sudo podman build --layers=false -t cloud-governance:v$version .
+        sudo podman push localhost/cloud-governance:v$version quay.io/${{ secrets.REGISTRY_REPOSITORY }}/cloud-governance
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
