@@ -56,7 +56,7 @@ jobs:
         git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
-    - name: Upload quay.io
+    - name: Upload to quay.io
       run: |
         version=$(python3 setup.py --version)
         sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
