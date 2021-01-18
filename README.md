@@ -1,6 +1,5 @@
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Python_CICD/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
 
-
 ![](images/cloud_governance1.png)
 
 This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
