@@ -54,8 +54,8 @@ jobs:
         bumpversion patch
         git commit .bumpversion.cfg setup.py -m 'bump version to exist version'
         git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@{{ secrets.GIT_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@{{ secrets.GIT_REPOSITORY}} --tag
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
     - name: 'Upload quay.io'
       run: |
         version=$(python3 setup.py --version)
