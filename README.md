@@ -18,7 +18,6 @@ This tool support the following policies:
 
 ![](images/quay.io.png)
 
-
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
