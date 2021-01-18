@@ -43,18 +43,18 @@ jobs:
         twine upload dist/*
     - name: Automated Version Bump
       run: |
+        version=$(python3 setup.py --version)
         git checkout master
         pip install bumpversion
         git config --global user.email ${{ secrets.EMAIL }}
         git config --global user.name  ${{ secrets.NAME }}
         bumpversion patch
-        git commit .bumpversion.cfg setup.py -m 'bump version to exist version'
+        git commit .bumpversion.cfg setup.py -m 'bump version to exist version v$version'
         git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
     - name: Upload to quay.io
       run: |
-        version=$(python3 setup.py --version)
         sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
         sudo podman login quay.io -u ${{ secrets.QAUYIO_REPOSITORY }} -p ${{ secrets.QAUYIO_PASSWORD }}
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
