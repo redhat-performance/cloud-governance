@@ -45,6 +45,12 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
+    - name:  'Automated Version Bump'
+      uses:  'phips28/gh-action-bump-version@master'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        skip-tag:  'true'
     - name: Buildah Action
       uses: redhat-actions/buildah-build@v1
       with:
@@ -52,3 +58,4 @@ jobs:
         tag: v1
         dockerfiles: |
           ./Dockerfile
+
