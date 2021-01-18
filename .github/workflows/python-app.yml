@@ -23,10 +23,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        version=$(python3 setup.py --version)
-        sudo podman build --layers=false -t cloud-governance:v$version .
-        sudo podman login quay.io -u ${{ secrets.QAUYIO_REPOSITORY }} -p ${{ secrets.QAUYIO_PASSWORD }}
-        sudo podman push localhost/cloud-governance:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/cloud-governance
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
@@ -60,11 +56,10 @@ jobs:
         git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance master
         git push https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance master
         git push https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance --tag
-    - name: Buildah Action
-      uses: redhat-actions/buildah-build@v1
-      with:
-        image: cloud-governance
-        tag: v1
-        dockerfiles: |
-          ./Dockerfile
+    - name: 'Upload quay.io'
+      run: |
+        version=$(python3 setup.py --version)
+        sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
+        sudo podman login quay.io -u ${{ secrets.QAUYIO_REPOSITORY }} -p ${{ secrets.QAUYIO_PASSWORD }}
+        sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
 
