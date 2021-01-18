@@ -42,6 +42,8 @@ jobs:
       run: |
         git checkout master
         pip install bumpversion
+        git config --global user.email ${{ secrets.EMAIL }}
+        git config --global user.name  ${{ secrets.NAME }}
         bumpversion patch
         git commit .bumpversion.cfg setup.py -m 'bump version to exist version'
         git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/redhat-performance/cloud-governance master
