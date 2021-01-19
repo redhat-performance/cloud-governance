@@ -1,5 +1,5 @@
 
-<h3 align="center">[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/CI/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
+<h3 align="center">[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/CI.yml/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
 </h3>
 <h3 align="center">Cloud Governance</h3>
 
