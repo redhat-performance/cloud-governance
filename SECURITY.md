@@ -2,18 +2,13 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Cloud-Governance scan by gitleaks for credetials leaks
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.80   | :gileaks: |
+| 1.0.80   | :gileaks:         |
 
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Gitleaks is a SAST tool for detecting hardcoded secrets like passwords, api keys, and tokens in git repos. Gitleaks aims to be the easy-to-use, all-in-one solution for finding secrets, past or present, in your code.
