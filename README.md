@@ -26,8 +26,6 @@ This tool support the following policies:
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
-* The cloud-governance pipeline is placed in [Jenkins](TBD)
-
 
 _**Table of Contents**_
 
