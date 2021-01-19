@@ -1,4 +1,6 @@
-[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Python_CICD/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
+[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/CI/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
+
+<h3 align="center">Cloud Governance</h3>
 
 ![](images/cloud_governance1.png)
 
