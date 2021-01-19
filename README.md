@@ -46,7 +46,6 @@ _**Table of Contents**_
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
 
-
 ## Run Policy Using Podman
 
 #### Environment variables description:
