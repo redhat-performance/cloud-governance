@@ -1,20 +1,22 @@
-from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
-from time import gmtime, strftime
 
+# TEST DRY RUN: mandatory_tags = None
+from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
 
 cluster_prefix = 'kubernetes.io/cluster/'
-#cluster_name = 'ocs-test-jlhpd'
 cluster_name = 'ocs-test'
+#cluster_name = 'ocs-test-jlhpd'
 #cluster_name = 'opc464-k7jml'
 
+
 # input tags
-mandatory_tags = {
-  "Name": "test-opc464",
-  "Owner": "Eli Battat",
-  "Email": "ebattat@redhat.com",
-  "Purpose": "test",
-  "Date": strftime("%Y/%m/%d %H:%M:%S")
-}
+mandatory_tags = None
+# mandatory_tags = {
+#   "Name": "test-opc464",
+#   "Owner": "Eli Battat",
+#   "Email": "ebattat@redhat.com",
+#   "Purpose": "test",
+#   "Date": strftime("%Y/%m/%d %H:%M:%S")
+# }
 #print(strftime("%Y/%m/%d %H:%M:%S", gmtime()))
 
 tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name, input_tags=mandatory_tags, region='us-east-2')
@@ -170,6 +172,14 @@ def test_cluster_role():
     :return:
     """
     assert len(tag_cluster_resources.cluster_role()) >= 0
+
+
+def test_cluster_user():
+    """
+    This method return all cluster role
+    :return:
+    """
+    print(tag_cluster_resources.cluster_user())
 
 
 def test_cluster_s3_bucket():

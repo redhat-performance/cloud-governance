@@ -49,7 +49,7 @@ class ZombieClusterResources:
 
         return result_instance
 
-    def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags: str ='Tags'):
+    def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags: str = 'Tags'):
         """
         This method return all cluster resources keys that start with cluster prefix
         :param resources_list:
@@ -435,6 +435,37 @@ class ZombieClusterResources:
                     logger.info(f'delete_role: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_role: {zombie}, {err}')
+        return sorted(zombies)
+
+    def zombie_cluster_user(self):
+        """
+        This method return list of cluster's user according to cluster name
+        """
+        exist_user_name_tag = {}
+        users = self.iam_client.list_users()
+        users_data = users['Users']
+        for user in users_data:
+            user_name = user['UserName']
+            user_data = self.iam_client.get_user(UserName=user_name)
+            data = user_data['User']
+            if data.get('Tags'):
+                for tag in data['Tags']:
+                    if tag['Key'].startswith(self.cluster_prefix):
+                        exist_user_name_tag[user_name] = tag['Key']
+        zombies = self.__get_zombie_resources(exist_user_name_tag)
+        if zombies and self.delete:
+            for zombie in zombies:
+                try:
+                    # Detach policy from user
+                    self.iam_client.delete_user_policy(UserName=zombie, PolicyName=f'{zombie}-policy')
+                    list_access_key = self.iam_client.list_access_keys(UserName=zombie)
+                    # delete user access key
+                    for access_key in list_access_key['AccessKeyMetadata']:
+                        self.iam_client.delete_access_key(UserName=zombie, AccessKeyId=access_key['AccessKeyId'])
+                    self.iam_client.delete_user(UserName=zombie)
+                    logger.info(f'delete_user: {zombie}')
+                except Exception as err:
+                    logger.exception(f'Cannot delete_user: {zombie}, {err}')
         return sorted(zombies)
 
     def zombie_cluster_s3_bucket(self, cluster_stamp: str = 'image-registry'):

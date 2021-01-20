@@ -27,6 +27,7 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2'):
                           zombie_cluster_resources.zombie_cluster_nat_gateway,
                           zombie_cluster_resources.zombie_network_acl,
                           zombie_cluster_resources.zombie_cluster_role,
+                          zombie_cluster_resources.zombie_cluster_user,
                           zombie_cluster_resources.zombie_cluster_s3_bucket]
 
     delete_func_resource_list = [zombie_cluster_resources.zombie_cluster_volume,
@@ -46,6 +47,7 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2'):
                           zombie_cluster_resources.zombie_cluster_nat_gateway,
                           zombie_cluster_resources.zombie_network_acl,
                           zombie_cluster_resources.zombie_cluster_role,
+                          zombie_cluster_resources.zombie_cluster_user,
                           zombie_cluster_resources.zombie_cluster_s3_bucket]
     if delete:
         action = 'Delete'
