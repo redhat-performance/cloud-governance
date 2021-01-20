@@ -1,0 +1,13 @@
+policies:
+
+  - name: ec2-untag
+    resource: ec2
+    comment: |
+      Report on total count of non tag instances with 5 mandatory tags: Name, Owner, Email, Purpose, Date
+    filters:
+      - or:
+          - "tag:Name": absent
+          - "tag:Owner": absent
+          - "tag:Email": absent
+          - "tag:Purpose": absent
+          - "tag:Date": absent

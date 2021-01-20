@@ -26,6 +26,31 @@ class ZombieClusterResources:
         self.cluster_prefix = cluster_prefix
         self.delete = delete
 
+    def _all_cluster_instance(self):
+        """
+        This method return list of cluster's instance tag name that contains openshift tag prefix from all regions
+        :return: list of cluster's instance tag name
+        """
+        instances_list = []
+        result_instance = {}
+        regions_data = self.ec2_client.describe_regions()
+        for region in regions_data['Regions']:
+            self.__ec2 = boto3.client('ec2', region_name=region['RegionName'])
+            ec2s = self.__ec2.describe_instances()
+            ec2s_data = ec2s['Reservations']
+            for items in ec2s_data:
+                if items.get('Instances'):
+                    instances_list.append(items['Instances'])
+            for instance in instances_list:
+                for item in instance:
+                    if item.get('InstanceId'):
+                        instance_id = item['InstanceId']
+                    if item.get('Tags'):
+                        for tag in item['Tags']:
+                            if tag['Key'].startswith(self.cluster_prefix):
+                                result_instance[instance_id] = tag['Key']
+        return result_instance
+
     def _cluster_instance(self):
         """
         This method return list of cluster's instance tag name that contains openshift tag prefix
@@ -70,8 +95,24 @@ class ZombieClusterResources:
         return result_resources_key_id
 
     def __get_zombie_resources(self, exist_resources: dict):
+        """
+        This method filter zombie resource, meaning no active instance for this cluster
+        """
         zombie_resources = []
         zombies_values = set(exist_resources.values()) - set(self._cluster_instance().values())
+
+        for zombie_value in zombies_values:
+            for key, value in exist_resources.items():
+                if zombie_value == value:
+                    zombie_resources.append(key)
+        return sorted(zombie_resources)
+
+    def __get_all_zombie_resources(self, exist_resources: dict):
+        """
+        This method filter zombie resource, meaning no active instance for this cluster in all regions
+        """
+        zombie_resources = []
+        zombies_values = set(exist_resources.values()) - set(self._all_cluster_instance().values())
 
         for zombie_value in zombies_values:
             for key, value in exist_resources.items():
@@ -411,7 +452,8 @@ class ZombieClusterResources:
 
     def zombie_cluster_role(self):
         """
-        This method return list of cluster's role according to cluster name
+        This method return list of cluster's role in all regions according to cluster name
+        * Role is a global resource, need to scan for live cluster in all regions
         """
         exist_role_name_tag = {}
         roles = self.iam_client.list_roles()
@@ -424,7 +466,7 @@ class ZombieClusterResources:
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         exist_role_name_tag[role_name] = tag['Key']
-        zombies = self.__get_zombie_resources(exist_role_name_tag)
+        zombies = self.__get_all_zombie_resources(exist_role_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
                 try:
@@ -440,6 +482,7 @@ class ZombieClusterResources:
     def zombie_cluster_user(self):
         """
         This method return list of cluster's user according to cluster name
+        * User is a global resource, need to scan for live cluster in all regions
         """
         exist_user_name_tag = {}
         users = self.iam_client.list_users()
@@ -452,12 +495,14 @@ class ZombieClusterResources:
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         exist_user_name_tag[user_name] = tag['Key']
-        zombies = self.__get_zombie_resources(exist_user_name_tag)
+        zombies = self.__get_all_zombie_resources(exist_user_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
                 try:
                     # Detach policy from user
-                    self.iam_client.delete_user_policy(UserName=zombie, PolicyName=f'{zombie}-policy')
+                    user_policies = self.iam_client.list_user_policies(UserName=zombie)
+                    if user_policies['PolicyNames']:
+                        self.iam_client.delete_user_policy(UserName=zombie, PolicyName=f'{zombie}-policy')
                     list_access_key = self.iam_client.list_access_keys(UserName=zombie)
                     # delete user access key
                     for access_key in list_access_key['AccessKeyMetadata']:
@@ -465,12 +510,13 @@ class ZombieClusterResources:
                     self.iam_client.delete_user(UserName=zombie)
                     logger.info(f'delete_user: {zombie}')
                 except Exception as err:
-                    logger.exception(f'Cannot delete_user: {zombie}, {err}')
+                     logger.exception(f'Cannot delete_user: {zombie}, {err}')
         return sorted(zombies)
 
     def zombie_cluster_s3_bucket(self, cluster_stamp: str = 'image-registry'):
         """
         This method return list of cluster's s3 bucket according to cluster name
+        * S3 is a global resource, need to scan for live cluster in all regions
         """
         exist_bucket_name_tag = {}
         response = self.s3_client.list_buckets()
@@ -486,7 +532,7 @@ class ZombieClusterResources:
                 for tag in tags['TagSet']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         exist_bucket_name_tag[bucket['Name']] = tag['Key']
-        zombies = self.__get_zombie_resources(exist_bucket_name_tag)
+        zombies = self.__get_all_zombie_resources(exist_bucket_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
                 try:

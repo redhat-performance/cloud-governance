@@ -6,6 +6,10 @@ from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieCluste
 zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False, region='us-east-2')
 
 
+def test_all_clusters():
+    print(zombie_cluster_resources._all_cluster_instance())
+
+
 def test_cluster_instance():
     """
     This method return all cluster instances, its a private method
@@ -144,7 +148,7 @@ def test_zombie_network_acl():
 
 def test_zombie_cluster_role():
     """
-    This method return all cluster role
+    This method return all zombie cluster role, scan cluster in all regions
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_role()) >= 0
@@ -152,15 +156,15 @@ def test_zombie_cluster_role():
 
 def test_zombie_cluster_user():
     """
-    This method return all cluster user
+    This method return all zombie cluster user, scan cluster in all regions
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_user())  >= 0
+    assert len(zombie_cluster_resources.zombie_cluster_user()) >= 0
 
 
 def test_zombie_cluster_s3_bucket():
     """
-    This method return all cluster s3_bucket
+    This method return all cluster s3 bucket, scan cluster in all regions
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()) >= 0
