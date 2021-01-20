@@ -337,7 +337,7 @@ class TagClusterResources:
         result_role_list = []
         # if cluster_key exit
         if self.cluster_key:
-            # starts with cluster name
+            # starts with cluster name, search for specific role name for fast scan (a lot of roles)
             role_name_list = [f"{self.cluster_key.replace(self.cluster_prefix, '')}-master-role", f"{self.cluster_key.replace(self.cluster_prefix, '')}-worker-role"]
 
             for role_name in role_name_list:
@@ -356,6 +356,30 @@ class TagClusterResources:
                     logger.exception(f'Missing cluster role name: {role_name}, {err}')
 
         return sorted(result_role_list)
+
+    def cluster_user(self):
+        """
+        This method return list of cluster's user according to cluster name
+        """
+        # tag_user
+        result_user_list = []
+        users = self.iam_client.list_users()
+        users_data = users['Users']
+        # return self.__generate_cluster_resources_list_by_tag(resources_list=users_data,
+        #                                                      input_resource_id='UserId')
+        for user in users_data:
+            user_name = user['UserName']
+            user_data = self.iam_client.get_user(UserName=user_name)
+            data = user_data['User']
+            user_id = data['UserId']
+            if data.get('Tags'):
+                for tag in data['Tags']:
+                    if tag['Key'] == self.cluster_key:
+                        if self.input_tags:
+                            all_tags = self.__append_input_tags(current_tags=data['Tags'])
+                            self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
+                        result_user_list.append(user_id)
+        return sorted(result_user_list)
 
     def cluster_s3_bucket(self):
         """

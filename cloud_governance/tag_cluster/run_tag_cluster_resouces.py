@@ -30,6 +30,7 @@ def tag_cluster_resource(cluster_name: str, mandatory_tags: dict = None, region:
                           tag_cluster_resources.cluster_nat_gateway,
                           tag_cluster_resources.cluster_network_acl,
                           tag_cluster_resources.cluster_role,
+                          tag_cluster_resources.cluster_user,
                           tag_cluster_resources.cluster_s3_bucket,
                           ]
     if mandatory_tags:

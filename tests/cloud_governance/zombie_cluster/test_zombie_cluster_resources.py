@@ -1,3 +1,5 @@
+
+# TEST DRY RUN: delete=False
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
@@ -148,9 +150,17 @@ def test_zombie_cluster_role():
     assert len(zombie_cluster_resources.zombie_cluster_role()) >= 0
 
 
+def test_zombie_cluster_user():
+    """
+    This method return all cluster user
+    :return:
+    """
+    assert len(zombie_cluster_resources.zombie_cluster_user())  >= 0
+
+
 def test_zombie_cluster_s3_bucket():
     """
     This method return all cluster s3_bucket
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_s3_bucket())  >= 0
+    assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()) >= 0
