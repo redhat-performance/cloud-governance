@@ -13,6 +13,7 @@ This tool support the following policies:
 
 * ec2_idle: [ec2_idle](cloud_governance/policy/ec2_idle.yml)
 * ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
+* ec2_untag: ec2 untag with 5 mandatory tags: Name, Owner, Email, Purpose, Date
 * tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombie resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
@@ -87,6 +88,9 @@ sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACC
 
 # policy=ec2_idle
 sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# policy=ec2_untag
+sudo podman run --rm --name cloud-governance -e policy=ec2_untag -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
 # policy=zombie_cluster_resource
 sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance

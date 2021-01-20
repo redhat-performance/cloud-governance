@@ -75,7 +75,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             logger.info(git_leaks.scan_repo())
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
-    elif policy == 'ec2_idle' or policy == 'ebs_unattached':  # default policy of cloud custodian - yaml file
+    elif policy == 'ec2_idle' or policy == 'ebs_unattached' or policy == 'ec2_untag':  # default policy of cloud custodian - yaml file
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -91,7 +91,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         else:
             raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
             logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
-    else:  # custom policy
+    else:  # local policy
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
