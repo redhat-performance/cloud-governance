@@ -40,9 +40,9 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pytest --cache-clear --cov=app tests/ > pytest-coverage.txt
-    - name: Comment coverage
-      uses: coroo/pytest-coverage-commentator@v1.0.2
+        coverage run -m pytest
+        coverage report -m
+        coverage html
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
