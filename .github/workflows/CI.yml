@@ -39,7 +39,7 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pip install -r tests_requirements.txt
+        pip install -r tests_requirments.txt
         pytest
     - name: Build and publish distribution 📦 to PyPI
       env:
