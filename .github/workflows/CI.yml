@@ -25,6 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f tests_requirments.txt ]; then pip install -r tests_requirments; fi
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -39,8 +40,9 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pip install -r tests_requirments.txt
-        pytest
+        pytest --cache-clear --cov=app test/ > pytest-coverage.txt
+    - name: Comment coverage
+      uses: coroo/pytest-coverage-commentator@v1.0.2
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
