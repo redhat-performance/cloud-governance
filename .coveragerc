@@ -1,0 +1,9 @@
+# gitleaks, cloud custodian - no unittest due to limitations
+[run]
+include=
+    cloud_governance/*
+
+omit=
+        *__init__*
+        */usr/local/lib*
+        *Test*
