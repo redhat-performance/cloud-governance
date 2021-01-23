@@ -42,7 +42,6 @@ jobs:
       run: |
         coverage run -m pytest
         coverage report -m
-        coverage html
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
