@@ -42,9 +42,8 @@ jobs:
       run: |
         #coverage run -m pytest
         #coverage report -m
-        pip install coveralls
-        coverage run -m pytest tests/
-        coveralls
+        pip install python-coveralls pytest-black pytest-cov
+        pytest --black --cov=./app --cov-report=term-missing
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
