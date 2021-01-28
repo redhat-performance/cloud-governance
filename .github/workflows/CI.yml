@@ -40,8 +40,11 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        coverage run -m pytest
-        coverage report -m
+        #coverage run -m pytest
+        #coverage report -m
+        pip install coveralls
+        coverage run --source=cloud_governance -m pytest tests/
+        coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
