@@ -48,6 +48,7 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: $GITHUB_WORKSPACE/coverage/lcov.info
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
