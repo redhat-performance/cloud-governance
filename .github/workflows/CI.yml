@@ -45,10 +45,9 @@ jobs:
         pip install coveralls
         coverage run --source=cloud_governance -m pytest tests/
     - name: Coveralls
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@v1.1.2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: $GITHUB_WORKSPACE/coverage/lcov.info
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
