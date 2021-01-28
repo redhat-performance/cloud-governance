@@ -42,8 +42,9 @@ jobs:
       run: |
         #coverage run -m pytest
         #coverage report -m
-        pip install python-coveralls pytest-black pytest-cov
-        pytest --cov=./ --cov-report=xml --doctest-modules
+        pytest --cache-clear --cov=cloud_governance tests/ > pytest-coverage.txt
+    - name: Comment coverage
+      uses: coroo/pytest-coverage-commentator@v1.0.2
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
