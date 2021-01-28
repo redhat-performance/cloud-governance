@@ -45,6 +45,8 @@ jobs:
         pytest --cache-clear --cov=cloud_governance tests/ > pytest-coverage.txt
     - name: Comment coverage
       uses: coroo/pytest-coverage-commentator@v1.0.2
+      with:
+        pytest-coverage: pytest-coverage.txt
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
