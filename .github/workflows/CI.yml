@@ -44,7 +44,10 @@ jobs:
         #coverage report -m
         pip install coveralls
         coverage run --source=cloud_governance -m pytest tests/
-        coveralls
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
