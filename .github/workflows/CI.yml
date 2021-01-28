@@ -54,7 +54,7 @@ jobs:
       run: |
         version=$(python3 setup.py --version)
         sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
-        sudo podman login quay.io -u ${{ secrets.QAUYIO_REPOSITORY }} -p ${{ secrets.QAUYIO_PASSWORD }}
+        sudo podman login quay.io -u ${{ secrets.QAUYIO_ROBOT_USER }} -p ${{ secrets.QAUYIO_ROBOT_TOKEN }}
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}:v$version
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
     - name: Bump Version
@@ -69,3 +69,4 @@ jobs:
         git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
         git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
+
