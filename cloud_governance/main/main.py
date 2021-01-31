@@ -1,21 +1,23 @@
 
 import os
+import logging
 from time import strftime, gmtime
 from ast import literal_eval  # str to dict
 import boto3  # regions
-from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, tag_ec2_resource
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 
 # # env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+#os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
-# os.environ['policy'] = 'zombie_cluster_resource'
+# os.environ['policy'] = 'ec2_untag'
+#os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['policy'] = 'tag_cluster_resource'
 # os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
-# os.environ['dry_run'] = 'yes'
+#os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['resource_name'] = 'ocs-test'
@@ -27,13 +29,18 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 # os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
 # os.environ['several_repos'] = 'Yes'
 
+log_level = os.environ.get('log_level', 'INFO').upper()
+logger.setLevel(level=log_level)
+policy_list = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
 
+
+@logger_time_stamp
 def run_policy(policy: str, region: str, dry_run: str):
     """
     This method run policy per region, first the custom policy and after custodian policy
     :return:
     """
-    # Custom policy Tag
+    # Custom policy Tag Cluster
     if policy == 'tag_cluster_resource':
         cluster_name = os.environ['resource_name']
         if dry_run == 'no':
@@ -43,7 +50,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
         else:  # default: yes or other
             tag_cluster_resource(cluster_name=cluster_name, region=region)
-    # Custom policy Zombie
+    # Custom policy Zombie Cluster
     elif policy == 'zombie_cluster_resource':
         if dry_run == 'no':  # delete
             zombie_cluster_resource(delete=True, region=region)
@@ -75,7 +82,8 @@ def run_policy(policy: str, region: str, dry_run: str):
             logger.info(git_leaks.scan_repo())
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
-    elif policy == 'ec2_idle' or policy == 'ebs_unattached' or policy == 'ec2_untag':  # default policy of cloud custodian - yaml file
+    # custodian policy
+    elif any(policy == item for item in policy_list):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -88,6 +96,8 @@ def run_policy(policy: str, region: str, dry_run: str):
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
+            with open(f'{policy_output}/resources.json', 'r') as fin:
+                print(fin.read())
         else:
             raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
             logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
@@ -108,6 +118,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             logger.exception(f'Missing Policy name: {policy}')
 
 
+@logger_time_stamp
 def main():
     """
     This is the main for running actions
@@ -116,12 +127,10 @@ def main():
     # environment variables - get while running the docker
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
-    log_level = os.environ.get('log_level', 'INFO').upper()
     policy = os.environ.get('policy', '')
     if not policy:
         raise Exception(f'Missing Policy name: "{policy}"')
         logger.exception(f'Missing Policy name: "{policy}"')
-    logger.setLevel(level=log_level)
     if region_env == 'all':
         # must be set for bot03 client default region
         os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
