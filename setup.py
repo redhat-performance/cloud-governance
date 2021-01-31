@@ -37,6 +37,8 @@ setup(
 
     install_requires=[
         'typing',
+        'botocore',
+        'typeguard',
         'boto3',  # ec2 client
         'c7n',  # custodian
         'requests',  # rest api & lambda
