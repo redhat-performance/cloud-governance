@@ -96,7 +96,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
-            with open(f'{policy_output}/resources.json', 'r') as fin:
+            with open(f'{policy}/resources.json', 'r') as fin:
                 print(fin.read())
         else:
             raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
