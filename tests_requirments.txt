@@ -2,3 +2,4 @@ typeguard
 requests
 boto3
 moto
+elasticsearch
