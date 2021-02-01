@@ -40,8 +40,9 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        coverage run -m pytest
-        coverage report -m
+        pytest
+        #coverage run -m pytest
+        #coverage report -m
     - name: Coveralls
       env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
