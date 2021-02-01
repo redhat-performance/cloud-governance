@@ -39,9 +39,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: us-east-2
     - name: Test with pytest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        pip install pytest-cov coveralls
         coverage run -m pytest
         coverage report -m
+        COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
