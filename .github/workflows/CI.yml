@@ -47,6 +47,7 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
+        pip install 'coveralls>=1.9.0,<2,!=1.11.0'
         coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
