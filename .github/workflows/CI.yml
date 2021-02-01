@@ -40,7 +40,7 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pytest
+        pytest --cov=cloud_governance --cov-report=term-missing
         #coverage run -m pytest
         #coverage report -m
     - name: Publish to coveralls.io 
