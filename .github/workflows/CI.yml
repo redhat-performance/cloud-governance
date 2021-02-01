@@ -43,7 +43,7 @@ jobs:
         pytest --cov=cloud_governance --cov-report=term-missing
         #coverage run -m pytest
         #coverage report -m
-    - name: Publish to coveralls.io 
+    - name: Publish to coveralls.io
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
