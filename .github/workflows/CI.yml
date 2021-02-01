@@ -43,11 +43,10 @@ jobs:
         pytest --cov=cloud_governance --cov-append
         #coverage run -m pytest
         #coverage report -m
-    - name: Coveralls
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-          coveralls
+    - name: Publish to coveralls.io
+      uses: coverallsapp/github-action@v1.1.2
+      with:
+       github-token: ${{ github.token }}
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
