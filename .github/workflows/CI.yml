@@ -40,9 +40,9 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        coverage run -m pytest
+        pip install pytest-cov coveralls
+        coverage run -m pytest --cov=/cloud_governance
         coverage report -m
-        pip install python-coveralls
         COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
