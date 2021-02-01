@@ -40,14 +40,14 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pytest
+        pytest --cov=cloud_governance --cov-append
         #coverage run -m pytest
         #coverage report -m
     - name: Coveralls
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel: true
-        flag-name: Test with pytest
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+          coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
