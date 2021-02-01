@@ -11,8 +11,8 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 class S3Operations:
     """ This class is responsible for S3 operations """
 
-    def __init__(self, input_region_name):
-        self.__s3_client = boto3.client('s3', region_name=input_region_name)
+    def __init__(self, region_name):
+        self.__s3_client = boto3.client('s3', region_name=region_name)
 
     @logger_time_stamp
     @typeguard.typechecked
@@ -45,13 +45,16 @@ class S3Operations:
         """
         This method download file from s3
         :param bucket:'devops-ais'
-        :param key:'test-data'
+        :param key:'logs/ec2-idle/2021/01/19/18'
         :param download_file: 'DJI_0100.jpg'
         :param file_name_path:'D:\\Performance\\Projects\\py-image-service\\data\\rt_results\\DJI_0100.jpg'
         :return:
         """
         try:
-            self.__s3_client.download_file(Bucket=bucket, Key=f'{key}/{download_file}', Filename=file_name_path)
+            if download_file:
+                self.__s3_client.download_file(Bucket=bucket, Key=f'{key}/{download_file}', Filename=file_name_path)
+            else:
+                self.__s3_client.download_file(Bucket=bucket, Key=key, Filename=file_name_path)
         # Todo add custom error
         except ClientError:
             raise
@@ -206,3 +209,22 @@ class S3Operations:
         except Exception:
             raise
 
+    @logger_time_stamp
+    @typeguard.typechecked
+    def get_last_objects(self, bucket: str, logs_dir: str, policy: str):
+        """
+        This method return last object per policy, only path without file name
+        @param bucket:
+        @param dir:
+        @param policy:
+        @return:
+        """
+        try:
+            objs = self.__s3_client.list_objects_v2(Bucket=bucket,
+                Prefix=f'{logs_dir}/{policy}',
+                MaxKeys=100)['Contents']
+        except:
+            return None
+        get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
+        full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified)][-2]
+        return os.path.dirname(full_path)

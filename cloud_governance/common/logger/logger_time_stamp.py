@@ -9,12 +9,17 @@ datetime_format = '%Y-%m-%d %H:%M:%S'
 
 def logger_time_stamp(method):
     """
-    This method is a get a method as parameter and wrap it
+    This method call to wrap method
+    @param method:
+    @return: method wrapper
     """
     @wraps(method)  # solve method help doc
     def method_wrapper(*args, **kwargs):
         """
         This method wrap the input method
+        @param args:
+        @param kwargs:
+        @return: prefix + input method + suffix
         """
         time_start = time.time()
         date_time_start = datetime.datetime.now().strftime(datetime_format)

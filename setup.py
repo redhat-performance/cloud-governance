@@ -42,7 +42,8 @@ setup(
         'boto3',  # ec2 client
         'c7n',  # custodian
         'requests',  # rest api & lambda
-        'PyGithub'  # gitleaks
+        'PyGithub',  # gitleaks
+        'elasticsearch'  # optional
 
     ],
 

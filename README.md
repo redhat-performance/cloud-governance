@@ -81,7 +81,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 ##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
 
-## Policy Examples
+## Policy workflows
 ```sh
 # policy=ebs_unattached
 sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://redhat-cloud-governance/logs -e log_level=INFO quay.io/ebattat/cloud-governance
