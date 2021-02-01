@@ -44,11 +44,10 @@ jobs:
         #coverage run -m pytest
         #coverage report -m
     - name: Coveralls
-      env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-            pip install coveralls
-            coveralls --service=github
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel: true
+        flag-name: Test with pytest
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
