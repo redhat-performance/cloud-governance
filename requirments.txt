@@ -1,6 +1,8 @@
+typing
 botocore
 typeguard
 boto3
 c7n
 requests
 PyGithub
+elasticsearch
