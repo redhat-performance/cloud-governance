@@ -31,7 +31,7 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
-policy_list = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
+policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
 
 
 @logger_time_stamp
@@ -83,7 +83,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
     # custodian policy
-    elif any(policy == item for item in policy_list):
+    elif any(policy == item for item in policies):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -96,8 +96,6 @@ def run_policy(policy: str, region: str, dry_run: str):
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
-            with open(f'{policy_output}/{policy}/resources.json', 'r') as fin:
-                print(fin.read())
         else:
             raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
             logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
