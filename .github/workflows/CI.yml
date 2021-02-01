@@ -40,13 +40,13 @@ jobs:
         aws-region: us-east-2
     - name: Test with pytest
       run: |
-        pytest --cov=cloud_governance --cov-append
+        pytest
         #coverage run -m pytest
         #coverage report -m
     - name: Publish to coveralls.io 
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@57daa114
       with:
-       github-token: ${{ github.token }}
+       github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
