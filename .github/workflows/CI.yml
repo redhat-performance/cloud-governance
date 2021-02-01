@@ -44,9 +44,10 @@ jobs:
         #coverage run -m pytest
         #coverage report -m
     - name: Publish to coveralls.io 
-      uses: coverallsapp/github-action@57daa114
-      with:
-       github-token: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: |
+        coveralls
     - name: Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
