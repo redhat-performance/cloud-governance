@@ -29,10 +29,10 @@ class S3Operations:
 
         try:
             self.__s3_client.upload_file(Filename=file_name_path,
-                                                       Bucket=bucket,
-                                                       Key=f'{key}/{upload_file}',
-                                                       ExtraArgs={'ServerSideEncryption': 'AES256',
-                                                                  'StorageClass': 'ONEZONE_IA'})
+                                         Bucket=bucket,
+                                         Key=f'{key}/{upload_file}',
+                                         ExtraArgs={'ServerSideEncryption': 'AES256',
+                                                    'StorageClass': 'ONEZONE_IA'})
         # Todo add custom error
         except ClientError:
             raise
@@ -63,7 +63,7 @@ class S3Operations:
 
     @logger_time_stamp
     @typeguard.typechecked
-    def delete_file(self, bucket: str, key: str , file_name: str):
+    def delete_file(self, bucket: str, key: str, file_name: str):
         """
         This method download file from s3
         :param bucket:'devops-ais'
@@ -220,11 +220,13 @@ class S3Operations:
         @return:
         """
         try:
+            if '_' in policy:
+                policy = policy.replace('_', '-')
             objs = self.__s3_client.list_objects_v2(Bucket=bucket,
-                Prefix=f'{logs_dir}/{policy}',
-                MaxKeys=100)['Contents']
+                                                    Prefix=f'{logs_dir}/{policy}',
+                                                    MaxKeys=100)['Contents']
         except:
             return None
         get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
-        full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified)][-2]
+        full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified)][-1]
         return os.path.dirname(full_path)
