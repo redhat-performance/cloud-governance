@@ -1,0 +1,48 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "iam:DeleteInstanceProfile",
+                "iam:GetRole",
+                "iam:DeleteAccessKey",
+                "iam:DeleteGroup",
+                "iam:TagRole",
+                "iam:RemoveRoleFromInstanceProfile",
+                "iam:DeleteUserPolicy",
+                "iam:DeleteRole",
+                "iam:DeleteUser",
+                "iam:TagUser",
+                "iam:RemoveUserFromGroup",
+                "iam:GetUserPolicy",
+                "iam:GetUser"
+            ],
+            "Resource": [
+                "arn:aws:iam:::role/*",
+                "arn:aws:iam:::instance-profile/*",
+                "arn:aws:iam:::user/*",
+                "arn:aws:iam:::group/*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListUserPolicies",
+                "iam:ListAccessKeys"
+            ],
+            "Resource": "arn:aws:iam:::user/*"
+        },
+        {
+            "Sid": "VisualEditor2",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListRoles",
+                "iam:ListUsers"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

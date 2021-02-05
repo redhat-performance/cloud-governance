@@ -10,7 +10,7 @@
 This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
 cost optimize and security.
 
-This tool support the following policies:
+This tool support the following policies on AWS account:
 [policy](cloud_governance/policy)
 
 * ec2_idle: [ec2_idle](cloud_governance/policy/ec2_idle.yml)
@@ -19,7 +19,7 @@ This tool support the following policies:
 * tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombie resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
-* gitleaks: scan repository git leak  
+* gitleaks: scan Github repository git leak (security scan)  
 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
    and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
@@ -48,7 +48,7 @@ _**Table of Contents**_
 # Need to run it with root privileges
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
-
+* On AWS account run with admin user or user with IAM [iam](iam/)
 ## Run Policy Using Podman
 
 #### Environment variables description:
