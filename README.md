@@ -48,7 +48,7 @@ _**Table of Contents**_
 # Need to run it with root privileges
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
-* On AWS account run with admin user or user with IAM [iam](iam/)
+* Run with AWS admin user or user with IAM [iam](iam/)
 ## Run Policy Using Podman
 
 #### Environment variables description:
