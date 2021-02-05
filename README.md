@@ -48,8 +48,6 @@ _**Table of Contents**_
 # Need to run it with root privileges
 sudo podman pull quay.io/ebattat/cloud-governance
 ```
-* Run with AWS admin user or user with IAM [iam](iam/)
-## Run Policy Using Podman
 
 #### Environment variables description:
 
@@ -84,6 +82,10 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (optional)log_level=INFO (default = INFO)
 
 ## Policy workflows
+
+* Run with AWS admin user or user with IAM [iam](iam/)
+
+## Run Policy Using Podman 
 ```sh
 # policy=ebs_unattached
 sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
