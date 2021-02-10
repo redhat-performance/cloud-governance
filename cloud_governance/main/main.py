@@ -1,6 +1,5 @@
 
 import os
-import logging
 from time import strftime, gmtime
 from ast import literal_eval  # str to dict
 import boto3  # regions
@@ -8,6 +7,8 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, 
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, tag_ec2_resource
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
+from cloud_governance.main.es_uploader import ESUploader
+
 
 # # env tests
 #os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -28,6 +29,7 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 # os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
 # os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
 # os.environ['several_repos'] = 'Yes'
+# os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
@@ -119,27 +121,50 @@ def run_policy(policy: str, region: str, dry_run: str):
 @logger_time_stamp
 def main():
     """
-    This is the main for running actions
+    This main run 2 processes:
+    1. ES uploader
+    2. Run policy
     :return: the action output
     """
     # environment variables - get while running the docker
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
     policy = os.environ.get('policy', '')
-    if not policy:
-        raise Exception(f'Missing Policy name: "{policy}"')
-        logger.exception(f'Missing Policy name: "{policy}"')
-    if region_env == 'all':
-        # must be set for bot03 client default region
-        os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
-        ec2 = boto3.client('ec2')
-        regions_data = ec2.describe_regions()
-        for region in regions_data['Regions']:
-            #logger.info(f"region: {region['RegionName']}")
-            os.environ['AWS_DEFAULT_REGION'] = region['RegionName']
-            run_policy(policy=policy, region=region['RegionName'], dry_run=dry_run)
+    upload_data_elk = os.environ.get('upload_data_elk', '')
+    es_host = os.environ.get('es_host', '')
+    es_port = os.environ.get('es_port', '')
+
+    # 1. ELK Uploader
+    if upload_data_elk:
+        input_data = {'es_host': es_host,
+                      'es_port': int(es_port),
+                      'es_index': 'json_ec2_timestamp_index',
+                      'es_doc_type': 'json_doc_type',
+                      'es_add_items': {},
+                      'bucket': 'redhat-cloud-governance',
+                      'logs_bucket_key': 'logs',
+                      's3_file_name': 'resources.json',
+                      'regions': ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'],
+                      'policies': ['ec2_idle', 'ebs_unattached', 'ec2_untag'],
+                      }
+        elk_uploader = ESUploader(**input_data)
+        elk_uploader.upload_to_es()
+    # 2. POLICY
     else:
-        run_policy(policy=policy, region=region_env, dry_run=dry_run)
+        if not policy:
+            raise Exception(f'Missing Policy name: "{policy}"')
+            logger.exception(f'Missing Policy name: "{policy}"')
+        if region_env == 'all':
+            # must be set for bot03 client default region
+            os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+            ec2 = boto3.client('ec2')
+            regions_data = ec2.describe_regions()
+            for region in regions_data['Regions']:
+                #logger.info(f"region: {region['RegionName']}")
+                os.environ['AWS_DEFAULT_REGION'] = region['RegionName']
+                run_policy(policy=policy, region=region['RegionName'], dry_run=dry_run)
+        else:
+            run_policy(policy=policy, region=region_env, dry_run=dry_run)
 
 
 main()

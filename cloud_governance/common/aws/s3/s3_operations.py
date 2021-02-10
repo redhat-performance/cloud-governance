@@ -1,3 +1,4 @@
+
 import os
 import boto3
 import typeguard
@@ -211,11 +212,11 @@ class S3Operations:
 
     @logger_time_stamp
     @typeguard.typechecked
-    def get_last_objects(self, bucket: str, logs_dir: str, policy: str):
+    def get_last_objects(self, bucket: str, logs_bucket_key: str, policy: str):
         """
         This method return last object per policy, only path without file name
+        @param logs_bucket_key:
         @param bucket:
-        @param dir:
         @param policy:
         @return:
         """
@@ -223,7 +224,7 @@ class S3Operations:
             if '_' in policy:
                 policy = policy.replace('_', '-')
             objs = self.__s3_client.list_objects_v2(Bucket=bucket,
-                                                    Prefix=f'{logs_dir}/{policy}',
+                                                    Prefix=f'{logs_bucket_key}/{policy}',
                                                     MaxKeys=100)['Contents']
         except:
             return None
