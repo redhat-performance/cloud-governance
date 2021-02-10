@@ -5,41 +5,41 @@ from datetime import datetime
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from elasticsearch import Elasticsearch
 
-es_host = 'localhost'
-es_port = 9200
 
-
-class ElkOperations:
+class ESOperations:
     """
-    This class related to elk operations
+    This class related to ElasticSearch operations
     """
 
-    def __init__(self, region='us-east-2', policy_bucket='redhat-cloud-governance', logs_dir='logs'):
-        self.__s3_operation = S3Operations(region_name=region)
-        self.__policy_bucket = policy_bucket
-        self.__logs_dir = logs_dir
-        self.es = Elasticsearch([{'host': es_host, 'port': es_port}])
+    def __init__(self, es_host: str, es_port: str,  region: str = 'us-east-2', bucket: str = 'redhat-cloud-governance', logs_bucket_key: str ='logs'):
+        self.__es_host = es_host
+        self.__es_port = es_port
+        self.__region = region
+        self.__s3_operation = S3Operations(region_name=self.__region)
+        self.__bucket = bucket
+        self.__logs_bucket_key = logs_bucket_key
+        self.es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
 
-    def __get_s3_latest_policy_file(self, policy: str, region: str):
+    def __get_s3_latest_policy_file(self, policy: str):
         """
         This method return latest policy logs
         @param policy:
         @return:
         """
-        return self.__s3_operation.get_last_objects(bucket=self.__policy_bucket,
-                                                    logs_dir=f'{self.__logs_dir}/{region}',
+        return self.__s3_operation.get_last_objects(bucket=self.__bucket,
+                                                    logs_bucket_key=f'{self.__logs_bucket_key}/{self.__region}',
                                                     policy=policy)
 
-    def __get_last_s3_policy_content(self, policy: str, region: str, file_name: str = 'resources.json'):
+    def __get_last_s3_policy_content(self, policy: str, file_name: str = 'resources.json'):
         """
         This method return last policy content
         @return:
         """
         with tempfile.TemporaryDirectory() as temp_local_directory:
             local_file = temp_local_directory + '/' + file_name + '.gz'
-            if self.__get_s3_latest_policy_file(policy=policy, region=region):
-                latest_policy_path = self.__get_s3_latest_policy_file(policy=policy, region=region)
-                self.__s3_operation.download_file(bucket=self.__policy_bucket,
+            if self.__get_s3_latest_policy_file(policy=policy):
+                latest_policy_path = self.__get_s3_latest_policy_file(policy=policy)
+                self.__s3_operation.download_file(bucket=self.__bucket,
                                            key=str(latest_policy_path),
                                            download_file=file_name + '.gz',
                                            file_name_path=local_file)
@@ -48,20 +48,19 @@ class ElkOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
-    def upload_last_policy_to_es(self, policy: str, region: str, index: str, doc_type: str, json_file: str = 'resources.json', add_items: dict = None):
+    def upload_last_policy_to_es(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
         :param policy:
-        :param region:
-        :param json_file:
+        :param s3_json_file:
         :param index:
         :param doc_type:
-        :param add_items:
+        :param es_add_items:
         :return:
         """
 
         # fetch data from s3 per region/policy
-        data = self.__get_last_s3_policy_content(policy=policy, region=region, file_name=json_file)
+        data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
             data_list = json.loads(data)
             # if json folding in list need to extract it
@@ -77,7 +76,7 @@ class ElkOperations:
             data = {'resources': 0}
 
         # Add items
-        for key, value in add_items.items():
+        for key, value in es_add_items.items():
             data[key] = value
 
         # utcnow - solve timestamp issue

@@ -1,14 +1,12 @@
 
-from cloud_governance.common.elk.elk_operations import ElkOperations
+from cloud_governance.common.es.es_operations import ESOperations
 
 
 def test_get_s3_latest_policy_file():
-    region = 'us-east-1'
-    elk_operations = ElkOperations(region=region)
-    assert elk_operations._ElkOperations__get_s3_latest_policy_file(policy='ec2-idle', region=region)
+    elk_operations = ESOperations(es_host='localhost', es_port=9200, region='us-east-2', bucket='redhat-cloud-governance', logs_bucket_key='logs')
+    assert elk_operations._ElkOperations__get_s3_latest_policy_file(policy='ec2-idle')
 
 
 def test_get_last_s3_policy_content():
-    region = 'us-east-1'
-    elk_operations = ElkOperations(region=region)
-    assert elk_operations._ElkOperations__get_last_s3_policy_content(policy='ec2-idle', region=region)
+    elk_operations = ESOperations(es_host='localhost', es_port=9200, region='us-east-2', bucket='redhat-cloud-governance', logs_bucket_key='logs')
+    assert elk_operations._ElkOperations__get_last_s3_policy_content(policy='ec2-idle')
