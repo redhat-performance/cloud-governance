@@ -133,6 +133,7 @@ def main():
     upload_data_elk = os.environ.get('upload_data_elk', '')
     es_host = os.environ.get('es_host', 'localhost')
     es_port = os.environ.get('es_port', '9200')
+    bucket = os.environ.get('bucket', '')
 
     # 1. ELK Uploader
     if upload_data_elk:
@@ -141,7 +142,7 @@ def main():
                       'es_index': 'json_ec2_timestamp_index',
                       'es_doc_type': 'json_doc_type',
                       'es_add_items': {},
-                      'bucket': 'redhat-cloud-governance',
+                      'bucket': bucket,
                       'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
                       'regions': ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'],
