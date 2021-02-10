@@ -131,8 +131,8 @@ def main():
     dry_run = os.environ.get('dry_run', 'yes')
     policy = os.environ.get('policy', '')
     upload_data_elk = os.environ.get('upload_data_elk', '')
-    es_host = os.environ.get('es_host', '')
-    es_port = os.environ.get('es_port', '')
+    es_host = os.environ.get('es_host', 'localhost')
+    es_port = os.environ.get('es_port', '9200')
 
     # 1. ELK Uploader
     if upload_data_elk:

@@ -1,3 +1,4 @@
+
 import json
 import os
 import tempfile
@@ -11,7 +12,7 @@ class ESOperations:
     This class related to ElasticSearch operations
     """
 
-    def __init__(self, es_host: str, es_port: str,  region: str = 'us-east-2', bucket: str = 'redhat-cloud-governance', logs_bucket_key: str ='logs'):
+    def __init__(self, es_host: str, es_port: str,  region: str, bucket: str, logs_bucket_key: str):
         self.__es_host = es_host
         self.__es_port = es_port
         self.__region = region
@@ -30,7 +31,7 @@ class ESOperations:
                                                     logs_bucket_key=f'{self.__logs_bucket_key}/{self.__region}',
                                                     policy=policy)
 
-    def __get_last_s3_policy_content(self, policy: str, file_name: str = 'resources.json'):
+    def __get_last_s3_policy_content(self, policy: str, file_name: str):
         """
         This method return last policy content
         @return:
