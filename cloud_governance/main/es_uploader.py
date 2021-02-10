@@ -8,7 +8,6 @@ from cloud_governance.common.es.es_operations import ESOperations
 # logs_dir = 'logs'
 #index = 'json_ec2_timestamp_index'
 #doc_type = 'json_doc_type'
-#es_host = 'http://elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com'
 #es_host = 'localhost'
 #es_port = 9200
 
