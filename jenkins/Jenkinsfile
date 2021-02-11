@@ -1,76 +1,107 @@
+#!groovy
+
 pipeline {
-  options {
-    buildDiscarder(logRotator(numToKeepStr: '10')) // Retain history on the last 10 builds
-    ansiColor('xterm') // Enable colors in terminal
-    timestamps() // Append timestamps to each line
-    timeout(time: 20, unit: 'MINUTES') // Set a timeout on the total execution time of the job
-  }
-  agent {
-    // Run this job within a Docker container built using Dockerfile.build
-    // contained within your projects repository. This image should include
-    // the core runtimes and dependencies required to run the job,
-    // for example Python 3.x and NPM.
-    dockerfile { filename 'Dockerfile.build' }
-  }
-  stages {  // Define the individual processes, or stages, of your CI pipeline
-    stage('Checkout') { // Checkout (git clone ...) the projects repository
-      steps {
-        checkout scm
-      }
-    }
-    stage('Setup') { // Install any dependencies you need to perform testing
-      steps {
-        script {
-          sh """
-          pip install -r requirements.txt
-          """
+    agent {
+        docker {
+            image 'python:3.7'
         }
-      }
     }
-    stage('Linting') { // Run pylint against your code
-      steps {
-        script {
-          sh """
-          pylint **/*.py
-          """
-        }
-      }
-    }
-    stage('Unit Testing') { // Perform unit testing
-      steps {
-        script {
-          sh """
-          python -m unittest discover -s tests/unit
-          """
-        }
-      }
-    }
-    stage('Integration Testing') { //Perform integration testing
-      steps {
-        script {
-          sh """
-          # You have the option to stand up a temporary environment to perform
-          # these tests and/or run the tests against an existing environment. The
-          # advantage to the former is you can ensure the environment is clean
-          # and in a desired initial state. The easiest way to stand up a temporary
-          # environment is to use Docker and a wrapper script to orchestrate the
-          # process. This script will handle standing up supporting services like
-          # MySQL & Redis, running DB migrations, starting the web server, etc.
-          # You can utilize your existing automation, your custom scripts and Make.
-          ./standup_testing_environment.sh # Name this whatever you'd like
 
-          python -m unittest discover -s tests/integration
-        """
-      }
-    }
-  }
-  post {
-    failure {
-      script {
-        msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+    stages {
+        stage('Environment preparation') {
+            steps {
+                echo "-=- preparing project environment -=-"
+                // Python dependencies
+                sh "pip install -r requirements.txt"
+            }
+        }
+        stage('Compile') {
+            steps {
+                echo "-=- compiling project -=-"
+                sh "python -m compileall ."
+            }
+        }
 
-        slackSend message: msg, channel: env.SLACK_CHANNEL
+        stage('Unit tests') {
+            steps {
+                echo "-=- execute unit tests -=-"
+                sh "nosetests -v test"
+            }
+        }
+
+        stage('Mutation tests') {
+            steps {
+                echo "-=- execute mutation tests -=-"
+                // initialize mutation testing session
+                sh "cosmic-ray init config.yml jenkins_session && cosmic-ray --verbose exec jenkins_session && cosmic-ray dump jenkins_session | cr-report"
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo "-=- packaging project -=-"
+                echo "No packaging phase for python projects ..."
+            }
+        }
+
+        stage('Build Docker image') {
+            steps {
+                echo "-=- build Docker image -=-"
+                sh "docker build -t restalion/python-jenkins-pipeline:0.1 ."
+            }
+        }
+
+        stage('Run Docker image') {
+            steps {
+                echo "-=- run Docker image -=-"
+                sh "docker run --name python-jenkins-pipeline --detach --rm --network ci -p 5001:5000 restalion/python-jenkins-pipeline:0.1"
+            }
+        }
+
+        stage('Integration tests') {
+            steps {
+                echo "-=- execute integration tests -=-"
+                sh "nosetests -v int_test"
+            }
+        }
+
+        stage('Performance tests') {
+            steps {
+                echo "-=- execute performance tests -=-"
+                sh "locust -f ./perf_test/locustfile.py --no-web -c 1000 -r 100 --run-time 1m -H http://172.18.0.3:5001"
+            }
+        }
+
+        stage('Dependency vulnerability tests') {
+            steps {
+                echo "-=- run dependency vulnerability tests -=-"
+                sh "safety check"
+            }
+        }
+
+        stage('Code inspection & quality gate') {
+            steps {
+                echo "-=- run code inspection & quality gate -=-"
+                sh "pylama"
+            }
+        }
+
+        stage('Push Docker image') {
+            steps {
+                echo "-=- push Docker image -=-"
+                withDockerRegistry([ credentialsId: "werdar-wedartg-uiny67-adsuja0-12njkn3", url: "" ]) {
+                    sh "docker push restalion/python-jenkins-pipeline:0.1"
+                }
+
+                //sh "mvn docker:push"
+            }
+        }
     }
-  }
-}
+
+    post {
+        always {
+            echo "-=- remove deployment -=-"
+            sh "docker stop python-jenkins-pipeline"
+        }
+    }
 }
