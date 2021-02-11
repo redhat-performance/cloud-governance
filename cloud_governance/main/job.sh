@@ -20,7 +20,7 @@ for region in "${regions[@]}"
 do
    for policy in "${policies[@]}"
    do
-       sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host=$es_host -e es_port='9200' -e es_index=$es_index -e bucket=$bucket -e policy=$policy -e region=$region -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
+       sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host=$es_host -e es_port='9200' -e es_index=$es_index -e bucket=$bucket -e policy=$policy -e AWS_DEFAULT_REGION=$region -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
 
    done
 done
@@ -34,6 +34,6 @@ for region in "${regions[@]}"
 do
    for policy in "${policies[@]}"
    do
-       sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host=$es_host -e es_port='9200' -e es_index=$es_index -e bucket=$bucket -e policy=$policy -e region=$region -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
+       sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host=$es_host -e es_port='9200' -e es_index=$es_index -e bucket=$bucket -e policy=$policy -e AWS_DEFAULT_REGION=$region -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
    done
 done
