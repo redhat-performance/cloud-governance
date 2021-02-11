@@ -133,10 +133,10 @@ def main():
     upload_data_es = os.environ.get('upload_data_es', '')
     es_host = os.environ.get('es_host', '')
     es_port = os.environ.get('es_port', '9200')
+    es_index = os.environ.get('es_index', '')
     bucket = os.environ.get('bucket', '')
     regions = os.environ.get('regions', [])
     policies = os.environ.get('policies', [])
-    es_index = os.environ.get('es_index', '')
 
     # 1. ELK Uploader
     if upload_data_es:
