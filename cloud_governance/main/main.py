@@ -33,7 +33,7 @@ from cloud_governance.main.es_uploader import ESUploader
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
-all_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
+custodian_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
 
 
 @logger_time_stamp
@@ -85,7 +85,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
     # custodian policy
-    elif any(policy == item for item in all_policies):
+    elif any(policy == item for item in custodian_policies):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -135,8 +135,8 @@ def main():
     es_port = os.environ.get('es_port', '9200')
     es_index = os.environ.get('es_index', '')
     bucket = os.environ.get('bucket', '')
-    regions = os.environ.get('regions', [])
-    policies = os.environ.get('policies', [])
+    region = os.environ.get('region', '')
+    policy = os.environ.get('policy', '')
 
     # 1. ELK Uploader
     if upload_data_es:
@@ -148,8 +148,8 @@ def main():
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
-                      'regions': regions,
-                      'policies': policies,
+                      'region': region,
+                      'policy': policy,
                       }
         elk_uploader = ESUploader(**input_data)
         elk_uploader.upload_to_es()
