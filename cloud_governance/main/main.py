@@ -33,7 +33,7 @@ from cloud_governance.main.es_uploader import ESUploader
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
-policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
+all_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
 
 
 @logger_time_stamp
@@ -85,7 +85,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
     # custodian policy
-    elif any(policy == item for item in policies):
+    elif any(policy == item for item in all_policies):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -130,23 +130,26 @@ def main():
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
     policy = os.environ.get('policy', '')
-    upload_data_elk = os.environ.get('upload_data_elk', '')
-    es_host = os.environ.get('es_host', 'localhost')
+    upload_data_es = os.environ.get('upload_data_es', 'upload_data_es')
+    es_host = os.environ.get('es_host', 'elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com')
     es_port = os.environ.get('es_port', '9200')
-    bucket = os.environ.get('bucket', '')
+    bucket = os.environ.get('bucket', 'redhat-cloud-governance')
+    regions = os.environ.get('regions', ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'])
+    policies = os.environ.get('policies', ['ec2_untag'])
+    es_index = os.environ.get('es_index', 'json_ebs_timestamp_index')
 
     # 1. ELK Uploader
-    if upload_data_elk:
+    if upload_data_es:
         input_data = {'es_host': es_host,
                       'es_port': int(es_port),
-                      'es_index': 'json_ec2_timestamp_index',
+                      'es_index': es_index,
                       'es_doc_type': 'json_doc_type',
                       'es_add_items': {},
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
-                      'regions': ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'],
-                      'policies': ['ec2_idle', 'ebs_unattached', 'ec2_untag'],
+                      'regions': regions,
+                      'policies': policies,
                       }
         elk_uploader = ESUploader(**input_data)
         elk_uploader.upload_to_es()

@@ -1,0 +1,74 @@
+pipeline {
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '10')) // Retain history on the last 10 builds
+    ansiColor('xterm') // Enable colors in terminal
+    timestamps() // Append timestamps to each line
+    timeout(time: 20, unit: 'MINUTES') // Set a timeout on the total execution time of the job
+  }
+  agent {
+    // Run this job within a Docker container built using Dockerfile.build
+    // contained within your projects repository. This image should include
+    // the core runtimes and dependencies required to run the job,
+    // for example Python 3.x and NPM.
+    dockerfile { filename 'Dockerfile' }
+  }
+  stages {  // Define the individual processes, or stages, of your CI pipeline
+    stage('Checkout') { // Checkout (git clone ...) the projects repository
+      steps {
+        checkout scm
+      }
+    }
+    stage('Setup') { // Install any dependencies you need to perform testing
+      steps {
+        script {
+          sh """
+          pip install -r requirements.txt
+          pip install -r tests_requirments.txt
+          """
+        }
+      }
+    }
+    stage('Linting') { // Run pylint against your code
+      steps {
+        script {
+          sh """
+          pylint **/*.py
+          """
+        }
+      }
+    }
+    stage('Unit Testing') { // Perform unit testing
+      steps {
+        script {
+          sh """
+          coverage run -m pytest
+          """
+        }
+      }
+    }
+    stage('Integration Testing') { //Perform integration testing
+      steps {
+        script {
+          sh """
+            declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
+            declare -a policies=('ec2_idle' 'ebs_unattached' 'ec2_untag')
+            for region in "${regions[@]}"
+            do
+               for policy in "${policies[@]}"
+               do
+                   sudo podman run --rm --name cloud-governance -e policy=$policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$region -e dry_run=yes -e policy_output=${{ secrets.OUTPUT_BUCKET }}/test/$region -e log_level=INFO quay.io/ebattat/cloud-governance
+               done
+            done
+        """
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+
+        slackSend message: msg, channel: env.SLACK_CHANNEL
+    }
+  }
+}

@@ -9,4 +9,5 @@ do
    done
 done
 # 2. Upload data to ElasticSearch
-sudo podman run --rm --name cloud-governance -e upload_data_elk='upload_data_elk' -e es_host='localhost' -e es_port='9200' -e bucket=$bucket -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host='localhost' -e es_port='9200' -e bucket=$bucket -e policies=['ec2_idle', 'ec2_untag'] -e es_index='json_ec2_timestamp_index' -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host='localhost' -e es_port='9200' -e bucket=$bucket -e policies=['ebs_unattached'] -e es_index='json_ebs_timestamp_index' -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
