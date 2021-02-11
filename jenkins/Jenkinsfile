@@ -7,8 +7,8 @@ pipeline {
     stages {
         stage('Run all policies pre active region') {
             steps {
-                 sh """podman images ${AWS_ACCESS_KEY_ID}  ${AWS_SECRET_ACCESS_KEY}
-                 """
+                 sh 'podman images'
+                 sh '${AWS_ACCESS_KEY_ID}  ${AWS_SECRET_ACCESS_KEY}'
             }
         }
     }
