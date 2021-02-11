@@ -1,12 +1,7 @@
 pipeline {
     agent { label 'cloud-governance' }
     stages {
-        stage('Linting & Unit Tests') {
-         agent {
-           dockerfile {
-                filename 'Dockerfile'
-                }
-            }
+        stage('Run all policies pre active region') {
             steps {
                 sh 'sudo podman images'
             }
