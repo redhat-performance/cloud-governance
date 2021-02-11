@@ -86,7 +86,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             logger.info(git_leaks.scan_repo())
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
-    # custodian policy
+    # custodian policy - check if its a custodian policy
     elif any(policy == item for item in custodian_policies):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':

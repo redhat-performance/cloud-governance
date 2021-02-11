@@ -1,6 +1,4 @@
 
-import typeguard
-
 from cloud_governance.common.es.es_operations import ESOperations
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
@@ -22,7 +20,6 @@ class ESUploader:
         self.__policy_name = kwargs.get('policy')
 
     @logger_time_stamp
-    @typeguard.typechecked
     def upload_to_es(self):
         """
         This method upload data to input ELK
