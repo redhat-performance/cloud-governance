@@ -2,9 +2,12 @@ pipeline {
     agent { label 'cloud-governance' }
     stages {
         stage('Run all policies pre active region') {
-            withCredentials([string(credentialsId: 'cloud-governance-aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID')])
             steps {
-                sh 'podman images ${AWS_ACCESS_KEY_ID}'
+                withCredentials([string(credentialsId: 'cloud-governance-aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID')])
+                {
+                 sh """podman images ${AWS_ACCESS_KEY_ID}
+                 """
+                }
             }
         }
     }
