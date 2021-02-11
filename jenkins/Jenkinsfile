@@ -10,7 +10,7 @@ pipeline {
     // contained within your projects repository. This image should include
     // the core runtimes and dependencies required to run the job,
     // for example Python 3.x and NPM.
-    dockerfile { filename 'Dockerfile' }
+    dockerfile { filename 'Dockerfile.build' }
   }
   stages {  // Define the individual processes, or stages, of your CI pipeline
     stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -23,7 +23,6 @@ pipeline {
         script {
           sh """
           pip install -r requirements.txt
-          pip install -r tests_requirments.txt
           """
         }
       }
@@ -41,7 +40,7 @@ pipeline {
       steps {
         script {
           sh """
-          coverage run -m pytest
+          python -m unittest discover -s tests/unit
           """
         }
       }
@@ -49,9 +48,19 @@ pipeline {
     stage('Integration Testing') { //Perform integration testing
       steps {
         script {
-           sh """
-           sudo podman run --rm --name cloud-governance -e policy='ec2_idle' -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION='us-east-1' -e dry_run=yes -e policy_output=$bucket/test/$region -e log_level=INFO quay.io/ebattat/cloud-governance
-           """
+          sh """
+          # You have the option to stand up a temporary environment to perform
+          # these tests and/or run the tests against an existing environment. The
+          # advantage to the former is you can ensure the environment is clean
+          # and in a desired initial state. The easiest way to stand up a temporary
+          # environment is to use Docker and a wrapper script to orchestrate the
+          # process. This script will handle standing up supporting services like
+          # MySQL & Redis, running DB migrations, starting the web server, etc.
+          # You can utilize your existing automation, your custom scripts and Make.
+          ./standup_testing_environment.sh # Name this whatever you'd like
+
+          python -m unittest discover -s tests/integration
+        """
       }
     }
   }
