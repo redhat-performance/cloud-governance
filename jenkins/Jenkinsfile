@@ -7,10 +7,8 @@ pipeline {
     stages {
         stage('Run all policies pre active region') {
             steps {
-                {
                  sh """podman images ${AWS_ACCESS_KEY_ID}  ${AWS_SECRET_ACCESS_KEY}
                  """
-                }
             }
         }
     }
@@ -18,8 +16,6 @@ pipeline {
         failure {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-
-                slackSend message: msg, channel: env.SLACK_CHANNEL
             }
           }
     }
