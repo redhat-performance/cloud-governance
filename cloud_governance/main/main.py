@@ -130,13 +130,13 @@ def main():
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
     policy = os.environ.get('policy', '')
-    upload_data_es = os.environ.get('upload_data_es', 'upload_data_es')
-    es_host = os.environ.get('es_host', 'elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com')
+    upload_data_es = os.environ.get('upload_data_es', '')
+    es_host = os.environ.get('es_host', '')
     es_port = os.environ.get('es_port', '9200')
-    bucket = os.environ.get('bucket', 'redhat-cloud-governance')
-    regions = os.environ.get('regions', ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'])
-    policies = os.environ.get('policies', ['ec2_untag'])
-    es_index = os.environ.get('es_index', 'json_ebs_timestamp_index')
+    bucket = os.environ.get('bucket', '')
+    regions = os.environ.get('regions', [])
+    policies = os.environ.get('policies', [])
+    es_index = os.environ.get('es_index', '')
 
     # 1. ELK Uploader
     if upload_data_es:
