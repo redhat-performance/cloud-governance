@@ -1,5 +1,6 @@
 
 import os
+import typeguard
 from time import strftime, gmtime
 from ast import literal_eval  # str to dict
 import boto3  # regions
@@ -37,6 +38,7 @@ custodian_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
 
 
 @logger_time_stamp
+@typeguard.typechecked
 def run_policy(policy: str, region: str, dry_run: str):
     """
     This method run policy per region, first the custom policy and after custodian policy
@@ -132,11 +134,9 @@ def main():
     policy = os.environ.get('policy', '')
     upload_data_es = os.environ.get('upload_data_es', '')
     es_host = os.environ.get('es_host', '')
-    es_port = os.environ.get('es_port', '9200')
+    es_port = os.environ.get('es_port', '')
     es_index = os.environ.get('es_index', '')
     bucket = os.environ.get('bucket', '')
-    region = os.environ.get('region', '')
-    policy = os.environ.get('policy', '')
 
     # 1. ELK Uploader
     if upload_data_es:
@@ -148,7 +148,7 @@ def main():
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
-                      'region': region,
+                      'region': region_env,
                       'policy': policy,
                       }
         elk_uploader = ESUploader(**input_data)
