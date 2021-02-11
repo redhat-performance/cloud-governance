@@ -1,10 +1,12 @@
 pipeline {
     agent { label 'cloud-governance' }
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('cloud-governance-aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('cloud-governance-aws-secret-access-key')
+    }
     stages {
         stage('Run all policies pre active region') {
             steps {
-                withCredentials([string(credentialsId: 'cloud-governance-aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                 string(credentialsId: 'cloud-governance-aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')])
                 {
                  sh """podman images ${AWS_ACCESS_KEY_ID}  ${AWS_SECRET_ACCESS_KEY}
                  """
