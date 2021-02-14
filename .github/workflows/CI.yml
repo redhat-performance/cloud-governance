@@ -66,7 +66,6 @@ jobs:
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
     - name: E2E tests using latest quay.io
       run: |
-        sudo podman pull quay.io/ebattat/cloud-governance
         declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
         declare -a policies=('ec2_idle' 'ebs_unattached' 'ec2_untag')
         for region in "${regions[@]}"
