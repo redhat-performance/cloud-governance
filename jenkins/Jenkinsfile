@@ -35,14 +35,10 @@ pipeline {
        always {
            deleteDir()
            script {
-                if (params.gitBranch == 'master') {
-                    sendEmailNotification(this,
+                sendEmailNotification(this,
                             currentBuild.result as String,
                             env.contact
                     )
-                } else {
-                    echo "Not in master branch - skipping email notification (branch is ${env.gitBranch})."
-                }
             }
        }
         failure {
