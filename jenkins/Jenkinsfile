@@ -37,7 +37,7 @@ pipeline {
            script {
                 msg = "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully"
                 emailext body: """\
-				user: {env.BUILD_USER_ID}\nJenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+				User: ${env.BUILD_USER_ID}\nJenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
 			    """,
                 subject: msg,
                 to: env.contact
@@ -47,7 +47,7 @@ pipeline {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
-				user: {env.BUILD_USER_ID}\nJenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+				User: ${env.BUILD_USER_ID}\nJenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
 				""",
                 subject: msg,
                 to: env.contact
