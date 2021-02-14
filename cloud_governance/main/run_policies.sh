@@ -4,6 +4,7 @@ AWS_ACCESS_KEY_ID=$1
 AWS_SECRET_ACCESS_KEY=$2
 BUCKET=$3
 
+
 echo "Run all policies pre active region"
 declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
 declare -a policies=('ec2_idle' 'ebs_unattached' 'ec2_untag')
