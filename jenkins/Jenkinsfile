@@ -11,26 +11,27 @@ pipeline {
           steps {
             checkout scm
            }
-          }
+        }
         stage('Run Policies') {
             steps {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
                  sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET'
             }
         }
-        // upload to elasticsearch
         stage('Upload ElasticSearch') {
             steps {
                  sh 'chmod 775 cloud_governance/main/./upload_es.sh'
                  sh 'cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST'
             }
         }
-        // cleanup the workspace
-		stage('cleaning workspace') {
-			deleteDir()
-		}
+        stage('Cleanup workspace') {
+              deleteDir()
+        }
     }
     post {
+       always {
+           deleteDir()
+       }
         failure {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
