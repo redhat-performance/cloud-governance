@@ -9,18 +9,16 @@ pipeline {
     stages {
         stage('Run all policies pre active region') {
             steps {
-                 sh """
-                        declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
-                        declare -a policies=('ec2_idle' 'ebs_unattached' 'ec2_untag')
-
-                        for region in "${regions[@]}"
-                        do
-                           for policy in "${policies[@]}"
-                           do
-                               sudo podman run --rm --name cloud-governance -e policy=$policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$region -e dry_run=yes -e policy_output=s3://$BUCKET/logs/$region -e log_level=INFO quay.io/ebattat/cloud-governance
-                           done
-                        done
-                 """
+                 sh 'ls'
+                 sh 'pwd'
+                 sh 'chmod 775 cloud-governance/cloud_governance/main/./run_policies.sh'
+                 sh 'cloud-governance/cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET'
+            }
+        }
+        stage('Upload data to ElasticSearch') {
+            steps {
+                 sh 'chmod 775 cloud-governance/cloud_governance/main/./upload_es.sh'
+                 sh 'cloud-governance/cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST'
             }
         }
     }
