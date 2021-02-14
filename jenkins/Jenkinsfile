@@ -34,6 +34,12 @@ pipeline {
     post {
        always {
            deleteDir()
+           script {
+                sendEmailNotification(this,
+                            currentBuild.result as String,
+                            env.contact
+                    )
+            }
        }
         failure {
               script {
