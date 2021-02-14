@@ -5,6 +5,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('cloud-governance-aws-secret-access-key')
         BUCKET = credentials('cloud-governance-bucket')
         ES_HOST = credentials('cloud-governance-es-host')
+        contact = "ebattat@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -39,5 +40,13 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
             }
           }
+          mail(
+			to: env.contact,
+			subject: "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully",
+			body: """\
+				Jenkins job: ${env.BUILD_URL}\n\n
+				See the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+			"""
+		)
     }
 }
