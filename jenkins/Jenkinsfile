@@ -13,6 +13,12 @@ pipeline {
            }
           }
         stage('Run Policies') {
+        agent {
+          dockerfile {
+             filename 'Dockerfile'
+             args '-u root:root'
+                    }
+                }
             steps {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
                  sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET'
