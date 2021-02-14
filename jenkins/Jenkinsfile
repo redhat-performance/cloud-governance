@@ -8,12 +8,6 @@ pipeline {
     }
     stages {
         stage('Run all policies pre active region') {
-        agent {
-          dockerfile {
-             filename 'Dockerfile'
-             args '-u root:root'
-                    }
-                }
             steps {
                  sh 'sudo podman pull quay.io/ebattat/cloud-governance'
                  sh 'sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} -e AWS_DEFAULT_REGION=us-east-1 -e dry_run=yes -e policy_output=s3://${BUCKET}/logs/us-east-1 -e log_level=INFO quay.io/ebattat/cloud-governance'
