@@ -7,6 +7,11 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
     }
     stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+          steps {
+            checkout scm
+           }
+          }
         stage('Run all policies pre active region') {
             steps {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
