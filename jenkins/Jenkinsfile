@@ -39,7 +39,7 @@ pipeline {
 				Jenkins job: ${env.BUILD_URL}\n\n
 				See the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
 			    """,
-                subject: '${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully',
+                subject: " ${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully",
                 to: env.contact
             }
        }
