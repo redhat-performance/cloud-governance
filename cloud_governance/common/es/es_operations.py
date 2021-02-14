@@ -66,8 +66,9 @@ class ESOperations:
             data_list = json.loads(data)
             # if json folding in list need to extract it
             if type(data_list) == list:
-                # resources_list is a list of ids that was triggered by policy
-                data_dict = {'resources_list': []}
+                # resources_list\resources_name_list is a list of ids\names that was triggered by policy
+                data_dict = {'resources_list': [], 'resources_name_list': []}
+                # resources_name_list is a list of resources name
                 for i, item in enumerate(data_list):
                     data_dict[f'resource{i + 1}'] = item
                     data_dict[f'resource_{i + 1}'] = 1
@@ -76,6 +77,10 @@ class ESOperations:
                         data_dict['resources_list'].append(item['InstanceId'])
                     if item.get('VolumeId'):
                         data_dict['resources_list'].append(item['VolumeId'])
+                    if item.get('Tags'):
+                        for val in item['Tags']:
+                            if val['Key'] == 'Name':
+                                data_dict['resources_name_list'].append(val['Value'])
                 data = data_dict
         # no data for policy
         else:
