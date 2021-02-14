@@ -41,7 +41,6 @@ pipeline {
 			    """,
                 subject: '${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully',
                 to: 'test@example.com'
-                    )
             }
        }
         failure {
