@@ -18,7 +18,7 @@ pipeline {
                  sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET'
             }
         }
-        stage('Upload Policies to ElasticSearch') {
+        stage('Upload to ElasticSearch') {
             steps {
                  sh 'chmod 775 cloud_governance/main/./upload_es.sh'
                  sh 'cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST'
