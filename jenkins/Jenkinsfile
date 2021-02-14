@@ -1,6 +1,5 @@
 pipeline {
     agent { label 'cloud-governance' }
-    def contact = "ebattat@redhat.com"
     environment {
         AWS_ACCESS_KEY_ID = credentials('cloud-governance-aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('cloud-governance-aws-secret-access-key')
