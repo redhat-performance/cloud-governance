@@ -27,12 +27,14 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
+              sh 'sudo podman rmi quay.io/ebattat/cloud-governance'
               deleteDir()
               }
         }
     }
     post {
        always {
+           sh 'sudo podman rmi quay.io/ebattat/cloud-governance'
            deleteDir()
            script {
                 msg = "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully"
