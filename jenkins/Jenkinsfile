@@ -14,17 +14,19 @@ pipeline {
            }
         }
         stage('Run Policies') {
-            echo "Return value of copy_file.sh: ${rc}"
             steps {
+               script {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
                  rp = sh(script: "cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET", returnStatus: true)
-
+               }
             }
         }
         stage('Upload ElasticSearch') {
             steps {
+               script {
                  sh 'chmod 775 cloud_governance/main/./upload_es.sh'
                  re = sh(script: "cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST", returnStatus: true)
+               }
             }
         }
         stage('Cleanup workspace') {
