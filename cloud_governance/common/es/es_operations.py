@@ -80,9 +80,9 @@ class ESOperations:
                                 data_dict['resources_name_list'].append(val['Value'])
                                 name = val['Value']
                     if item.get('InstanceId'):
-                        data_dict['resources_list'].append(f"{item['InstanceId']}|{name}")
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {name}")
                     if item.get('VolumeId'):
-                        data_dict['resources_list'].append(f"{item['VolumeId']}|{name}")
+                        data_dict['resources_list'].append(f"{item['VolumeId']} | {name}")
                 data = data_dict
         # no data for policy
         else:
