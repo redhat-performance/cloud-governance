@@ -34,7 +34,7 @@ from cloud_governance.main.es_uploader import ESUploader
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
-custodian_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag']
+custodian_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag', 'ec2_run']
 
 
 @logger_time_stamp
