@@ -7,7 +7,7 @@ ES_HOST=$4
 ES_PORT=9200
 
 echo "Upload data to ElasticSearch - ec2 index"
-es_index='cloud_governance-ec2'
+es_index='cloud-governance-ec2'
 declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
 declare -a policies=('ec2_idle' 'ec2_untag')
 for region in "${regions[@]}"
@@ -20,7 +20,7 @@ do
 done
 
 echo "Upload data to ElasticSearch - ebs index"
-es_index='cloud_governance-ebs'
+es_index='cloud-governance-ebs'
 declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
 declare -a policies=('ebs_unattached')
 for region in "${regions[@]}"
