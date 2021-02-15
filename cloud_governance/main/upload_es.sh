@@ -9,7 +9,7 @@ ES_PORT=9200
 echo "Upload data to ElasticSearch - ec2 index"
 es_index='cloud-governance-ec2'
 declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2')
-declare -a policies=('ec2_idle' 'ec2_untag')
+declare -a policies=('ec2_idle' 'ec2_untag' 'ec2_run')
 for region in "${regions[@]}"
 do
    for policy in "${policies[@]}"
