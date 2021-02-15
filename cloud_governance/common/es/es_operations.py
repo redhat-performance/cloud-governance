@@ -70,17 +70,19 @@ class ESOperations:
                 data_dict = {'resources_list': [], 'resources_name_list': []}
                 # resources_name_list is a list of resources name
                 for i, item in enumerate(data_list):
+                    name = ''
                     data_dict[f'resource{i + 1}'] = item
                     data_dict[f'resource_{i + 1}'] = 1
                     data_dict['resources'] = i + 1
-                    if item.get('InstanceId'):
-                        data_dict['resources_list'].append(item['InstanceId'])
-                    if item.get('VolumeId'):
-                        data_dict['resources_list'].append(item['VolumeId'])
                     if item.get('Tags'):
                         for val in item['Tags']:
                             if val['Key'] == 'Name':
                                 data_dict['resources_name_list'].append(val['Value'])
+                                name = val['Value']
+                    if item.get('InstanceId'):
+                        data_dict['resources_list'].append({item['InstanceId'], name})
+                    if item.get('VolumeId'):
+                        data_dict['resources_list'].append({item['VolumeId'], name})
                 data = data_dict
         # no data for policy
         else:
