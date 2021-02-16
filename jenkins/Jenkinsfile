@@ -17,7 +17,17 @@ pipeline {
             steps {
                script {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
-                 rp = sh(script: "cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET", returnStatus: true)
+                 run_policy = sh(script: "cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET", returnStatus: true)
+                 if (run_policy != 0)
+                    {
+                        msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                        emailext body: """\
+                        Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+                        """,
+                        subject: msg,
+                        to: env.contact
+                        System.exit(0)
+                    }
                }
             }
         }
@@ -25,7 +35,17 @@ pipeline {
             steps {
                script {
                  sh 'chmod 775 cloud_governance/main/./upload_es.sh'
-                 re = sh(script: "cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST", returnStatus: true)
+                 upload_es = sh(script: "cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST", returnStatus: true)
+                 if (upload_es != 0)
+                    {
+                        msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                        emailext body: """\
+                        Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+                        """,
+                        subject: msg,
+                        to: env.contact
+                        System.exit(0)
+                    }
                }
             }
         }
