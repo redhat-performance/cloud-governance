@@ -11,11 +11,11 @@ This tool provides a lightweight and flexible framework for deploying cloud mana
 cost optimize and security.
 
 This tool support the following policies on AWS account:
-[policy](cloud_governance/policy)
+[policy](policy)
 
-* ec2_idle: [ec2_idle](cloud_governance/policy/ec2_idle.yml)
-* ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
-* ec2_untag: ec2 untag with 5 mandatory tags: Name, Owner, Email, Purpose, Date [ec2_untag](cloud_governance/policy/ec2_untag.yml)
+* ec2_idle: [ec2_idle](policy/ec2_idle.yml)
+* ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](policy/ebs_unattached.yml)
+* ec2_untag: ec2 untag with 5 mandatory tags: Name, Owner, Email, Purpose, Date [ec2_untag](policy/ec2_untag.yml)
 * tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombie resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
