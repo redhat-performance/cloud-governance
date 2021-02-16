@@ -6,5 +6,7 @@ policies:
       - "State.Name": running
       - type: instance-age
         days: 5
+      - not:
+          - tag:AlwayOn: "True"
     actions:
       - stop
