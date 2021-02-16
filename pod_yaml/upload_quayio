@@ -1,6 +1,6 @@
 # python3 setup.py bdist_wheel
 # twine upload dist/*
-# sudo podman build --layers=false -t cloud-governance:v1.0.105 .
+# sudo podman build --layers=false -t cloud-governance:v1.0.190 .
 # sudo podman login quay.io
 # sudo podman push localhost/cloud-governance:v1.0.105 quay.io/ebattat/cloud-governance
 # sudo podman pull quay.io/ebattat/cloud-governance

@@ -34,7 +34,20 @@ from cloud_governance.main.es_uploader import ESUploader
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
-custodian_policies = ['ec2_idle', 'ebs_unattached', 'ec2_untag', 'ec2_run']
+
+
+def get_custodian_policies():
+    """
+    This method return a list of policies name without extension
+    @return: list of custodian policies name
+    """
+    custodian_policies = []
+    # policies_path working only inside the docker
+    policies_path = os.path.join(os.path.dirname(__file__), 'policy')
+    for (dirpath, dirnames, filenames) in os.walk(policies_path):
+        for filename in filenames:
+            custodian_policies.append(os.path.splitext(filename)[0])
+    return custodian_policies
 
 
 @logger_time_stamp
@@ -87,7 +100,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
     # custodian policy - check if its a custodian policy
-    elif any(policy == item for item in custodian_policies):
+    elif any(policy == item for item in get_custodian_policies()):
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
             dry_run = '--dryrun'
@@ -96,6 +109,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         else:  # default dry run
             dry_run = '--dryrun'
         policy_output = os.environ['policy_output']
+        # policies_path working only inside the docker
         # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
