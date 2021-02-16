@@ -1,10 +1,10 @@
-  1 policies:
-  2   - name: ec2-run
-  3     resource: ec2
-  4     description: stop EC2 instances that are running 5 days
-  5     filters:
-  6       - "State.Name": running
-  7       - type: instance-age
-  8         days: 5
-  9     actions:
- 10       - stop
+#policies:
+  - name: ec2-run
+    resource: ec2
+    description: stop EC2 instances that are running 5 days
+    filters:
+      - "State.Name": running
+      - type: instance-age
+        days: 5
+    actions:
+      - stop
