@@ -15,35 +15,14 @@ pipeline {
         }
         stage('Run Policies') {
             steps {
-               script {
-               try{
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
                  sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET'
-                 }
-               catch (err) {
-                    currentBuild.result = 'FAILURE'
-                    emailExtraMsg = "Build Failure:"+ err.getMessage()
-                    throw err
-                  }
-               }
             }
         }
         stage('Upload ElasticSearch') {
             steps {
-               script {
                  sh 'chmod 775 cloud_governance/main/./upload_es.sh'
-                 upload_es = sh(script: "cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST", returnStatus: true)
-                 if (upload_es != 0)
-                    {
-                        msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-                        emailext body: """\
-                        Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-                        """,
-                        subject: msg,
-                        to: env.contact
-                        System.exit(0)
-                    }
-               }
+                 sh 'cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST'
             }
         }
         stage('Cleanup workspace') {
