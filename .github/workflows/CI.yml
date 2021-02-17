@@ -78,7 +78,7 @@ jobs:
         
         # gileaks policy
         # GITHUB_TOKEN already taken => GIT_TOKEN
-         sudo podman run --rm --name cloud-governance -e policy='gitleaks' -e git_access_token=${{ secrets.GIT_TOKEN }} -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=${{ secrets.OUTPUT_BUCKET }}/test/$region-e log_level=INFO quay.io/ebattat/cloud-governance
+         sudo podman run --rm --name cloud-governance -e policy='gitleaks' -e git_access_token=${{ secrets.GIT_TOKEN }} -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=${{ secrets.OUTPUT_BUCKET }}/test/$region -e log_level=INFO quay.io/ebattat/cloud-governance
 
     - name: Bump Version
       run: |
