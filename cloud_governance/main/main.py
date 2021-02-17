@@ -31,8 +31,8 @@ from cloud_governance.main.es_uploader import ESUploader
 #os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
 #os.environ['git_repo'] = 'https://github.com/redhat-performance'
 # os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
-#os.environ['several_repos'] = 'Yes'
-# os.environ['upload_data_elk'] = 'upload_data_elk'
+#os.environ['several_repos'] = 'yes'
+#os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)

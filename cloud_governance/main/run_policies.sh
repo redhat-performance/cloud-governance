@@ -19,4 +19,4 @@ done
 
 echo "run gitleaks"
 policy='gitleaks'
-sudo podman run --rm --name cloud-governance -e policy=$policy -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=$policy -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=s3://$BUCKET/logs/$region -e log_level=INFO quay.io/ebattat/cloud-governance
