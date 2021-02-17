@@ -77,7 +77,8 @@ jobs:
         done
         
         # gileaks policy
-        sudo podman run --rm --name cloud-governance -e policy='gitleaks' -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+
+sudo podman run --rm --name cloud-governance -e policy='gitleaks' -e git_access_token=${{ secrets.GITHUB_TOKEN }} -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e log_level=INFO quay.io/ebattat/cloud-governance
 
     - name: Bump Version
       run: |
@@ -88,7 +89,7 @@ jobs:
         git config --global user.name  ${{ secrets.NAME }}
         bumpversion patch
         git commit .bumpversion.cfg setup.py -m 'bump version to exist version v'$version
-        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
+        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} --tag
 
