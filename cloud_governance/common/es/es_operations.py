@@ -70,19 +70,28 @@ class ESOperations:
                 data_dict = {'resources_list': [], 'resources_name_list': []}
                 # resources_name_list is a list of resources name
                 for i, item in enumerate(data_list):
-                    name = ''
+                    ec2_ebs_name = ''
+                    gitleaks_leakurl = ''
                     data_dict[f'resource{i + 1}'] = item
                     data_dict[f'resource_{i + 1}'] = 1
                     data_dict['resources'] = i + 1
+                    # ec2/ebs
                     if item.get('Tags'):
                         for val in item['Tags']:
                             if val['Key'] == 'Name':
                                 data_dict['resources_name_list'].append(val['Value'])
-                                name = val['Value']
+                                ec2_ebs_name = val['Value']
+                    # ec2
                     if item.get('InstanceId'):
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {name}")
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name}")
+                    # ebs
                     if item.get('VolumeId'):
-                        data_dict['resources_list'].append(f"{item['VolumeId']} | {name}")
+                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name}")
+                    # gitleaks
+                    if item.get('leakURL'):
+                        gitleaks_leakurl = item.get('leakURL')
+                    if item.get('email'):
+                        data_dict['resources_list'].append(f"{item.get('email')} | {gitleaks_leakurl}")
                 data = data_dict
         # no data for policy
         else:
