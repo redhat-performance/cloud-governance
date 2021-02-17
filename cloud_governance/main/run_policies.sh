@@ -18,5 +18,6 @@ do
 done
 
 echo "run gitleaks"
+region='us-east-1'
 policy='gitleaks'
-sudo podman run --rm --name cloud-governance -e policy=$policy -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=s3://$BUCKET/logs/$region -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=$policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$region -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=s3://$BUCKET/logs/$region -e log_level=INFO quay.io/ebattat/cloud-governance
