@@ -5,7 +5,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('cloud-governance-aws-secret-access-key')
         BUCKET = credentials('cloud-governance-bucket')
         ES_HOST = credentials('cloud-governance-es-host')
-        GIT_ACCESS_TOKEN = credentials('cloud-governance-git-access-token')
+        GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
         contact = "ebattat@redhat.com"
     }
     stages {
@@ -17,7 +17,7 @@ pipeline {
         stage('Run Policies') {
             steps {
                  sh 'chmod 775 cloud_governance/main/./run_policies.sh'
-                 sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $GIT_ACCESS_TOKEN'
+                 sh 'cloud_governance/main/./run_policies.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $GITHUB_TOKEN'
             }
         }
         stage('Upload ElasticSearch') {
