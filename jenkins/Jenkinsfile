@@ -16,14 +16,12 @@ pipeline {
         }
         stage('Run Policies') {
             steps {
-                 sh 'chmod 775 cloud_governance/main/./run_policies.sh'
-                 sh 'python3 cloud_governance/main/./run_policies.py $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $GITHUB_TOKEN'
+                 sh 'python3 cloud_governance/main/./run_policies.py'
             }
         }
         stage('Upload ElasticSearch') {
             steps {
-                 sh 'chmod 775 cloud_governance/main/./upload_es.sh'
-                 sh 'cloud_governance/main/./upload_es.sh $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY $BUCKET $ES_HOST'
+                 sh 'python3 cloud_governance/main/./upload_es.py'
             }
         }
         stage('Cleanup workspace') {
