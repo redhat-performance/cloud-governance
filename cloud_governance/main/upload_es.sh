@@ -33,4 +33,5 @@ done
 
 echo "Upload data to ElasticSearch - gitleaks index"
 es_index='cloud-governance-gitleaks'
+policy='gitleaks'
 sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e es_host=$ES_HOST -e es_port=$ES_PORT -e es_index=$es_index -e bucket=$BUCKET -e policy=$policy -e AWS_DEFAULT_REGION=$region -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e log_level=INFO quay.io/ebattat/cloud-governance
