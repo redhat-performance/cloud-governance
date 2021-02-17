@@ -77,7 +77,7 @@ jobs:
         done
         
         # gileaks policy
-        sudo podman run --rm --name cloud-governance -e policy=gitleaks -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e log_level=INFO quay.io/ebattat/cloud-governance
+        sudo podman run --rm --name cloud-governance -e policy='gitleaks' -e git_access_token=$GITHUB_TOKEN -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e log_level=INFO quay.io/ebattat/cloud-governance
 
     - name: Bump Version
       run: |
