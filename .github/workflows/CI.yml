@@ -88,7 +88,7 @@ jobs:
         git config --global user.name  ${{ secrets.NAME }}
         bumpversion patch
         git commit .bumpversion.cfg setup.py -m 'bump version to exist version v'$version
-        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} master
-        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GITHUB_REPOSITORY}} --tag
+        git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} master
+        git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
 
