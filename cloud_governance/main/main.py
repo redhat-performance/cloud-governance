@@ -92,7 +92,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         several_repos = os.environ.get('several_repos')
         policy_output = os.environ.get('policy_output', '')
         try:
-            if several_repos == 'Yes':
+            if several_repos == 'yes':
                 git_leaks = GitLeaks(git_access_token=git_access_token,
                                      git_repo=git_repo,
                                      several_repos=True)
@@ -177,7 +177,7 @@ def main():
             raise Exception(f'Missing Policy name: "{policy}"')
             logger.exception(f'Missing Policy name: "{policy}"')
         if region_env == 'all':
-            # must be set for bot03 client default region
+            # must be set for boto3 client default region
             os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
             ec2 = boto3.client('ec2')
             regions_data = ec2.describe_regions()
