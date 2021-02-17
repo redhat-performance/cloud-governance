@@ -1,7 +1,7 @@
 policies:
   - name: ec2-run
     resource: ec2
-    description: stop EC2 instances that are running 5 days
+    description: stop EC2 instances that are running 5 days without tag AlwayOn True
     filters:
       - "State.Name": running
       - type: instance-age

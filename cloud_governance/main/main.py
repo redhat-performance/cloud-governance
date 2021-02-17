@@ -18,18 +18,20 @@ from cloud_governance.main.es_uploader import ESUploader
 # os.environ['policy'] = 'ec2_untag'
 #os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['policy'] = 'tag_cluster_resource'
-# os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
+#os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
+#os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 #os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['resource_name'] = 'ocs-test'
 # os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
-# os.environ['policy'] = 'gitleaks'
-# os.environ['git_access_token'] = ''
-# os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
+#os.environ['policy'] = 'gitleaks'
+#os.environ['git_access_token'] = ''
+#os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
+#os.environ['git_repo'] = 'https://github.com/redhat-performance'
 # os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
-# os.environ['several_repos'] = 'Yes'
+#os.environ['several_repos'] = 'Yes'
 # os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
@@ -88,6 +90,7 @@ def run_policy(policy: str, region: str, dry_run: str):
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')
         several_repos = os.environ.get('several_repos')
+        policy_output = os.environ.get('policy_output', '')
         try:
             if several_repos == 'Yes':
                 git_leaks = GitLeaks(git_access_token=git_access_token,
@@ -96,7 +99,8 @@ def run_policy(policy: str, region: str, dry_run: str):
             else:
                 git_leaks = GitLeaks(git_access_token=git_access_token,
                                      git_repo=git_repo)
-            logger.info(git_leaks.scan_repo())
+            logger.info(git_leaks.write_result(policy_output, region, policy))
+
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
     # custodian policy - check if its a custodian policy
@@ -108,7 +112,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             dry_run = ''
         else:  # default dry run
             dry_run = '--dryrun'
-        policy_output = os.environ['policy_output']
+        policy_output = os.environ.get('policy_output', '')
         # policies_path working only inside the docker
         # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
@@ -125,7 +129,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             dry_run = ''
         else:  # default dry run
             dry_run = '--dryrun'
-        policy_output = os.environ['policy_output']
+        policy_output = os.environ.get('policy_output', '')
         # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
         if os.path.isfile(policy):
             os.system(f'custodian run {dry_run} -s {policy_output} {policy}')
@@ -143,7 +147,7 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
+    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     dry_run = os.environ.get('dry_run', 'yes')
     policy = os.environ.get('policy', '')
     upload_data_es = os.environ.get('upload_data_es', '')
