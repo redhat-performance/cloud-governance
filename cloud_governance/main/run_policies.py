@@ -1,6 +1,6 @@
 
 import os
-from cloud_governance.main.main import get_custodian_policies
+
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 BUCKET = os.environ['BUCKET']
@@ -8,7 +8,7 @@ GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
 print('Run all policies pre active region')
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
-policies = get_custodian_policies()
+policies = ['ec2_idle', 'ec2_untag', 'ec2_run', 'ebs_unattached']
 
 for region in regions:
     for policy in policies:
