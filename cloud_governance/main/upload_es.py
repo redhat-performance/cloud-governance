@@ -1,5 +1,6 @@
 
 import os
+from cloud_governance.main.main import get_custodian_policies
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -10,7 +11,7 @@ ES_PORT = 9200
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
 
 print("Upload data to ElasticSearch - ec2 index")
-policies = ['ec2_idle', 'ec2_untag', 'ec2_run']
+policies = get_custodian_policies(type='ec2')
 es_index = 'cloud-governance-ec2'
 for region in regions:
     for policy in policies:

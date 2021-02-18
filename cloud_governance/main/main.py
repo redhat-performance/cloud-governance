@@ -12,7 +12,7 @@ from cloud_governance.main.es_uploader import ESUploader
 
 
 # # env tests
-#os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
@@ -38,17 +38,22 @@ log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
 
 
-def get_custodian_policies():
+def get_custodian_policies(type: str = None):
     """
-    This method return a list of policies name without extension
+    This method return a list of policies name without extension, that can fitler by type
     @return: list of custodian policies name
     """
     custodian_policies = []
+    # path for debug only
+    # policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy')
     # policies_path working only inside the docker
     policies_path = os.path.join(os.path.dirname(__file__), 'policy')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
-            custodian_policies.append(os.path.splitext(filename)[0])
+            if not type:
+                custodian_policies.append(os.path.splitext(filename)[0])
+            elif type and type in filename:
+                custodian_policies.append(os.path.splitext(filename)[0])
     return custodian_policies
 
 
@@ -114,7 +119,7 @@ def run_policy(policy: str, region: str, dry_run: str):
             dry_run = '--dryrun'
         policy_output = os.environ.get('policy_output', '')
         # policies_path working only inside the docker
-        # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
+        # run from local - policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy', f'{policy}.yml')
         policies_path = os.path.join(os.path.dirname(__file__), 'policy')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
