@@ -6,9 +6,26 @@ AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 BUCKET = os.environ['BUCKET']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
+
+def get_custodian_policies(type: str = None):
+    """
+    This method return a list of policies name without extension, that can filter by type
+    @return: list of custodian policies name
+    """
+    custodian_policies = []
+    policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy')
+    for (dirpath, dirnames, filenames) in os.walk(policies_path):
+        for filename in filenames:
+            if not type:
+                custodian_policies.append(os.path.splitext(filename)[0])
+            elif type and type in filename:
+                custodian_policies.append(os.path.splitext(filename)[0])
+    return custodian_policies
+
+
 print('Run all policies pre active region')
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
-policies = ['ec2_idle', 'ec2_untag', 'ec2_run', 'ebs_unattached']
+policies = get_custodian_policies()
 
 for region in regions:
     for policy in policies:

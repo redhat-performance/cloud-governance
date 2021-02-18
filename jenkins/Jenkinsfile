@@ -21,7 +21,7 @@ pipeline {
         }
         stage('Upload ElasticSearch') {
             steps {
-                 sh 'python3 cloud_governance/main/upload_es.py'
+                 sh 'python3 cloud_governance/main/run_upload_es.py'
             }
         }
         stage('Cleanup workspace') {
