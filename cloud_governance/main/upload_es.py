@@ -11,7 +11,7 @@ ES_PORT = 9200
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
 
 print("Upload data to ElasticSearch - ec2 index")
-policies = get_custodian_policies(type='ec2')
+policies = ['ec2_idle', 'ec2_untag', 'ec2_run']
 es_index = 'cloud-governance-ec2'
 for region in regions:
     for policy in policies:
