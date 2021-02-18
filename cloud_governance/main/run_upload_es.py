@@ -7,10 +7,27 @@ BUCKET = os.environ['BUCKET']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = 9200
 
+
+def get_custodian_policies(type: str = None):
+    """
+    This method return a list of policies name without extension, that can filter by type
+    @return: list of custodian policies name
+    """
+    custodian_policies = []
+    policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy')
+    for (dirpath, dirnames, filenames) in os.walk(policies_path):
+        for filename in filenames:
+            if not type:
+                custodian_policies.append(os.path.splitext(filename)[0])
+            elif type and type in filename:
+                custodian_policies.append(os.path.splitext(filename)[0])
+    return custodian_policies
+
+
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
 
 print("Upload data to ElasticSearch - ec2 index")
-policies = ['ec2_idle', 'ec2_untag', 'ec2_run']
+policies = get_custodian_policies(type='ec2')
 es_index = 'cloud-governance-ec2'
 for region in regions:
     for policy in policies:

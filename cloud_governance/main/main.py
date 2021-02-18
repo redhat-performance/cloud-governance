@@ -40,7 +40,7 @@ logger.setLevel(level=log_level)
 
 def get_custodian_policies(type: str = None):
     """
-    This method return a list of policies name without extension, that can fitler by type
+    This method return a list of policies name without extension, that can filter by type
     @return: list of custodian policies name
     """
     custodian_policies = []
