@@ -72,6 +72,8 @@ class ESOperations:
                 for i, item in enumerate(data_list):
                     ec2_ebs_name = ''
                     gitleaks_leakurl = ''
+                    # cluster resource tag
+                    cluster_owned = ''
                     data_dict[f'resource{i + 1}'] = item
                     data_dict[f'resource_{i + 1}'] = 1
                     data_dict['resources'] = i + 1
@@ -81,9 +83,11 @@ class ESOperations:
                             if val['Key'] == 'Name':
                                 data_dict['resources_name_list'].append(val['Value'])
                                 ec2_ebs_name = val['Value']
+                            if val['Value'] == 'owned':
+                                cluster_owned = val['Key']
                     # ec2
                     if item.get('InstanceId'):
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name}")
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {cluster_owned}")
                     # ebs
                     if item.get('VolumeId'):
                         data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name}")
