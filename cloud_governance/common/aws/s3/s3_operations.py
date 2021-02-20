@@ -224,10 +224,9 @@ class S3Operations:
             if '_' in policy:
                 policy = policy.replace('_', '-')
             objs = self.__s3_client.list_objects_v2(Bucket=bucket,
-                                                    Prefix=f'{logs_bucket_key}/{policy}',
-                                                    MaxKeys=100)['Contents']
+                                                    Prefix=f'{logs_bucket_key}/{policy}')['Contents']
         except:
             return None
-        get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
-        full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified)][-1]
+        get_last_modified_key = lambda obj: int(obj['LastModified'].strftime('%s'))
+        full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified_key)][-1]
         return os.path.dirname(full_path)

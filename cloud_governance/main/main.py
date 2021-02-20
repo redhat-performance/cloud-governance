@@ -168,7 +168,7 @@ def main():
                       'es_port': int(es_port),
                       'es_index': es_index,
                       'es_doc_type': 'json_doc_type',
-                      'es_add_items': {},
+                      'es_add_items': {'account': account},
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
