@@ -160,6 +160,7 @@ def main():
     es_host = os.environ.get('es_host', '')
     es_port = os.environ.get('es_port', '')
     es_index = os.environ.get('es_index', '')
+    es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
     # 1. ELK Uploader
@@ -167,7 +168,7 @@ def main():
         input_data = {'es_host': es_host,
                       'es_port': int(es_port),
                       'es_index': es_index,
-                      'es_doc_type': 'json_doc_type',
+                      'es_doc_type': es_doc_type,
                       'es_add_items': {'account': account},
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
