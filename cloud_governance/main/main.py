@@ -167,7 +167,7 @@ def main():
         input_data = {'es_host': es_host,
                       'es_port': int(es_port),
                       'es_index': es_index,
-                      'es_doc_type': 'json_doc_type',
+                      'es_doc_type': 'cloud_governance_doc_type',
                       'es_add_items': {'account': account},
                       'bucket': bucket,
                       'logs_bucket_key': 'logs',
