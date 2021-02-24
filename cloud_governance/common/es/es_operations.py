@@ -74,7 +74,8 @@ class ESOperations:
                     gitleaks_leakurl = ''
                     # cluster resource tag
                     cluster_owned = ''
-                    data_dict[f'resource{i + 1}'] = item
+                    # filter all data to save place
+                    #data_dict[f'resource{i + 1}'] = item
                     data_dict[f'resource_{i + 1}'] = 1
                     data_dict['resources'] = i + 1
                     # ec2/ebs
