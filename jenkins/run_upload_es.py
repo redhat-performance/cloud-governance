@@ -31,8 +31,8 @@ regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
 
 print("Upload data to ElasticSearch - ec2 index")
 policies = get_custodian_policies(type='ec2')
-es_index = 'cloud-governance-instance'
-es_doc_type = 'cloud_governance_doc_type'
+es_index = 'cloud-governance-ec2-index'
+es_doc_type = '_doc'
 for region in regions:
     for policy in policies:
         os.system(f"sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='perf' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance")
@@ -40,8 +40,8 @@ for region in regions:
 
 
 print("Upload data to ElasticSearch - ebs index")
-es_index = 'cloud-governance-ebs'
-es_doc_type = 'cloud_governance_doc_type'
+es_index = 'cloud-governance-ebs-index'
+es_doc_type = '_doc'
 policies = get_custodian_policies(type='ebs')
 for region in regions:
     for policy in policies:
@@ -52,7 +52,7 @@ for region in regions:
 # Gitleaks run on github not related to any aws account
 print("Upload data to ElasticSearch - gitleaks index")
 es_index = 'cloud-governance-gitleaks'
-es_doc_type = 'cloud_governance_doc_type'
+es_doc_type = '_doc'
 region = 'us-east-1'
 policy = 'gitleaks'
 os.system(f"sudo podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='perf' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance")
