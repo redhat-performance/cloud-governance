@@ -87,10 +87,12 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2
+                    # instance id | name | instance type | cost($/day) | cluster id
                     if item.get('InstanceId'):
                         ec2_cost_day = 4.6
                         data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['InstanceType']} | {ec2_cost_day} | {cluster_owned} ")
                     # ebs
+                    # volume id | name | volume type | size(gb) | cost($/month)
                     if item.get('VolumeId'):
                         ebs_cost_month = 0.1
                         data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name} | {item['VolumeType']} | {item['Size']} | {ebs_cost_month}")
