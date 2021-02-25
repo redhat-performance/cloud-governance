@@ -88,10 +88,12 @@ class ESOperations:
                                 cluster_owned = val['Key']
                     # ec2
                     if item.get('InstanceId'):
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {cluster_owned}")
+                        ec2_cost_day = 4.6
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['InstanceType']} | {ec2_cost_day} | {cluster_owned} ")
                     # ebs
                     if item.get('VolumeId'):
-                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name}")
+                        ebs_cost_month = 0.1
+                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name} | {item['VolumeType']} | {item['Size']} | {ebs_cost_month}")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
