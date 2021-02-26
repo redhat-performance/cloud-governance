@@ -58,7 +58,6 @@ class ESOperations:
         @return:
         """
 
-
         if resource == 'ec2' and item_data['State']['Name'] == 'running':
             # Get current price for a given 'running' instance, region and os
             ec2_type_cost = '0'
