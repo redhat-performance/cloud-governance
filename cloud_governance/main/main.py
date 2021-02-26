@@ -154,6 +154,7 @@ def main():
     # environment variables - get while running the docker
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
+
     account = os.environ.get('account', '')
     policy = os.environ.get('policy', '')
     upload_data_es = os.environ.get('upload_data_es', '')
