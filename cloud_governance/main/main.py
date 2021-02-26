@@ -18,13 +18,13 @@ from cloud_governance.main.es_uploader import ESUploader
 # os.environ['policy'] = 'ec2_untag'
 #os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['policy'] = 'tag_cluster_resource'
-#os.environ['policy_output'] ='s3://redhat-cloud-governance/logs'
+#os.environ['policy_output'] ='s3://cloud-governance/logs'
 #os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 #os.environ['dry_run'] = 'yes'
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['resource_name'] = 'ocs-test'
-# os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
+# os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 #os.environ['policy'] = 'gitleaks'
 #os.environ['git_access_token'] = ''

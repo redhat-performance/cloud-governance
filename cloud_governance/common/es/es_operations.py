@@ -118,7 +118,7 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2
-                    # instance id | name | State | instance type | cost($) | cluster id
+                    # instance id | name | state | instance type | cost($) | cluster id
                     if item.get('InstanceId'):
                         ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
                         data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['State']['Name']} | {item['InstanceType']} | {ec2_cost} | {cluster_owned} ")
