@@ -57,20 +57,24 @@ class ESOperations:
         This method calculate ec2 cost from launch time or ebs per month in $
         @return:
         """
+        ec2_type_cost = ''
+        ebs_monthly_cost = ''
         if resource == 'ec2' and item_data['State']['Name'] == 'running':
             # Get current price for a given 'running' instance, region and os
             try:
-                ec2_type_price = self.__aws_price.get_price(self.__aws_price.get_region_name(self.__region),
+                ec2_type_cost = self.__aws_price.get_price(self.__aws_price.get_region_name(self.__region),
                                                             item_data['InstanceType'], 'Linux')
+                ec2_lanuch_time = item_data['LaunchTime']
+                d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
+                d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
+                diff = d2 - d1
+                diff_in_hours = diff.total_seconds() / 3600
+                ec2_cost = round(float(ec2_type_cost) * diff_in_hours, 3)
             except:
-                ec2_cost = '4.6'
-            ec2_lanuch_time = item_data['LaunchTime']
-            d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
-            d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
-            diff = d2 - d1
-            diff_in_hours = diff.total_seconds() / 3600
-            ec2_cost = round(float(ec2_type_price) * diff_in_hours, 3)
-            return ec2_cost
+                ec2_cost = 'NA'
+                return ec2_cost
+        elif resource == 'ec2' and item_data['State']['Name'] != 'running':
+            return '0'
         elif resource == 'ebs':
             if item_data['VolumeType'] == 'gp2':
                 ebs_monthly_cost = 0.1 * item_data['Size']
