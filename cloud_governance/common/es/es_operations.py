@@ -72,7 +72,7 @@ class ESOperations:
                 ec2_cost = round(float(ec2_type_cost) * diff_in_hours, 3)
             except:
                 ec2_cost = 'NA'
-                return ec2_cost
+            return ec2_cost
         elif resource == 'ec2' and item_data['State']['Name'] != 'running':
             return '0'
         elif resource == 'ebs':
