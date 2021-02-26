@@ -3,8 +3,10 @@ import json
 import os
 import tempfile
 from datetime import datetime
-from cloud_governance.common.aws.s3.s3_operations import S3Operations
+from time import strftime
 from elasticsearch import Elasticsearch
+from cloud_governance.common.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.aws.price.price import AWSPrice
 
 
 class ESOperations:
@@ -19,7 +21,8 @@ class ESOperations:
         self.__s3_operation = S3Operations(region_name=self.__region)
         self.__bucket = bucket
         self.__logs_bucket_key = logs_bucket_key
-        self.es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
+        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
+        self.__aws_price = AWSPrice()
 
     def __get_s3_latest_policy_file(self, policy: str):
         """
@@ -49,6 +52,34 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
+    def __get_resource_cost(self, resource: str, item_data: dict):
+        """
+        This method calculate ec2 cost from launch time or ebs per month in $
+        @return:
+        """
+        if resource == 'ec2':
+            # Get current price for a given instance, region and os
+            try:
+                ec2_type_price = self.__aws_price.get_price(self.__aws_price.get_region_name(self.__region),
+                                                            item_data['InstanceType'], 'Linux')
+            except:
+                ec2_cost = '4.6'
+            ec2_lanuch_time = item_data['LaunchTime']
+            d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
+            d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
+            diff = d2 - d1
+            diff_in_hours = diff.total_seconds() / 3600
+            ec2_cost = round(float(ec2_type_price) * diff_in_hours, 3)
+            return ec2_cost
+        elif resource == 'ebs':
+            if item_data['VolumeType'] == 'gp2':
+                ebs_monthly_cost = 0.1 * item_data['Size']
+            elif item_data['VolumeType'] == 'io1':
+                ebs_monthly_cost = 0.125 * item_data['Size']
+            else:
+                ebs_monthly_cost = 0.1 * item_data['Size']
+            return ebs_monthly_cost
+
     def upload_last_policy_to_es(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
@@ -75,8 +106,8 @@ class ESOperations:
                     # cluster resource tag
                     cluster_owned = ''
                     # filter all data to save place
-                    #data_dict[f'resource{i + 1}'] = item
-                    data_dict[f'resource_{i + 1}'] = 1
+                    # data_dict[f'resource{i + 1}'] = item
+                    # data_dict[f'resource_{i + 1}'] = 1
                     data_dict['resources'] = i + 1
                     # ec2/ebs
                     if item.get('Tags'):
@@ -87,15 +118,15 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2
-                    # instance id | name | instance type | cost($/day) | cluster id
+                    # instance id | name | State | instance type | cost($) | cluster id
                     if item.get('InstanceId'):
-                        ec2_cost_day = 4.6
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['InstanceType']} | {ec2_cost_day} | {cluster_owned} ")
+                        ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['State']['Name']} | {item['InstanceType']} | {ec2_cost} | {cluster_owned} ")
                     # ebs
                     # volume id | name | volume type | size(gb) | cost($/month)
                     if item.get('VolumeId'):
-                        ebs_cost_month = 0.1
-                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name} | {item['VolumeType']} | {item['Size']} | {ebs_cost_month}")
+                        ebs_monthly_cost = self.__get_resource_cost(resource='ebs', item_data=item)
+                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost}")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
@@ -116,10 +147,10 @@ class ESOperations:
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
-                self.es.index(index=index, doc_type=doc_type, body=data)
+                self.__es.index(index=index, doc_type=doc_type, body=data)
             else:  # JSON Array
                 for record in data:
-                    self.es.index(index=index, doc_type=doc_type, body=record)
+                    self.__es.index(index=index, doc_type=doc_type, body=record)
             return True
         except Exception:
             raise
