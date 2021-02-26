@@ -154,14 +154,15 @@ def main():
     # environment variables - get while running the docker
     region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
-    account = os.environ.get('account', 'perf')
-    policy = os.environ.get('policy', 'ec2_untag')
-    upload_data_es = os.environ.get('upload_data_es', 'upload_data_es')
-    es_host = os.environ.get('es_host', '10.1.170.102')
-    es_port = os.environ.get('es_port', '9200')
-    es_index = os.environ.get('es_index', 'cloud-governance-ec2-index')
-    es_doc_type = os.environ.get('es_doc_type', '_doc')
-    bucket = os.environ.get('bucket', 'redhat-cloud-governance')
+
+    account = os.environ.get('account', '')
+    policy = os.environ.get('policy', '')
+    upload_data_es = os.environ.get('upload_data_es', '')
+    es_host = os.environ.get('es_host', '')
+    es_port = os.environ.get('es_port', '')
+    es_index = os.environ.get('es_index', '')
+    es_doc_type = os.environ.get('es_doc_type', '')
+    bucket = os.environ.get('bucket', '')
 
     # 1. ELK Uploader
     if upload_data_es:
