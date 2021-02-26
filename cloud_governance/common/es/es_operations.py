@@ -57,8 +57,6 @@ class ESOperations:
         This method calculate ec2 cost from launch time or ebs per month in $
         @return:
         """
-
-
         if resource == 'ec2' and item_data['State']['Name'] == 'running':
             # Get current price for a given 'running' instance, region and os
             ec2_type_cost = '0'
@@ -96,7 +94,6 @@ class ESOperations:
         :param es_add_items:
         :return:
         """
-
         # fetch data from s3 per region/policy
         data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
