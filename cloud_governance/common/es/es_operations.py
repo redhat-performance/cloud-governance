@@ -57,8 +57,8 @@ class ESOperations:
         This method calculate ec2 cost from launch time or ebs per month in $
         @return:
         """
-        if resource == 'ec2':
-            # Get current price for a given instance, region and os
+        if resource == 'ec2' and item_data['State']['Name'] == 'running':
+            # Get current price for a given 'running' instance, region and os
             try:
                 ec2_type_price = self.__aws_price.get_price(self.__aws_price.get_region_name(self.__region),
                                                             item_data['InstanceType'], 'Linux')
