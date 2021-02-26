@@ -94,7 +94,6 @@ class ESOperations:
         :param es_add_items:
         :return:
         """
-
         # fetch data from s3 per region/policy
         data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
