@@ -24,7 +24,7 @@ from cloud_governance.main.es_uploader import ESUploader
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['resource_name'] = 'ocs-test'
-# os.environ['mandatory_tags'] = "{'Owner': 'Eli Battat','Email': 'ebattat@redhat.com','Purpose': 'test'}"
+# os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 #os.environ['policy'] = 'gitleaks'
 #os.environ['git_access_token'] = ''
