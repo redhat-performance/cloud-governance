@@ -1,7 +1,7 @@
 
 import os
 import typeguard
-from time import strftime, gmtime
+from time import strftime
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
