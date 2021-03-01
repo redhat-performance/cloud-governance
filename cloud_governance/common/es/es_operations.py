@@ -61,7 +61,12 @@ class ESOperations:
             # Get current price for a given 'running' instance, region and os
             ec2_type_cost = '0'
             try:
-                ec2_type_cost = self.__aws_price.get_price(self.__aws_price.get_region_name(self.__region),
+                # walk around for NA values in eu-central-1
+                if self.__region == 'eu-central-1':
+                    curr_region = 'us-east-1'
+                else:
+                    curr_region = self.__region
+                ec2_type_cost = self.__aws_price.get_price(self.__aws_price.get_region_name(curr_region),
                                                             item_data['InstanceType'], 'Linux')
             except:
                 return 'NA'
