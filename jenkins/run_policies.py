@@ -28,7 +28,7 @@ def get_custodian_policies(type: str = None):
 
 
 print('Run all policies pre active region')
-regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
+regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1']
 policies = get_custodian_policies()
 
 for region in regions:

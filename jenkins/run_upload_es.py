@@ -27,7 +27,7 @@ def get_custodian_policies(type: str = None):
     return custodian_policies
 
 
-regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
+regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1']
 
 print("Upload data to ElasticSearch - ec2 index")
 policies = get_custodian_policies(type='ec2')
