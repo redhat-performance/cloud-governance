@@ -164,7 +164,6 @@ def main():
     es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
-
     # 1. ELK Uploader
     if upload_data_es:
         input_data = {'es_host': es_host,
