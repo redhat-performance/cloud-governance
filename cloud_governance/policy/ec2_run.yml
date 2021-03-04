@@ -4,8 +4,6 @@ policies:
     description: stop EC2 instances that are running 5 days without tag AlwayOn True
     filters:
       - "State.Name": running
-      - type: instance-age
-        days: 5
       - not:
           - tag:AlwayOn: "True"
     actions:

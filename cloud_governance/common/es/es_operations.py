@@ -126,15 +126,15 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2
-                    # instance id | name | state | instance type | cost($) | cluster id
+                    # name | instance id  | instance type | launch time | state  | cost($) | cluster id
                     if item.get('InstanceId'):
                         ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {ec2_ebs_name} | {item['State']['Name']} | {item['InstanceType']} | {ec2_cost} | {cluster_owned} ")
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime']} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
                     # ebs
-                    # volume id | name | volume type | size(gb) | cost($/month)
+                    # name | volume id | volume type | size(gb) | cost($/month)
                     if item.get('VolumeId'):
                         ebs_monthly_cost = self.__get_resource_cost(resource='ebs', item_data=item)
-                        data_dict['resources_list'].append(f"{item['VolumeId']} | {ec2_ebs_name} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost}")
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost}")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
