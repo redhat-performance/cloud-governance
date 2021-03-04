@@ -129,7 +129,7 @@ class ESOperations:
                     # name | instance id  | instance type | launch time | state  | cost($) | cluster id
                     if item.get('InstanceId'):
                         ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime']} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-9].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
                     # ebs
                     # name | volume id | volume type | size(gb) | cost($/month)
                     if item.get('VolumeId'):
