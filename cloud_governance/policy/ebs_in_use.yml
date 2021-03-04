@@ -1,0 +1,10 @@
+policies:
+ - name: ebs-in-use
+   resource: ebs
+   comments: |
+    list in use EBS
+   filters:
+     - type: value 
+       key: "State"
+       value: "in-use"
+

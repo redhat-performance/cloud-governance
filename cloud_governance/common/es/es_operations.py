@@ -131,10 +131,10 @@ class ESOperations:
                         ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-9].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
                     # ebs
-                    # name | volume id | volume type | size(gb) | cost($/month)
+                    # name | volume id | volume type | size(gb) | cost($/month) | cluster id
                     if item.get('VolumeId'):
                         ebs_monthly_cost = self.__get_resource_cost(resource='ebs', item_data=item)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost}")
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost} | {cluster_owned} ")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
