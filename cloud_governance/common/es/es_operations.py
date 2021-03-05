@@ -55,7 +55,7 @@ class ESOperations:
                     return f.read()
 
     @staticmethod
-    def __get_cluster_cost(data):
+    def __get_cluster_cost(data, resource):
         """
         This method aggregate cluster cost data
         @param data:
@@ -73,7 +73,7 @@ class ESOperations:
         # cluster | cost
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
-                cluster_cost_results.append(f'other | {item_df} ')
+                cluster_cost_results.append(f'{resource}  | {item_df} ')
             else:
                 cluster_cost_results.append(f'{index_df} | {item_df} ')
         return cluster_cost_results
@@ -120,7 +120,7 @@ class ESOperations:
         :param es_add_items:
         :return:
         """
-        ec2_ebs_name = ''
+        resource = ''
         # fetch data from s3 per region/policy
         data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
@@ -148,11 +148,13 @@ class ESOperations:
                     # ec2
                     # name | instance id  | instance type | launch time | state  | cost($) | cluster id
                     if item.get('InstanceId'):
+                        resource = 'ec2'
                         ec2_cost = self.__get_resource_cost(resource='ec2', item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-9].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
                     # ebs
                     # name | volume id | volume type | size(gb) | cost($/month) | cluster id
                     if item.get('VolumeId'):
+                        resource = 'ebs'
                         ebs_monthly_cost = self.__get_resource_cost(resource='ebs', item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost} | {cluster_owned} ")
                     # gitleaks
@@ -162,8 +164,8 @@ class ESOperations:
                         data_dict['resources_list'].append(f"{item.get('email')} | {gitleaks_leakurl}")
 
                 # get cluster cost data only for ec2 and ebs
-                if ec2_ebs_name:
-                    data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict)
+                if resource:
+                    data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict, resource=resource)
                 data = data_dict
         # no data for policy
         else:
