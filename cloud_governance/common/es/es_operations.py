@@ -54,6 +54,29 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
+    def __get_cluster_cost(self, data):
+        """
+        This method aggregate cluster cost data
+        @param data:
+        @return:
+        """
+        # aggregate ec2/ebs cluster cost data
+        resource_data = [item.split('|') for item in data['resources_list']]
+        df = pd.DataFrame(resource_data)
+        # cost column: remove space
+        df[df.columns[-2]] = df[df.columns[-2]].str.strip()
+        # cost column: change to float
+        df[df.columns[-2]] = df[df.columns[-2]].astype(float)
+        cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
+        cluster_cost_results = []
+        # cluster | cost
+        for index_df, item_df in cluster_cost.items():
+            if index_df == '  ':
+                cluster_cost_results.append(f'other | {item_df} ')
+            else:
+                cluster_cost_results.append(f'{index_df} | {item_df} ')
+        return cluster_cost_results
+
     def __get_resource_cost(self, resource: str, item_data: dict):
         """
         This method calculate ec2 cost from launch time or ebs per month in $
@@ -135,6 +158,8 @@ class ESOperations:
                         gitleaks_leakurl = item.get('leakURL')
                     if item.get('email'):
                         data_dict['resources_list'].append(f"{item.get('email')} | {gitleaks_leakurl}")
+
+                data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict)
                 data = data_dict
         # no data for policy
         else:
@@ -147,22 +172,6 @@ class ESOperations:
         # utcnow - solve timestamp issue
         data['timestamp'] = datetime.utcnow()  # datetime.now()
 
-        # aggregate ec2/ebs cluster data
-        resource_data = [item.split('|') for item in data['resources_list']]
-        df = pd.DataFrame(resource_data)
-        # cost column: remove space
-        df[df.columns[-2]] = df[df.columns[-2]].str.strip()
-        # cost column: change to float
-        df[df.columns[-2]] = df[df.columns[-2]].astype(float)
-        cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
-        cluster_cost_results = []
-        # cluster | cost
-        for index_df, item_df in cluster_cost.items():
-            if index_df == '  ':
-                cluster_cost_results.append(f'other | {item_df} ')
-            else:
-                cluster_cost_results.append(f'{index_df} | {item_df} ')
-        data['cluster_cost_data'] = cluster_cost_results
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
