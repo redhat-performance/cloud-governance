@@ -54,7 +54,8 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
-    def __get_cluster_cost(self, data):
+    @staticmethod
+    def __get_cluster_cost(data):
         """
         This method aggregate cluster cost data
         @param data:
