@@ -4,6 +4,8 @@ import os
 import tempfile
 from datetime import datetime
 from time import strftime
+import pandas as pd
+
 from elasticsearch import Elasticsearch
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.aws.price.price import AWSPrice
@@ -61,11 +63,6 @@ class ESOperations:
             # Get current price for a given 'running' instance, region and os
             ec2_type_cost = '0'
             try:
-                # walk around for NA values in eu-central-1
-                # if self.__region == 'eu-central-1':
-                #     curr_region = 'us-east-1'
-                # else:
-                #     curr_region = self.__region
                 ec2_type_cost = self.__aws_price.get_price(self.__aws_price.get_region_name('us-east-1'),
                                                             item_data['InstanceType'], 'Linux')
             except:
@@ -105,9 +102,8 @@ class ESOperations:
             data_list = json.loads(data)
             # if json folding in list need to extract it
             if type(data_list) == list:
-                # resources_list\resources_name_list is a list of ids\names that was triggered by policy
-                data_dict = {'resources_list': [], 'resources_name_list': []}
-                # resources_name_list is a list of resources name
+                # resources_list is a list of items that was triggered by policy
+                data_dict = {'resources_list': []}
                 for i, item in enumerate(data_list):
                     ec2_ebs_name = ''
                     gitleaks_leakurl = ''
@@ -121,7 +117,6 @@ class ESOperations:
                     if item.get('Tags'):
                         for val in item['Tags']:
                             if val['Key'] == 'Name':
-                                data_dict['resources_name_list'].append(val['Value'])
                                 ec2_ebs_name = val['Value']
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
@@ -152,6 +147,22 @@ class ESOperations:
         # utcnow - solve timestamp issue
         data['timestamp'] = datetime.utcnow()  # datetime.now()
 
+        # aggregate ec2/ebs cluster data
+        resource_data = [item.split('|') for item in data['resources_list']]
+        df = pd.DataFrame(resource_data)
+        # cost column: remove space
+        df[df.columns[-2]] = df[df.columns[-2]].str.strip()
+        # cost column: change to float
+        df[df.columns[-2]] = df[df.columns[-2]].astype(float)
+        cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
+        cluster_cost_results = []
+        # cluster | cost
+        for index_df, item_df in cluster_cost.items():
+            if index_df == '  ':
+                cluster_cost_results.append(f'other | {item_df} ')
+            else:
+                cluster_cost_results.append(f'{index_df} | {item_df} ')
+        data['cluster_cost_data'] = cluster_cost_results
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object

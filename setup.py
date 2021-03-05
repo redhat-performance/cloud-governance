@@ -43,8 +43,8 @@ setup(
         'c7n',  # custodian
         'requests',  # rest api & lambda
         'PyGithub',  # gitleaks
-        'elasticsearch'  # optional
-
+        'elasticsearch',  # optional
+        'pandas'  # aggregate ec2/ebs cluster data
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
