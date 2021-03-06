@@ -67,7 +67,7 @@ class ESOperations:
         # cost column: remove space
         df[df.columns[-2]] = df[df.columns[-2]].str.strip()
         # cost column: change to float
-        df[df.columns[-2]] = df[df.columns[-2]].astype(float)
+        df[df.columns[-2]] = df[df.columns[-2]].astype(float).round(3)
         cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
         cluster_cost_results = []
         # cluster | cost
