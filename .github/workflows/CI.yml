@@ -57,6 +57,7 @@ jobs:
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
         twine upload dist/*
+        sleep 30
     - name: Upload to quay.io
       run: |
         version=$(python3 setup.py --version)
