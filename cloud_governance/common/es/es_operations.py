@@ -97,7 +97,7 @@ class ESOperations:
             diff = d2 - d1
             diff_in_hours = diff.total_seconds() / 3600
             ec2_cost = round(float(ec2_type_cost) * diff_in_hours, 3)
-            return ec2_cost
+            return round(ec2_cost, 3)
         elif resource == 'ec2' and item_data['State']['Name'] != 'running':
             return '0'
         elif resource == 'ebs':
@@ -108,7 +108,7 @@ class ESOperations:
                 ebs_monthly_cost = 0.125 * item_data['Size']
             else:
                 ebs_monthly_cost = 0.1 * item_data['Size']
-            return ebs_monthly_cost
+            return round(ebs_monthly_cost, 3)
 
     def upload_last_policy_to_es(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
         """
