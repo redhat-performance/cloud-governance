@@ -73,9 +73,9 @@ class ESOperations:
         # cluster | cost
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
-                cluster_cost_results.append(f'{resource} (non cluster) | {item_df} ')
+                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
             else:
-                cluster_cost_results.append(f'{index_df} | {item_df} ')
+                cluster_cost_results.append(f'{index_df} | {round(item_df, 3)} ')
         return cluster_cost_results
 
     def __get_resource_cost(self, resource: str, item_data: dict):
