@@ -1,8 +1,9 @@
 
 import json
 import os
+import boto3
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import strftime
 import pandas as pd
 
@@ -25,6 +26,8 @@ class ESOperations:
         self.__logs_bucket_key = logs_bucket_key
         self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
         self.__aws_price = AWSPrice()
+        self.__iam_client = boto3.client('iam', region_name=region)
+        self.__trail_client = boto3.client('cloudtrail')
 
     def __get_s3_latest_policy_file(self, policy: str):
         """
@@ -54,13 +57,64 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
-    @staticmethod
-    def __get_cluster_cost(data, resource):
+    def __find_username_in_events(self, cluster_user, date_time):
+        """
+        This method find user name in cloud trail events according to date time
+        @param cluster_user:
+        @param date_time:
+        @return:
+        """
+        diff = timedelta(seconds=1)
+        end_date_time = date_time + diff
+        response = self.__trail_client.lookup_events(
+            StartTime=date_time,
+            EndTime=end_date_time,
+            MaxResults=123
+        )
+        if response:
+            for event in response['Events']:
+                if event.get('Username'):
+                    return event['Username']
+        return ''
+
+    def __get_cluster_user(self, clusters):
+        """
+        This method find cluster user according to cluster owned tag
+        1. Scan each user and verify if it is a cluster, if yes return Creation time
+        2. Scan in CloudTrail the Creation time and return the user
+        """
+        cluster_user = {}
+        for cluster in cluster_user:
+            cluster_user[cluster] = ''
+        clusters_key = clusters.keys()
+        cluster_create_date_dict = {}
+        users = self.__iam_client.list_users()
+        users_data = users['Users']
+        for user in users_data:
+            user_name = user['UserName']
+            user_data = self.__iam_client.get_user(UserName=user_name)
+            data = user_data['User']
+            user_id = data['UserId']
+            create_date = data['CreateDate']
+            if data.get('Tags'):
+                for tag in data['Tags']:
+                    for cluster in clusters_key:
+                        if tag['Key'].split() == cluster.split():
+                            cluster_create_date_dict[cluster] = create_date
+        for cluster, date_time in cluster_create_date_dict.items():
+            user_name = self.__find_username_in_events(cluster_user, date_time)
+            cluster_user[cluster] = user_name
+        return cluster_user
+
+    def __get_cluster_cost(self, data, resource, clusters):
         """
         This method aggregate cluster cost data
         @param data:
+        @param resource:
+        @param clusters:
         @return:
         """
+        clusters_user = self.__get_cluster_user(clusters=clusters)
         # aggregate ec2/ebs cluster cost data
         resource_data = [item.split('|') for item in data['resources_list']]
         df = pd.DataFrame(resource_data)
@@ -70,12 +124,12 @@ class ESOperations:
         df[df.columns[-2]] = df[df.columns[-2]].astype(float).round(3)
         cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
         cluster_cost_results = []
-        # cluster | cost
+        # cluster | user | cost | launch time
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
-                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
+                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} | NA ')
             else:
-                cluster_cost_results.append(f'{index_df} | {round(item_df, 3)} ')
+                cluster_cost_results.append(f'{index_df.strip()} | {clusters_user[index_df.strip()]} | {round(item_df, 3)} | {clusters[index_df.strip()]}')
         return cluster_cost_results
 
     def __get_resource_cost(self, resource: str, item_data: dict):
@@ -124,6 +178,8 @@ class ESOperations:
         # fetch data from s3 per region/policy
         data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
+            # cluster owned launch time
+            clusters_dict = {}
             data_list = json.loads(data)
             # if json folding in list need to extract it
             if type(data_list) == list:
@@ -151,12 +207,16 @@ class ESOperations:
                         resource = 'ec2'
                         ec2_cost = self.__get_resource_cost(resource=resource, item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-9].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
+                        if cluster_owned:
+                            clusters_dict[cluster_owned] = item['LaunchTime'][:-9].replace('T', ' ')
                     # ebs
                     # name | volume id | volume type | size(gb) | cost($/month) | cluster id
                     if item.get('VolumeId'):
                         resource = 'ebs'
                         ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost} | {cluster_owned} ")
+                        if cluster_owned:
+                            clusters_dict[cluster_owned] = item['LaunchTime'][:-9].replace('T', ' ')
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
@@ -165,7 +225,7 @@ class ESOperations:
 
                 # get cluster cost data only for ec2 and ebs
                 if resource:
-                    data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict, resource=resource)
+                    data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict, resource=resource, clusters=clusters_dict)
                 data = data_dict
         # no data for policy
         else:
