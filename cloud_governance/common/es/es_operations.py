@@ -57,10 +57,9 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
-    def __find_username_in_events(self, cluster_user, date_time):
+    def __find_username_in_events(self, date_time):
         """
         This method find user name in cloud trail events according to date time
-        @param cluster_user:
         @param date_time:
         @return:
         """
@@ -102,7 +101,7 @@ class ESOperations:
                         if tag['Key'].split() == cluster.split():
                             cluster_create_date_dict[cluster] = create_date
         for cluster, date_time in cluster_create_date_dict.items():
-            user_name = self.__find_username_in_events(cluster_user, date_time)
+            user_name = self.__find_username_in_events(date_time)
             cluster_user[cluster] = user_name
         return cluster_user
 
