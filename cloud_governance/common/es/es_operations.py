@@ -123,13 +123,18 @@ class ESOperations:
         df[df.columns[-2]] = df[df.columns[-2]].astype(float).round(3)
         cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
         cluster_cost_results = []
-        # cluster | cost | user | launch time
+        cluster_cost_dict = {}
+        # cluster | cost($) | user | launch time
+        num = 0
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
                 cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} | NA | NA ')
+                cluster_cost_dict[f'{resource} (non cluster)'] = {'cost': str(round(item_df, 3))}
             else:
                 cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user[index_df.strip()]} | {clusters_launch_time[index_df.strip()]} ')
-        return cluster_cost_results
+                cluster_cost_dict[f'resource_{num}'] = {'name': index_df.strip(), 'cost': str(round(item_df, 3)), 'user': clusters_user[index_df.strip()], 'launach_time': clusters_launch_time[index_df.strip()]}
+        num += 1
+        return cluster_cost_results, cluster_cost_dict
 
     def __get_resource_cost(self, resource: str, item_data: dict):
         """
@@ -224,7 +229,9 @@ class ESOperations:
 
                 # get cluster cost data only for ec2 and ebs
                 if resource:
-                    data_dict['cluster_cost_data'] = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
+                    cluster_cost_results, cluster_cost_dict = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
+                    data_dict['cluster_cost_data'] = cluster_cost_results
+                    data_dict['cluster_cost_info'] = cluster_cost_dict
                 data = data_dict
         # no data for policy
         else:
