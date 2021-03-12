@@ -128,11 +128,11 @@ class ESOperations:
         num = 0
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
-                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} | NA | NA ')
+                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
                 cluster_cost_dict[f'{resource} (non cluster)'] = {'cost': str(round(item_df, 3))}
             else:
-                cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user[index_df.strip()]} | {clusters_launch_time[index_df.strip()]} ')
-                cluster_cost_dict[f'resource_{num}'] = {'name': index_df.strip(), 'cost': str(round(item_df, 3)), 'user': clusters_user[index_df.strip()], 'launach_time': clusters_launch_time[index_df.strip()]}
+                cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user.get(index_df.strip())} | {clusters_launch_time.get(index_df.strip())} ')
+                cluster_cost_dict[f'resource_{num}'] = {'name': index_df.strip(), 'cost': str(round(item_df, 3)), 'user': clusters_user.get(index_df.strip()), 'launach_time': clusters_launch_time.get(index_df.strip())}
         num += 1
         return cluster_cost_results, cluster_cost_dict
 
@@ -210,9 +210,9 @@ class ESOperations:
                     if item.get('InstanceId'):
                         resource = 'ec2'
                         ec2_cost = self.__get_resource_cost(resource=resource, item_data=item)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-9].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-15].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
                         if cluster_owned:
-                            clusters_launch_time_dict[cluster_owned] = item['LaunchTime'][:-9].replace('T', ' ')
+                            clusters_launch_time_dict[cluster_owned] = item['LaunchTime'][:-15].replace('T', ' ')
                     # ebs
                     # name | volume id | volume type | size(gb) | cost($/month) | cluster id
                     if item.get('VolumeId'):
@@ -220,7 +220,7 @@ class ESOperations:
                         ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost} | {cluster_owned} ")
                         if cluster_owned:
-                            clusters_launch_time_dict[cluster_owned] = item['LaunchTime'][:-9].replace('T', ' ')
+                            clusters_launch_time_dict[cluster_owned] = item['CreateTime'][:-15].replace('T', ' ')
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')

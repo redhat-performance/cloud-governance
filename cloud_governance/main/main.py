@@ -177,7 +177,7 @@ def main():
                       'policy': policy,
                       }
         elk_uploader = ESUploader(**input_data)
-        elk_uploader.upload_to_es()
+        elk_uploader.upload_to_es(account=account)
     # 2. POLICY
     else:
         if not policy:
