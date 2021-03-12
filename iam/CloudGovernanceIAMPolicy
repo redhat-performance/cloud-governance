@@ -19,12 +19,7 @@
                 "iam:GetUserPolicy",
                 "iam:GetUser"
             ],
-            "Resource": [
-                "arn:aws:iam:::role/*",
-                "arn:aws:iam:::instance-profile/*",
-                "arn:aws:iam:::user/*",
-                "arn:aws:iam:::group/*"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "VisualEditor1",
