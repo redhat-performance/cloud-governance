@@ -66,6 +66,8 @@ jobs:
         sudo podman login quay.io -u ${{ secrets.QAUYIO_ROBOT_USER }} -p ${{ secrets.QAUYIO_ROBOT_TOKEN }}
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}:v$version
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
+        echo 'Wait 30 sec till image will be updated in quay.io'
+        sleep 30
     - name: E2E tests using latest quay.io
       run: |
         declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2' 'eu-central-1')
