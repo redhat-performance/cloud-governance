@@ -20,7 +20,7 @@ class ESUploader:
         self.__policy_name = kwargs.get('policy')
 
     @logger_time_stamp
-    def upload_to_es(self):
+    def upload_to_es(self, account):
         """
         This method upload data to input ELK
         """
