@@ -133,7 +133,7 @@ class ESOperations:
             else:
                 cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user.get(index_df.strip())} | {clusters_launch_time.get(index_df.strip())} ')
                 cluster_cost_dict[f'resource_{num}'] = {'name': index_df.strip(), 'cost': str(round(item_df, 3)), 'user': clusters_user.get(index_df.strip()), 'launach_time': clusters_launch_time.get(index_df.strip())}
-        num += 1
+            num += 1
         return cluster_cost_results, cluster_cost_dict
 
     def __get_resource_cost(self, resource: str, item_data: dict):
