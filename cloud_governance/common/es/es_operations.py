@@ -124,17 +124,17 @@ class ESOperations:
         cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
         cluster_cost_results = []
         cluster_cost_dict = {}
-        # cluster | cost($) | user | launch time
+        # title: cluster | cost($) | user | launch time
         num = 0
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
                 cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
-                cluster_cost_dict[f'{resource} (non cluster)'] = {'cost': str(round(item_df, 3))}
+                data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(item_df, 3)}
             else:
                 cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user.get(index_df.strip())} | {clusters_launch_time.get(index_df.strip())} ')
-                cluster_cost_dict[f'resource_{num}'] = {'name': index_df.strip(), 'cost': str(round(item_df, 3)), 'user': clusters_user.get(index_df.strip()), 'launach_time': clusters_launch_time.get(index_df.strip())}
+                data[f'cluster_{num}'] = {'name': index_df.strip(), 'cost': round(item_df, 3), 'user': clusters_user.get(index_df.strip()), 'launch_time': clusters_launch_time.get(index_df.strip())}
             num += 1
-        return cluster_cost_results, cluster_cost_dict
+        return cluster_cost_results
 
     def __get_resource_cost(self, resource: str, item_data: dict):
         """
@@ -206,7 +206,7 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2
-                    # name | instance id  | instance type | launch time | state  | cost($) | cluster id
+                    # title: name | instance id  | instance type | launch time | state  | cost($) | cluster id
                     if item.get('InstanceId'):
                         resource = 'ec2'
                         ec2_cost = self.__get_resource_cost(resource=resource, item_data=item)
@@ -214,7 +214,7 @@ class ESOperations:
                         if cluster_owned:
                             clusters_launch_time_dict[cluster_owned] = item['LaunchTime'][:-15].replace('T', ' ')
                     # ebs
-                    # name | volume id | volume type | size(gb) | cost($/month) | cluster id
+                    # title: name | volume id | volume type | size(gb) | cost($/month) | cluster id
                     if item.get('VolumeId'):
                         resource = 'ebs'
                         ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
@@ -229,9 +229,9 @@ class ESOperations:
 
                 # get cluster cost data only for ec2 and ebs
                 if resource:
-                    cluster_cost_results, cluster_cost_dict = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
+                    cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
                     data_dict['cluster_cost_data'] = cluster_cost_results
-                    data_dict['cluster_cost_info'] = cluster_cost_dict
+                    #data_dict['cluster_cost_info'] = cluster_cost_dict
                 data = data_dict
         # no data for policy
         else:
