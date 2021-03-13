@@ -125,7 +125,7 @@ class ESOperations:
         cluster_cost_results = []
         cluster_cost_dict = {}
         # title: cluster | cost($) | user | launch time
-        num = 0
+        num = 1
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
                 cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
@@ -133,7 +133,7 @@ class ESOperations:
             else:
                 cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user.get(index_df.strip())} | {clusters_launch_time.get(index_df.strip())} ')
                 data[f'cluster_{num}'] = {'name': index_df.strip(), 'cost': round(item_df, 3), 'user': clusters_user.get(index_df.strip()), 'launch_time': clusters_launch_time.get(index_df.strip())}
-            num += 1
+                num += 1
         return cluster_cost_results
 
     def __get_resource_cost(self, resource: str, item_data: dict):
