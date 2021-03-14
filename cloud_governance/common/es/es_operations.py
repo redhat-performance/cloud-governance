@@ -27,7 +27,7 @@ class ESOperations:
         self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
         self.__aws_price = AWSPrice()
         self.__iam_client = boto3.client('iam', region_name=region)
-        self.__trail_client = boto3.client('cloudtrail')
+        self.__trail_client = boto3.client('cloudtrail', region_name=region)
 
     def __get_s3_latest_policy_file(self, policy: str):
         """
@@ -231,7 +231,6 @@ class ESOperations:
                 if resource:
                     cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
                     data_dict['cluster_cost_data'] = cluster_cost_results
-                    #data_dict['cluster_cost_info'] = cluster_cost_dict
                 data = data_dict
         # no data for policy
         else:
