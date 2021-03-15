@@ -57,7 +57,7 @@ class ESOperations:
                 with open(os.path.join(temp_local_directory, file_name)) as f:
                     return f.read()
 
-    def __find_username_in_events(self, date_time):
+    def __get_user_from_trail_events(self, date_time):
         """
         This method find user name in cloud trail events according to date time
         @param date_time:
@@ -101,7 +101,7 @@ class ESOperations:
                         if tag['Key'].split() == cluster.split():
                             cluster_create_date_dict[cluster] = create_date
         for cluster, date_time in cluster_create_date_dict.items():
-            user_name = self.__find_username_in_events(date_time)
+            user_name = self.__get_user_from_trail_events(date_time)
             cluster_user[cluster] = user_name
         return cluster_user
 
@@ -118,13 +118,14 @@ class ESOperations:
         resource_data = [item.split('|') for item in data['resources_list']]
         df = pd.DataFrame(resource_data)
         # cost column: remove space
-        df[df.columns[-2]] = df[df.columns[-2]].str.strip()
+        df[df.columns[-3]] = df[df.columns[-3]].str.strip()
         # cost column: change to float
-        df[df.columns[-2]] = df[df.columns[-2]].astype(float).round(3)
-        cluster_cost = df.groupby(df.columns[-1])[df.columns[-2]].sum()
+        df[df.columns[-3]] = df[df.columns[-3]].astype(float).round(3)
+        # group by cluster owned column
+        cluster_cost = df.groupby(df.columns[-2])[df.columns[-3]].sum()
         cluster_cost_results = []
-        cluster_cost_dict = {}
-        # title: cluster | cost($) | user | launch time
+        # cluster
+        # title: cluster# | cost($) | cluster owned | launch time
         num = 1
         for index_df, item_df in cluster_cost.items():
             if index_df == '  ':
@@ -205,22 +206,28 @@ class ESOperations:
                                 ec2_ebs_name = val['Value']
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
-                    # ec2
-                    # title: name | instance id  | instance type | launch time | state  | cost($) | cluster id
+                    # ec2 - MUST: every change change also cluster title
+                    # title: name | instance id  | instance type | launch time | state  | cost($) | cluster owned | user
                     if item.get('InstanceId'):
                         resource = 'ec2'
+                        lt_datetime = datetime.strptime(item['LaunchTime'], '%Y-%m-%dT%H:%M:%S+00:00')
+                        user = self.__get_user_from_trail_events(lt_datetime)
                         ec2_cost = self.__get_resource_cost(resource=resource, item_data=item)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {item['LaunchTime'][:-15].replace('T', ' ')} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} ")
+                        launch_time_format = item['LaunchTime'][:-15].replace('T', ' ')
                         if cluster_owned:
-                            clusters_launch_time_dict[cluster_owned] = item['LaunchTime'][:-15].replace('T', ' ')
-                    # ebs
-                    # title: name | volume id | volume type | size(gb) | cost($/month) | cluster id
+                            clusters_launch_time_dict[cluster_owned] = launch_time_format
+                            # no display user when cluster owned
+                            user = ''
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {launch_time_format} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} | {user} ")
+                    # ebs - MUST: every change change also cluster title
+                    # title: name | volume id | volume type | size(gb) | create time | state | cost($/month) | cluster owned | user
                     if item.get('VolumeId'):
                         resource = 'ebs'
+                        lt_datetime = datetime.strptime(item['CreateTime'], '%Y-%m-%dT%H:%M:%S.%f+00:00')
+                        user = self.__get_user_from_trail_events(lt_datetime)
                         ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {ebs_monthly_cost} | {cluster_owned} ")
-                        if cluster_owned:
-                            clusters_launch_time_dict[cluster_owned] = item['CreateTime'][:-15].replace('T', ' ')
+                        create_time_format = item['CreateTime'][:-22].replace('T', ' ')
+                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {create_time_format} | {item['State']} | {ebs_monthly_cost} | {cluster_owned} | {user} ")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
