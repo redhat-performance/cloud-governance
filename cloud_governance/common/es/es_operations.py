@@ -126,7 +126,7 @@ class ESOperations:
         cluster_cost = df.groupby(df.columns[-2])[df.columns[-3]].sum()
         cluster_cost_results = []
         # cluster
-        # title: cluster# | cost($) | cluster owned | launch time
+        # title: cluster# | cluster owned | cost($) | user | launch time
         num = 1
         for name, cost in cluster_cost.items():
             if name == '  ':
