@@ -117,6 +117,7 @@ class ESOperations:
         # aggregate ec2/ebs cluster cost data
         resource_data = [item.split('|') for item in data['resources_list']]
         df = pd.DataFrame(resource_data)
+        # MUST : every fix, change ec2/ebs title
         # cost column: remove space
         df[df.columns[-3]] = df[df.columns[-3]].str.strip()
         # cost column: change to float
@@ -127,20 +128,48 @@ class ESOperations:
         # cluster
         # title: cluster# | cost($) | cluster owned | launch time
         num = 1
-        for index_df, item_df in cluster_cost.items():
-            if index_df == '  ':
-                cluster_cost_results.append(f'{resource} (non cluster) | {round(item_df, 3)} ')
-                data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(item_df, 3)}
+        for name, cost in cluster_cost.items():
+            if name == '  ':
+                cluster_cost_results.append(f'{resource} (non cluster) | {round(cost, 3)} ')
+                data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
             else:
-                cluster_cost_results.append(f'{index_df.strip()} | {round(item_df, 3)} | {clusters_user.get(index_df.strip())} | {clusters_launch_time.get(index_df.strip())} ')
-                data[f'cluster_{num}'] = {'name': index_df.strip(), 'cost': round(item_df, 3), 'user': clusters_user.get(index_df.strip()), 'launch_time': clusters_launch_time.get(index_df.strip())}
+                cluster_cost_results.append(f'{name.strip()} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} ')
+                data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3), 'user': clusters_user.get(name.strip()), 'launch_time': clusters_launch_time.get(name.strip())}
                 num += 1
         return cluster_cost_results
+
+    def __get_user_cost(self, data):
+        """
+        This method aggregate user cost data
+        @param data:
+        @param resource:
+        @return:
+        """
+        # aggregate ec2/ebs cluster cost data
+        resource_data = [item.split('|') for item in data['resources_list']]
+        df = pd.DataFrame(resource_data)
+        # MUST : every fix, change ec2/ebs title
+        # cost column: remove space
+        df[df.columns[-3]] = df[df.columns[-3]].str.strip()
+        # cost column: change to float
+        df[df.columns[-3]] = df[df.columns[-3]].astype(float).round(3)
+        # group by user
+        user_cost = df.groupby(df.columns[-1])[df.columns[-3]].sum()
+        user_cost_results = []
+        # user
+        # title: user | cost($)
+        num = 1
+        for user, cost in user_cost.items():
+            if cost > 0 and user != '  ' and user:
+                user_cost_results.append(f'{user.strip()} | {round(cost, 3)}')
+                data[f'user_{num}'] = {'name': user.strip(), 'cost': round(cost, 3)}
+                num += 1
+        return user_cost_results
 
     def __get_resource_cost(self, resource: str, item_data: dict):
         """
         This method calculate ec2 cost from launch time or ebs per month in $
-        @return:
+        @return:cluster_cost_results
         """
         if resource == 'ec2' and item_data['State']['Name'] == 'running':
             # Get current price for a given 'running' instance, region and os
@@ -180,11 +209,14 @@ class ESOperations:
         :return:
         """
         resource = ''
+        launch_time_format = ''
         # fetch data from s3 per region/policy
         data = self.__get_last_s3_policy_content(policy=policy, file_name=s3_json_file)
         if data:
             # cluster owned launch time
             clusters_launch_time_dict = {}
+            # cluster owned user name
+            cluster_user = {}
             data_list = json.loads(data)
             # if json folding in list need to extract it
             if type(data_list) == list:
@@ -206,7 +238,7 @@ class ESOperations:
                                 ec2_ebs_name = val['Value']
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
-                    # ec2 - MUST: every change change also cluster title
+                    # ec2 - MUST: every fix, change also cluster title
                     # title: name | instance id  | instance type | launch time | state  | cost($) | cluster owned | user
                     if item.get('InstanceId'):
                         resource = 'ec2'
@@ -216,10 +248,11 @@ class ESOperations:
                         launch_time_format = item['LaunchTime'][:-15].replace('T', ' ')
                         if cluster_owned:
                             clusters_launch_time_dict[cluster_owned] = launch_time_format
-                            # no display user when cluster owned
-                            user = ''
+                            if not cluster_user.get(cluster_owned):
+                                cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
+                            user = cluster_user.get(cluster_owned)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {launch_time_format} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} | {user} ")
-                    # ebs - MUST: every change change also cluster title
+                    # ebs - MUST: every fix, change also cluster title
                     # title: name | volume id | volume type | size(gb) | create time | state | cost($/month) | cluster owned | user
                     if item.get('VolumeId'):
                         resource = 'ebs'
@@ -227,6 +260,11 @@ class ESOperations:
                         user = self.__get_user_from_trail_events(lt_datetime)
                         ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
                         create_time_format = item['CreateTime'][:-22].replace('T', ' ')
+                        if cluster_owned:
+                            clusters_launch_time_dict[cluster_owned] = launch_time_format
+                            if not cluster_user.get(cluster_owned):
+                                cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
+                            user = cluster_user.get(cluster_owned)
                         data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {create_time_format} | {item['State']} | {ebs_monthly_cost} | {cluster_owned} | {user} ")
                     # gitleaks
                     if item.get('leakURL'):
@@ -238,6 +276,8 @@ class ESOperations:
                 if resource:
                     cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
                     data_dict['cluster_cost_data'] = cluster_cost_results
+                    user_cost_results = self.__get_user_cost(data=data_dict)
+                    data_dict['user_cost_data'] = user_cost_results
                 data = data_dict
         # no data for policy
         else:
