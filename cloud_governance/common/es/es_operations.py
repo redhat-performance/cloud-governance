@@ -133,7 +133,7 @@ class ESOperations:
                 cluster_cost_results.append(f'{resource} (non cluster) | {round(cost, 3)} ')
                 data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
             else:
-                cluster_cost_results.append(f'{name.strip()} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} ')
+                cluster_cost_results.append(f" 'cluster_{num}' | {name.strip()} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} ")
                 data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3), 'user': clusters_user.get(name.strip()), 'launch_time': clusters_launch_time.get(name.strip())}
                 num += 1
         return cluster_cost_results
@@ -157,11 +157,11 @@ class ESOperations:
         user_cost = df.groupby(df.columns[-1])[df.columns[-3]].sum()
         user_cost_results = []
         # user
-        # title: user | cost($)
+        # title: user# | user | cost($)
         num = 1
         for user, cost in user_cost.items():
             if cost > 0 and user != '  ' and user:
-                user_cost_results.append(f'{user.strip()} | {round(cost, 3)}')
+                user_cost_results.append(f"user_{num}  | {user.strip()} | {round(cost, 3)}")
                 data[f'user_{num}'] = {'name': user.strip(), 'cost': round(cost, 3)}
                 num += 1
         return user_cost_results
