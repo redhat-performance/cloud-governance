@@ -71,7 +71,7 @@ jobs:
     - name: E2E tests using latest quay.io
       run: |
         declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2' 'eu-central-1')
-        declare -a policies=('ec2_idle' 'ec2_run' 'ec2_untag' 'ebs_unattached' 'ebs_in_use')
+        declare -a policies=('ec2_idle' 'ec2_run' 'ebs_unattached' 'ebs_in_use')
         for region in "${regions[@]}"
         do
            for policy in "${policies[@]}"
