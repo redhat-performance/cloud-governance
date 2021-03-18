@@ -6,17 +6,17 @@ policies:
       - "State.Name": running
       - type: metrics
         name: CPUUtilization
-        value: 2
+        value: 5
         op: lt
         days: 2
       - type: metrics
         name: NetworkIn
-        value: 5000
+        value: 10000
         op: lt
         days: 2
       - type: metrics
         name: NetworkOut
-        value: 5000
+        value: 10000
         op: lt
         days: 2
     actions:
