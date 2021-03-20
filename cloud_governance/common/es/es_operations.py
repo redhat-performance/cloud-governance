@@ -119,14 +119,14 @@ class ESOperations:
         df = pd.DataFrame(resource_data)
         # MUST : every fix, change ec2/ebs title
         # cost column: remove space
-        df[df.columns[-3]] = df[df.columns[-3]].str.strip()
+        df[df.columns[1]] = df[df.columns[1]].str.strip()
         # cost column: change to float
-        df[df.columns[-3]] = df[df.columns[-3]].astype(float).round(3)
+        df[df.columns[1]] = df[df.columns[1]].astype(float).round(3)
         # group by cluster owned column
-        cluster_cost = df.groupby(df.columns[-2])[df.columns[-3]].sum()
+        cluster_cost = df.groupby(df.columns[-1])[df.columns[1]].sum()
         cluster_cost_results = []
         # cluster
-        # title: cluster# | user | cost($) | launch time | cluster owned
+        # title: cluster# | cost($) | user | launch time | cluster owned
         num = 1
         for name, cost in cluster_cost.items():
             if cost > 0:
@@ -134,7 +134,7 @@ class ESOperations:
                     cluster_cost_results.append(f'{resource} (non cluster) | {round(cost, 3)} ')
                     data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
                 else:
-                    cluster_cost_results.append(f" cluster_{num} | {clusters_user.get(name.strip())} | {round(cost, 3)} | {clusters_launch_time.get(name.strip())} | {name.strip()} ")
+                    cluster_cost_results.append(f" cluster_{num} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} | {name.strip()} ")
                     data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3), 'user': clusters_user.get(name.strip()), 'launch_time': clusters_launch_time.get(name.strip())}
                     num += 1
         return cluster_cost_results
@@ -151,18 +151,18 @@ class ESOperations:
         df = pd.DataFrame(resource_data)
         # MUST : every fix, change ec2/ebs title
         # cost column: remove space
-        df[df.columns[-3]] = df[df.columns[-3]].str.strip()
+        df[df.columns[1]] = df[df.columns[1]].str.strip()
         # cost column: change to float
-        df[df.columns[-3]] = df[df.columns[-3]].astype(float).round(3)
+        df[df.columns[1]] = df[df.columns[1]].astype(float).round(3)
         # group by user
-        user_cost = df.groupby(df.columns[-1])[df.columns[-3]].sum()
+        user_cost = df.groupby(df.columns[0])[df.columns[1]].sum()
         user_cost_results = []
         # user
-        # title: user# | user | cost($)
+        # title: user# | cost($) | user
         num = 1
         for user, cost in user_cost.items():
             if cost > 0 and user != '  ' and user:
-                user_cost_results.append(f"user_{num}  | {user.strip()} | {round(cost, 3)}")
+                user_cost_results.append(f"user_{num} | {round(cost, 3)}  | {user.strip()} ")
                 data[f'user_{num}'] = {'name': user.strip(), 'cost': round(cost, 3)}
                 num += 1
         return user_cost_results
@@ -253,6 +253,7 @@ class ESOperations:
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
                         data_dict['resources_list'].append(f"{user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {item['InstanceId']} | {cluster_owned} ")
+
                     # ebs - MUST: every fix, change also cluster title
                     # title: user | cost($/month) | state | volume type | create time | size(gb) | name | volume id | cluster owned
                     if item.get('VolumeId'):
