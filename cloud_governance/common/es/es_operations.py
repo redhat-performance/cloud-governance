@@ -131,8 +131,8 @@ class ESOperations:
         for name, cost in cluster_cost.items():
             if cost > 0:
                 if name == '  ':
-                    cluster_cost_results.append(f'{resource} (non cluster) | {round(cost, 3)} ')
-                    data[f'{resource} non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
+                    cluster_cost_results.append(f'non cluster | {round(cost, 3)} ')
+                    data['non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
                 else:
                     cluster_cost_results.append(f" cluster_{num} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} | {name.strip()} ")
                     data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3), 'user': clusters_user.get(name.strip()), 'launch_time': clusters_launch_time.get(name.strip())}

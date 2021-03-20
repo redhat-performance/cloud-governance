@@ -151,7 +151,7 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
+    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     dry_run = os.environ.get('dry_run', 'yes')
 
     account = os.environ.get('account', '')
