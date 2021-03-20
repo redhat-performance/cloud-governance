@@ -302,4 +302,3 @@ class ESOperations:
             return True
         except Exception:
             raise
-
