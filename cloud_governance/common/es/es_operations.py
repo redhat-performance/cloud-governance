@@ -240,7 +240,7 @@ class ESOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2 - MUST: every fix, change also cluster title
-                    # title: name | instance id  | instance type | launch time | state  | cost($) | cluster owned | user
+                    # title:  user | cost($) | state | instance type | launch time | name | instance id | cluster owned
                     if item.get('InstanceId'):
                         resource = 'ec2'
                         lt_datetime = datetime.strptime(item['LaunchTime'], '%Y-%m-%dT%H:%M:%S+00:00')
@@ -252,9 +252,9 @@ class ESOperations:
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['InstanceId']} | {item['InstanceType']} | {launch_time_format} | {item['State']['Name']}  | {ec2_cost} | {cluster_owned} | {user} ")
+                        data_dict['resources_list'].append(f"{user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {item['InstanceId']} | {cluster_owned} ")
                     # ebs - MUST: every fix, change also cluster title
-                    # title: name | volume id | volume type | size(gb) | create time | state | cost($/month) | cluster owned | user
+                    # title: user | cost($/month) | state | volume type | create time | size(gb) | name | volume id | cluster owned
                     if item.get('VolumeId'):
                         resource = 'ebs'
                         lt_datetime = datetime.strptime(item['CreateTime'], '%Y-%m-%dT%H:%M:%S.%f+00:00')
@@ -266,7 +266,7 @@ class ESOperations:
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{ec2_ebs_name} | {item['VolumeId']} | {item['VolumeType']} | {item['Size']} | {create_time_format} | {item['State']} | {ebs_monthly_cost} | {cluster_owned} | {user} ")
+                        data_dict['resources_list'].append(f"{user} | {ebs_monthly_cost} | {item['State']} | {item['VolumeType']} | {create_time_format} | {item['Size']} | {ec2_ebs_name} |  {item['VolumeId']} | {cluster_owned} ")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
