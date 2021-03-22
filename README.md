@@ -13,9 +13,10 @@ cost optimize and security.
 This tool support the following policies on AWS account:
 [policy](cloud_governance/policy)
 
-* ec2_idle: [ec2_idle](cloud_governance/policy/ec2_idle.yml)
+* ec2_idle: idle ec2 in last 2 days, cpu < 5% & network < 10mb [ec2_idle](cloud_governance/policy/ec2_idle.yml)
+* ec2_run: running ec2 [ec2_run](cloud_governance/policy/ec2_run.yml)
 * ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
-* ec2_untag: ec2 untag with 5 mandatory tags: Name, Owner, Email, Purpose, Date [ec2_untag](cloud_governance/policy/ec2_untag.yml)
+* ebs_in_use: in use volumes [ebs_in_use](cloud_governance/policy/ebs_in_use.yml)
 * tag_cluster_resource: Update cluster tags by input cluster name 
 * zombie_cluster_resource: Delete cluster's zombie resources
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
@@ -34,6 +35,7 @@ _**Table of Contents**_
 
 <!-- TOC -->
 - [Installation](#installation)
+- [Configuration](#configuration)
 - [Run Policy Using Podman](#run-policy-using-podman)
 - [Run Policy Using Pod](#run-policy-using-pod)
 - [Pytest](#pytest)
@@ -56,7 +58,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 ##### Policy name:
-(mandatory)policy=ebs_unattached / ec2_idle / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
+(mandatory)policy=ec2_idle / ec2_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
 
 ##### Policy logs output
 (mandatory)policy_output=s3://redhat-cloud-governance/logs
@@ -81,20 +83,23 @@ sudo podman pull quay.io/ebattat/cloud-governance
 ##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
 
-## Policy workflows
-
+## Configurations
+# Need to add those IAMs to the tested account and run create_bucket.sh
 * Run with AWS admin user or user with IAM [iam](iam/)
 
 ## Run Policy Using Podman 
 ```sh
-# policy=ebs_unattached
-sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
-
 # policy=ec2_idle
 sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
-# policy=ec2_untag
-sudo podman run --rm --name cloud-governance -e policy=ec2_untag -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+# policy=ec2_run
+sudo podman run --rm --name cloud-governance -e policy=ec2_run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# policy=ebs_unattached
+sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
+
+# policy=ebs_in_use
+sudo podman run --rm --name cloud-governance -e policy=ebs_in_use -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
 # policy=zombie_cluster_resource
 sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e log_level=INFO quay.io/ebattat/cloud-governance
