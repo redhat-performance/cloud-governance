@@ -13,6 +13,7 @@ cost optimize and security.
 This tool support the following policies:
 [policy](cloud_governance/policy)
 
+* Real time Openshift Cluster cost, User cost
 * ec2_idle: idle ec2 in last 2 days, cpu < 5% & network < 10mb [ec2_idle](cloud_governance/policy/ec2_idle.yml)
 * ec2_run: running ec2 [ec2_run](cloud_governance/policy/ec2_run.yml)
 * ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
@@ -22,7 +23,6 @@ This tool support the following policies:
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * gitleaks: scan Github repository git leak (security scan)  
 
-* Additional data: Cluster cost, User cost by daily 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
    and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
 
