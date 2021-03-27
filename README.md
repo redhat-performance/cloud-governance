@@ -10,7 +10,7 @@
 This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
 cost optimize and security.
 
-This tool support the following policies on AWS account:
+This tool support the following policies:
 [policy](cloud_governance/policy)
 
 * ec2_idle: idle ec2 in last 2 days, cpu < 5% & network < 10mb [ec2_idle](cloud_governance/policy/ec2_idle.yml)
@@ -22,14 +22,19 @@ This tool support the following policies on AWS account:
 * tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * gitleaks: scan Github repository git leak (security scan)  
 
+* Additional data: Cluster cost, User cost by daily 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
    and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
 
-![](images/quay.io.png)
+First release: Support AWS only
+ 
+![](images/cloud_governance2.png)
 
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
-* The cloud-governance image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
+* The cloud-governance container image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
+
+![](images/cloud_governance3.png)
 
 _**Table of Contents**_
 
@@ -83,9 +88,10 @@ sudo podman pull quay.io/ebattat/cloud-governance
 ##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
 
-## Configurations
-# Need to add those IAMs to the tested account and run create_bucket.sh
-* Run with AWS admin user or user with IAM [iam](iam/)
+## Configuration
+#### Create a user and a bucket
+* Create user with IAM [iam](iam)
+* Create a logs bucket [create_bucket.sh](iam/create_bucket.sh)
 
 ## Run Policy Using Podman 
 ```sh
