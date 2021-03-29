@@ -58,7 +58,7 @@ def get_custodian_policies(type: str = None):
 
 @logger_time_stamp
 @typeguard.typechecked
-def run_policy(policy: str, region: str, dry_run: str):
+def run_policy(account: str, policy: str, region: str, dry_run: str):
     """
     This method run policy per region, first the custom policy and after custodian policy
     :return:
@@ -191,9 +191,9 @@ def main():
             for region in regions_data['Regions']:
                 #logger.info(f"region: {region['RegionName']}")
                 os.environ['AWS_DEFAULT_REGION'] = region['RegionName']
-                run_policy(policy=policy, region=region['RegionName'], dry_run=dry_run)
+                run_policy(account=account, policy=policy, region=region['RegionName'], dry_run=dry_run)
         else:
-            run_policy(policy=policy, region=region_env, dry_run=dry_run)
+            run_policy(account=account, policy=policy, region=region_env, dry_run=dry_run)
 
 
 main()
