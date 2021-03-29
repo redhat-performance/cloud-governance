@@ -7,9 +7,9 @@ pipeline {
         AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
         AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
         BUCKET_PSAP = credentials('cloud-governance-bucket-psap')
-        AWS_ACCESS_KEY_ID_RT_PERF = credentials('cloud-governance-aws-access-key-id-rt-perf')
-        AWS_SECRET_ACCESS_KEY_RT_PERF = credentials('cloud-governance-aws-secret-access-key-rt-perf')
-        BUCKET_RT_PERF = credentials('cloud-governance-bucket-rt-perf')
+        AWS_ACCESS_KEY_ID_RH_PERF = credentials('cloud-governance-aws-access-key-id-rh-perf')
+        AWS_SECRET_ACCESS_KEY_RH_PERF = credentials('cloud-governance-aws-secret-access-key-rh-perf')
+        BUCKET_RH_PERF = credentials('cloud-governance-bucket-rh-perf')
         ES_HOST = credentials('cloud-governance-es-host')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
         contact = "ebattat@redhat.com"
