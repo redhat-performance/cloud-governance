@@ -1,0 +1,6 @@
+1. Add IAM policies in new account
+2. Create bucket in new account
+3. Add 3 secrets in jenkins credentials (access-key-id, secret-access-key, bucket)
+4. Add secrets to 3 files: Jenkinsfile, run_policies, run_upload_es - change: account/AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+5. Add account url in source: https://source.redhat.com/groups/public/cloudgovernance
+6. Create account dashboard
