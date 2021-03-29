@@ -7,6 +7,9 @@ BUCKET_PERF = os.environ['BUCKET_PERF']
 AWS_ACCESS_KEY_ID_PSAP = os.environ['AWS_ACCESS_KEY_ID_PSAP']
 AWS_SECRET_ACCESS_KEY_PSAP = os.environ['AWS_SECRET_ACCESS_KEY_PSAP']
 BUCKET_PSAP = os.environ['BUCKET_PSAP']
+AWS_ACCESS_KEY_ID_RT_PERF = os.environ['AWS_ACCESS_KEY_ID_RT_PERF']
+AWS_SECRET_ACCESS_KEY_RT_PERF = os.environ['AWS_SECRET_ACCESS_KEY_RT_PERF']
+BUCKET_RT_PERF = os.environ['BUCKET_RT_PERF']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 LOGS = os.environ.get('LOGS', 'logs')
 
@@ -35,6 +38,7 @@ for region in regions:
     for policy in policies:
         os.system(f"sudo podman run --rm --name cloud-governance -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance")
         os.system(f"sudo podman run --rm --name cloud-governance -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PSAP} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PSAP}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance")
+        os.system(f"sudo podman run --rm --name cloud-governance -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RT_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RT_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_RT_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance")
 
 # Gitleaks run on github not related to any aws account
 print("run gitleaks")
