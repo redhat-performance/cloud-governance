@@ -65,11 +65,14 @@ class ESOperations:
         """
         diff = timedelta(seconds=1)
         end_date_time = date_time + diff
-        response = self.__trail_client.lookup_events(
-            StartTime=date_time,
-            EndTime=end_date_time,
-            MaxResults=123
-        )
+        try:
+            response = self.__trail_client.lookup_events(
+                StartTime=date_time,
+                EndTime=end_date_time,
+                MaxResults=123
+            )
+        except:
+            return ''
         if response:
             for event in response['Events']:
                 if event.get('Username'):
