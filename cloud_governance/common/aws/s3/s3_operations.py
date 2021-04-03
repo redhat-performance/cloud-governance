@@ -1,4 +1,6 @@
-
+import datetime
+import gzip
+import json
 import os
 import boto3
 import typeguard
@@ -12,8 +14,13 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 class S3Operations:
     """ This class is responsible for S3 operations """
 
-    def __init__(self, region_name):
+    def __init__(self, region_name,  report_file_name: str = "zombie_report.json", resource_file_name: str = "resources.json.gz"):
         self.__s3_client = boto3.client('s3', region_name=region_name)
+        self.__region = region_name
+        self.__report_file_name = report_file_name
+        self.__resource_file_name = resource_file_name
+        self.__report_file_full_path = os.path.join(os.path.dirname(__file__), self.__report_file_name)
+        self.__resources_file_full_path = os.path.join(os.path.dirname(__file__), self.__resource_file_name)
 
     @logger_time_stamp
     @typeguard.typechecked
@@ -230,3 +237,30 @@ class S3Operations:
         get_last_modified_key = lambda obj: int(obj['LastModified'].strftime('%s'))
         full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified_key)][-1]
         return os.path.dirname(full_path)
+
+    @logger_time_stamp
+    @typeguard.typechecked
+    def save_results_to_s3(self, policy, policy_output, policy_result):
+        """
+        This method save policy result to s3 with folder creation order by datetime
+        @return:
+        """
+
+        with gzip.open(self.__resources_file_full_path, 'wt', encoding="ascii") as zipfile:
+            json.dump(policy_result, zipfile)
+        if 's3' in policy_output:
+            s3_operations = S3Operations(self.__region)
+            date_key = datetime.datetime.now().strftime("%Y/%m/%d/%H")
+            if '/' in policy_output:
+                targets = policy_output.split('/')
+                bucket = targets[2]
+                logs = targets[3]
+            s3_operations.upload_file(file_name_path=self.__resources_file_full_path, bucket=bucket,
+                                      key=f'{logs}/{self.__region}/{policy}/{date_key}',
+                                      upload_file=self.__resource_file_name)
+        # save local
+        else:
+            os.replace(self.__resources_file_full_path, fr'{policy_output}/{self.__resource_file_name}')
+        resource_file = self.__resources_file_full_path
+        if os.path.isfile(resource_file):
+            os.remove(resource_file)
