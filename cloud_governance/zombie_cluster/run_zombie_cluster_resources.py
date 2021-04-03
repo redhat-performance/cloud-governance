@@ -60,6 +60,11 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2'):
     logger.info(f'{action} {len(func_resource_list)} cluster zombies resources in region {region}:')
     for func in func_resource_list:
         logger.info(f'key: {func.__name__}, count: {len(func())}, data: {func()}')
-        zombie_result[func.__name__] = {'count': len(func()), 'data': func()}
+        # limit the results that upload to ES
+        if len(func()) > 20:
+            result_list = func()[0:20]
+        else:
+            result_list = func()
+        zombie_result[func.__name__] = {'count': len(func()), 'data': result_list}
     return zombie_result
 
