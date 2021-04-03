@@ -9,29 +9,29 @@ from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_re
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
+from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
-#os.environ['policy'] = 'zombie_cluster_resource'
-# os.environ['policy'] = 'tag_cluster_resource'
-#os.environ['policy_output'] ='s3://cloud-governance/logs'
-#os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
-#os.environ['dry_run'] = 'yes'
+# os.environ['policy'] = 'zombie_cluster_resource'
+# os.environ['dry_run'] = 'yes'
+# os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
+# os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['resource_name'] = 'ocs-test'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
-#os.environ['policy'] = 'gitleaks'
-#os.environ['git_access_token'] = ''
-#os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
-#os.environ['git_repo'] = 'https://github.com/redhat-performance'
+# os.environ['policy'] = 'gitleaks'
+# os.environ['git_access_token'] = ''
+# os.environ['git_repo'] = 'https://github.com/redhat-performance'
+# os.environ['several_repos'] = 'yes'
+# os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
 # os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
-#os.environ['several_repos'] = 'yes'
-#os.environ['upload_data_elk'] = 'upload_data_elk'
+# os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
@@ -75,10 +75,13 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             tag_cluster_resource(cluster_name=cluster_name, region=region)
     # Custom policy Zombie Cluster
     elif policy == 'zombie_cluster_resource':
+        policy_output = os.environ.get('policy_output', '')
         if dry_run == 'no':  # delete
-            zombie_cluster_resource(delete=True, region=region)
+            zombie_result = zombie_cluster_resource(delete=True, region=region)
         else:  # default: yes or other
-            zombie_cluster_resource(region=region)
+            zombie_result = zombie_cluster_resource(region=region)
+        s3operations = S3Operations(region_name=region)
+        logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))
     elif policy == 'tag_ec2':
         instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
@@ -103,7 +106,9 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             else:
                 git_leaks = GitLeaks(git_access_token=git_access_token,
                                      git_repo=git_repo)
-            logger.info(git_leaks.write_result(policy_output, region, policy))
+            s3operations = S3Operations(region_name=region)
+            logger.info(s3operations.save_results_to_s3(policy=policy, policy_output=policy_output,
+                                            policy_result=git_leaks.scan_repo()))
 
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
@@ -151,7 +156,7 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
     dry_run = os.environ.get('dry_run', 'yes')
 
     account = os.environ.get('account', '')
@@ -189,7 +194,7 @@ def main():
             ec2 = boto3.client('ec2')
             regions_data = ec2.describe_regions()
             for region in regions_data['Regions']:
-                #logger.info(f"region: {region['RegionName']}")
+                # logger.info(f"region: {region['RegionName']}")
                 os.environ['AWS_DEFAULT_REGION'] = region['RegionName']
                 run_policy(account=account, policy=policy, region=region['RegionName'], dry_run=dry_run)
         else:

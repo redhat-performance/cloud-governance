@@ -31,14 +31,14 @@ class GitLeaks:
         if os.path.isfile(report_file):
             os.remove(report_file)
 
-    def __delete_gitleaks_resource(self):
-        """
-        This method clear resource file
-        @return:
-        """
-        resource_file = self.__resources_file_full_path
-        if os.path.isfile(resource_file):
-            os.remove(resource_file)
+    # def __delete_gitleaks_resource(self):
+    #     """
+    #     This method clear resource file
+    #     @return:
+    #     """
+    #     resource_file = self.__resources_file_full_path
+    #     if os.path.isfile(resource_file):
+    #         os.remove(resource_file)
 
     def __get_gitleaks_report(self):
         """
@@ -52,7 +52,7 @@ class GitLeaks:
             return json_data
         return None
 
-    def __scan_repo(self):
+    def scan_repo(self):
         """
         This method scan repo for leaks
         :return: The report content or None if empty
@@ -73,23 +73,24 @@ class GitLeaks:
                 self.__delete_gitleaks_report()
         return result_list
 
-    def write_result(self, policy_output, region, policy):
-        """
-        This method write data to output
-        @return:
-        """
-
-        with gzip.open(self.__resources_file_full_path, 'wt', encoding="ascii") as zipfile:
-            json.dump(self.__scan_repo(), zipfile)
-        if 's3' in policy_output:
-            s3_operations = S3Operations(region)
-            date_key = datetime.datetime.now().strftime("%Y/%m/%d/%H")
-            if '/' in policy_output:
-                targets = policy_output.split('/')
-                bucket = targets[2]
-                logs = targets[3]
-            s3_operations.upload_file(file_name_path=self.__resources_file_full_path, bucket=bucket, key=f'{logs}/{region}/{policy}/{date_key}', upload_file=self.__resource_file_name)
-        # save local
-        else:
-            os.replace(self.__resources_file_full_path, fr'{policy_output}/{self.__resource_file_name}')
-        self.__delete_gitleaks_resource()
+    # def save_results_to_s3(self, policy_output, region, policy):
+    #     """
+    #     This method save policy result to s3 with folder creation order by datetime
+    #     @return:
+    #     """
+    #     s3operations = S3Operations(region_name=region)
+    #     s3operations.save_results_to_s3(policy=policy, policy_output=policy_output, policy_result=self.__scan_repo())
+        # with gzip.open(self.__resources_file_full_path, 'wt', encoding="ascii") as zipfile:
+        #     json.dump(self.__scan_repo(), zipfile)
+        # if 's3' in policy_output:
+        #     s3_operations = S3Operations(region)
+        #     date_key = datetime.datetime.now().strftime("%Y/%m/%d/%H")
+        #     if '/' in policy_output:
+        #         targets = policy_output.split('/')
+        #         bucket = targets[2]
+        #         logs = targets[3]
+        #     s3_operations.upload_file(file_name_path=self.__resources_file_full_path, bucket=bucket, key=f'{logs}/{region}/{policy}/{date_key}', upload_file=self.__resource_file_name)
+        # # save local
+        # else:
+        #     os.replace(self.__resources_file_full_path, fr'{policy_output}/{self.__resource_file_name}')
+        # self.__delete_gitleaks_resource()

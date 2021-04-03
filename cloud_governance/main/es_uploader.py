@@ -24,9 +24,9 @@ class ESUploader:
         """
         This method upload data to input ELK
         """
-        elk_operations = ESOperations(es_host=self.__es_host, es_port=self.__es_port, region=self.__region_name, bucket=self.__bucket_name, logs_bucket_key=self.__logs_bucket_key)
+        es_operations = ESOperations(es_host=self.__es_host, es_port=self.__es_port, region=self.__region_name, bucket=self.__bucket_name, logs_bucket_key=self.__logs_bucket_key)
         self.__es_add_items.update({'policy': self.__policy_name, 'region': self.__region_name})
-        elk_operations.upload_last_policy_to_es(policy=self.__policy_name, index=self.__es_index, doc_type=self.__es_doc_type, s3_json_file=self.__s3_file_name,
-                                                       es_add_items=self.__es_add_items)
+        es_operations.upload_last_policy_to_es(policy=self.__policy_name, index=self.__es_index, doc_type=self.__es_doc_type, s3_json_file=self.__s3_file_name,
+                                               es_add_items=self.__es_add_items)
 
 
