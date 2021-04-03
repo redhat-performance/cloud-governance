@@ -202,9 +202,13 @@ class ZombieClusterResources:
         """
         elastic_ips = self.ec2_client.describe_addresses()
         elastic_ips_data = elastic_ips['Addresses']
-        exist_elastic_ip = self.__get_cluster_resources(resources_list=elastic_ips_data,
+        exist_elastic_ip_ass = self.__get_cluster_resources(resources_list=elastic_ips_data,
                                                              input_resource_id='AssociationId')
-        zombies = self.__get_zombie_resources(exist_elastic_ip)
+        exist_elastic_ip_all = self.__get_cluster_resources(resources_list=elastic_ips_data,
+                                                             input_resource_id='AllocationId')
+        zombies_ass = self.__get_zombie_resources(exist_elastic_ip_ass)
+        zombies_all = self.__get_zombie_resources(exist_elastic_ip_all)
+        zombies = zombies_ass + zombies_all
         if zombies and self.delete:
             for zombie in zombies:
                 try:

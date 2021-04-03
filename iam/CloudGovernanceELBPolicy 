@@ -9,7 +9,7 @@
                 "elasticloadbalancing:DescribeTags",
                 "elasticloadbalancing:AddTags"
             ],
-            "Resource": "arn:aws:elasticloadbalancing:*::loadbalancer/*"
+            "Resource": "*"
         },
         {
             "Sid": "VisualEditor1",
