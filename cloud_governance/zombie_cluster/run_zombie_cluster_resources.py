@@ -67,4 +67,3 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2'):
             result_list = func()
         zombie_result[func.__name__] = {'count': len(func()), 'data': result_list}
     return zombie_result
-
