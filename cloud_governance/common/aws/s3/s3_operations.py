@@ -238,7 +238,8 @@ class S3Operations:
         full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified_key)][-1]
         return os.path.dirname(full_path)
 
-    def __set_default(self, obj):
+    @staticmethod
+    def __set_default(obj):
         if isinstance(obj, set):
             return list(obj)
         raise TypeError
