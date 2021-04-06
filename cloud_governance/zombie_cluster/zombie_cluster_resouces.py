@@ -15,7 +15,7 @@ class ZombieClusterResources:
     This class filter zombie cluster resources
     """
 
-    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2', cluster: str = ''):
+    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2', cluster_tag: str = ''):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.ec2_resource = boto3.resource('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
@@ -25,7 +25,7 @@ class ZombieClusterResources:
         self.s3_resource = boto3.resource('s3')
         self.cluster_prefix = cluster_prefix
         self.delete = delete
-        self.cluster = cluster
+        self.cluster_tag = cluster_tag
 
     def _all_cluster_instance(self):
         """
@@ -93,8 +93,8 @@ class ZombieClusterResources:
                 for tag in resource[tags]:
                     if tag['Key'].startswith(self.cluster_prefix):
                         # when input a specific cluster, return resource id of the input cluster
-                        if self.cluster:
-                            if self.cluster == tag['Key']:
+                        if self.cluster_tag:
+                            if self.cluster_tag == tag['Key']:
                                 result_resources_key_id[resource_id] = tag['Key']
                         else:
                             result_resources_key_id[resource_id] = tag['Key']
@@ -265,8 +265,8 @@ class ZombieClusterResources:
                     for tag in item['Tags']:
                         if tag['Key'].startswith(self.cluster_prefix):
                             # when input a specific cluster, return resource id of the input cluster
-                            if self.cluster:
-                                if self.cluster == tag['Key']:
+                            if self.cluster_tag:
+                                if self.cluster_tag == tag['Key']:
                                     exist_load_balancer[resource_id] = tag['Key']
                             else:
                                 exist_load_balancer[resource_id] = tag['Key']
@@ -296,8 +296,8 @@ class ZombieClusterResources:
                     for tag in item['Tags']:
                         if tag['Key'].startswith(self.cluster_prefix):
                             # when input a specific cluster, return resource id of the input cluster
-                            if self.cluster:
-                                if self.cluster == tag['Key']:
+                            if self.cluster_tag:
+                                if self.cluster_tag == tag['Key']:
                                     exist_load_balancer[resource_id] = tag['Key']
                             else:
                                 exist_load_balancer[resource_id] = tag['Key']
@@ -492,8 +492,8 @@ class ZombieClusterResources:
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         # when input a specific cluster, return resource id of the input cluster
-                        if self.cluster:
-                            if self.cluster == tag['Key']:
+                        if self.cluster_tag:
+                            if self.cluster_tag == tag['Key']:
                                 exist_role_name_tag[role_name] = tag['Key']
                         else:
                             exist_role_name_tag[role_name] = tag['Key']
@@ -526,8 +526,8 @@ class ZombieClusterResources:
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         # when input a specific cluster, return resource id of the input cluster
-                        if self.cluster:
-                            if self.cluster == tag['Key']:
+                        if self.cluster_tag:
+                            if self.cluster_tag == tag['Key']:
                                 exist_user_name_tag[user_name] = tag['Key']
                         else:
                             exist_user_name_tag[user_name] = tag['Key']
@@ -568,8 +568,8 @@ class ZombieClusterResources:
                 for tag in tags['TagSet']:
                     if tag['Key'].startswith(self.cluster_prefix):
                         # when input a specific cluster, return resource id of the input cluster
-                        if self.cluster:
-                            if self.cluster == tag['Key']:
+                        if self.cluster_tag:
+                            if self.cluster_tag == tag['Key']:
                                 exist_bucket_name_tag[bucket['Name']] = tag['Key']
                         else:
                             exist_bucket_name_tag[bucket['Name']] = tag['Key']

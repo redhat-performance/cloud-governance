@@ -19,7 +19,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
 # os.environ['resource'] = 'zombie_cluster_elastic_ip'
-# os.environ['cluster'] = 'kubernetes.io/cluster/464-pd9qq'
+# os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
@@ -79,11 +79,11 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
-        cluster = os.environ.get('cluster', '')
+        cluster_tag = os.environ.get('cluster_tag', '')
         if dry_run == 'no':  # delete
-            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource, cluster=cluster)
+            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource, cluster_tag=cluster_tag)
         else:  # default: yes or other
-            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster=cluster)
+            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag)
         if policy_output:
             s3operations = S3Operations(region_name=region)
             logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))

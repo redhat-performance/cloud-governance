@@ -2,8 +2,8 @@ from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
-def __get_resource_list(region, delete: bool = False, resource: str = '', cluster: str = ''):
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete, region=region, cluster=cluster)
+def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = ''):
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete, region=region, cluster_tag=cluster_tag)
     zombie_cluster_resources_dict = {'zombie_cluster_volume' : zombie_cluster_resources.zombie_cluster_volume,
                               'zombie_cluster_ami' : zombie_cluster_resources.zombie_cluster_ami,
                               'zombie_cluster_snapshot': zombie_cluster_resources.zombie_cluster_snapshot,
@@ -72,7 +72,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
         return scan_func_resource_list
 
 
-def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', resource: str = '', cluster: str = ''):
+def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', resource: str = '', cluster_tag: str = ''):
     """
     This method return zombie cluster resources,
     How its works? if not exist an instance cluster, the resource is zombie
@@ -85,16 +85,16 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
     if delete:
         action = 'Delete'
         if resource:
-            func_resource_list = __get_resource_list(region, delete, resource, cluster)
+            func_resource_list = __get_resource_list(region, delete, resource, cluster_tag)
         else:
-            func_resource_list = __get_resource_list(region, delete, resource, cluster)
+            func_resource_list = __get_resource_list(region, delete, resource, cluster_tag)
         logger.info("Skip Deleting the following resource due to Dependencies:\n zombie_cluster_security_group, zombie_cluster_vpc, zombie_cluster_route_table, zombie_cluster_internet_gateway, zombie_cluster_dhcp_option")
     else:
         action = 'Scan'
         if resource:
-            func_resource_list = __get_resource_list(region, delete, resource, cluster)
+            func_resource_list = __get_resource_list(region, delete, resource, cluster_tag)
         else:
-            func_resource_list = __get_resource_list(region, delete, resource, cluster)
+            func_resource_list = __get_resource_list(region, delete, resource, cluster_tag)
     logger.info(f'{action} {len(func_resource_list)} cluster zombies resources in region {region}:')
     for func in func_resource_list:
         resource_data, cluster_data = func()
