@@ -238,6 +238,11 @@ class S3Operations:
         full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified_key)][-1]
         return os.path.dirname(full_path)
 
+    def __set_default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        raise TypeError
+
     @logger_time_stamp
     @typeguard.typechecked
     def save_results_to_s3(self, policy, policy_output, policy_result):
@@ -247,7 +252,7 @@ class S3Operations:
         """
 
         with gzip.open(self.__resources_file_full_path, 'wt', encoding="ascii") as zipfile:
-            json.dump(policy_result, zipfile)
+            json.dump(policy_result, zipfile, default=self.__set_default)
         if 's3' in policy_output:
             s3_operations = S3Operations(self.__region)
             date_key = datetime.datetime.now().strftime("%Y/%m/%d/%H")

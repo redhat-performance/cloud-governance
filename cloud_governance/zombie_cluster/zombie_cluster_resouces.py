@@ -15,7 +15,7 @@ class ZombieClusterResources:
     This class filter zombie cluster resources
     """
 
-    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2'):
+    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2', cluster: str = ''):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.ec2_resource = boto3.resource('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
@@ -25,6 +25,7 @@ class ZombieClusterResources:
         self.s3_resource = boto3.resource('s3')
         self.cluster_prefix = cluster_prefix
         self.delete = delete
+        self.cluster = cluster
 
     def _all_cluster_instance(self):
         """
@@ -91,7 +92,12 @@ class ZombieClusterResources:
             if resource.get(tags):
                 for tag in resource[tags]:
                     if tag['Key'].startswith(self.cluster_prefix):
-                        result_resources_key_id[resource_id] = tag['Key']
+                        # when input a specific cluster, return resource id of the input cluster
+                        if self.cluster:
+                            if self.cluster == tag['Key']:
+                                result_resources_key_id[resource_id] = tag['Key']
+                        else:
+                            result_resources_key_id[resource_id] = tag['Key']
         return result_resources_key_id
 
     def __get_zombie_resources(self, exist_resources: dict):
@@ -122,7 +128,7 @@ class ZombieClusterResources:
 
     def zombie_cluster_volume(self):
         """
-        This method return list of cluster's volume according to cluster tag name,
+        This method return list of cluster's volume according to cluster tag name and cluster name data
         delete only available resource that related to cluster
         """
         available_volumes = []
@@ -141,11 +147,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_volume: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_volume: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_volume.values())))
 
     def zombie_cluster_ami(self):
         """
-        This method return list of cluster's ami according to cluster tag name
+        This method return list of cluster's ami according to cluster tag name and cluster name data
         """
         images = self.ec2_client.describe_images(Owners=['self'])
         images_data = images['Images']
@@ -158,11 +164,11 @@ class ZombieClusterResources:
                     logger.info(f'deregister_image: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot deregister_image: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_ami.values())))
 
     def zombie_cluster_snapshot(self):
         """
-        This method return list of cluster's snapshot according to cluster tag name
+        This method return list of cluster's snapshot according to cluster tag name and cluster name data
         """
         snapshots = self.ec2_client.describe_snapshots(OwnerIds=['self'])
         snapshots_data = snapshots['Snapshots']
@@ -176,11 +182,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_snapshot: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_snapshot: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_snapshot.values())))
 
     def zombie_cluster_security_group(self):
         """
-        This method return list of zombie cluster's security groups compare to existing instances
+        This method return list of zombie cluster's security groups compare to existing instances and cluster name data
         :return: list of zombie cluster's security groups
         """
         security_groups = self.ec2_client.describe_security_groups()
@@ -194,11 +200,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_security_group: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_security_group: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_security_group.values())))
 
     def zombie_cluster_elastic_ip(self):
         """
-        This method return list of zombie cluster's elastic ip according to existing instances
+        This method return list of zombie cluster's elastic ip according to existing instances and cluster name data
         """
         elastic_ips = self.ec2_client.describe_addresses()
         elastic_ips_data = elastic_ips['Addresses']
@@ -208,19 +214,25 @@ class ZombieClusterResources:
                                                              input_resource_id='AllocationId')
         zombies_ass = self.__get_zombie_resources(exist_elastic_ip_ass)
         zombies_all = self.__get_zombie_resources(exist_elastic_ip_all)
-        zombies = zombies_ass + zombies_all
-        if zombies and self.delete:
-            for zombie in zombies:
+        if zombies_ass and self.delete:
+            for zombie in zombies_ass:
                 try:
                     self.ec2_client.disassociate_address(AssociationId=zombie)
                     logger.info(f'disassociate_address: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot disassociate_address: {zombie}, {err}')
-        return sorted(zombies)
+        if zombies_all and self.delete:
+            for zombie in zombies_all:
+                try:
+                    self.ec2_client.release_address(AllocationId=zombie)
+                    logger.info(f'release_address: {zombie}')
+                except Exception as err:
+                    logger.exception(f'Cannot release_address: {zombie}, {err}')
+        return sorted(zombies_ass+zombies_all), sorted(list(set(exist_elastic_ip_all.values())) + list(set(exist_elastic_ip_ass.values())))
 
     def zombie_cluster_network_interface(self):
         """
-        This method return list of zombie cluster's network interface according to existing instances
+        This method return list of zombie cluster's network interface according to existing instances and cluster name data
         """
         network_interfaces = self.ec2_client.describe_network_interfaces()
         network_interfaces_data = network_interfaces['NetworkInterfaces']
@@ -235,11 +247,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_network_interface: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot disassociate_address: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_network_interface.values())))
 
     def zombie_cluster_load_balancer(self):
         """
-        This method return list of cluster's load balancer according to cluster vpc
+        This method return list of cluster's load balancer according to cluster vpc and cluster name data
         """
 
         exist_load_balancer = {}
@@ -252,7 +264,12 @@ class ZombieClusterResources:
                 if item.get('Tags'):
                     for tag in item['Tags']:
                         if tag['Key'].startswith(self.cluster_prefix):
-                            exist_load_balancer[resource_id] = tag['Key']
+                            # when input a specific cluster, return resource id of the input cluster
+                            if self.cluster:
+                                if self.cluster == tag['Key']:
+                                    exist_load_balancer[resource_id] = tag['Key']
+                            else:
+                                exist_load_balancer[resource_id] = tag['Key']
                             break
         zombies = self.__get_zombie_resources(exist_load_balancer)
         if zombies and self.delete:
@@ -262,11 +279,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_load_balancer: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_load_balancer: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_load_balancer.values())))
 
     def zombie_cluster_load_balancer_v2(self):
         """
-        This method return list of cluster's load balancer according to cluster vpc
+        This method return list of cluster's load balancer according to cluster vpc and cluster name data
         """
         exist_load_balancer = {}
         load_balancers = self.elbv2_client.describe_load_balancers()
@@ -278,7 +295,12 @@ class ZombieClusterResources:
                 if item.get('Tags'):
                     for tag in item['Tags']:
                         if tag['Key'].startswith(self.cluster_prefix):
-                            exist_load_balancer[resource_id] = tag['Key']
+                            # when input a specific cluster, return resource id of the input cluster
+                            if self.cluster:
+                                if self.cluster == tag['Key']:
+                                    exist_load_balancer[resource_id] = tag['Key']
+                            else:
+                                exist_load_balancer[resource_id] = tag['Key']
                             break
         zombies = self.__get_zombie_resources(exist_load_balancer)
         if zombies and self.delete:
@@ -288,7 +310,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_load_balancer: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_load_balancer: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_load_balancer.values())))
 
     def __get_all_exist_vpcs(self):
         """
@@ -304,7 +326,7 @@ class ZombieClusterResources:
 
     def zombie_cluster_vpc(self):
         """
-        This method return list of cluster's vpc according to cluster tag name
+        This method return list of cluster's vpc according to cluster tag name and cluster name data
         """
         vpcs = self.ec2_client.describe_vpcs()
         vpcs_data = vpcs['Vpcs']
@@ -318,11 +340,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_vpc: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_vpc: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_vpc.values())))
 
     def zombie_cluster_subnet(self):
         """
-        This method return list of cluster's subnet according to cluster tag name
+        This method return list of cluster's subnet according to cluster tag name and cluster name data
         """
         subnets = self.ec2_client.describe_subnets()
         subnets_data = subnets['Subnets']
@@ -336,11 +358,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_subnet: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_subnet: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_subnet.values())))
 
     def zombie_cluster_route_table(self):
         """
-        This method return list of cluster's route table according to cluster tag name
+        This method return list of cluster's route table according to cluster tag name and cluster name data
         """
         route_tables = self.ec2_client.describe_route_tables()
         route_tables_data = route_tables['RouteTables']
@@ -354,11 +376,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_route_table: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_route_table: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_route_table.values())))
 
     def zombie_cluster_internet_gateway(self):
         """
-        This method return list of cluster's route table internet gateway according to cluster tag name
+        This method return list of cluster's route table internet gateway according to cluster tag name and cluster name data
         """
         internet_gateways = self.ec2_client.describe_internet_gateways()
         internet_gateways_data = internet_gateways['InternetGateways']
@@ -372,11 +394,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_internet_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_internet_gateway: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_internet_gateway.values())))
 
     def zombie_cluster_dhcp_option(self):
         """
-        This method return list of cluster's dhcp option according to cluster tag name
+        This method return list of cluster's dhcp option according to cluster tag name and cluster name data
         """
         dhcp_options = self.ec2_client.describe_dhcp_options()
         dhcp_options_data = dhcp_options['DhcpOptions']
@@ -390,11 +412,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_internet_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_internet_gateway: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_dhcp_option.values())))
 
     def zombie_cluster_vpc_endpoint(self):
         """
-        This method return list of cluster's vpc endpoint according to cluster tag name
+        This method return list of cluster's vpc endpoint according to cluster tag name and cluster name data
         """
         vpc_endpoints = self.ec2_client.describe_vpc_endpoints()
         vpc_endpoints_data = vpc_endpoints['VpcEndpoints']
@@ -408,11 +430,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_vpc_endpoints: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_vpc_endpoints: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_vpc_endpoint.values())))
 
     def zombie_cluster_nat_gateway(self):
         """
-        This method return list of zombie cluster's nat gateway according to cluster tag name
+        This method return list of zombie cluster's nat gateway according to cluster tag name and cluster name data
         """
         nat_gateways = self.ec2_client.describe_nat_gateways()
         nat_gateways_data = nat_gateways['NatGateways']
@@ -426,11 +448,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_nat_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_nat_gateway: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_nat_gateway.values())))
 
     def zombie_network_acl(self):
         """
-        This method return list of zombie cluster's network acl according to existing vpc id
+        This method return list of zombie cluster's network acl according to existing vpc id and cluster name data
         """
         exist_network_acl = {}
         network_acls = self.ec2_client.describe_network_acls()
@@ -452,11 +474,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_network_acl: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_network_acl: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(zombies_values)))
 
     def zombie_cluster_role(self):
         """
-        This method return list of cluster's role in all regions according to cluster name
+        This method return list of cluster's role in all regions according to cluster name and cluster name data
         * Role is a global resource, need to scan for live cluster in all regions
         """
         exist_role_name_tag = {}
@@ -469,7 +491,12 @@ class ZombieClusterResources:
             if data.get('Tags'):
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
-                        exist_role_name_tag[role_name] = tag['Key']
+                        # when input a specific cluster, return resource id of the input cluster
+                        if self.cluster:
+                            if self.cluster == tag['Key']:
+                                exist_role_name_tag[role_name] = tag['Key']
+                        else:
+                            exist_role_name_tag[role_name] = tag['Key']
         zombies = self.__get_all_zombie_resources(exist_role_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
@@ -481,11 +508,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_role: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_role: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_role_name_tag.values())))
 
     def zombie_cluster_user(self):
         """
-        This method return list of cluster's user according to cluster name
+        This method return list of cluster's user according to cluster name and cluster name data
         * User is a global resource, need to scan for live cluster in all regions
         """
         exist_user_name_tag = {}
@@ -498,7 +525,12 @@ class ZombieClusterResources:
             if data.get('Tags'):
                 for tag in data['Tags']:
                     if tag['Key'].startswith(self.cluster_prefix):
-                        exist_user_name_tag[user_name] = tag['Key']
+                        # when input a specific cluster, return resource id of the input cluster
+                        if self.cluster:
+                            if self.cluster == tag['Key']:
+                                exist_user_name_tag[user_name] = tag['Key']
+                        else:
+                            exist_user_name_tag[user_name] = tag['Key']
         zombies = self.__get_all_zombie_resources(exist_user_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
@@ -515,11 +547,11 @@ class ZombieClusterResources:
                     logger.info(f'delete_user: {zombie}')
                 except Exception as err:
                      logger.exception(f'Cannot delete_user: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_user_name_tag.values())))
 
     def zombie_cluster_s3_bucket(self, cluster_stamp: str = 'image-registry'):
         """
-        This method return list of cluster's s3 bucket according to cluster name
+        This method return list of cluster's s3 bucket according to cluster name and cluster name data
         * S3 is a global resource, need to scan for live cluster in all regions
         """
         exist_bucket_name_tag = {}
@@ -535,7 +567,12 @@ class ZombieClusterResources:
                     continue
                 for tag in tags['TagSet']:
                     if tag['Key'].startswith(self.cluster_prefix):
-                        exist_bucket_name_tag[bucket['Name']] = tag['Key']
+                        # when input a specific cluster, return resource id of the input cluster
+                        if self.cluster:
+                            if self.cluster == tag['Key']:
+                                exist_bucket_name_tag[bucket['Name']] = tag['Key']
+                        else:
+                            exist_bucket_name_tag[bucket['Name']] = tag['Key']
         zombies = self.__get_all_zombie_resources(exist_bucket_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
@@ -548,7 +585,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_bucket: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_bucket: {zombie}, {err}')
-        return sorted(zombies)
+        return sorted(zombies), sorted(list(set(exist_bucket_name_tag.values())))
 
 # zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False, region='us-east-2')
 # print(zombie_cluster_resources.zombie_cluster_subnet())

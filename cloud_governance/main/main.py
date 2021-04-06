@@ -11,13 +11,15 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
-# # env tests
+# env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
+# os.environ['resource'] = 'zombie_cluster_elastic_ip'
+# os.environ['cluster'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
@@ -76,12 +78,15 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     # Custom policy Zombie Cluster
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
+        resource = os.environ.get('resource', '')
+        cluster = os.environ.get('cluster', '')
         if dry_run == 'no':  # delete
-            zombie_result = zombie_cluster_resource(delete=True, region=region)
+            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource, cluster=cluster)
         else:  # default: yes or other
-            zombie_result = zombie_cluster_resource(region=region)
-        s3operations = S3Operations(region_name=region)
-        logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))
+            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster=cluster)
+        if policy_output:
+            s3operations = S3Operations(region_name=region)
+            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))
     elif policy == 'tag_ec2':
         instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
@@ -96,7 +101,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     elif policy == 'gitleaks':
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')
-        several_repos = os.environ.get('several_repos')
+        several_repos = os.environ.get('several_repos', '')
         policy_output = os.environ.get('policy_output', '')
         try:
             if several_repos == 'yes':
@@ -106,9 +111,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             else:
                 git_leaks = GitLeaks(git_access_token=git_access_token,
                                      git_repo=git_repo)
-            s3operations = S3Operations(region_name=region)
-            logger.info(s3operations.save_results_to_s3(policy=policy, policy_output=policy_output,
-                                            policy_result=git_leaks.scan_repo()))
+            policy_result = git_leaks.scan_repo()
+            logger.info(policy_result)
+            if policy_output:
+                s3operations = S3Operations(region_name=region)
+                logger.info(s3operations.save_results_to_s3(policy=policy, policy_output=policy_output,
+                                                policy_result=policy_result))
 
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
@@ -190,7 +198,7 @@ def main():
             logger.exception(f'Missing Policy name: "{policy}"')
         if region_env == 'all':
             # must be set for boto3 client default region
-            os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+            # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
             ec2 = boto3.client('ec2')
             regions_data = ec2.describe_regions()
             for region in regions_data['Regions']:
