@@ -206,11 +206,18 @@ class ZombieClusterResources:
         """
         This method return list of zombie cluster's elastic ip according to existing instances and cluster name data
         """
+        exist_elastic_ip_association = []
+        exist_elastic_ip_allocation = []
         elastic_ips = self.ec2_client.describe_addresses()
         elastic_ips_data = elastic_ips['Addresses']
-        exist_elastic_ip_ass = self.__get_cluster_resources(resources_list=elastic_ips_data,
+        for elastic_ip in elastic_ips_data:
+            if elastic_ip.get('AssociationId'):
+                exist_elastic_ip_association.append(elastic_ip)
+            elif elastic_ip.get('AllocationId'):
+                exist_elastic_ip_allocation.append(elastic_ip)
+        exist_elastic_ip_ass = self.__get_cluster_resources(resources_list=exist_elastic_ip_association,
                                                              input_resource_id='AssociationId')
-        exist_elastic_ip_all = self.__get_cluster_resources(resources_list=elastic_ips_data,
+        exist_elastic_ip_all = self.__get_cluster_resources(resources_list=exist_elastic_ip_allocation,
                                                              input_resource_id='AllocationId')
         zombies_ass = self.__get_zombie_resources(exist_elastic_ip_ass)
         zombies_all = self.__get_zombie_resources(exist_elastic_ip_all)
