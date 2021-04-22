@@ -19,6 +19,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
 # os.environ['resource'] = 'zombie_cluster_elastic_ip'
+# os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
