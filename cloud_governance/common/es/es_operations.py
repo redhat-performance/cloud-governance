@@ -277,7 +277,6 @@ class ESOperations:
                     if item.get('email'):
                         data_dict['resources_list'].append(f"{item.get('email')} | {gitleaks_leakurl}")
 
-
                 # get cluster cost data only for ec2 and ebs
                 if resource:
                     cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
