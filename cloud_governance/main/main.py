@@ -170,7 +170,7 @@ def main():
 
     account = os.environ.get('account', '')
     policy = os.environ.get('policy', '')
-    upload_data_es = os.environ.get('', '')
+    upload_data_es = os.environ.get('upload_data_es', '')
     es_host = os.environ.get('es_host', '')
     es_port = os.environ.get('es_port', '')
     es_index = os.environ.get('es_index', '')
