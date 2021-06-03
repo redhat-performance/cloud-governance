@@ -246,7 +246,7 @@ class S3Operations:
 
     @logger_time_stamp
     @typeguard.typechecked
-    def save_results_to_s3(self, policy: str, policy_output: str, policy_result: str):
+    def save_results_to_s3(self, policy: str, policy_output: str, policy_result: dict):
         """
         This method save policy result to s3 with folder creation order by datetime
         @return:
