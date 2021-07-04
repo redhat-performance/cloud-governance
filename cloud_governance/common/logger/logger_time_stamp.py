@@ -36,7 +36,7 @@ def logger_time_stamp(method):
             total_time = time_end - time_start
             date_time_end = datetime.datetime.now().strftime(datetime_format)
             logger.error(f'Method name: {method.__name__} , End time with errors: {date_time_end} , Total time: {round(total_time, 2)} sec')
-            raise Exception(method.__name__, err)
+            raise err  # Exception(method.__name__, err)
 
         return result
     return method_wrapper
