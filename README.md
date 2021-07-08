@@ -6,7 +6,7 @@
 <h3 align="center">Cloud Governance</h3>
 
 ![](images/cloud_governance1.png)
-
+![](images/demo.gif)
 This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
 cost optimize and security.
 
