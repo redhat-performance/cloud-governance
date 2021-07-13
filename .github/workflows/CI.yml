@@ -59,7 +59,7 @@ jobs:
         twine upload dist/*
         echo 'Wait 30 sec till package will be updated'
         sleep 30
-    - name: Upload to quay.io
+    - name: Upload to 🐋 quay.io
       run: |
         version=$(python3 setup.py --version)
         sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
@@ -68,7 +68,7 @@ jobs:
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}
         echo 'Wait 30 sec till image will be updated in quay.io'
         sleep 30
-    - name: E2E tests using latest quay.io
+    - name: ✔️ E2E tests using latest quay.io
       run: |
         declare -a regions=('us-east-1' 'us-east-2' 'us-west-1' 'us-west-2' 'eu-central-1')
         declare -a policies=('ec2_idle' 'ec2_run' 'ebs_unattached' 'ebs_in_use')
