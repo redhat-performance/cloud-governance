@@ -1,6 +1,6 @@
 FROM python:3.8-slim
 
-#cloud-governance latest version
+# cloud-governance latest version
 ARG VERSION
 
 # install gitleaks
