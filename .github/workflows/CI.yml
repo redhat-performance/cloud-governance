@@ -38,18 +38,18 @@ jobs:
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: us-east-2
-    - name: Test with pytest
+    - name: 📃 Test with pytest
       run: |
         pytest --cov=cloud_governance --cov-report=term-missing
         coverage run -m pytest
         coverage report -m
-    - name: Publish to coveralls.io
+    - name: 🎥 Publish to coveralls.io
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pip install coveralls
         COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
-    - name: Build and publish distribution 📦 to PyPI
+    - name: 🔨 Build and publish distribution 📦 to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
@@ -57,12 +57,10 @@ jobs:
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
         twine upload dist/*
-        echo 'Wait 30 sec till package will be updated'
-        sleep 30
-    - name: Upload to 🐋 quay.io
+    - name: ⌛ Upload to 🐋 quay.io
       run: |
         version=$(python3 setup.py --version)
-        sudo podman build --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
+        sudo podman build --build-arg VERSION=$version --layers=false -t ${{ secrets.PACKAGE_NAME }}:v$version .
         sudo podman login quay.io -u ${{ secrets.QAUYIO_ROBOT_USER }} -p ${{ secrets.QAUYIO_ROBOT_TOKEN }}
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}:v$version
         sudo podman push localhost/${{ secrets.PACKAGE_NAME }}:v$version quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}

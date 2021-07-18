@@ -1,5 +1,8 @@
 FROM python:3.8-slim
 
+#cloud-governance latest version
+ARG VERSION
+
 # install gitleaks
 ARG gitleaks_version=7.0.2
 RUN apt-get update \
