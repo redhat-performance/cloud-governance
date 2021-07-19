@@ -14,8 +14,8 @@ RUN apt-get update \
      && mv gitleaks /usr/local/bin/ \
      && gitleaks --version
 
-# install & run cloud-governance
-RUN python -m pip install --upgrade pip && pip install cloud-governance==$VERSION
+# install & run cloud-governance (--no-cache-dir for take always the latest)
+RUN python -m pip --no-cache-dir install --upgrade pip && pip --no-cache-dir install cloud-governance==$VERSION
 RUN pip3 --no-cache-dir install --upgrade awscli
 ADD cloud_governance/policy /usr/local/cloud_governance/policy/
 COPY cloud_governance/main/main.py /usr/local/cloud_governance/main.py
