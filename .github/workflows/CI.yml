@@ -32,25 +32,6 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - uses: azure/k8s-set-context@v1
-      with:
-        method: kubeconfig
-        kubeconfig: ${{ secrets.KUBECONFIG }} # Use secret (https://developer.github.com/actions/managing-workflows/storing-secrets/)
-      id: setcontext
-    - name: run oc command
-      env:
-        RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
-      run: |
-        # Install Dockerfile content for pytest
-        # install oc/kubctl
-        oc_version=4.7.0-0.okd-2021-05-22-050008
-        curl -L https://github.com/openshift/okd/releases/download/${oc_version}/openshift-client-linux-${oc_version}.tar.gz -o $RUNNER_PATH/openshift-client-linux-${oc_version}.tar.gz
-        tar -xzvf $RUNNER_PATH/openshift-client-linux-${oc_version}.tar.gz -C $RUNNER_PATH/
-        rm $RUNNER_PATH/openshift-client-linux-${oc_version}.tar.gz
-        echo alias oc=$RUNNER_PATH/./oc >> $RUNNER_PATH/.bashrc
-        echo alias kubectl=$RUNNER_PATH/./kubectl >> $RUNNER_PATH/.bashrc
-        oc get nodes
-        sleep 300
     - name: Configure AWS credentials for pytest
       uses: aws-actions/configure-aws-credentials@v1
       with:
