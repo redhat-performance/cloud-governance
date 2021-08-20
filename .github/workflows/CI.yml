@@ -38,6 +38,8 @@ jobs:
         kubeconfig: ${{ secrets.KUBECONFIG }} # Use secret (https://developer.github.com/actions/managing-workflows/storing-secrets/)
       id: setcontext
     - name: run oc command
+      env:
+        RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
       run: |
         # Install Dockerfile content for pytest
         # install oc/kubctl
