@@ -11,7 +11,7 @@ AWS_ACCESS_KEY_ID_RH_PERF = os.environ['AWS_ACCESS_KEY_ID_RH_PERF']
 AWS_SECRET_ACCESS_KEY_RH_PERF = os.environ['AWS_SECRET_ACCESS_KEY_RH_PERF']
 BUCKET_RH_PERF = os.environ['BUCKET_RH_PERF']
 ES_HOST = os.environ['ES_HOST']
-ES_PORT = 9200
+ES_PORT = os.environ['ES_PORT']
 
 
 def get_custodian_policies(type: str = None):
