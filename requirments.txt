@@ -5,4 +5,4 @@ boto3
 c7n
 requests
 PyGithub
-elasticsearch
+elasticsearch==7.10.0

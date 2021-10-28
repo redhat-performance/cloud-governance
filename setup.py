@@ -43,7 +43,7 @@ setup(
         'c7n',  # custodian
         'requests',  # rest api & lambda
         'PyGithub',  # gitleaks
-        'elasticsearch',  # optional
+        'elasticsearch==7.10.0',  # optional
         'pandas'  # aggregate ec2/ebs cluster data
     ],
 
