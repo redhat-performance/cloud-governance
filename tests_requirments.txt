@@ -2,5 +2,5 @@ typeguard
 requests
 boto3
 moto
-elasticsearch
+elasticsearch==7.10.0
 pandas
