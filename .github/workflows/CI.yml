@@ -57,8 +57,33 @@ jobs:
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
         twine upload dist/*
-        echo '⌛ Wait 120 sec till package will be updated in PyPI'
-        sleep 120
+        echo '⌛ Wait till package will be updated in PyPI'
+        # Verfiy and wait till latest cloud-governance version will be updated in Pypi (timeout 900 seconds)
+        timeout=900
+        sleep_time=30
+        expected_version=$(python3 setup.py --version)
+        pip --no-cache-dir install cloud-governance --upgrade
+        build=$(pip freeze | grep cloud-governance | sed 's/==/=/g')
+        actual_version="$(cut -d'=' -f2 <<<"$build")"
+        current_wait_time=0
+        while [[ $current_wait_time < $timeout ]]; do
+            if [[ "$expected_version" = "$actual_version" ]]; then
+              echo 'cloud-governance version:' $expected_version 'was updated in Pypi'
+              break;
+            else
+              # sleep for x seconds
+              echo 'wait' "$((current_wait_time+sleep_time))" 'seconds'
+              sleep $sleep_time
+              current_wait_time="$((current_wait_time+sleep_time))"
+              pip --no-cache-dir install cloud-governance --upgrade
+              build=$(pip freeze | grep cloud-governance | sed 's/==/=/g')
+              actual_version="$(cut -d'=' -f2 <<<"$build")"
+              if (( $current_wait_time == $timeout )); then
+                echo "cloud-governance lastet version did not update in Pypi after 900 seconds - raise failure"
+                exit 1
+              fi
+            fi
+        done
     - name: ⌛ Upload to 🐋 quay.io
       run: |
         version=$(python3 setup.py --version)
