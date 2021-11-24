@@ -104,27 +104,28 @@ class ZombieClusterResources:
         """
         This method filter zombie resource, meaning no active instance for this cluster
         """
-        zombie_resources = []
+        zombie_resources = {}
         zombies_values = set(exist_resources.values()) - set(self._cluster_instance().values())
 
         for zombie_value in zombies_values:
             for key, value in exist_resources.items():
                 if zombie_value == value:
-                    zombie_resources.append(key)
-        return sorted(zombie_resources)
+                    zombie_resources[key] = value
+
+        return zombie_resources
 
     def __get_all_zombie_resources(self, exist_resources: dict):
         """
         This method filter zombie resource, meaning no active instance for this cluster in all regions
         """
-        zombie_resources = []
+        zombie_resources = {}
         zombies_values = set(exist_resources.values()) - set(self._all_cluster_instance().values())
 
         for zombie_value in zombies_values:
             for key, value in exist_resources.items():
                 if zombie_value == value:
-                    zombie_resources.append(key)
-        return sorted(zombie_resources)
+                    zombie_resources[key] = value
+        return zombie_resources
 
     def zombie_cluster_volume(self):
         """
@@ -147,7 +148,8 @@ class ZombieClusterResources:
                     logger.info(f'delete_volume: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_volume: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_volume.values())))
+
+        return zombies
 
     def zombie_cluster_ami(self):
         """
@@ -164,7 +166,7 @@ class ZombieClusterResources:
                     logger.info(f'deregister_image: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot deregister_image: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_ami.values())))
+        return zombies
 
     def zombie_cluster_snapshot(self):
         """
@@ -182,7 +184,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_snapshot: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_snapshot: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_snapshot.values())))
+        return zombies
 
     def zombie_cluster_security_group(self):
         """
@@ -200,7 +202,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_security_group: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_security_group: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_security_group.values())))
+        return zombies
 
     def zombie_cluster_elastic_ip(self):
         """
@@ -235,7 +237,8 @@ class ZombieClusterResources:
                     logger.info(f'release_address: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot release_address: {zombie}, {err}')
-        return sorted(zombies_ass+zombies_all), sorted(list(set(exist_elastic_ip_all.values())) + list(set(exist_elastic_ip_ass.values())))
+        zombies = {**zombies_ass, **zombies_all}
+        return zombies
 
     def zombie_cluster_network_interface(self):
         """
@@ -254,7 +257,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_network_interface: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot disassociate_address: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_network_interface.values())))
+        return zombies
 
     def zombie_cluster_load_balancer(self):
         """
@@ -286,7 +289,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_load_balancer: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_load_balancer: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_load_balancer.values())))
+        return zombies
 
     def zombie_cluster_load_balancer_v2(self):
         """
@@ -317,7 +320,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_load_balancer: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_load_balancer: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_load_balancer.values())))
+        return zombies
 
     def __get_all_exist_vpcs(self):
         """
@@ -347,7 +350,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_vpc: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_vpc: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_vpc.values())))
+        return zombies
 
     def zombie_cluster_subnet(self):
         """
@@ -365,7 +368,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_subnet: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_subnet: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_subnet.values())))
+        return zombies
 
     def zombie_cluster_route_table(self):
         """
@@ -383,7 +386,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_route_table: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_route_table: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_route_table.values())))
+        return zombies
 
     def zombie_cluster_internet_gateway(self):
         """
@@ -401,7 +404,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_internet_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_internet_gateway: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_internet_gateway.values())))
+        return zombies
 
     def zombie_cluster_dhcp_option(self):
         """
@@ -419,7 +422,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_internet_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_internet_gateway: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_dhcp_option.values())))
+        return zombies
 
     def zombie_cluster_vpc_endpoint(self):
         """
@@ -437,7 +440,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_vpc_endpoints: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_vpc_endpoints: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_vpc_endpoint.values())))
+        return zombies
 
     def zombie_cluster_nat_gateway(self):
         """
@@ -455,7 +458,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_nat_gateway: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_nat_gateway: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_nat_gateway.values())))
+        return zombies
 
     def zombie_network_acl(self):
         """
@@ -466,13 +469,13 @@ class ZombieClusterResources:
         network_acls_data = network_acls['NetworkAcls']
         for resource in network_acls_data:
             exist_network_acl[resource['NetworkAclId']] = resource['VpcId']
-        zombie_resources = []
+        zombie_resources = {}
         all_exist_vpcs = self.__get_all_exist_vpcs()
         zombies_values = set(exist_network_acl.values()) - set(all_exist_vpcs)
         for zombie_value in zombies_values:
             for key, value in exist_network_acl.items():
                 if zombie_value == value:
-                    zombie_resources.append(key)
+                    zombie_resources[key] = value
         zombies = zombie_resources
         if zombies and self.delete:
             for zombie in zombies:
@@ -481,7 +484,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_network_acl: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_network_acl: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(zombies_values)))
+        return zombies
 
     def zombie_cluster_role(self):
         """
@@ -515,7 +518,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_role: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_role: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_role_name_tag.values())))
+        return zombies
 
     def zombie_cluster_user(self):
         """
@@ -554,7 +557,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_user: {zombie}')
                 except Exception as err:
                      logger.exception(f'Cannot delete_user: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_user_name_tag.values())))
+        return zombies
 
     def zombie_cluster_s3_bucket(self, cluster_stamp: str = 'image-registry'):
         """
@@ -592,7 +595,7 @@ class ZombieClusterResources:
                     logger.info(f'delete_bucket: {zombie}')
                 except Exception as err:
                     logger.exception(f'Cannot delete_bucket: {zombie}, {err}')
-        return sorted(zombies), sorted(list(set(exist_bucket_name_tag.values())))
+        return zombies
 
 # zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False, region='us-east-2')
 # print(zombie_cluster_resources.zombie_cluster_subnet())
