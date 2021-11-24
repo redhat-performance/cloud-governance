@@ -97,9 +97,11 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
             func_resource_list = __get_resource_list(region, delete, resource, cluster_tag)
     logger.info(f'{action} {len(func_resource_list)} cluster zombies resources in region {region}:')
     for func in func_resource_list:
-        resource_data, cluster_data = func()
-        logger.info(f'key: {func.__name__}, count: {len(resource_data)}, data: {cluster_data}')
-        zombie_result[func.__name__] = {'count': len(resource_data), 'data': set(cluster_data)}
-        all_cluster_data.extend(cluster_data)
-    zombie_result['all_cluster_data'] = {'count': len(set(all_cluster_data)), 'data': set(all_cluster_data)}
+        resource_data = func()
+        if resource_data:
+            resource_data_list = sorted(set(resource_data.values()))
+            logger.info(f'key: {func.__name__}, count: {len(resource_data)}, data: {resource_data_list}')
+            zombie_result[func.__name__] = {'count': len(resource_data), 'data': resource_data_list}
+            all_cluster_data.extend(resource_data_list)
+    zombie_result['all_cluster_data'] = {'count': len(set(all_cluster_data)), 'data': set(sorted(all_cluster_data))}
     return zombie_result
