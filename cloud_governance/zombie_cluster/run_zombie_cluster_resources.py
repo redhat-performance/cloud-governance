@@ -100,6 +100,7 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
         resource_data = func()
         if resource_data:
             resource_data_list = sorted(set(resource_data.values()))
+            resource_data_list = [func.__name__.replace("zombie_cluster_", "") + ':' + item for item in resource_data_list]
             logger.info(f'key: {func.__name__}, count: {len(resource_data)}, data: {resource_data_list}')
             zombie_result[func.__name__] = {'count': len(resource_data), 'data': resource_data_list}
             all_cluster_data.extend(resource_data_list)
