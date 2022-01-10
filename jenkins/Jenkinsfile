@@ -33,7 +33,7 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-              sh 'sudo podman rmi quay.io/ebattat/cloud-governance'
+              sh 'sudo podman rmi -f quay.io/ebattat/cloud-governance:latest'
               deleteDir()
               }
         }
