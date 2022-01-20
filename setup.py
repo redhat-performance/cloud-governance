@@ -39,7 +39,7 @@ setup(
 
     install_requires=[
         'pandas',  # latest: aggregate ec2/ebs cluster data
-        'typing=3.7.4.3',
+        'typing==3.7.4.3',
         'typeguard==2.13.3',  # checking types
         'botocore==1.23.39',
         'boto3==1.20.39',  # ec2 client
