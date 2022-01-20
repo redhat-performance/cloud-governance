@@ -47,7 +47,6 @@ setup(
         'requests==2.27.1',  # rest api & lambda
         'PyGithub==1.54',  # gitleaks
         'elasticsearch==7.16.3',  # optional
-
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
