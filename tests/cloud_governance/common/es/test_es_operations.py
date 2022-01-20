@@ -1,4 +1,4 @@
-
+from collections.abc import Mapping
 from cloud_governance.common.es.es_operations import ESOperations
 
 
