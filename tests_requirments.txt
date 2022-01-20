@@ -1,6 +1,6 @@
+pandas
 typeguard==2.13.3
-requests
 boto3==1.20.39
 moto==2.3.2
+requests==2.27.1
 elasticsearch==7.16.3
-pandas

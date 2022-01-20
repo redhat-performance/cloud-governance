@@ -38,15 +38,16 @@ setup(
     packages=find_packages(include=['cloud_governance', 'cloud_governance.*']),
 
     install_requires=[
-        'typing',
-        'botocore==1.23.39',
+        'pandas',  # latest: aggregate ec2/ebs cluster data
+        'typing=3.7.4.3',
         'typeguard==2.13.3',  # checking types
+        'botocore==1.23.39',
         'boto3==1.20.39',  # ec2 client
-        'c7n',  # custodian
-        'requests',  # rest api & lambda
+        'c7n==0.9.14',  # custodian
+        'requests==2.27.1',  # rest api & lambda
         'PyGithub==1.55',  # gitleaks
         'elasticsearch==7.16.3',  # optional
-        'pandas'  # aggregate ec2/ebs cluster data
+
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
