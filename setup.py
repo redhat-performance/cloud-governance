@@ -45,9 +45,8 @@ setup(
         'boto3==1.20.39',  # ec2 client
         'c7n==0.9.14',  # custodian
         'requests==2.27.1',  # rest api & lambda
-        'PyGithub==1.55',  # gitleaks
+        'PyGithub==1.54',  # gitleaks
         'elasticsearch==7.16.3',  # optional
-
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
