@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10' ]
+        python-version: [ '3.8', '3.9' ]
+        # 3.10 - elasticsearch not support  https://stackoverflow.com/questions/69381312/in-vs-code-importerror-cannot-import-name-mapping-from-collections
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
