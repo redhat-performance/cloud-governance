@@ -39,13 +39,13 @@ setup(
 
     install_requires=[
         'typing',
-        'botocore',
-        'typeguard',  # checking types
-        'boto3',  # ec2 client
+        'botocore==1.23.39',
+        'typeguard==2.13.3',  # checking types
+        'boto3==1.20.39',  # ec2 client
         'c7n',  # custodian
         'requests',  # rest api & lambda
-        'PyGithub',  # gitleaks
-        'elasticsearch==7.10.0',  # optional
+        'PyGithub==1.55',  # gitleaks
+        'elasticsearch==7.16.3',  # optional
         'pandas'  # aggregate ec2/ebs cluster data
     ],
 
