@@ -3,8 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-
-__version__ = '1.0.330'
+__version__ = '1.0.331'
 
 here = path.abspath(path.dirname(__file__))
 
@@ -30,7 +29,6 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
     ],
 
     zip_safe=False,
