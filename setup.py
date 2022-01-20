@@ -39,13 +39,13 @@ setup(
 
     install_requires=[
         'pandas',  # latest: aggregate ec2/ebs cluster data
-        'PyGithub',  # gitleaks
         'typing==3.7.4.3',
         'typeguard==2.13.3',  # checking types
         'botocore==1.23.39',
         'boto3==1.20.39',  # ec2 client
         'c7n==0.9.14',  # custodian
         'requests==2.27.1',  # rest api & lambda
+        'PyGitHub==1.55',  # gitleaks
         'elasticsearch==7.16.3',  # optional
     ],
 
