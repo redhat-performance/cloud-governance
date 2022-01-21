@@ -1,5 +1,5 @@
 pipeline {
-    agent { any }
+    agent  any 
     environment {
         AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
         AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
