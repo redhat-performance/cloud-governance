@@ -16,6 +16,12 @@ pipeline {
         contact = "ebattat@redhat.com"
     }
     stages {
+        stage('Cleanup workspace') {
+            steps {
+              sh 'if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then  podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'
+              deleteDir()
+              }
+        }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
           steps {
             checkout scm
@@ -30,12 +36,6 @@ pipeline {
             steps {
                  sh 'python3 jenkins/run_upload_es.py'
             }
-        }
-        stage('Cleanup workspace') {
-            steps {
-              sh 'sudo podman rmi -f quay.io/ebattat/cloud-governance:latest'
-              deleteDir()
-              }
         }
     }
     post {
