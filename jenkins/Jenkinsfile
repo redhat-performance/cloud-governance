@@ -16,7 +16,7 @@ pipeline {
         contact = "ebattat@redhat.com"
     }
     stages {
-        stage('Cleanup workspace') {
+        stage('Image Cleanup') {
             steps {
                  sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
               }
