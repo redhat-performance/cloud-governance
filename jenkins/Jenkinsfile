@@ -1,5 +1,5 @@
 pipeline {
-    agent  any 
+    agent { label 'cloud-governance' }
     environment {
         AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
         AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
@@ -16,6 +16,11 @@ pipeline {
         contact = "ebattat@redhat.com"
     }
     stages {
+        stage('Cleanup workspace') {
+            steps {
+              sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+              }
+        }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
           steps {
             checkout scm
@@ -33,7 +38,7 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-              sh 'if [[ "$(sudo docker images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then  sudo docker rmi -f $(sudo docker images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'
+              sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
               deleteDir()
               }
         }
@@ -44,21 +49,21 @@ pipeline {
 //            script {
 //                 msg = "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully"
 //                 emailext body: """\
-// 				Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-// 			    """,
+//              Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+//               """,
 //                 subject: msg,
 //                 to: env.contact
 //             }
        }
-//         failure {
-//               script {
-//                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-//                 emailext body: """\
-// 				Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-// 				""",
-//                 subject: msg,
-//                 to: env.contact
-//             }
-//           }
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
+                subject: msg,
+                to: env.contact
+            }
+          }
     }
 }
