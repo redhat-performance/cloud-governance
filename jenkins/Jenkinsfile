@@ -33,7 +33,7 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-              sh 'if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then  podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'
+              sh 'if [[ "$(sudo docker images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then  sudo docker rmi -f $(sudo docker images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'
               deleteDir()
               }
         }
