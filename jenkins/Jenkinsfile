@@ -16,6 +16,11 @@ pipeline {
         contact = "ebattat@redhat.com"
     }
     stages {
+        stage('Cleanup workspace') {
+            steps {
+                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+              }
+        }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
           steps {
             checkout scm
@@ -33,7 +38,7 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-              sh 'sudo podman rmi -f quay.io/ebattat/cloud-governance:latest'
+                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
               deleteDir()
               }
         }
