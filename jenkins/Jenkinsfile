@@ -16,9 +16,9 @@ pipeline {
         contact = "ebattat@redhat.com"
     }
     stages {
-        stage('Image Cleanup') {
             steps {
                  sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+
               }
         }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -49,8 +49,8 @@ pipeline {
 //            script {
 //                 msg = "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully"
 //                 emailext body: """\
-// 				Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-// 			    """,
+//              Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+//               """,
 //                 subject: msg,
 //                 to: env.contact
 //             }
@@ -59,8 +59,8 @@ pipeline {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
-				Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-				""",
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
                 subject: msg,
                 to: env.contact
             }
