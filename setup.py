@@ -3,9 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-
 __version__ = '1.0.337'
-
 
 
 here = path.abspath(path.dirname(__file__))
@@ -48,7 +46,7 @@ setup(
         'c7n==0.9.14',  # custodian
         'requests==2.27.1',  # rest api & lambda
         'PyGitHub==1.55',  # gitleaks
-        'elasticsearch==7.16.3',  # optional
+        'elasticsearch==7.10.0',  # depend on elasticsearch server
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

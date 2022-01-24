@@ -6,4 +6,4 @@ boto3==1.19.12
 c7n==0.9.14
 PyGitHub==1.55
 requests==2.27.1
-elasticsearch==7.16.3
+elasticsearch==7.10.0
