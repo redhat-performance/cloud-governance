@@ -39,7 +39,11 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-        aws-region: us-east-2
+        aws-region: ${{ secrets.REGION }}
     - name:  Test with pytest
+      env:
+        OUTPUT_BUCKET: ${{ secrets.OUTPUT_BUCKET }}
+        REGION: ${{ secrets.REGION }}
+        KEY_TEST: ${{ secrets.KEY_TEST }}
       run: |
         python -m pytest
