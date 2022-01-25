@@ -2,11 +2,13 @@
 import tempfile
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from tests.integration.cloud_governance.test_environment_variables import *
+from uuid import uuid4
 
 BUCKET = test_environment_variable.get("OUTPUT_BUCKET", '')
 REGION = test_environment_variable.get("REGION", '')
 KEY_TEST = test_environment_variable.get("KEY_TEST", '')
-TEMP_FILE = "cloud-governance-test.txt"
+uuid = str(uuid4())
+TEMP_FILE = f'cloud-governance-test-{uuid}.txt'
 
 
 def get_s3_client_object():
