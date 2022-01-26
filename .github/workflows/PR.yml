@@ -42,7 +42,7 @@ jobs:
         aws-region: ${{ secrets.REGION }}
     - name:  Test with pytest
       env:
-        OUTPUT_BUCKET: ${{ secrets.OUTPUT_BUCKET }}
+        BUCKET: ${{ secrets.BUCKET }}
         REGION: ${{ secrets.REGION }}
         KEY_TEST: ${{ secrets.KEY_TEST }}
       run: |

@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI
+name: Build
 
 on:
   push:
@@ -38,9 +38,13 @@ jobs:
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: us-east-2
-    - name: 📃 Test with pytest
+    - name: 📃 Unittest and Integration tests with pytest'
+      env:
+        BUCKET: ${{ secrets.BUCKET }}
+        REGION: ${{ secrets.REGION }}
+        KEY_TEST: ${{ secrets.KEY_TEST }}
       run: |
-        pytest --cov=cloud_governance --cov-report=term-missing
+        pytest --cov=cloud_governqance --cov-report=term-missing
         coverage run -m pytest
         coverage report -m
     - name: 🎥 Publish to coveralls.io
