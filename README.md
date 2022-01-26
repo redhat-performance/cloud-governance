@@ -1,6 +1,6 @@
 
-[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/CI/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
-[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=master)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=master)
+[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
+[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
 
 
 <h3 align="center">Cloud Governance</h3>
