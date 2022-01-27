@@ -218,6 +218,7 @@ class ElasticSearchOperations:
                 ebs_monthly_cost = 0.1 * item_data['Size']
             return round(ebs_monthly_cost, 3)
 
+
     def upload_last_policy_to_elasticsearch(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
@@ -324,6 +325,7 @@ class ElasticSearchOperations:
             return True
         except Exception:
             raise
+
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):

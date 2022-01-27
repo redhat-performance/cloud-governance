@@ -11,7 +11,6 @@ def __get_test_environment_variables():
     test_environment_variable['elasticsearch'] = os.environ.get('ELASTICSEARCH', 'elasticsearch.intlab.perf-infra.lab.eng.rdu2.redhat.com')
     test_environment_variable['elasticsearch_port'] = os.environ.get('ELASTICSEARCH_PORT', '80')
     test_environment_variable['timeout'] = int(os.environ.get('TIMEOUT', '2000'))
-
     # ElasticSearch url
     if test_environment_variable.get('elasticsearch_password', ''):
         test_environment_variable['elasticsearch_url'] = f"http://{test_environment_variable.get('elasticsearch_user', '')}:{test_environment_variable.get('elasticsearch_password', '')}@{test_environment_variable.get('elasticsearch', '')}:{test_environment_variable.get('elasticsearch_port', '')}"
