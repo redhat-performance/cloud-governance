@@ -47,6 +47,7 @@ setup(
         'requests==2.27.1',  # rest api & lambda
         'PyGitHub==1.55',  # gitleaks
         'elasticsearch==7.10.0',  # depend on elasticsearch server
+        "elasticsearch_dsl==7.4.0",
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

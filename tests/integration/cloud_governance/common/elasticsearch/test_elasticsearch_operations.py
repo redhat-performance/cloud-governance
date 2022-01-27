@@ -8,7 +8,7 @@ from tests.integration.cloud_governance.test_environment_variables import *
 
 
 @pytest.mark.skip(reason="No elasticsearch for test")
-def test_get_upload_update_es():
+def test_get_upload_update_elasticsearch():
     """
     This method test get upload and update elasticsearch
     @return:
@@ -20,11 +20,11 @@ def test_get_upload_update_es():
         es = ElasticSearchOperations(es_host=test_environment_variable.get('elasticsearch', ''),
                                      es_port=test_environment_variable.get('elasticsearch_port', ''))
         data = {'tool': 'cloud-governance', 'uuid': uuid}
-        es.upload_to_es(index='cloud-governance-test', data=data)
-        assert es.verify_es_data_uploaded(index='cloud-governance-test', uuid=uuid)
-        id = es.verify_es_data_uploaded(index='cloud-governance-test', uuid=uuid)
-        es.update_es_index(index='cloud-governance-test', id=id[0], metadata={'cloud-governance_version': '1.0.324'})
-        result = es.get_es_index_by_id(index='cloud-governance-test', id=id[0])
+        es.upload_to_elasticsearch(index='cloud-governance-test', data=data)
+        assert es.verify_elasticsearch_data_uploaded(index='cloud-governance-test', uuid=uuid)
+        id = es.verify_elasticsearch_data_uploaded(index='cloud-governance-test', uuid=uuid)
+        es.update_elasticsearch_index(index='cloud-governance-test', id=id[0], metadata={'cloud-governance_version': '1.0.324'})
+        result = es.get_elasticsearch_index_by_id(index='cloud-governance-test', id=id[0])
         assert result['_source']['uuid'] == uuid
         assert result['_source']['cloud-governance_version'] == '1.0.324'
 

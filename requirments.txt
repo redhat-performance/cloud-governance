@@ -7,3 +7,4 @@ c7n==0.9.14
 PyGitHub==1.55
 requests==2.27.1
 elasticsearch==7.10.0
+elasticsearch_dsl==7.4.0
