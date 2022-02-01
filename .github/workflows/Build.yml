@@ -36,7 +36,7 @@ jobs:
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: us-east-2
-    - name: 📃 Unittest and Integration tests with pytest'
+    - name: 📃 Unittest and Integration tests with pytest
       env:
         BUCKET: ${{ secrets.BUCKET }}
         REGION: ${{ secrets.REGION }}
@@ -112,8 +112,7 @@ jobs:
         region='us-east-1'
         policy='gitleaks' 
         sudo podman run --rm --name cloud-governance -e policy=$policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$region -e git_access_token=${{ secrets.GIT_TOKEN }} -e git_repo=https://github.com/redhat-performance -e several_repos=yes -e policy_output=${{ secrets.OUTPUT_BUCKET }}/test/$region -e log_level=INFO quay.io/ebattat/cloud-governance
-
-    - name: Bump Version
+    - name: 🎁 Bump Version
       run: |
         version=$(python3 setup.py --version)
         git checkout main

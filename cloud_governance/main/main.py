@@ -137,8 +137,8 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
         else:
-            raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
             logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
+            raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
     else:  # local policy
         # default is dry run - change it to custodian dry run format
         if dry_run == 'yes':
@@ -152,8 +152,9 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         if os.path.isfile(policy):
             os.system(f'custodian run {dry_run} -s {policy_output} {policy}')
         else:
-            raise Exception(f'Missing Policy name: {policy}')
             logger.exception(f'Missing Policy name: {policy}')
+            raise Exception(f'Missing Policy name: {policy}')
+
 
 
 @logger_time_stamp
@@ -195,8 +196,8 @@ def main():
     # 2. POLICY
     else:
         if not policy:
-            raise Exception(f'Missing Policy name: "{policy}"')
             logger.exception(f'Missing Policy name: "{policy}"')
+            raise Exception(f'Missing Policy name: "{policy}"')
         if region_env == 'all':
             # must be set for boto3 client default region
             # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
