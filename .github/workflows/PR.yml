@@ -20,7 +20,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -29,7 +28,6 @@ jobs:
         if [ -f tests_requirments.txt ]; then pip install -r tests_requirments.txt; fi
     - name: Lint with flake8
       run: |
-
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
@@ -40,10 +38,19 @@ jobs:
         aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.REGION }}
-    - name:  Test with pytest
+    - name: 📃 Unittest and Integration tests with pytest
       env:
         BUCKET: ${{ secrets.BUCKET }}
         REGION: ${{ secrets.REGION }}
         KEY_TEST: ${{ secrets.KEY_TEST }}
       run: |
         python -m pytest
+    - name: 📃 E2E test
+      env:
+        AWS_DEFAULT_REGION: ${{ secrets.REGION }}
+        policy: ${{ secrets.POLICY }}
+        policy_output: ${{ secrets.POLICY_OUTPUT }}
+        RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
+      run: |
+        PYTHONPATH=. python cloud_governance/main/main.py 1> /dev/null 2> $RUNNER_PATH/err.log
+        [ -s $RUNNER_PATH/err.log ] && echo "Error is raised"
