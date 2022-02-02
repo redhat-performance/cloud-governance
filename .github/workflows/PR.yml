@@ -52,5 +52,6 @@ jobs:
         policy_output: ${{ secrets.POLICY_OUTPUT }}
         RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
       run: |
-        PYTHONPATH=. python cloud_governance/main/main.py 1> /dev/null 2> $RUNNER_PATH/err.log
-        [ -s $RUNNER_PATH/err.log ] && echo "Error is raised"
+        PYTHONPATH=. python cloud_governance/main/main.py 1> /dev/null 2> /home/runner/err.log
+        cat /home/runner/err.log
+    #    [ -s $RUNNER_PATH/err.log ] && echo "Error E2E is raised"

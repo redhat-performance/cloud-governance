@@ -48,6 +48,8 @@ setup(
         'PyGitHub==1.55',  # gitleaks
         'elasticsearch==7.10.0',  # depend on elasticsearch server
         "elasticsearch_dsl==7.4.0",
+        "sphinx==4.0.2",
+        "sphinx_rtd_theme==0.4.3",
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
