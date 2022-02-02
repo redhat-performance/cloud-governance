@@ -8,3 +8,5 @@ PyGitHub==1.55
 requests==2.27.1
 elasticsearch==7.10.0
 elasticsearch_dsl==7.4.0
+sphinx==4.0.2
+sphinx_rtd_theme==0.4.3
