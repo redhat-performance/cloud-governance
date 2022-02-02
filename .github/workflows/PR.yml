@@ -52,4 +52,4 @@ jobs:
         policy_output: ${{ secrets.POLICY_OUTPUT }}
         RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
       run: |
-        PYTHONPATH=. python cloud_governance/main/main.py
+        PYTHONPATH=. python cloud_governance/main/main.py 
