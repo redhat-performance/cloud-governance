@@ -2,9 +2,11 @@ from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
-def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '', resource_name: str = ''):
+def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '',
+                        resource_name: str = ''):
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete,
-                                                      region=region, cluster_tag=cluster_tag, resource_name=resource_name)
+                                                      region=region, cluster_tag=cluster_tag,
+                                                      resource_name=resource_name)
     zombie_cluster_resources_dict = {'zombie_cluster_volume': zombie_cluster_resources.zombie_cluster_volume,
                                      'zombie_cluster_ami': zombie_cluster_resources.zombie_cluster_ami,
                                      'zombie_cluster_snapshot': zombie_cluster_resources.zombie_cluster_snapshot,
@@ -28,44 +30,44 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
         scan_func_resource_list = [zombie_cluster_resources_dict[resource]]
         delete_func_resource_list = [zombie_cluster_resources_dict[resource]]
     else:
-        scan_func_resource_list = [zombie_cluster_resources.zombie_cluster_volume,
-                                   zombie_cluster_resources.zombie_cluster_ami,
-                                   zombie_cluster_resources.zombie_cluster_snapshot,
-                                   zombie_cluster_resources.zombie_cluster_security_group,
-                                   zombie_cluster_resources.zombie_cluster_elastic_ip,
-                                   zombie_cluster_resources.zombie_cluster_network_interface,
-                                   zombie_cluster_resources.zombie_cluster_load_balancer,
+        scan_func_resource_list = [zombie_cluster_resources.zombie_cluster_load_balancer,
                                    zombie_cluster_resources.zombie_cluster_load_balancer_v2,
-                                   zombie_cluster_resources.zombie_cluster_vpc,
-                                   zombie_cluster_resources.zombie_cluster_subnet,
-                                   zombie_cluster_resources.zombie_cluster_route_table,
-                                   zombie_cluster_resources.zombie_cluster_internet_gateway,
-                                   zombie_cluster_resources.zombie_cluster_dhcp_option,
+                                   zombie_cluster_resources.zombie_cluster_volume,
+                                   zombie_cluster_resources.zombie_cluster_snapshot,
                                    zombie_cluster_resources.zombie_cluster_vpc_endpoint,
+                                   zombie_cluster_resources.zombie_cluster_dhcp_option,
+                                   zombie_cluster_resources.zombie_cluster_route_table,
+                                   zombie_cluster_resources.zombie_cluster_security_group,
                                    zombie_cluster_resources.zombie_cluster_nat_gateway,
                                    zombie_cluster_resources.zombie_network_acl,
+                                   zombie_cluster_resources.zombie_cluster_network_interface,
+                                   zombie_cluster_resources.zombie_cluster_internet_gateway,
+                                   zombie_cluster_resources.zombie_cluster_subnet,
+                                   zombie_cluster_resources.zombie_cluster_elastic_ip,
+                                   zombie_cluster_resources.zombie_cluster_vpc,
                                    zombie_cluster_resources.zombie_cluster_role,
                                    zombie_cluster_resources.zombie_cluster_user,
+                                   zombie_cluster_resources.zombie_cluster_ami,
                                    zombie_cluster_resources.zombie_cluster_s3_bucket]
-        delete_func_resource_list = [zombie_cluster_resources.zombie_cluster_volume,
-                                     zombie_cluster_resources.zombie_cluster_ami,
-                                     zombie_cluster_resources.zombie_cluster_snapshot,
-                                     zombie_cluster_resources.zombie_cluster_load_balancer,
+        delete_func_resource_list = [zombie_cluster_resources.zombie_cluster_load_balancer,
                                      zombie_cluster_resources.zombie_cluster_load_balancer_v2,
+                                     zombie_cluster_resources.zombie_cluster_volume,
+                                     zombie_cluster_resources.zombie_cluster_snapshot,
                                      zombie_cluster_resources.zombie_cluster_vpc_endpoint,
-                                     zombie_cluster_resources.zombie_network_acl,
-                                     zombie_cluster_resources.zombie_cluster_role,
-                                     zombie_cluster_resources.zombie_cluster_user,
-                                     zombie_cluster_resources.zombie_cluster_s3_bucket,
                                      zombie_cluster_resources.zombie_cluster_dhcp_option,
+                                     zombie_cluster_resources.zombie_cluster_route_table,
+                                     zombie_cluster_resources.zombie_cluster_security_group,
                                      zombie_cluster_resources.zombie_cluster_nat_gateway,
+                                     zombie_cluster_resources.zombie_network_acl,
+                                     zombie_cluster_resources.zombie_cluster_network_interface,
                                      zombie_cluster_resources.zombie_cluster_internet_gateway,
                                      zombie_cluster_resources.zombie_cluster_subnet,
-                                     zombie_cluster_resources.zombie_cluster_route_table,
                                      zombie_cluster_resources.zombie_cluster_elastic_ip,
-                                     zombie_cluster_resources.zombie_cluster_security_group,
-                                     zombie_cluster_resources.zombie_cluster_network_interface,
-                                     zombie_cluster_resources.zombie_cluster_vpc]
+                                     zombie_cluster_resources.zombie_cluster_vpc,
+                                     zombie_cluster_resources.zombie_cluster_role,
+                                     zombie_cluster_resources.zombie_cluster_user,
+                                     zombie_cluster_resources.zombie_cluster_ami,
+                                     zombie_cluster_resources.zombie_cluster_s3_bucket]
     if delete:
         return delete_func_resource_list
     else:

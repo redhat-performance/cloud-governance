@@ -34,7 +34,7 @@ os.environ['dry_run'] = 'yes'
 # os.environ['resource'] = 'zombie_cluster_s3_bucket'
 # os.environ['resource'] = 'zombie_network_acl' # no NACL's, only default one
 # os.environ['resource'] = 'zombie_cluster_vpc_endpoint' # pass
-os.environ['resource'] = 'zombie_cluster_role'
+# os.environ['resource'] = 'zombie_cluster_role'
 # os.environ['resource'] = 'zombie_cluster_user'
 # os.environ['resource'] = 'zombie_cluster_ami'
 # os.environ['resource'] = 'zombie_cluster_s3_bucket'
@@ -44,7 +44,7 @@ os.environ['resource'] = 'zombie_cluster_role'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['resource'] = 'zombie_cluster_dhcp_option'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
-os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
+# os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
@@ -61,7 +61,7 @@ os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
 # os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
-logger.setLevel(level=log_level)
+logger.setLevel (level=log_level)
 
 
 def get_custodian_policies(type: str = None):
