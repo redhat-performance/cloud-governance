@@ -269,3 +269,17 @@ class S3Operations:
         resource_file = self.__resources_file_full_path
         if os.path.isfile(resource_file):
             os.remove(resource_file)
+
+    @logger_time_stamp
+    @typeguard.typechecked
+    def find_bucket(self, bucket_name: str):
+        """
+        This method find the bucket is present in the S3 or not
+        :param bucket_name:
+        :return:
+        """
+        response = self.__s3_client.list_buckets()
+        for bucket in response['Buckets']:
+            if bucket['Name'] == bucket_name:
+                return True
+        return False

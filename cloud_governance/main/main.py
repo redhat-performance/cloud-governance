@@ -1,4 +1,3 @@
-
 import os
 import typeguard
 from time import strftime
@@ -12,20 +11,45 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-#os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
-#os.environ['policy'] = 'zombie_cluster_resource'
-#os.environ['dry_run'] = 'yes'
-#os.environ['resource'] = 'zombie_cluster_elastic_ip'
+os.environ['policy'] = 'zombie_cluster_resource'
+os.environ['dry_run'] = 'yes'
+# ------------
+# os.environ['resource'] = 'zombie_cluster_load_balancer' # pass
+# os.environ['resource'] = 'zombie_cluster_load_balancer_v2' # pass
+# os.environ['resource'] = 'zombie_cluster_vpc_endpoint' # pass
+# os.environ['resource'] = 'zombie_cluster_dhcp_option' # pass, only with zombie tag
+# os.environ['resource'] = 'zombie_cluster_route_table' # pass, except Main Route table --> 1 remaining Main Route table
+# os.environ['resource'] = 'zombie_cluster_security_group' # pass, except default security group
+# os.environ['resource'] = 'zombie_cluster_nat_gateway' # pass
+# os.environ['resource'] = 'zombie_network_acl' # no NACL's, only default one
+# os.environ['resource'] = 'zombie_cluster_network_interface' # pass
+# os.environ['resource'] = 'zombie_cluster_internet_gateway' # pass
+# os.environ['resource'] = 'zombie_cluster_subnet' # pass , except default subnet
+# os.environ['resource'] = 'zombie_cluster_elastic_ip' # pass, only with zombie tag
+# os.environ['resource'] = 'zombie_cluster_vpc' # pass
+# os.environ['resource'] = 'zombie_cluster_s3_bucket'
+# os.environ['resource'] = 'zombie_network_acl' # no NACL's, only default one
+# os.environ['resource'] = 'zombie_cluster_vpc_endpoint' # pass
+os.environ['resource'] = 'zombie_cluster_role'
+# os.environ['resource'] = 'zombie_cluster_user'
+# os.environ['resource'] = 'zombie_cluster_ami'
+# os.environ['resource'] = 'zombie_cluster_s3_bucket'
+# os.environ['resource'] = 'zombie_cluster_volume'
+# -------
+# os.environ['resource'] = 'zombie_cluster_internet_gateway'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
+# os.environ['resource'] = 'zombie_cluster_dhcp_option'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
+os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['resource_name'] = 'ocs-test'
+# os.environ['resource_name'] = 'ebattat@redhat.com'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -80,14 +104,18 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
+        resource_name = os.environ.get('resource_name', '')
         cluster_tag = os.environ.get('cluster_tag', '')
         if dry_run == 'no':  # delete
-            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource, cluster_tag=cluster_tag)
+            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource,
+                                                    cluster_tag=cluster_tag, resource_name=resource_name)
         else:  # default: yes or other
-            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag)
+            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag,
+                                                    resource_name=resource_name)
         if policy_output:
             s3operations = S3Operations(region_name=region)
-            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))
+            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,
+                                                        policy_result=zombie_result))
     elif policy == 'tag_ec2':
         instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
@@ -117,7 +145,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             if policy_output:
                 s3operations = S3Operations(region_name=region)
                 logger.info(s3operations.save_results_to_s3(policy=policy, policy_output=policy_output,
-                                                policy_result=policy_result))
+                                                            policy_result=policy_result))
 
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
@@ -154,7 +182,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         else:
             logger.exception(f'Missing Policy name: {policy}')
             raise Exception(f'Missing Policy name: {policy}')
-
 
 
 @logger_time_stamp

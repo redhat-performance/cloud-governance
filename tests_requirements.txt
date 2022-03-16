@@ -1,6 +1,6 @@
 pandas
 typeguard==2.13.3
-boto3==1.19.12
+boto3==1.21.18
 moto==2.3.2
 requests==2.27.1
 elasticsearch==7.10.0
