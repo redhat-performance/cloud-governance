@@ -534,21 +534,25 @@ class ZombieClusterResources:
                                                       check_tag='Marker')
         for role in roles_data:
             role_name = role['RoleName']
-            role_data = self.iam_client.get_role(RoleName=role_name)
-            data = role_data['Role']
-            if data.get('Tags'):
-                for tag in data['Tags']:
-                    if tag['Key'].startswith(self.cluster_prefix):
-                        # when input a specific cluster, return resource id of the input cluster
-                        if self.cluster_tag:
-                            if self.cluster_tag == tag['Key']:
+            if 'worker-role' in role_name or 'master-role' in role_name:
+                role_data = self.iam_client.get_role(RoleName=role_name)
+                data = role_data['Role']
+                if data.get('Tags'):
+                    for tag in data['Tags']:
+                        if tag['Key'].startswith(self.cluster_prefix):
+                            # when input a specific cluster, return resource id of the input cluster
+                            if self.cluster_tag:
+                                if self.cluster_tag == tag['Key']:
+                                    exist_role_name_tag[role_name] = tag['Key']
+                            else:
                                 exist_role_name_tag[role_name] = tag['Key']
-                        else:
-                            exist_role_name_tag[role_name] = tag['Key']
-        zombies = self.__get_all_zombie_resources(exist_role_name_tag)
-        if zombies and self.delete:
-            for zombie in zombies:
-                self.delete_iam_resource.delete_iam_zombie_resource(resource_id=zombie, resource_type='iam_role')
+                            break
+        zombies = []
+        if exist_role_name_tag:
+            zombies = self.__get_all_zombie_resources(exist_role_name_tag)
+            if zombies and self.delete:
+                for zombie in zombies:
+                    self.delete_iam_resource.delete_iam_zombie_resource(resource_id=zombie, resource_type='iam_role')
         return zombies
 
     def zombie_cluster_user(self):
@@ -572,6 +576,7 @@ class ZombieClusterResources:
                                 exist_user_name_tag[user_name] = tag['Key']
                         else:
                             exist_user_name_tag[user_name] = tag['Key']
+                        break
         zombies = self.__get_all_zombie_resources(exist_user_name_tag)
         if zombies and self.delete:
             for zombie in zombies:
@@ -592,7 +597,7 @@ class ZombieClusterResources:
             if cluster_stamp in bucket['Name']:
                 try:
                     tags = self.s3_client.get_bucket_tagging(Bucket=bucket['Name'])
-                except Exception:  # continue when no bucket tags
+                except Exception as e:  # continue when no bucket tags
                     continue
                 for tag in tags['TagSet']:
                     if tag['Key'].startswith(self.cluster_prefix):
@@ -602,6 +607,7 @@ class ZombieClusterResources:
                                 exist_bucket_name_tag[bucket['Name']] = tag['Key']
                         else:
                             exist_bucket_name_tag[bucket['Name']] = tag['Key']
+                        break
         zombies = self.__get_all_zombie_resources(exist_bucket_name_tag)
         if zombies and self.delete:
             for zombie in zombies:

@@ -1,4 +1,5 @@
 import boto3
+import pytest
 from moto import mock_ec2, mock_elb, mock_elbv2, mock_s3
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 from cloud_governance.common.aws.ec2.ec2_resources import EC2_Resources
@@ -7,6 +8,27 @@ tags = [
     {'Key': 'kubernetes.io/cluster/unittest-test-cluster', 'Value': 'Owned'},
     {'Key': 'Owner', 'Value': 'unitest'}
 ]
+
+
+@mock_ec2
+def test_delete_ec2_ami():
+    """
+    This method tests the deletion of AMI image
+    :return:
+    """
+    ec2_client = boto3.client('ec2')
+    default_ami_id = 'ami-0cc00ed857256d2b4'
+    ec2_resource = boto3.resource('ec2')
+    instance_id = ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1)[0].instance_id
+    image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
+                                         InstanceId=instance_id, Name='test-image').get('ImageId')
+    ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      resource_name='zombie_cluster_ami')
+
+    zombie_cluster_resources.zombie_cluster_ami()
+    assert not EC2_Resources().find_ami(image_name)
 
 
 @mock_ec2
@@ -121,27 +143,26 @@ def test_delete_dhcp_option_set():
     assert EC2_Resources()
 
 
-# @mock_ec2
-# def test_delete_route_table():
-#     """
-#     This method tests the deletion of route table in the vpc
-#     --> this method failing because of Route table acts as Main Route Table by default, In AWS docs
-#     they mentioned Main Route Table can't be deleted.
-#     :return:
-#     """
-#     ec2_client = boto3.client('ec2')
-#     vpc_id = ec2_client.create_vpc(CidrBlock='10.1.0.0/16',
-#                                    TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}]).get('Vpc')['VpcId']
-#     subnet1 = ec2_client.create_subnet(TagSpecifications=[{'ResourceType': 'subnet', 'Tags': tags}],
-#                                        CidrBlock='10.1.1.0/24', VpcId=vpc_id)['Subnet']['SubnetId']
-#     route_table_id = ec2_client.create_route_table(VpcId=vpc_id, TagSpecifications=[
-#         {'ResourceType': 'route-table', 'Tags': tags}]).get('RouteTable').get('RouteTableId')
-#     ec2_client.associate_route_table(RouteTableId=route_table_id, SubnetId=subnet1)
-#     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
-#                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
-#                                                       resource_name='zombie_cluster_route_table')
-#     zombie_cluster_resources.zombie_cluster_route_table()
-#     assert not EC2_Resources().find_route_table(route_table_id)
+@pytest.mark.skip(reason="Creating Route Table as Main Route Table")
+@mock_ec2
+def test_delete_route_table():
+    """
+    This method tests the deletion of route table in the vpc
+    :return:
+    """
+    ec2_client = boto3.client('ec2')
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.1.0.0/16',
+                                   TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}]).get('Vpc')['VpcId']
+    subnet1 = ec2_client.create_subnet(TagSpecifications=[{'ResourceType': 'subnet', 'Tags': tags}],
+                                       CidrBlock='10.1.1.0/24', VpcId=vpc_id)['Subnet']['SubnetId']
+    route_table_id = ec2_client.create_route_table(VpcId=vpc_id, TagSpecifications=[
+        {'ResourceType': 'route-table', 'Tags': tags}]).get('RouteTable').get('RouteTableId')
+    ec2_client.associate_route_table(RouteTableId=route_table_id, SubnetId=subnet1)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      resource_name='zombie_cluster_route_table')
+    zombie_cluster_resources.zombie_cluster_route_table()
+    assert not EC2_Resources().find_route_table(route_table_id)
 
 
 @mock_ec2
@@ -346,4 +367,4 @@ def test_delete_vpc():
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_vpc')
     zombie_cluster_resources.zombie_cluster_vpc()
-    assert not EC2_Resources().find_vpc(vpc_id)
+    assert not EC2_Resources().find_vpc('kubernetes.io/cluster/unittest-test-cluster')

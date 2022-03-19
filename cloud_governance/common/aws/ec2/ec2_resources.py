@@ -139,10 +139,22 @@ class EC2_Resources:
             return True
         return False
 
-    def find_vpc(self, vpc_id: str):
+    @logger_time_stamp
+    @typeguard.typechecked
+    def find_vpc(self, cluster_tag: str):
         vpcs = self.ec2_client.describe_vpcs()['Vpcs']
         for vpc in vpcs:
-            if vpc['VpcId'] == vpc_id:
-                return True
+            if vpc.get('tags'):
+                for tag in vpc.get('Tags'):
+                    if tag['Key'] == cluster_tag:
+                        return True
         return False
 
+    @logger_time_stamp
+    @typeguard.typechecked
+    def find_ami(self, image_id: str):
+        images = self.ec2_client.describe_images(Owners=['self'])
+        for image in images['Images']:
+            if image['ImageId'] == image_id:
+                return True
+        return False

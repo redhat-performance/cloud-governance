@@ -17,9 +17,15 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['policy'] = 'ec2_untag'
 os.environ['policy'] = 'zombie_cluster_resource'
 os.environ['dry_run'] = 'yes'
+# os.environ['service_type'] = 'ec2_zombie_resource_service'
+# os.environ['service_type'] = 'iam_zombie_resource_service'
+# os.environ['service_type'] = 's3_zombie_resource_service'
+
 # ------------
 # os.environ['resource'] = 'zombie_cluster_load_balancer' # pass
 # os.environ['resource'] = 'zombie_cluster_load_balancer_v2' # pass
+# os.environ['resource'] = 'zombie_cluster_volume' # pass
+# os.environ['resource'] = 'zombie_cluster_snapshot' # pass
 # os.environ['resource'] = 'zombie_cluster_vpc_endpoint' # pass
 # os.environ['resource'] = 'zombie_cluster_dhcp_option' # pass, only with zombie tag
 # os.environ['resource'] = 'zombie_cluster_route_table' # pass, except Main Route table --> 1 remaining Main Route table
@@ -32,19 +38,17 @@ os.environ['dry_run'] = 'yes'
 # os.environ['resource'] = 'zombie_cluster_elastic_ip' # pass, only with zombie tag
 # os.environ['resource'] = 'zombie_cluster_vpc' # pass
 # os.environ['resource'] = 'zombie_cluster_s3_bucket'
-# os.environ['resource'] = 'zombie_network_acl' # no NACL's, only default one
-# os.environ['resource'] = 'zombie_cluster_vpc_endpoint' # pass
 # os.environ['resource'] = 'zombie_cluster_role'
 # os.environ['resource'] = 'zombie_cluster_user'
 # os.environ['resource'] = 'zombie_cluster_ami'
-# os.environ['resource'] = 'zombie_cluster_s3_bucket'
-# os.environ['resource'] = 'zombie_cluster_volume'
+
 # -------
 # os.environ['resource'] = 'zombie_cluster_internet_gateway'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['resource'] = 'zombie_cluster_dhcp_option'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
+os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-n86tp'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
@@ -106,12 +110,13 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         resource = os.environ.get('resource', '')
         resource_name = os.environ.get('resource_name', '')
         cluster_tag = os.environ.get('cluster_tag', '')
+        service_type = os.environ.get('service_type', '')
         if dry_run == 'no':  # delete
             zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource,
-                                                    cluster_tag=cluster_tag, resource_name=resource_name)
+                                                    cluster_tag=cluster_tag, resource_name=resource_name, service_type=service_type)
         else:  # default: yes or other
             zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag,
-                                                    resource_name=resource_name)
+                                                    resource_name=resource_name, service_type=service_type)
         if policy_output:
             s3operations = S3Operations(region_name=region)
             logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,

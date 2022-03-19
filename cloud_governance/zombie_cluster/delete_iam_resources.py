@@ -20,10 +20,20 @@ class DeleteIAMResources:
     def __delete_iam_role(self, resource_id: str):
         try:
             # Detach policy from role
-            self.iam_client.detach_role_policy(RoleName=resource_id, PolicyName=resource_id.replace('role', 'policy'))
-            self.iam_client.remove_role_from_instance_profile(RoleName=resource_id,
-                                                             InstanceProfileName=resource_id.replace('role',
-                                                                                                      'profile'))
+            role_policies = self.iam_client.list_attached_role_policies(RoleName=resource_id)
+            if role_policies['AttachedPolicies']:
+                for role_policy in role_policies['AttachedPolicies']:
+                    self.iam_client.detach_role_policy(RoleName=resource_id, PolicyArn=role_policy.get('PolicyArn'))
+                    self.iam_client.delete_policy(PolicyArn=role_policy.get('PolicyArn'))
+            policy_names = self.iam_client.list_role_policies(RoleName=resource_id)
+            if policy_names.get('PolicyNames'):
+                for policy in policy_names.get('PolicyNames'):
+                    self.iam_client.delete_role_policy(RoleName=resource_id, PolicyName=policy)
+            instance_policies = self.iam_client.list_instance_profiles_for_role(RoleName=resource_id)
+            if instance_policies['InstanceProfiles']:
+                self.iam_client.remove_role_from_instance_profile(RoleName=resource_id,
+                                                                  InstanceProfileName=resource_id.replace('role',
+                                                                                                          'profile'))
             self.iam_client.delete_role(RoleName=resource_id)
             logger.info(f'delete_role: {resource_id}')
         except Exception as err:
