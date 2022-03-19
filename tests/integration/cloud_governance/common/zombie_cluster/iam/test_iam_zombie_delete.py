@@ -1,8 +1,11 @@
-from moto import mock_iam, mock_ec2
+import uuid
 import boto3
 
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+
+
+random_id = uuid.uuid1()
 
 
 def create_user():
@@ -15,7 +18,7 @@ def create_user():
         {'Key': 'kubernetes.io/cluster/integration-test-cluster', 'Value': 'Owned'},
         {'Key': 'Owner', 'Value': 'integration'}
     ]
-    iam_resource.create_user(UserName='integration-ocp-user', Tags=tags)
+    iam_resource.create_user(UserName=f'integration-ocp-user-{random_id}', Tags=tags)
 
 
 def test_iam_zombie_user():
@@ -43,7 +46,7 @@ def test_delete_iam_cluster_user():
     iam_users = Utils().get_details_resource_list(func_name=iam_resource.list_users, input_tag='Users', check_tag='Marker')
     find = False
     for role in iam_users:
-        if role['UserName'] == 'integration-ocp-user':
+        if role['UserName'] == f'integration-ocp-user-{random_id}':
             find = True
             break
     assert not find
