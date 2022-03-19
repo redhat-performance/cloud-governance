@@ -30,7 +30,6 @@ def test_iam_zombie_user():
     assert len(zombie_cluster_resources.zombie_cluster_user()) >= 1
 
 
-#'An error occurred (AccessDenied) when calling the ListUserPolicies operation: User: arn:aws:iam::452958939641:user/cloud-governance-user is not authorized to perform: iam:ListUserPolicies on resource: user integration-ocp-user'
 def test_delete_iam_cluster_user():
     """
     This method tests the user has successfully deleted or not
