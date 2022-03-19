@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-__version__ = '1.0.350'
+__version__ = '1.0.352'
 
 
 here = path.abspath(path.dirname(__file__))
@@ -41,8 +41,8 @@ setup(
         'pandas',  # latest: aggregate ec2/ebs cluster data
         'typing==3.7.4.3',
         'typeguard==2.13.3',  # checking types
-        'botocore==1.22.12',  # required by c7n 0.9.14
-        'boto3==1.19.12',  # required by c7n 0.9.14
+        'botocore==1.21.18',  # required by c7n 0.9.14
+        'boto3==1.21.18',  # required by c7n 0.9.14
         'c7n==0.9.14',  # custodian
         'requests==2.27.1',  # rest api & lambda
         'PyGitHub==1.55',  # gitleaks
