@@ -44,7 +44,6 @@ class DeleteEC2Resources:
         self.elbv2_client = elbv2_client
         self.get_detail_list = Utils().get_details_resource_list
 
-    @logger_time_stamp
     @typeguard.typechecked
     def delete_zombie_resource(self, resource: str, resource_id: str, vpc_id: str = '',
                                deletion_type: str = '', pending_resources: dict = ''):

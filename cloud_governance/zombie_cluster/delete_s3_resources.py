@@ -18,7 +18,6 @@ class DeleteS3Resources:
         self.s3_client = s3_client
         self.s3_resource = s3_resource
 
-    @logger_time_stamp
     @typeguard.typechecked
     def delete_zombie_s3_resource(self, resource_type: str, resource_id: str):
         """

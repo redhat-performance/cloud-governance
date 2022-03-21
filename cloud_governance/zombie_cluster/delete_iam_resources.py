@@ -18,7 +18,6 @@ class DeleteIAMResources:
         """
         self.iam_client = iam_client
 
-    @logger_time_stamp
     @typeguard.typechecked
     def delete_iam_zombie_resource(self, resource_id: str, resource_type: str):
         """

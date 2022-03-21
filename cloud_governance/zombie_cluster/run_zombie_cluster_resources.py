@@ -1,7 +1,10 @@
+import typeguard
+
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
+@typeguard.typechecked
 def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '',
                         resource_name: str = '', service_type: str = ' '):
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete,
@@ -70,6 +73,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
         return scan_func_resource_list
 
 
+@typeguard.typechecked
 def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', resource: str = '', cluster_tag: str = '',
                             resource_name: str = '', service_type: str = ''):
     """
