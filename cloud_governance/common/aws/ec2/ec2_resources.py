@@ -42,16 +42,12 @@ class EC2_Resources:
                     return True
         return False
 
-    @logger_time_stamp
-    @typeguard.typechecked
     def find_volume(self):
         volumes = self.ec2_client.describe_volumes()
         if len(volumes['Volumes']) == 0:
             return True
         return False
 
-    @logger_time_stamp
-    @typeguard.typechecked
     def find_dhcp_options(self):
         dhcp_options = self.ec2_client.describe_dhcp_options()
         if len(dhcp_options['DhcpOptions']) == 0:
@@ -131,8 +127,6 @@ class EC2_Resources:
                 return True
         return False
 
-    @logger_time_stamp
-    @typeguard.typechecked
     def find_elastic_ip(self):
         elastic_ips = self.ec2_client.describe_addresses()['Addresses']
         if len(elastic_ips) == 0:
