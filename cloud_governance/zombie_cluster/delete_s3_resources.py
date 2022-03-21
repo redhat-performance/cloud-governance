@@ -1,4 +1,7 @@
+import typeguard
+
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class DeleteS3Resources:
@@ -15,6 +18,8 @@ class DeleteS3Resources:
         self.s3_client = s3_client
         self.s3_resource = s3_resource
 
+    @logger_time_stamp
+    @typeguard.typechecked
     def delete_zombie_s3_resource(self, resource_type: str, resource_id: str):
         """
         This method checks the  which resource to delete
@@ -25,6 +30,7 @@ class DeleteS3Resources:
         if resource_type == 's3_bucket':
             self.__delete_s3_bucket(resource_id=resource_id)
 
+    @typeguard.typechecked
     def __delete_s3_bucket(self, resource_id: str):
         """
         This method delete the bucket from s3

@@ -1,9 +1,11 @@
 from typing import Callable
 
+import typeguard
 from botocore.client import BaseClient
 
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class DeleteEC2Resources:
@@ -42,6 +44,8 @@ class DeleteEC2Resources:
         self.elbv2_client = elbv2_client
         self.get_detail_list = Utils().get_details_resource_list
 
+    @logger_time_stamp
+    @typeguard.typechecked
     def delete_zombie_resource(self, resource: str, resource_id: str, vpc_id: str = '',
                                deletion_type: str = '', pending_resources: dict = ''):
         """
@@ -85,6 +89,8 @@ class DeleteEC2Resources:
         elif resource == 'vpc':
             self.__delete_vpc(resource_id=resource_id, pending_resources=pending_resources)
 
+    @logger_time_stamp
+    @typeguard.typechecked
     def __get_cluster_references(self, resource_id: str, resource_list: list,
                                  input_resource_id: str, output_result: str):
         """
@@ -108,6 +114,7 @@ class DeleteEC2Resources:
                     result.append(resource)
         return result
 
+    @typeguard.typechecked
     def __delete_load_balancer(self, resource_id: str):
         """
         Delete the Load Balancer based on LoadBalancer ID
@@ -120,6 +127,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_load_balancer: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_load_balancer_v2(self, resource_id: str):
         """
         Delete the Load Balancer based on LoadBalancer ID
@@ -132,6 +140,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_load_balancer: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_volume(self, resource_id: str):
         try:
             self.client.delete_volume(VolumeId=resource_id)
@@ -139,6 +148,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_volume: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_snapshots(self, resource_id: str):
         try:
             self.client.delete_snapshot(SnapshotId=resource_id)
@@ -146,6 +156,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_snapshot: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_vpc_endpoints(self, resource_id: str):
         """
         This method delete the VPC endpoints based on vpc_endpoint ID
@@ -158,6 +169,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_vpc_endpoints: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_dhcp_options(self, resource_id: str, vpc_id: str):
         """
         This method delete the dhcp options in the following order
@@ -172,6 +184,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_dhcp_options: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_route_table(self, resource_id: str, vpc_id: str):
         """
         This method deleted the Route Table in the following order
@@ -202,6 +215,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_route_table: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_security_group(self, resource_id: str, vpc_id: str):
         """
         This method deletes the NatGateway in the following order
@@ -228,7 +242,6 @@ class DeleteEC2Resources:
 
             default_security_group_id = [security_group.get('GroupId') for security_group in vpc_security_groups
                                          if security_group.get('GroupName') == 'default'][0]
-            # @Todo add network interface delete method
             for network_interface in network_interface_ids:
                 for security_group in network_interface.get('Groups'):
                     if security_group.get('GroupId') == resource_id:
@@ -248,6 +261,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_security_group: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_nat_gateways(self, resource_id: str):
         """
         This method delete the NatGateway based on NatGateway ID
@@ -260,6 +274,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_nat_gateway: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_network_acl(self, resource_id, vpc_id: str):
         try:
             nacls = self.get_detail_list(func_name=self.client.describe_network_acls,
@@ -280,6 +295,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_network_acl: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_network_interface(self, resource_id: str):
         """
         This method deletes the Network Interface in the following order
@@ -312,6 +328,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot disassociate_address: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def network_interface(self, subnet_id: str = ''):
         """
         This method calls delete interface method if subnet is used by network interface
@@ -328,6 +345,7 @@ class DeleteEC2Resources:
             if subnet_id:
                 self.__delete_network_interface(resource_id=network_interface_id)
 
+    @typeguard.typechecked
     def __delete_internet_gateway(self, resource_id, vpc_id):
         """
         This method delete Internet gateway in the following order
@@ -352,6 +370,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_internet_gateway: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_subnet(self, resource_id: str):
         """
         This method delete the Subnets in the following order
@@ -366,6 +385,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot delete_subnet: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_elastic_ip(self, resource_id: str, deletion_type: str):
         """
         This method delete Elastic Ip in the following order
@@ -387,6 +407,7 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot release_address: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_vpc(self, resource_id: str, pending_resources: dict):
         """
         This method delete the vpc in the following order

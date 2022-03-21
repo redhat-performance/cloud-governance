@@ -1,4 +1,7 @@
+import typeguard
+
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class DeleteIAMResources:
@@ -15,6 +18,8 @@ class DeleteIAMResources:
         """
         self.iam_client = iam_client
 
+    @logger_time_stamp
+    @typeguard.typechecked
     def delete_iam_zombie_resource(self, resource_id: str, resource_type: str):
         """
         This method checks for the which resource to delete
@@ -27,6 +32,7 @@ class DeleteIAMResources:
         elif resource_type == 'iam_user':
             self.__delete_user(resource_id)
 
+    @typeguard.typechecked
     def __delete_iam_role(self, resource_id: str):
         """
         This method deleted the zombie cluster iam role
@@ -54,6 +60,7 @@ class DeleteIAMResources:
         except Exception as err:
             logger.exception(f'Cannot delete_role: {resource_id}, {err}')
 
+    @typeguard.typechecked
     def __delete_user(self, resource_id: str):
         """
         This method deletes the Zombie cluster user

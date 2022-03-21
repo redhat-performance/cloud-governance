@@ -5,7 +5,7 @@ from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
-class EC2_Operations:
+class EC2Operations:
     """
     This class is useful for writing Operations of the  EC2
     """
@@ -63,6 +63,7 @@ class EC2_Operations:
                     return True
         return False
 
+    @logger_time_stamp
     def find_volume(self):
         """
         Find the volumes is present or nor
@@ -199,6 +200,7 @@ class EC2_Operations:
                 return True
         return False
 
+    @logger_time_stamp
     def find_elastic_ip(self):
         """
         find the elastic ip is present or not

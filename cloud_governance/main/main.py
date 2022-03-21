@@ -23,14 +23,12 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['service_type'] = 's3_zombie_resource_service'
 # os.environ['resource'] = 'zombie_cluster_elastic_ip'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
-# os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
-# os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
-# os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-n86tp'
+# os.environ['cluster_tag'] = ''
+# os.environ['cluster_tag'] = ''
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['resource_name'] = 'ebattat@redhat.com'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
