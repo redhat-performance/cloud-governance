@@ -1,3 +1,4 @@
+
 import os
 import typeguard
 from time import strftime
@@ -41,7 +42,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['upload_data_elk'] = 'upload_data_elk'
 
 log_level = os.environ.get('log_level', 'INFO').upper()
-logger.setLevel (level=log_level)
+logger.setLevel(level=log_level)
 
 
 def get_custodian_policies(type: str = None):

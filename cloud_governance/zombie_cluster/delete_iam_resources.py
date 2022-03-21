@@ -9,15 +9,30 @@ class DeleteIAMResources:
     """
 
     def __init__(self, iam_client):
+        """
+        Initialize the aws clients
+        :param iam_client:
+        """
         self.iam_client = iam_client
 
     def delete_iam_zombie_resource(self, resource_id: str, resource_type: str):
+        """
+        This method checks for the which resource to delete
+        :param resource_id:
+        :param resource_type:
+        :return:
+        """
         if resource_type == 'iam_role':
             self.__delete_iam_role(resource_id)
         elif resource_type == 'iam_user':
             self.__delete_user(resource_id)
 
     def __delete_iam_role(self, resource_id: str):
+        """
+        This method deleted the zombie cluster iam role
+        :param resource_id:
+        :return:
+        """
         try:
             # Detach policy from role
             role_policies = self.iam_client.list_attached_role_policies(RoleName=resource_id)
@@ -40,6 +55,11 @@ class DeleteIAMResources:
             logger.exception(f'Cannot delete_role: {resource_id}, {err}')
 
     def __delete_user(self, resource_id: str):
+        """
+        This method deletes the Zombie cluster user
+        :param resource_id:
+        :return:
+        """
         try:
             # Detach policy from user
             user_policies = self.iam_client.list_user_policies(UserName=resource_id)
