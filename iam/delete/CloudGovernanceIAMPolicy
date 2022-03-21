@@ -17,25 +17,18 @@
                 "iam:TagUser",
                 "iam:RemoveUserFromGroup",
                 "iam:GetUserPolicy",
-                "iam:GetUser"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "VisualEditor1",
-            "Effect": "Allow",
-            "Action": [
-                "iam:ListUserPolicies",
-                "iam:ListAccessKeys"
-            ],
-            "Resource": "arn:aws:iam:::user/*"
-        },
-        {
-            "Sid": "VisualEditor2",
-            "Effect": "Allow",
-            "Action": [
+                "iam:GetUser",
+                "iam:createUser",
                 "iam:ListRoles",
-                "iam:ListUsers"
+                "iam:ListUsers",
+                "iam:ListUserPolicies",
+                "iam:ListAccessKeys",
+                "iam:ListAttachedRolePolicies",
+                "iam:DetachRolePolicy",
+                "iam:DeletePolicy",
+                "iam:ListInstanceProfilesForRole",
+                "iam:ListRolePolicies",
+                "iam:DeleteRolePolicy"
             ],
             "Resource": "*"
         }

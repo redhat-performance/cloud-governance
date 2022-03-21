@@ -7,14 +7,9 @@
             "Action": [
                 "elasticloadbalancing:DeleteLoadBalancer",
                 "elasticloadbalancing:DescribeTags",
-                "elasticloadbalancing:AddTags"
+                "elasticloadbalancing:AddTags",
+                "elasticloadbalancing:DescribeLoadBalancers"
             ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "VisualEditor1",
-            "Effect": "Allow",
-            "Action": "elasticloadbalancing:DescribeLoadBalancers",
             "Resource": "*"
         }
     ]

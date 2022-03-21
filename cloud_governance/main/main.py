@@ -12,20 +12,23 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-#os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
-#os.environ['policy'] = 'zombie_cluster_resource'
-#os.environ['dry_run'] = 'yes'
-#os.environ['resource'] = 'zombie_cluster_elastic_ip'
+# os.environ['policy'] = 'zombie_cluster_resource'
+# os.environ['dry_run'] = 'yes'
+# os.environ['service_type'] = 'ec2_zombie_resource_service'
+# os.environ['service_type'] = 'iam_zombie_resource_service'
+# os.environ['service_type'] = 's3_zombie_resource_service'
+# os.environ['resource'] = 'zombie_cluster_elastic_ip'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
-# os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
+# os.environ['cluster_tag'] = ''
+# os.environ['cluster_tag'] = ''
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['resource_name'] = 'ocs-test'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -80,14 +83,19 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
+        resource_name = os.environ.get('resource_name', '')
         cluster_tag = os.environ.get('cluster_tag', '')
+        service_type = os.environ.get('service_type', '')
         if dry_run == 'no':  # delete
-            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource, cluster_tag=cluster_tag)
+            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource,
+                                                    cluster_tag=cluster_tag, resource_name=resource_name, service_type=service_type)
         else:  # default: yes or other
-            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag)
+            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag,
+                                                    resource_name=resource_name, service_type=service_type)
         if policy_output:
             s3operations = S3Operations(region_name=region)
-            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output, policy_result=zombie_result))
+            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,
+                                                        policy_result=zombie_result))
     elif policy == 'tag_ec2':
         instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
@@ -117,7 +125,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             if policy_output:
                 s3operations = S3Operations(region_name=region)
                 logger.info(s3operations.save_results_to_s3(policy=policy, policy_output=policy_output,
-                                                policy_result=policy_result))
+                                                            policy_result=policy_result))
 
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
@@ -154,7 +162,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         else:
             logger.exception(f'Missing Policy name: {policy}')
             raise Exception(f'Missing Policy name: {policy}')
-
 
 
 @logger_time_stamp

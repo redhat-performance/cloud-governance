@@ -4,7 +4,10 @@
         {
             "Sid": "VisualEditor0",
             "Effect": "Allow",
-            "Action": "pricing:GetProducts",
+            "Action": [
+                "cloudtrail:LookupEvents",
+                "cloudtrail:ListTrails"
+            ],
             "Resource": "*"
         }
     ]
