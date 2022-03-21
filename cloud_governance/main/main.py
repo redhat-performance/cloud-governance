@@ -27,6 +27,7 @@ os.environ['dry_run'] = 'yes'
 # os.environ['resource'] = 'zombie_cluster_dhcp_option'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
+os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-n86tp'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
