@@ -11,20 +11,20 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
-os.environ['policy'] = 'zombie_cluster_resource'
-os.environ['dry_run'] = 'yes'
+# os.environ['policy'] = 'zombie_cluster_resource'
+# os.environ['dry_run'] = 'yes'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
-os.environ['service_type'] = 's3_zombie_resource_service'
+# os.environ['service_type'] = 's3_zombie_resource_service'
 # os.environ['resource'] = 'zombie_cluster_elastic_ip'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/464-pd9qq'
 # os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-bd7g8'
-os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-n86tp'
+# os.environ['cluster_tag'] = 'kubernetes.io/cluster/test-ocp-n86tp'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
