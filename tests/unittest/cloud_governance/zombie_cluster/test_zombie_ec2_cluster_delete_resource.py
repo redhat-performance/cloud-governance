@@ -17,7 +17,7 @@ def test_delete_ec2_ami():
     :return:
     """
     ec2_client = boto3.client('ec2')
-    default_ami_id = 'ami-064ff912f78e3e561'
+    default_ami_id = 'ami-03cf127a'
     ec2_resource = boto3.resource('ec2')
     instance_id = ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1)[0].instance_id
     image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
