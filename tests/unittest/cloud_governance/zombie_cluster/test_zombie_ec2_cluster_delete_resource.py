@@ -139,7 +139,7 @@ def test_delete_dhcp_option_set():
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_dhcp_option')
     zombie_cluster_resources.zombie_cluster_dhcp_option()
-    assert EC2_Operations()
+    assert EC2_Operations().find_dhcp_options(dhcp_id=dhcp['DhcpOptions']['DhcpOptionsId'])
 
 
 @pytest.mark.skip(reason="Already created in VPC, Creating Route Table as Main Route Table by default")

@@ -73,14 +73,17 @@ class EC2_Operations:
             return True
         return False
 
-    def find_dhcp_options(self):
+    @logger_time_stamp
+    @typeguard.typechecked
+    def find_dhcp_options(self, dhcp_id: str):
         """
         Find the DHCP option present or not
         :return:
         """
         dhcp_options = self.ec2_client.describe_dhcp_options()
-        if len(dhcp_options['DhcpOptions']) == 0:
-            return True
+        for dhcp_option in dhcp_options['DhcpOptions']:
+            if dhcp_option['DhcpOptionsId'] == dhcp_id:
+                return True
         return False
 
     @logger_time_stamp
