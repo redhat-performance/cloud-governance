@@ -26,7 +26,6 @@ def test_delete_ec2_ami():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_ami')
-
     zombie_cluster_resources.zombie_cluster_ami()
     assert not EC2_Resources().find_ami(image_name)
 
