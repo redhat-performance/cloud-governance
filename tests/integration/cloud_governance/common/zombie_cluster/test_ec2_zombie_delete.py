@@ -3,7 +3,7 @@ from datetime import date
 
 import boto3
 
-from cloud_governance.common.aws.ec2.ec2_resources import EC2_Resources
+from cloud_governance.common.aws.ec2.ec2_operations import EC2_Operations
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
 
 
@@ -42,5 +42,5 @@ def test_ec2_zombie_vpc_delete():
                                                       cluster_tag='kubernetes.io/cluster/integration-test-cluster',
                                                       resource_name='zombie_cluster_vpc')
     zombie_cluster_resources.zombie_cluster_vpc()
-    assert not EC2_Resources().find_vpc('kubernetes.io/cluster/integration-test-cluster')
+    assert not EC2_Operations().find_vpc('kubernetes.io/cluster/integration-test-cluster')
 

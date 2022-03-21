@@ -13,6 +13,7 @@ class Utils:
     def __init__(self):
         pass
 
+    @typeguard.typechecked
     def get_details_resource_list(self, func_name: Callable, input_tag: str, check_tag: str):
         """
         This method fetch all Items of the resource i.e: EC2, IAM
