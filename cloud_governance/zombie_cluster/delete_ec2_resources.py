@@ -36,7 +36,6 @@ class DeleteEC2Resources:
           Security Groups, NetworkACl]
     """
 
-    @typeguard.typechecked
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient):
         self.client = client
         self.elb_client = elb_client
