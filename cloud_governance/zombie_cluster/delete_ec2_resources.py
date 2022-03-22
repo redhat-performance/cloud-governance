@@ -1,11 +1,9 @@
-from typing import Callable
 
 import typeguard
 from botocore.client import BaseClient
 
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class DeleteEC2Resources:
@@ -38,6 +36,7 @@ class DeleteEC2Resources:
           Security Groups, NetworkACl]
     """
 
+    @typeguard.typechecked
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient):
         self.client = client
         self.elb_client = elb_client
@@ -88,7 +87,6 @@ class DeleteEC2Resources:
         elif resource == 'vpc':
             self.__delete_vpc(resource_id=resource_id, pending_resources=pending_resources)
 
-    @logger_time_stamp
     @typeguard.typechecked
     def __get_cluster_references(self, resource_id: str, resource_list: list,
                                  input_resource_id: str, output_result: str):
@@ -345,7 +343,7 @@ class DeleteEC2Resources:
                 self.__delete_network_interface(resource_id=network_interface_id)
 
     @typeguard.typechecked
-    def __delete_internet_gateway(self, resource_id, vpc_id):
+    def __delete_internet_gateway(self, resource_id: str, vpc_id: str):
         """
         This method delete Internet gateway in the following order
         NatGateway( Delete Network Interface associated with It ) --> Release Address --> Internet Gateway
