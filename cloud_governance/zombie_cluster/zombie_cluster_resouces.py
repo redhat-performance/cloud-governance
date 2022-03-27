@@ -2,7 +2,6 @@ import boto3
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.aws.utils.utils import Utils
 
-
 # @todo add next token
 # response = client.get_servers()
 # results = response["serverList"]
@@ -36,7 +35,6 @@ class ZombieClusterResources:
         self.delete_iam_resource = DeleteIAMResources(iam_client=self.iam_client)
         self.delete_s3_resource = DeleteS3Resources(s3_client=self.s3_client, s3_resource=self.s3_resource)
         self.__get_details_resource_list = Utils().get_details_resource_list
-
 
     def _all_cluster_instance(self):
         """
@@ -116,7 +114,16 @@ class ZombieClusterResources:
                         break
         return result_resources_key_id
 
-    def __extract_vpc_id_from_resource_data(self, zombie_id: str, resource_data: list, input_tag: str, output_tag: str =''):
+    def __extract_vpc_id_from_resource_data(self, zombie_id: str, resource_data: list, input_tag: str,
+                                            output_tag: str = ''):
+        """
+        This method extract vpc_id from the resource data
+        :param zombie_id:
+        :param resource_data:
+        :param input_tag:
+        :param output_tag:
+        :return:
+        """
         vpc_id = ''
         for resource in resource_data:
             if resource.get(input_tag) == zombie_id:
@@ -127,11 +134,20 @@ class ZombieClusterResources:
         return vpc_id
 
     def __get_cluster_resources_by_vpc_id(self, vpc_id: str, resource_data: list, output_tag: str, input_tag: str = ''):
+        """
+        this method list all the resources by vpc_id
+        :param vpc_id:
+        :param resource_data:
+        :param output_tag:
+        :param input_tag:
+        :return:
+        """
         ids = []
         for resource in resource_data:
             if input_tag:
-                if resource.get(input_tag)[0].get('VpcId') == vpc_id:
-                    ids.append(resource.get(output_tag))
+                for attachment in resource.get(input_tag):
+                    if attachment.get('VpcId') == vpc_id:
+                        ids.append(resource.get(output_tag))
             elif resource.get('VpcId') == vpc_id:
                 ids.append(resource.get(output_tag))
         return ids
@@ -163,7 +179,7 @@ class ZombieClusterResources:
                     zombie_resources[key] = value
         return zombie_resources
 
-    def zombie_cluster_volume(self):
+    def zombie_cluster_volume(self, vpc_id: str = ''):
         """
         This method return list of cluster's volume according to cluster tag name and cluster name data
         delete only available resource that related to cluster
@@ -183,7 +199,7 @@ class ZombieClusterResources:
                 self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume')
         return zombies
 
-    def zombie_cluster_ami(self):
+    def zombie_cluster_ami(self, vpc_id: str = ''):
         """
         This method return list of cluster's ami according to cluster tag name and cluster name data
         """
@@ -200,7 +216,7 @@ class ZombieClusterResources:
                     logger.exception(f'Cannot deregister_image: {zombie}, {err}')
         return zombies
 
-    def zombie_cluster_snapshot(self):
+    def zombie_cluster_snapshot(self, vpc_id: str = ''):
         """
         This method return list of cluster's snapshot according to cluster tag name and cluster name data
         """
@@ -214,7 +230,7 @@ class ZombieClusterResources:
                 self.delete_ec2_resource.delete_zombie_resource(resource='ebs_snapshots', resource_id=zombie)
         return zombies
 
-    def zombie_cluster_security_group(self):
+    def zombie_cluster_security_group(self, vpc_id: str = ''):
         """
         This method return list of zombie cluster's security groups compare to existing instances and cluster name data
         :return: list of zombie cluster's security groups
@@ -224,21 +240,26 @@ class ZombieClusterResources:
         exist_security_group = self.__get_cluster_resources(resources_list=security_groups,
                                                             input_resource_id='GroupId')
         zombies = self.__get_zombie_resources(exist_security_group)
+        if vpc_id and not zombies:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=security_groups,
+                                                             output_tag='GroupId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=security_groups,
-                                                              input_tag='GroupId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=security_groups,
-                                                                output_tag='GroupId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource('security_group', resource_id=zombie, vpc_id=vpc_id)
+            for zombie in zombies:
+                security_groups = self.__get_details_resource_list(func_name=self.ec2_client.describe_security_groups,
+                                                                   input_tag='SecurityGroups', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=security_groups,
+                                                                  input_tag='GroupId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=security_groups,
+                                                                    output_tag='GroupId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource('security_group', resource_id=zombie_id,
+                                                                    vpc_id=vpc_id)
         return zombies
 
-    def zombie_cluster_elastic_ip(self):
+    def zombie_cluster_elastic_ip(self, vpc_id: str = ''):
         """
         This method return list of zombie cluster's elastic ip according to existing instances and cluster name data
         """
@@ -259,39 +280,45 @@ class ZombieClusterResources:
         zombies_all = self.__get_zombie_resources(exist_elastic_ip_all)
         if zombies_ass and self.delete:
             for zombie in zombies_ass:
-                self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie, deletion_type='disassociate')
+                self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie,
+                                                                deletion_type='disassociate')
         if zombies_all and self.delete:
             for zombie in zombies_all:
                 self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie)
         zombies = {**zombies_all}
         return zombies
 
-    def zombie_cluster_network_interface(self):
+    def zombie_cluster_network_interface(self, vpc_id: str = ''):
         """
         This method return list of zombie cluster's network interface according to existing instances and cluster name data
         """
-        network_interfaces_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_network_interfaces,
-                                                                   input_tag='NetworkInterfaces', check_tag='NextToken')
+        network_interfaces_data = self.__get_details_resource_list(
+            func_name=self.ec2_client.describe_network_interfaces,
+            input_tag='NetworkInterfaces', check_tag='NextToken')
         exist_network_interface = self.__get_cluster_resources(resources_list=network_interfaces_data,
                                                                input_resource_id='NetworkInterfaceId',
                                                                tags='TagSet')
         zombies = self.__get_zombie_resources(exist_network_interface)
-
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=network_interfaces_data,
+                                                             output_tag='NetworkInterfaceId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=network_interfaces_data,
-                                                              input_tag='NetworkInterfaceId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=network_interfaces_data,
-                                                                output_tag='NetworkInterfaceId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource(resource='network_interface', resource_id=zombie)
+            for zombie in zombies:
+                network_interfaces_data = self.__get_details_resource_list(
+                    func_name=self.ec2_client.describe_network_interfaces,
+                    input_tag='NetworkInterfaces', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=network_interfaces_data,
+                                                                  input_tag='NetworkInterfaceId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=network_interfaces_data,
+                                                                    output_tag='NetworkInterfaceId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='network_interface', resource_id=zombie_id)
         return zombies
 
-    def zombie_cluster_load_balancer(self):
+    def zombie_cluster_load_balancer(self, vpc_id: str = ''):
         """
         This method return list of cluster's load balancer according to cluster vpc and cluster name data
         """
@@ -319,7 +346,7 @@ class ZombieClusterResources:
                 self.delete_ec2_resource.delete_zombie_resource(resource='load_balancer', resource_id=zombie)
         return zombies
 
-    def zombie_cluster_load_balancer_v2(self):
+    def zombie_cluster_load_balancer_v2(self, vpc_id: str = ''):
         """
         This method return list of cluster's load balancer according to cluster vpc and cluster name data
         """
@@ -358,7 +385,7 @@ class ZombieClusterResources:
             vpcs_list.append(resource['VpcId'])
         return vpcs_list
 
-    def zombie_cluster_vpc(self, ):
+    def zombie_cluster_vpc(self):
         """
         This method return list of cluster's vpc according to cluster tag name and cluster name data
         """
@@ -370,7 +397,7 @@ class ZombieClusterResources:
         delete_dict = {"ELB": self.zombie_cluster_load_balancer, "ELBV2": self.zombie_cluster_load_balancer_v2,
                        "VPCE": self.zombie_cluster_vpc_endpoint, "DHCP": self.zombie_cluster_dhcp_option,
                        "RT": self.zombie_cluster_route_table, "SG": self.zombie_cluster_security_group,
-                       "NATG": self.zombie_cluster_nat_gateway, "NACL": self.zombie_network_acl,
+                       "NATG": self.zombie_cluster_nat_gateway, "NACL": self.zombie_cluster_network_acl,
                        "ENI": self.zombie_cluster_network_interface, "IGW": self.zombie_cluster_internet_gateway,
                        "SUB": self.zombie_cluster_subnet, "EIP": self.zombie_cluster_elastic_ip}
         if zombies and self.delete:
@@ -379,7 +406,7 @@ class ZombieClusterResources:
                                                                 pending_resources=delete_dict)
         return zombies
 
-    def zombie_cluster_subnet(self):
+    def zombie_cluster_subnet(self, vpc_id: str = ''):
         """
         This method return list of cluster's subnet according to cluster tag name and cluster name data
         """
@@ -388,21 +415,25 @@ class ZombieClusterResources:
         exist_subnet = self.__get_cluster_resources(resources_list=subnets_data,
                                                     input_resource_id='SubnetId')
         zombies = self.__get_zombie_resources(exist_subnet)
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=subnets_data,
+                                                             output_tag='SubnetId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=subnets_data,
-                                                              input_tag='SubnetId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=subnets_data,
-                                                                output_tag='SubnetId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource(resource='subnet', resource_id=zombie)
+            for zombie in zombies:
+                subnets_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_subnets,
+                                                                input_tag='Subnets', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=subnets_data,
+                                                                  input_tag='SubnetId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=subnets_data,
+                                                                    output_tag='SubnetId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='subnet', resource_id=zombie_id)
         return zombies
 
-    def zombie_cluster_route_table(self):
+    def zombie_cluster_route_table(self, vpc_id: str = ''):
         """
         This method return list of cluster's route table according to cluster tag name and cluster name data
         """
@@ -411,18 +442,26 @@ class ZombieClusterResources:
         exist_route_table = self.__get_cluster_resources(resources_list=route_tables_data,
                                                          input_resource_id='RouteTableId')
         zombies = self.__get_zombie_resources(exist_route_table)
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=route_tables_data,
+                                                             output_tag='RouteTableId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=route_tables_data,
-                                                              input_tag='RouteTableId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=route_tables_data,
-                                                                output_tag='RouteTableId')
-            for zombie in zombie_ids:
-                self.delete_ec2_resource.delete_zombie_resource(resource='route_table', resource_id=zombie, vpc_id=vpc_id)
+            for zombie in zombies:
+                route_tables_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_route_tables,
+                                                                     input_tag='RouteTables', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=route_tables_data,
+                                                                  input_tag='RouteTableId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=route_tables_data,
+                                                                    output_tag='RouteTableId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='route_table', resource_id=zombie_id,
+                                                                    vpc_id=vpc_id)
         return zombies
 
-    def zombie_cluster_internet_gateway(self):
+    def zombie_cluster_internet_gateway(self, vpc_id: str = ''):
         """
         This method return list of cluster's route table internet gateway according to cluster tag name and cluster name data
         """
@@ -432,25 +471,30 @@ class ZombieClusterResources:
                                                               input_resource_id='InternetGatewayId')
 
         zombies = self.__get_zombie_resources(exist_internet_gateway)
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=internet_gateways_data,
+                                                             output_tag='InternetGatewayId',
+                                                             input_tag='Attachments')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=internet_gateways_data,
-                                                              input_tag='InternetGatewayId', output_tag='Attachments')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=internet_gateways_data,
-                                                                output_tag='InternetGatewayId', input_tag='Attachments')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                try:
-                    self.delete_ec2_resource.delete_zombie_resource(resource='internet_gateway', resource_id=zombie,
+            for zombie in zombies:
+                internet_gateways_data = self.__get_details_resource_list(
+                    func_name=self.ec2_client.describe_internet_gateways,
+                    input_tag='InternetGateways', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=internet_gateways_data,
+                                                                  input_tag='InternetGatewayId',
+                                                                  output_tag='Attachments')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=internet_gateways_data,
+                                                                    output_tag='InternetGatewayId',
+                                                                    input_tag='Attachments')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='internet_gateway', resource_id=zombie_id,
                                                                     vpc_id=vpc_id)
-                except Exception as err:
-                    logger.exception(f'Cannot delete_internet_gateway: {zombie}, {err}')
         return zombies
 
-    def zombie_cluster_dhcp_option(self):
+    def zombie_cluster_dhcp_option(self, vpc_id: str = ''):
         """
         This method return list of cluster's dhcp option according to cluster tag name and cluster name data
         """
@@ -459,15 +503,19 @@ class ZombieClusterResources:
         exist_dhcp_option = self.__get_cluster_resources(resources_list=dhcp_options_data,
                                                          input_resource_id='DhcpOptionsId')
         zombies = self.__get_zombie_resources(exist_dhcp_option)
+        vpcs = self.ec2_client.describe_vpcs()['Vpcs']
         if zombies and self.delete:
-            vpcs = self.ec2_client.describe_vpcs()['Vpcs']
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0], resource_data=vpcs,
-                                                              input_tag='DhcpOptionsId')
             for zombie in zombies:
-                self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie, vpc_id=vpc_id)
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie, resource_data=vpcs,
+                                                                  input_tag='DhcpOptionsId')
+                if vpc_id:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie,
+                                                                    vpc_id=vpc_id)
+                else:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie)
         return zombies
 
-    def zombie_cluster_vpc_endpoint(self):
+    def zombie_cluster_vpc_endpoint(self, vpc_id: str = ''):
         """
         This method return list of cluster's vpc endpoint according to cluster tag name and cluster name data
         """
@@ -476,21 +524,25 @@ class ZombieClusterResources:
         exist_vpc_endpoint = self.__get_cluster_resources(resources_list=vpc_endpoints_data,
                                                           input_resource_id='VpcEndpointId')
         zombies = self.__get_zombie_resources(exist_vpc_endpoint)
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                             resource_data=vpc_endpoints_data,
+                                                             output_tag='VpcEndpointId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                              resource_data=vpc_endpoints_data,
-                                                              input_tag='VpcEndpointId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
-                                                                resource_data=vpc_endpoints_data,
-                                                                output_tag='VpcEndpointId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource(resource='vpc_endpoints', resource_id=zombie)
+            for zombie in zombies:
+                vpc_endpoints_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_vpc_endpoints,
+                                                                      input_tag='VpcEndpoints', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                  resource_data=vpc_endpoints_data,
+                                                                  input_tag='VpcEndpointId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
+                                                                    resource_data=vpc_endpoints_data,
+                                                                    output_tag='VpcEndpointId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='vpc_endpoints', resource_id=zombie_id)
         return zombies
 
-    def zombie_cluster_nat_gateway(self):
+    def zombie_cluster_nat_gateway(self, vpc_id: str = ''):
         """
         This method return list of zombie cluster's nat gateway according to cluster tag name and cluster name data
         """
@@ -499,19 +551,22 @@ class ZombieClusterResources:
         exist_nat_gateway = self.__get_cluster_resources(resources_list=nat_gateways_data,
                                                          input_resource_id='NatGatewayId')
         zombies = self.__get_zombie_resources(exist_nat_gateway)
+        if not zombies and vpc_id:
+            zombies = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=nat_gateways_data,
+                                                             output_tag='NatGatewayId')
         if zombies and self.delete:
-            vpc_id = self.__extract_vpc_id_from_resource_data(list(zombies.keys())[0], nat_gateways_data,
-                                                              input_tag='NatGatewayId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=nat_gateways_data,
-                                                                output_tag='NatGatewayId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource(resource='nat_gateways', resource_id=zombie)
+            for zombie in zombies:
+                nat_gateways_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_nat_gateways,
+                                                                     input_tag='NatGateways', check_tag='NextToken')
+                vpc_id = self.__extract_vpc_id_from_resource_data(zombie, nat_gateways_data,
+                                                                  input_tag='NatGatewayId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=nat_gateways_data,
+                                                                    output_tag='NatGatewayId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='nat_gateways', resource_id=zombie_id)
         return zombies
 
-    def zombie_network_acl(self, vpc_id: str = ''):
+    def zombie_cluster_network_acl(self, vpc_id: str = ''):
         """
         This method return list of zombie cluster's network acl according to existing vpc id and cluster name data
         """
@@ -528,21 +583,22 @@ class ZombieClusterResources:
                 if zombie_value == value:
                     zombie_resources[key] = value
         zombies = zombie_resources
-        if vpc_id:
+        if not zombies and vpc_id:
             zombies = [network_acl.get('NetworkAclId') for network_acl in network_acls_data
                        if network_acl.get('VpcId') == vpc_id]
         if zombies and self.delete:
-            if not vpc_id:
-                vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=list(zombies.keys())[0],
-                                                                  resource_data=network_acls_data,
-                                                                  input_tag='NetworkAclId')
-            zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=network_acls_data,
-                                                                output_tag='NetworkAclId')
-            zombie_values = zombies
-            if zombie_ids:
-                zombie_values = zombie_ids
-            for zombie in zombie_values:
-                self.delete_ec2_resource.delete_zombie_resource(resource='network_acl', resource_id=zombie, vpc_id=vpc_id)
+            for zombie in zombies:
+                network_acls_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_network_acls,
+                                                                     input_tag='NetworkAcls', check_tag='NextToken')
+                if not vpc_id:
+                    vpc_id = self.__extract_vpc_id_from_resource_data(zombie_id=zombie,
+                                                                      resource_data=network_acls_data,
+                                                                      input_tag='NetworkAclId')
+                zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=network_acls_data,
+                                                                    output_tag='NetworkAclId')
+                for zombie_id in zombie_ids:
+                    self.delete_ec2_resource.delete_zombie_resource(resource='network_acl', resource_id=zombie_id,
+                                                                    vpc_id=vpc_id)
         return zombies
 
     def zombie_cluster_role(self):

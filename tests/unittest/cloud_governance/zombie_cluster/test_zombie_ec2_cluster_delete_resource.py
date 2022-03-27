@@ -217,8 +217,8 @@ def test_delete_network_acl():
                                                                                      'Tags': tags}])['NetworkAcl']['NetworkAclId']
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
-                                                      resource_name='zombie_network_acl')
-    zombie_cluster_resources.zombie_network_acl(vpc_id)
+                                                      resource_name='zombie_cluster_network_acl')
+    zombie_cluster_resources.zombie_cluster_network_acl(vpc_id)
     assert not EC2Operations().find_network_acl(network_acl_id)
 
 

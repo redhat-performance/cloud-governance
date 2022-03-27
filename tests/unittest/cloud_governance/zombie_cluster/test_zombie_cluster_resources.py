@@ -47,7 +47,7 @@ def test_zombie_cluster_security_group():
     This method return all cluster security_group
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_security_group())
+    assert len(zombie_cluster_resources.zombie_cluster_security_group()) >= 0
 
 
 def test_zombie_cluster_elastic_ip():
@@ -55,7 +55,7 @@ def test_zombie_cluster_elastic_ip():
     This method return all cluster elastic_ip
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_elastic_ip())
+    assert len(zombie_cluster_resources.zombie_cluster_elastic_ip()) >= 0
 
 
 def test_zombie_cluster_network_interface():
@@ -87,7 +87,7 @@ def test_zombie_cluster_cluster_vpc():
     This method return all cluster cluster_vpc
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_vpc())
+    assert len(zombie_cluster_resources.zombie_cluster_vpc()) >= 0
 
 
 def test_zombie_cluster_subnet():
@@ -103,7 +103,7 @@ def test_zombie_cluster_route_table():
     This method return all cluster route_table
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_route_table())
+    assert len(zombie_cluster_resources.zombie_cluster_route_table()) >= 0
 
 
 def test_zombie_cluster_internet_gateway():
@@ -111,7 +111,7 @@ def test_zombie_cluster_internet_gateway():
     This method return all cluster internet_gateway
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_internet_gateway())
+    assert  len(zombie_cluster_resources.zombie_cluster_internet_gateway()) >= 0
 
 
 def test_zombie_cluster_dhcp_option():
@@ -119,7 +119,7 @@ def test_zombie_cluster_dhcp_option():
     This method return all cluster dhcp_option
     :return:
     """
-    print(zombie_cluster_resources.zombie_cluster_dhcp_option())
+    assert len(zombie_cluster_resources.zombie_cluster_dhcp_option()) >= 0
 
 
 def test_zombie_cluster_vpc_endpoint():
@@ -127,7 +127,7 @@ def test_zombie_cluster_vpc_endpoint():
     This method return all cluster vpc_endpoint
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_cluster_vpc_endpoint())
+    assert len(zombie_cluster_resources.zombie_cluster_vpc_endpoint()) >= 0
 
 
 def test_zombie_cluster_nat_gateway():
@@ -138,12 +138,12 @@ def test_zombie_cluster_nat_gateway():
     assert len(zombie_cluster_resources.zombie_cluster_nat_gateway()) >= 0
 
 
-def test_zombie_network_acl():
+def test_zombie_cluster_network_acl():
     """
     This method return zombie network_acl, cross between vpc id in network acl and existing vpcs
     :return:
     """
-    assert len(zombie_cluster_resources.zombie_network_acl()) >= 0
+    assert len(zombie_cluster_resources.zombie_cluster_network_acl()) >= 0
 
 
 def test_zombie_cluster_role():

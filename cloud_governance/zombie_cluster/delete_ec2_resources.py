@@ -169,7 +169,7 @@ class DeleteEC2Resources:
             logger.exception(f'Cannot delete_vpc_endpoints: {resource_id}, {err}')
 
     @typeguard.typechecked
-    def __delete_dhcp_options(self, resource_id: str, vpc_id: str):
+    def __delete_dhcp_options(self, resource_id: str, vpc_id: str = ''):
         """
         This method delete the dhcp options in the following order
         set associate dhcp options in vpc as default --> delete dhcp options
@@ -177,7 +177,8 @@ class DeleteEC2Resources:
         :return:
         """
         try:
-            self.client.associate_dhcp_options(DhcpOptionsId='default', VpcId=vpc_id)
+            if vpc_id:
+                self.client.associate_dhcp_options(DhcpOptionsId='default', VpcId=vpc_id)
             self.client.delete_dhcp_options(DhcpOptionsId=resource_id)
             logger.info(f'delete_dhcp_options: {resource_id}')
         except Exception as err:
@@ -210,7 +211,7 @@ class DeleteEC2Resources:
                 self.client.delete_route_table(RouteTableId=resource_id)
                 logger.info(f'delete_route_table: {resource_id}')
             else:
-                logger.info(f'cannot delete route table: {resource_id} till deleting vpc: {vpc_id} ')
+                logger.info(f'Main route table: {resource_id} is deleted by vpc: {vpc_id} ')
         except Exception as err:
             logger.exception(f'Cannot delete_route_table: {resource_id}, {err}')
 
@@ -243,17 +244,12 @@ class DeleteEC2Resources:
                                          if security_group.get('GroupName') == 'default'][0]
             for network_interface in network_interface_ids:
                 for security_group in network_interface.get('Groups'):
-                    if security_group.get('GroupId') == resource_id:
-                        if network_interface.get('Description'):
-                            if 'NAT' in network_interface.get('Description') or 'ELB' in network_interface.get(
-                                    'Description'):
-                                self.__delete_network_interface(resource_id=network_interface.get('NetworkInterfaceId'))
-                            else:
-                                self.client.modify_network_interface_attribute(Groups=[default_security_group_id],
-                                                                               NetworkInterfaceId=network_interface.get(
-                                                                                   'NetworkInterfaceId'))
+                    if security_group.get('GroupId') == resource_id and default_security_group_id != security_group.get('GroupId'):
+                        self.client.modify_network_interface_attribute(Groups=[default_security_group_id],
+                                                                       NetworkInterfaceId=network_interface.get(
+                                                                           'NetworkInterfaceId'))
             if resource_id == default_security_group_id:
-                logger.info(f'cannot delete_security_group: {resource_id} until vpc: {vpc_id}')
+                logger.info(f'default security group: {resource_id} is deleted by vpc: {vpc_id} ')
             else:
                 self.client.delete_security_group(GroupId=resource_id)
                 logger.info(f'delete_security_group: {resource_id}')
@@ -297,7 +293,7 @@ class DeleteEC2Resources:
                     self.client.delete_network_acl(NetworkAclId=resource_id)
                     logger.info(f'delete_network_acl: {resource_id}')
                 else:
-                    logger.info(f'cannot delete_network_acl: {resource_id} till vpc:{vpc_id}')
+                    logger.info(f'default network acl: {resource_id} is deleted by vpc: {vpc_id} ')
         except Exception as err:
             logger.exception(f'Cannot delete_network_acl: {resource_id}, {err}')
 
@@ -425,10 +421,7 @@ class DeleteEC2Resources:
         try:
             i = 0
             for key, pending_resource in pending_resources.items():
-                if key == 'NACL':
-                    pending_resource(resource_id)
-                else:
-                    pending_resource()
+                pending_resource(resource_id)
             self.client.delete_vpc(VpcId=resource_id)
             logger.info(f'delete_vpc: {resource_id}')
         except Exception as err:
