@@ -1,9 +1,13 @@
+import uuid
 from datetime import datetime
 
 import boto3
 
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+
+short_random_id = str(uuid.uuid1())[0:4]
+BUCKET_NAME = f'integration-test-ocp-{short_random_id}-image-registry'
 
 
 def create_s3_bucket():
@@ -12,8 +16,8 @@ def create_s3_bucket():
     :return:
     """
     s3_resource = boto3.resource('s3', region_name='us-east-1')
-    s3_resource.create_bucket(Bucket='integration-test-ocp-image-registry-us-east-1')
-    bucket_tagging = s3_resource.BucketTagging('integration-test-ocp-image-registry-us-east-1')
+    s3_resource.create_bucket(Bucket=BUCKET_NAME)
+    bucket_tagging = s3_resource.BucketTagging(BUCKET_NAME)
     tags = [{'Key': 'kubernetes.io/cluster/integration-test-cluster',
              'Value': 'Owned'
              }, {
@@ -27,7 +31,7 @@ def create_s3_bucket():
 
 def test_s3_zombie_bucket_exists():
     """
-    Thia method checks any zombie s3 buckets are exists are not
+    This method checks any zombie s3 buckets are exists are not
     :return:
     """
     create_s3_bucket()
@@ -49,7 +53,7 @@ def test_s3_zombie_bucket_delete():
 
     zombie_cluster_resources.zombie_cluster_s3_bucket()
     s3_operations = S3Operations(region_name='us-east-1')
-    assert not s3_operations.find_bucket(bucket_name='integration-test-ocp-image-registry-us-east-1')
+    assert not s3_operations.find_bucket(bucket_name=BUCKET_NAME)
 
 
 

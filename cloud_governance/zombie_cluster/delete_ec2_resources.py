@@ -37,6 +37,8 @@ class DeleteEC2Resources:
           Security Groups, NetworkACl]
     """
 
+    SLEEP_TIME = 30
+
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient):
         self.client = client
         self.elb_client = elb_client
@@ -273,7 +275,7 @@ class DeleteEC2Resources:
                 while nat_gateway.get('State') != 'deleted':
                     nat_gateway = self.client.describe_nat_gateways(
                         Filter=[{'Name': 'nat-gateway-id', 'Values': [resource_id]}])['NatGateways'][0]
-                    time.sleep(16)
+                    time.sleep(self.SLEEP_TIME)
                 logger.info(f'delete_nat_gateway: {resource_id}')
         except Exception as err:
             logger.exception(f'Cannot delete_nat_gateway: {resource_id}, {err}')
