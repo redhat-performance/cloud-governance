@@ -1,3 +1,4 @@
+import time
 
 import typeguard
 from botocore.client import BaseClient
@@ -35,6 +36,8 @@ class DeleteEC2Resources:
     VPC [ Network Interface, NatGateway, Elastic Load Balancer, Vpc Endpoints, Route tables, Subnets,
           Security Groups, NetworkACl]
     """
+
+    SLEEP_TIME = 30
 
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient):
         self.client = client
@@ -265,8 +268,15 @@ class DeleteEC2Resources:
         :return:
         """
         try:
-            self.client.delete_nat_gateway(NatGatewayId=resource_id)
-            logger.info(f'delete_nat_gateway: {resource_id}')
+            nat_gateway = self.client.describe_nat_gateways(
+                Filter=[{'Name': 'nat-gateway-id', 'Values': [resource_id]}])['NatGateways'][0]
+            if nat_gateway.get('State') == 'available':
+                self.client.delete_nat_gateway(NatGatewayId=resource_id)
+                while nat_gateway.get('State') != 'deleted':
+                    nat_gateway = self.client.describe_nat_gateways(
+                        Filter=[{'Name': 'nat-gateway-id', 'Values': [resource_id]}])['NatGateways'][0]
+                    time.sleep(self.SLEEP_TIME)
+                logger.info(f'delete_nat_gateway: {resource_id}')
         except Exception as err:
             logger.exception(f'Cannot delete_nat_gateway: {resource_id}, {err}')
 

@@ -41,9 +41,9 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
                                     zombie_cluster_resources.zombie_cluster_nat_gateway,
                                     zombie_cluster_resources.zombie_network_acl,
                                     zombie_cluster_resources.zombie_cluster_network_interface,
+                                    zombie_cluster_resources.zombie_cluster_elastic_ip,
                                     zombie_cluster_resources.zombie_cluster_internet_gateway,
                                     zombie_cluster_resources.zombie_cluster_subnet,
-                                    zombie_cluster_resources.zombie_cluster_elastic_ip,
                                     zombie_cluster_resources.zombie_cluster_vpc]
     iam_zombie_resource_services = [zombie_cluster_resources.zombie_cluster_role,
                                     zombie_cluster_resources.zombie_cluster_user]

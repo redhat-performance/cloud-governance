@@ -1,6 +1,5 @@
 import json
 
-import pytest
 from moto import mock_iam, mock_ec2
 import boto3
 
@@ -39,7 +38,6 @@ EC2_POLICY = {
 }
 
 
-# @pytest.mark.skip(reason="Problem with listing of Role Policies")
 @mock_ec2
 @mock_iam
 def test_delete_iam_cluster_role():
