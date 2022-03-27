@@ -231,7 +231,10 @@ class ZombieClusterResources:
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
                                                                 resource_data=security_groups,
                                                                 output_tag='GroupId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource('security_group', resource_id=zombie, vpc_id=vpc_id)
         return zombies
 
@@ -281,7 +284,10 @@ class ZombieClusterResources:
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
                                                                 resource_data=network_interfaces_data,
                                                                 output_tag='NetworkInterfaceId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource(resource='network_interface', resource_id=zombie)
         return zombies
 
@@ -389,7 +395,10 @@ class ZombieClusterResources:
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
                                                                 resource_data=subnets_data,
                                                                 output_tag='SubnetId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource(resource='subnet', resource_id=zombie)
         return zombies
 
@@ -430,7 +439,10 @@ class ZombieClusterResources:
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
                                                                 resource_data=internet_gateways_data,
                                                                 output_tag='InternetGatewayId', input_tag='Attachments')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 try:
                     self.delete_ec2_resource.delete_zombie_resource(resource='internet_gateway', resource_id=zombie,
                                                                     vpc_id=vpc_id)
@@ -471,7 +483,10 @@ class ZombieClusterResources:
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id,
                                                                 resource_data=vpc_endpoints_data,
                                                                 output_tag='VpcEndpointId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource(resource='vpc_endpoints', resource_id=zombie)
         return zombies
 
@@ -489,7 +504,10 @@ class ZombieClusterResources:
                                                               input_tag='NatGatewayId')
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=nat_gateways_data,
                                                                 output_tag='NatGatewayId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource(resource='nat_gateways', resource_id=zombie)
         return zombies
 
@@ -520,7 +538,10 @@ class ZombieClusterResources:
                                                                   input_tag='NetworkAclId')
             zombie_ids = self.__get_cluster_resources_by_vpc_id(vpc_id=vpc_id, resource_data=network_acls_data,
                                                                 output_tag='NetworkAclId')
-            for zombie in zombie_ids:
+            zombie_values = zombies
+            if zombie_ids:
+                zombie_values = zombie_ids
+            for zombie in zombie_values:
                 self.delete_ec2_resource.delete_zombie_resource(resource='network_acl', resource_id=zombie, vpc_id=vpc_id)
         return zombies
 
