@@ -76,8 +76,7 @@ class S3Operations:
         This method download file from s3
         :param bucket:'devops-ais'
         :param key:'test-data'
-        :param delete_file: 'DJI_0100.jpg'
-        :param file_name_path:'D:\\Performance\\Projects\\py-image-service\\data\\rt_results\\DJI_0100.jpg'
+        :param file_name: 'DJI_0100.jpg'
         :return:
         """
         try:

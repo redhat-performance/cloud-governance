@@ -1,0 +1,35 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Delete Zombie Cluster
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      # run one job every time
+      max-parallel: 1
+      # continue to next job if failed
+      fail-fast: false
+      matrix:
+        cluster_tags: ${{ secrets.CLUSTER_TAGS }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: AWS
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.DELETE_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.DELETE_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+    - name: Delete the Zombie Cluster
+      run: |
+        sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=no  -e cluster_tag=${{ matrix.cluster_tags }} -e log_level=INFO quay.io/ebattat/cloud-governance:latest

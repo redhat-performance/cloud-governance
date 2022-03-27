@@ -8,6 +8,7 @@ from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieCluste
 short_random_id = uuid.uuid1()
 USER_NAME = f'integration-ocp-user-{short_random_id}'
 
+
 def create_user():
     """
     This method creates a s3 bucket for test
