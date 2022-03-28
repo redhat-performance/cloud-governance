@@ -25,7 +25,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
                                      'zombie_cluster_dhcp_option': zombie_cluster_resources.zombie_cluster_dhcp_option,
                                      'zombie_cluster_vpc_endpoint': zombie_cluster_resources.zombie_cluster_vpc_endpoint,
                                      'zombie_cluster_nat_gateway': zombie_cluster_resources.zombie_cluster_nat_gateway,
-                                     'zombie_network_acl': zombie_cluster_resources.zombie_network_acl,
+                                     'zombie_cluster_network_acl': zombie_cluster_resources.zombie_cluster_network_acl,
                                      'zombie_cluster_role': zombie_cluster_resources.zombie_cluster_role,
                                      'zombie_cluster_user': zombie_cluster_resources.zombie_cluster_user,
                                      'zombie_cluster_s3_bucket': zombie_cluster_resources.zombie_cluster_s3_bucket}
@@ -39,7 +39,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
                                     zombie_cluster_resources.zombie_cluster_route_table,
                                     zombie_cluster_resources.zombie_cluster_security_group,
                                     zombie_cluster_resources.zombie_cluster_nat_gateway,
-                                    zombie_cluster_resources.zombie_network_acl,
+                                    zombie_cluster_resources.zombie_cluster_network_acl,
                                     zombie_cluster_resources.zombie_cluster_network_interface,
                                     zombie_cluster_resources.zombie_cluster_elastic_ip,
                                     zombie_cluster_resources.zombie_cluster_internet_gateway,
