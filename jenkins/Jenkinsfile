@@ -3,6 +3,8 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
         AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
+        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
         BUCKET_PERF = credentials('cloud-governance-bucket-perf')
         AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
         AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
