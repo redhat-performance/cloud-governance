@@ -15,7 +15,8 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
-        contact = "ebattat@redhat.com"
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
     }
     stages {
         stage('Image Cleanup'){
@@ -64,7 +65,7 @@ pipeline {
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
             """,
                 subject: msg,
-                to: env.contact
+                to: "${env.contact1}, ${env.contact2}"
             }
           }
     }
