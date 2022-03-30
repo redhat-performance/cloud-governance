@@ -422,6 +422,17 @@ class DeleteEC2Resources:
             i = 0
             for key, pending_resource in pending_resources.items():
                 pending_resource(resource_id)
+            vpc_peerings = self.client.describe_vpc_peering_connections()['VpcPeeringConnections']
+            for vpc_peering in vpc_peerings:
+                if vpc_peering.get('Status').get('Code') == 'active':
+                    if vpc_peering.get('RequesterVpcInfo').get('VpcId') == resource_id:
+                        self.client.delete_vpc_peering_connection(VpcPeeringConnectionId=vpc_peering.get('VpcPeeringConnectionId'))
+                    elif vpc_peering.get('AccepterVpcInfo').get('VpcId') == resource_id:
+                        self.client.delete_vpc_peering_connection(VpcPeeringConnectionId=vpc_peering.get('VpcPeeringConnectionId'))
+                elif vpc_peering.get('Status').get('Code') == 'pending-acceptance':
+                    if vpc_peering.get('RequesterVpcInfo').get('VpcId') == resource_id:
+                        self.client.delete_vpc_peering_connection(VpcPeeringConnectionId=vpc_peering.get('VpcPeeringConnectionId'))
+
             self.client.delete_vpc(VpcId=resource_id)
             logger.info(f'delete_vpc: {resource_id}')
         except Exception as err:
