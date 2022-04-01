@@ -50,6 +50,7 @@ setup(
         "elasticsearch_dsl==7.4.0",
         "sphinx==4.0.2",
         "sphinx_rtd_theme==0.4.3",
+        "myst_parser==0.17.0"
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
