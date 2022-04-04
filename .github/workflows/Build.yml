@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9' ]
+        python-version: [  '3.9' ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -46,6 +46,12 @@ jobs:
           pytest --cov=cloud_governqance --cov-report=term-missing
           coverage run -m pytest
           coverage report -m
+      - name: 🎥 Publish to coveralls.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install coveralls
+          COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
 
   build:
     name: build
@@ -57,12 +63,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-      - name: 🎥 Publish to coveralls.io
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pip install coveralls
-          COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
       - name: 🔨 Build and publish distribution 📦 to PyPI
         env:
           TWINE_USERNAME: __token__
