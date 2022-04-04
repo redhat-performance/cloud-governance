@@ -1,14 +1,16 @@
 
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
 [![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
+[![Documentation Status](https://readthedocs.org/projects/cloud-governance/badge/?version=latest)](https://cloud-governance.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
 
 
 <h3 align="center">Cloud Governance</h3>
-
-![](images/cloud_governance1.png)
-![](images/demo.gif)
-This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
-cost optimize and security.
+<div align="center">
+  <img src="images/cloud_governance.png"><br>
+</div>
+<h2>What is it?</h2>
+<p>This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.</p>
 
 This tool support the following policies:
 [policy](cloud_governance/policy)
@@ -27,7 +29,10 @@ This tool support the following policies:
    and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
 
 First release: Support AWS only
- 
+
+![](images/cloud_governance1.png)
+![](images/demo.gif)
+
 ![](images/cloud_governance2.png)
 
 Reference:

@@ -1,14 +1,11 @@
 # Cloud Governance
 
-[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
-[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
+<div align="center">
+  <img src="../../images/cloud_governance.png"><br>
+</div>
 
-
-
-![](../../images/cloud_governance1.png)
-![](../../images/demo.gif)
-This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on 
-cost optimize and security.
+<h2>What is it?</h2>
+<p>This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.</p>
 
 This tool support the following policies:
 [policy](cloud_governance/policy)
@@ -27,13 +24,15 @@ This tool support the following policies:
    and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
 
 First release: Support AWS only
- 
+
+![](../../images/cloud_governance1.png)
+![](../../images/demo.gif)
+
 ![](../../images/cloud_governance2.png)
 
 Reference:
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance container image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
-* The cloud-governance readthedocs link is [ReadTheDocs](https://cloud-governance.readthedocs.io/en/latest/)
 ![](../../images/cloud_governance3.png)
 
 
