@@ -205,3 +205,4 @@ fabric.properties
 # cloud-governance local environment variables
 filled_test_environment_variables.py
 empty_test_environment_variables.py
+/venv.sh
