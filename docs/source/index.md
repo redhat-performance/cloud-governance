@@ -1,9 +1,5 @@
 # Cloud Governance
 
-<div align="center">
-  <img src="../../images/cloud_governance.png"><br>
-</div>
-
 <h2>What is it?</h2>
 <p>This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.</p>
 
