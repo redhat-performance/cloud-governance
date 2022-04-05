@@ -1,16 +1,18 @@
 
+[![PyPI Latest Release](https://img.shields.io/pypi/v/cloud-governance.svg)](https://pypi.org/project/cloud-governance/)
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
 [![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/cloud-governance/badge/?version=latest)](https://cloud-governance.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
 
 
-<h3 align="center">Cloud Governance</h3>
-<div align="center">
-  <img src="images/cloud_governance.png"><br>
-</div>
-<h2>What is it?</h2>
-<p>This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.</p>
+# Cloud Governance
+
+![](images/cloud_governance.png)
+
+## What is it?
+
+**Cloud Governance** tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.
 
 This tool support the following policies:
 [policy](cloud_governance/policy)
