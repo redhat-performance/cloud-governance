@@ -6,12 +6,13 @@
 [![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
 
 
-<h3 align="center">Cloud Governance</h3>
-<div align="center">
-  <img src="https://github.com/redhat-performance/cloud-governance/blob/main/images/cloud_governance.png"><br>
-</div>
-<h2>What is it?</h2>
-<p>This tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.</p>
+# Cloud Governance
+
+![](images/cloud_governance.png)
+
+## What is it?
+
+**Cloud Governance** tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.
 
 This tool support the following policies:
 [policy](cloud_governance/policy)
