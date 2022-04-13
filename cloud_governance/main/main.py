@@ -12,24 +12,25 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_ec2'
+os.environ['policy'] = 'tag_ec2'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
-# os.environ['dry_run'] = 'yes'
+# os.environ['Name'] = 'i-04b72187d7e7f7a7d'
+os.environ['dry_run'] = 'no'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
-# os.environ['resource'] = 'zombie_cluster_elastic_ip'
-# os.environ['resource'] = 'zombie_cluster_nat_gateway'
+# os.environ['resource'] = 'zombie_cluster_ami'
+# os.environ['policy'] = 'tag_cluster_resource'
 # os.environ['cluster_tag'] = ''
 # os.environ['cluster_tag'] = ''
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
+os.environ['resource_name'] = 'athiruma-rrvr7'
+os.environ['mandatory_tags'] = "{'Owner': 'athiruma','Email': 'athiruma@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
 # os.environ['git_access_token'] = ''
@@ -101,12 +102,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         mandatory_tags = os.environ.get('mandatory_tags', {})
         mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         mandatory_tags['Name'] = instance_name
+        dry_run = os.environ.get('dry_run', 'yes')
         mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
         if dry_run == 'no':
-            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
+            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
         else:
-            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
-        logger.info(response)
+            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
     elif policy == 'gitleaks':
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')
