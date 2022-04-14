@@ -42,16 +42,16 @@ def tag_cluster_resource(cluster_name: str, mandatory_tags: dict = None, region:
         logger.info(f'{func.__name__} count: {len(func())}, {func()}')
 
 
-def tag_ec2_resource(instance_name: str, mandatory_tags: dict = None, region: str = 'us-east-2', dry_run: str = 'yes'):
+def tag_ec2_resource(mandatory_tags: dict = None, region: str = 'us-east-2', dry_run: str = 'yes'):
     """
     This method update tags of ec2: instance, volume, ami, snapshot
     """
-    tag_ec2_resources = TagEc2Resources(region=region, dry_run=dry_run)
+    tag_ec2_resources = TagEc2Resources(region=region, dry_run=dry_run, input_tags=mandatory_tags)
     func_list = [
         tag_ec2_resources.update_ec2,
         tag_ec2_resources.update_volumes,
-        tag_ec2_resources.update_snapshots,
-        tag_ec2_resources.update_ami
+        tag_ec2_resources.update_ami,
+        tag_ec2_resources.update_snapshots
     ]
     for func in func_list:
         resources = func()
