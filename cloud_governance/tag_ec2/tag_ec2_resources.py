@@ -27,16 +27,20 @@ class TagEc2Resources:
         This method go over all instances
         :return:
         """
-        instances_list = []
+
+        ec2s_data = self.ec2_client.describe_instances()['Reservations']
         if instance_id:
-            ec2s = self.ec2_client.describe_instances(InstanceIds=[instance_id])
+            for items in ec2s_data:
+                if items.get('Instances'):
+                    for item in items['Instances']:
+                        if item.get('InstanceId') == instance_id:
+                            return items['Instances']
         else:
-            ec2s = self.ec2_client.describe_instances()
-        ec2s_data = ec2s['Reservations']
-        for items in ec2s_data:
-            if items.get('Instances'):
-                instances_list.append(items['Instances'])
-        return instances_list
+            instances_list = []
+            for items in ec2s_data:
+                if items.get('Instances'):
+                    instances_list.append(items['Instances'])
+            return instances_list
 
     def __append_input_tags(self):
         """
@@ -47,6 +51,7 @@ class TagEc2Resources:
         for key, value in self.input_tags.items():
             tags_list.append({'Key': key, 'Value': value})
         return tags_list
+
 
     def __get_tags_of_resources(self, tags: list, search_tags: list):
         """
@@ -68,22 +73,21 @@ class TagEc2Resources:
             add_tags.extend(search_tags)
         return add_tags
 
-    def __get_instance_user_tags(self, instance):
-        add_tags = []
-        instance_id = ''
-        for item in instance:
-            instance_id = item.get('InstanceId')
-            launch_time = item.get('LaunchTime')
-            username = self.cloudtrail.get_username(launch_time, instance_id, 'AWS::EC2::Instance')
-            user_tags = self.iam_client.get_user_tags(username=username)
-            tag_name = username + '-' + instance_id[-4:]
-            search_tags = [{'Key': 'Name', 'Value': tag_name}]
-            search_tags.extend(self.__append_input_tags())
-            search_tags.extend(user_tags)
-            add_tags = self.__get_tags_of_resources(tags=item.get('Tags'), search_tags=search_tags)
-        return [add_tags, instance_id]
+    def __get_instance_tags(self, launch_time: datetime, instance_id: str, tags: list):
+        username = self.cloudtrail.get_username(launch_time, instance_id, 'AWS::EC2::Instance')
+        user_tags = self.iam_client.get_user_tags(username=username)
+        tag_name = username + '-' + instance_id[-4:]
+        search_tags = [{'Key': 'Name', 'Value': tag_name}, {'Key': 'createdBy', 'Value': username}, {'Key': 'Launch Time', 'Value': str(launch_time)}]
+        search_tags.extend(self.__append_input_tags())
+        search_tags.extend(user_tags)
+        add_tags = self.__get_tags_of_resources(tags=tags, search_tags=search_tags)
+        return add_tags
 
     def update_ec2(self):
+        """
+        This method tagged the ec2 instances without having tags
+        @return:
+        """
         instances_list = self.__get_instances_data()
         instances_ids = []
         for instance in instances_list:
@@ -95,12 +99,15 @@ class TagEc2Resources:
                             cluster = True
                             break
             if not cluster:
-                add_tags, instance_id = self.__get_instance_user_tags(instance=instance)
-                logger.info(add_tags)
+                add_tags = []
+                for item in instance:
+                    instance_id = item.get('InstanceId')
+                    launch_time = item.get('LaunchTime')
+                    add_tags = self.__get_instance_tags(launch_time=launch_time, instance_id=instance_id, tags=item.get('Tags'))
                 if add_tags:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
-                        logger.info(f'added tags to instance: {instance_id} by tags: {add_tags}')
+                        logger.info(f'added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
                     instances_ids.append(instance_id)
         return instances_ids
 
@@ -110,6 +117,7 @@ class TagEc2Resources:
         for volume in volumes_data:
             cluster = False
             volume_id = volume.get('VolumeId')
+            tag_name = ''
             if volume.get('Tags'):
                 for tag in volume.get('Tags'):
                     if tag.get('Key').startswith(f'{self.cluster_prefix}'):
@@ -119,27 +127,36 @@ class TagEc2Resources:
                 username = self.cloudtrail.get_username(volume.get('CreateTime'), volume_id, 'AWS::EC2::Volume')
                 search_tags = []
                 if not username:
-                    for attachment in volume.get('Attachments'):
-                        for instance in self.__get_instances_data(attachment.get('InstanceId')):
-                            for item in instance:
+                    if volume.get('Attachments'):
+                        for attachment in volume.get('Attachments'):
+                            for item in self.__get_instances_data(attachment.get('InstanceId')):
                                 if item.get('tags'):
                                     search_tags.extend([tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
+                                    for tag in item.get('Tags'):
+                                        if tag.get('Key') == 'createdBy':
+                                            username = tag.get('Key')
+                                            tag_name = username+"-"+volume_id[-4:]
+                                            search_tags.append({'Key': 'Name', 'Value': tag_name})
                                 else:
                                     search_tags.extend(self.__append_input_tags())
-                                username = self.cloudtrail.get_username(item.get('LaunchTime'), item.get('InstanceId'), 'AWS::EC2::Instance')
+                                    username = self.cloudtrail.get_username(item.get('LaunchTime'), item.get('InstanceId'), 'AWS::EC2::Instance')
                                 break
+                    else:
+                        search_tags.extend(self.__append_input_tags())
                 else:
                     search_tags.extend(self.__append_input_tags())
-                user_tags = self.iam_client.get_user_tags(username=username)
-                search_tags.extend(user_tags)
-                tag_name = username + '-' + volume_id[-4:]
-                search_tags.append({'Key': 'Name', 'Value': tag_name})
+                if username and not tag_name:
+                    tag_name = username + '-' + volume_id[-4:]
+                    user_tags = self.iam_client.get_user_tags(username=username)
+                    search_tags.append({'Key': 'createdBy', 'Value': username})
+                    search_tags.extend(user_tags)
+                    search_tags.append({'Key': 'Name', 'Value': tag_name})
+                search_tags.append({'Key': 'CreateTime', 'Value': str(volume.get('CreateTime'))})
                 volume_tags = self.__get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
-                logger.info(volume_tags)
                 if volume_tags:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=[volume_id], Tags=volume_tags)
-                        logger.info(f'added tags to volume: {volume_id} by tags: {volume_tags}')
+                        logger.info(f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
                     volume_ids.append(volume_id)
         return volume_ids
 
@@ -157,7 +174,7 @@ class TagEc2Resources:
                 username = self.cloudtrail.get_username(snapshot.get('StartTime'), snapshot_id, 'AWS::EC2::Snapshot')
                 search_tags = []
                 if not username:
-                    if snapshot.get('Description'):
+                    if snapshot.get('Description') and 'Created' in snapshot.get('Description'):
                         image_id = snapshot.get('Description').split(" ")[-1]
                         images = self.ec2_client.describe_images(Owners=['self'])['Images']
                         for image in images:
@@ -167,37 +184,45 @@ class TagEc2Resources:
                                 else:
                                     search_tags.extend(self.__append_input_tags())
                                 start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
-                                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami')
+                                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id,
+                                                                        resource_type='AWS::EC2::Ami')
                                 break
                         if not username:
                             instance_id = snapshot.get('Description').split(" ")[2].split("(")[1][:-1]
-                            for instance in self.__get_instances_data(instance_id):
-                                for item in instance:
-                                    if item.get('tags'):
-                                        search_tags.extend(
-                                            [tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
-                                    else:
-                                        search_tags.extend(self.__append_input_tags())
-                                    username = self.cloudtrail.get_username(item.get('LaunchTime'),
-                                                                            item.get('InstanceId'),
-                                                                            'AWS::EC2::Instance')
-                                    break
+                            instances = self.__get_instances_data(instance_id)
+                            if instances:
+                                for instance in instances:
+                                    if instance.get('InstanceId') == instance_id:
+                                        for item in instance:
+                                            if item.get('tags'):
+                                                search_tags.extend([tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
+                                            else:
+                                                search_tags.extend(self.__append_input_tags())
+                                            username = self.cloudtrail.get_username(item.get('LaunchTime'),
+                                                                                    item.get('InstanceId'),
+                                                                                    'AWS::EC2::Instance')
+                                            break
+                        if not username:
+                            username = 'zombie'
+                            search_tags.extend(self.__append_input_tags())
 
                 else:
                     search_tags.extend(self.__append_input_tags())
                 if username:
                     user_tags = self.iam_client.get_user_tags(username=username)
+                    search_tags.append({'Key': 'createdBy', 'Value': username})
                     search_tags.extend(user_tags)
                     tag_name = username + '-' + snapshot_id[-4:]
                     search_tags.append({'Key': 'Name', 'Value': tag_name})
                 else:
                     search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:4]}-{self.region}-{snapshot_id[-4:]}'})
+                    search_tags.extend(self.__append_input_tags())
                 snapshot_tags = self.__get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
-                logger.info(snapshot_tags)
                 if snapshot_tags:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=[snapshot_id], Tags=snapshot_tags)
-                        logger.info(f'added tags to snapshots: {snapshot_id} by tags: {snapshot_tags}')
+                        logger.info(f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
+                    logger.info(snapshot_tags)
                     snapshot_ids.append(snapshot_id)
         return snapshot_ids
 
@@ -212,19 +237,18 @@ class TagEc2Resources:
                         cluster = True
             if not cluster:
                 image_id = image.get('ImageId')
-                start_time = datetime.fromisoformat(image.get('CreationDate')[:-1]+'+00:00')
-                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami')
+                start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
+                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id,
+                                                        resource_type='AWS::EC2::Ami')
                 user_tags = self.iam_client.get_user_tags(username=username)
                 tag_name = username + '-' + image_id[-4:]
-                search_tags = [{'Key': 'Name', 'Value': tag_name}]
+                search_tags = [{'Key': 'Name', 'Value': tag_name}, {'Key': 'createdBy', 'Value': username}, {'Key': 'CreationDate', 'Value': str(image.get('CreationDate'))}]
                 search_tags.extend(self.__append_input_tags())
                 search_tags.extend(user_tags)
                 image_tags = self.__get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
-                logger.info(image_tags)
                 if image_tags:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=[image_id], Tags=image_tags)
-                        logger.info(f'added tags to image: {image_id} by tags: {image_tags}')
+                        logger.info(f'added tags to image: {image_id} total: {len(image_tags)} tags: {image_tags}')
                     image_ids.append(image_id)
         return image_ids
-

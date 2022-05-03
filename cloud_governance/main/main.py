@@ -12,9 +12,9 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-os.environ['policy'] = 'tag_ec2'
+os.environ['policy'] = 'tag_cluster_resource'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['Name'] = 'i-04b72187d7e7f7a7d'
@@ -29,8 +29,8 @@ os.environ['dry_run'] = 'yes'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'athiruma-rrvr7'
-os.environ['mandatory_tags'] = "{'Environment': 'test', 'Budget': 'perf-dept', 'Team': 'Noushin s team'}"
+# os.environ['resource_name'] = 'athiruma-fmqf9'
+# os.environ['mandatory_tags'] = "{'Environment': 'test', 'Budget': 'perf-dept', 'Team': 'Noushin s team'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
 # os.environ['git_access_token'] = ''
@@ -72,7 +72,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     """
     # Custom policy Tag Cluster
     if policy == 'tag_cluster_resource':
-        cluster_name = os.environ['resource_name']
+        cluster_name = os.environ.get('resource_name', '')
         if dry_run == 'no':
             mandatory_tags = os.environ.get('mandatory_tags', {})
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
@@ -103,7 +103,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         # mandatory_tags['Name'] = instance_name
         dry_run = os.environ.get('dry_run', 'yes')
-        mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
         if dry_run == 'no':
             response = tag_ec2_resource(mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
         else:
