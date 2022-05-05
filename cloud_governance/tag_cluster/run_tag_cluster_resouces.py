@@ -9,28 +9,28 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     :return: list of cluster resources according to cluster name
     """
 
-    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster', cluster_name=cluster_name,
+    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
                                                 input_tags=mandatory_tags, region=region)
 
-    func_resource_list = [#tag_cluster_resources.cluster_instance,
-    #                       tag_cluster_resources.cluster_volume,
-    #                       tag_cluster_resources.cluster_ami,
-    #                       tag_cluster_resources.cluster_snapshot,
-    #                       tag_cluster_resources.cluster_network_interface,
-    #                       tag_cluster_resources.cluster_load_balancer,
-    #                       tag_cluster_resources.cluster_load_balancer_v2,
-    #                       tag_cluster_resources.cluster_dhcp_option,
-    #                       tag_cluster_resources.cluster_network_acl,
-    #                       tag_cluster_resources.cluster_subnet,
-    #                       tag_cluster_resources.cluster_route_table,
-    #                       tag_cluster_resources.cluster_vpc_endpoint,
-    #                       tag_cluster_resources.cluster_nat_gateway,
-    #                       tag_cluster_resources.cluster_internet_gateway,
-    #                       tag_cluster_resources.cluster_security_group,
-    #                       tag_cluster_resources.cluster_elastic_ip,
-    #                       tag_cluster_resources.cluster_vpc,
-    #                       tag_cluster_resources.cluster_role,
-    #                       tag_cluster_resources.cluster_user,
+    func_resource_list = [tag_cluster_resources.cluster_instance,
+                          tag_cluster_resources.cluster_volume,
+                          tag_cluster_resources.cluster_ami,
+                          tag_cluster_resources.cluster_snapshot,
+                          tag_cluster_resources.cluster_network_interface,
+                          tag_cluster_resources.cluster_load_balancer,
+                          tag_cluster_resources.cluster_load_balancer_v2,
+                          tag_cluster_resources.cluster_dhcp_option,
+                          tag_cluster_resources.cluster_network_acl,
+                          tag_cluster_resources.cluster_subnet,
+                          tag_cluster_resources.cluster_route_table,
+                          tag_cluster_resources.cluster_vpc_endpoint,
+                          tag_cluster_resources.cluster_nat_gateway,
+                          tag_cluster_resources.cluster_internet_gateway,
+                          tag_cluster_resources.cluster_security_group,
+                          tag_cluster_resources.cluster_elastic_ip,
+                          tag_cluster_resources.cluster_vpc,
+                          tag_cluster_resources.cluster_role,
+                          tag_cluster_resources.cluster_user,
                           tag_cluster_resources.cluster_s3_bucket,
                           ]
     if mandatory_tags:
@@ -38,8 +38,14 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         action = 'Scan'
     logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
-    for func in func_resource_list:
-        logger.info(f'{func.__name__} count: {len(func())}, {func()}')
+    if cluster_name:
+        for func in func_resource_list:
+            response = func()
+            logger.info(f'{func.__name__} count: {len(response)}, {response}')
+    else:
+        for func in func_resource_list[:-3]:
+            response = func()
+            logger.info(f'{func.__name__} count: {len(response)}, {response}')
 
 
 def tag_ec2_resource(mandatory_tags: dict = None, region: str = 'us-east-2', dry_run: str = 'yes'):
