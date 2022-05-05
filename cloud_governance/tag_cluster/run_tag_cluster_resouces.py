@@ -3,14 +3,14 @@ from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResource
 from cloud_governance.tag_ec2.tag_ec2_resources import TagEc2Resources
 
 
-def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2'):
+def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', dry_run: str = 'yes'):
     """
     This method scan for cluster name in all the cluster resources
     :return: list of cluster resources according to cluster name
     """
 
     tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
-                                                input_tags=mandatory_tags, region=region)
+                                                input_tags=mandatory_tags, region=region, dry_run=dry_run)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,

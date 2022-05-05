@@ -12,13 +12,13 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 os.environ['policy'] = 'tag_cluster_resource'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['Name'] = 'i-04b72187d7e7f7a7d'
-os.environ['dry_run'] = 'no'
+os.environ['dry_run'] = 'yes'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
@@ -73,12 +73,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     # Custom policy Tag Cluster
     if policy == 'tag_cluster_resource':
         cluster_name = os.environ.get('resource_name', '')
+        mandatory_tags = os.environ.get('mandatory_tags', {})
+        mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         if dry_run == 'no':
-            mandatory_tags = os.environ.get('mandatory_tags', {})
-            mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
         else:  # default: yes or other
-            tag_cluster_resource(cluster_name=cluster_name, region=region)
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
     # Custom policy Zombie Cluster
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')

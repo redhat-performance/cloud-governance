@@ -18,7 +18,7 @@ class TagClusterResources:
     """
 
     def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None,
-                 region: str = 'us-east-2'):
+                 region: str = 'us-east-2', dry_run: str = 'yes'):
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)
@@ -29,6 +29,7 @@ class TagClusterResources:
         self.cluster_key = self.__init_cluster_name()
         self.input_tags = input_tags
         self.__get_details_resource_list = Utils().get_details_resource_list
+        self.dry_run = dry_run
 
     def __init_cluster_name(self):
         """
@@ -72,18 +73,19 @@ class TagClusterResources:
             resource_id = resource[input_resource_id]
             if resource.get(tags):
                 for tag in resource[tags]:
-                    if self.cluster_key:
-                        if tag['Key'] == self.cluster_key:
-                            if self.input_tags:
-                                all_tags = self.__append_input_tags(current_tags=resource[tags])
-                                self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
-                            result_resources_list.append(resource_id)
-                    else:
-                        if self.cluster_prefix in tag['Key']:
-                            if self.input_tags:
-                                all_tags = self.__append_input_tags(current_tags=resource[tags])
-                                self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
-                            result_resources_list.append(resource_id)
+                    all_tags = self.__append_input_tags(current_tags=resource.get(tags))
+                    all_tags = self.__filter_tags(resource.get(tags), all_tags)
+                    if all_tags:
+                        if self.cluster_key:
+                            if tag['Key'] == self.cluster_key:
+                                if self.dry_run == 'no':
+                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                result_resources_list.append(resource_id)
+                        else:
+                            if self.cluster_prefix in tag['Key']:
+                                if self.dry_run == 'no':
+                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                result_resources_list.append(resource_id)
         return sorted(result_resources_list)
 
     def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
@@ -156,20 +158,21 @@ class TagClusterResources:
                     instance_id = item['InstanceId']
                     if item.get('Tags'):
                         for tag in item['Tags']:
-                            if self.cluster_key:
-                                if tag['Key'] == self.cluster_key:
-                                    if self.input_tags:
-                                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                        self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
-                                        logger.info(f'{all_tags}')
-                                    result_instance_list.append(instance_id)
-                            else:
-                                if self.cluster_prefix in tag['Key']:
-                                    if self.input_tags:
-                                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                        self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
-                                    result_instance_list.append(instance_id)
-                                    cluster_names.add(tag['Key'].split('/')[-1])
+                            all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                            all_tags = self.__filter_tags(item.get('Tags'), all_tags)
+                            if all_tags:
+                                if self.cluster_key:
+                                    if tag['Key'] == self.cluster_key:
+                                        if self.dry_run == 'no':
+                                            self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
+                                            logger.info(f'{all_tags}')
+                                        result_instance_list.append(instance_id)
+                                else:
+                                    if self.cluster_prefix in tag['Key']:
+                                        if self.dry_run == 'no':
+                                            self.ec2_client.create_tags(Resources=[instance_id], Tags=all_tags)
+                                        result_instance_list.append(instance_id)
+                                        cluster_names.add(tag['Key'].split('/')[-1])
         if not self.cluster_key:
             s3_buckets = []
             role_ids = []
@@ -194,9 +197,6 @@ class TagClusterResources:
         volumes_data = volumes['Volumes']
         volume_ids = self.__generate_cluster_resources_list_by_tag(resources_list=volumes_data,
                                                                    input_resource_id='VolumeId')
-        if self.input_tags and volume_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=volume_ids, Tags=add_tags)
         return volume_ids
 
     def cluster_ami(self):
@@ -206,9 +206,6 @@ class TagClusterResources:
         images = self.ec2_client.describe_images(Owners=['self'])
         images_data = images['Images']
         ami_ids = self.__generate_cluster_resources_list_by_tag(resources_list=images_data, input_resource_id='ImageId')
-        if self.input_tags and ami_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=ami_ids, Tags=add_tags)
         return ami_ids
 
     def cluster_snapshot(self):
@@ -219,9 +216,6 @@ class TagClusterResources:
         snapshots_data = snapshots['Snapshots']
         snapshot_ids = self.__generate_cluster_resources_list_by_tag(resources_list=snapshots_data,
                                                                      input_resource_id='SnapshotId')
-        if self.input_tags and snapshot_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=snapshot_ids, Tags=add_tags)
         return snapshot_ids
 
     def __get_security_group_data(self):
@@ -240,9 +234,7 @@ class TagClusterResources:
         security_group_ids = self.__generate_cluster_resources_list_by_tag(
             resources_list=self.__get_security_group_data(),
             input_resource_id='GroupId')
-        if self.input_tags and security_group_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=security_group_ids, Tags=add_tags)
+
         return security_group_ids
 
     def cluster_elastic_ip(self):
@@ -253,9 +245,6 @@ class TagClusterResources:
         elastic_ips_data = elastic_ips['Addresses']
         elastic_ips = self.__generate_cluster_resources_list_by_tag(resources_list=elastic_ips_data,
                                                                     input_resource_id='AllocationId')
-        if self.input_tags and elastic_ips:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=elastic_ips, Tags=add_tags)
         return elastic_ips
 
     def cluster_network_interface(self):
@@ -267,9 +256,6 @@ class TagClusterResources:
         network_interface_ids = self.__generate_cluster_resources_list_by_tag(resources_list=network_interfaces_data,
                                                                               input_resource_id='NetworkInterfaceId',
                                                                               tags='TagSet')
-        if self.input_tags and network_interface_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=network_interface_ids, Tags=add_tags)
         return network_interface_ids
 
     def cluster_load_balancer(self):
@@ -286,28 +272,29 @@ class TagClusterResources:
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if self.cluster_key:
-                            if tag['Key'] == self.cluster_key:
-                                if self.input_tags:
-                                    all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                    try:
-                                        response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
-                                                                            Tags=all_tags)
-                                    except Exception as err:
-                                        logger.exception(f'Tags are already updated, {err}')
-                                result_resources_list.append(resource_id)
-                                break
-                        else:
-                            if self.cluster_name in tag['Key']:
-                                if self.input_tags:
-                                    all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                    try:
-                                        response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
-                                                                            Tags=all_tags)
-                                    except Exception as err:
-                                        logger.exception(f'Tags are already updated, {err}')
-                                result_resources_list.append(resource_id)
-                                break
+                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                        all_tags = self.__filter_tags(item.get('Tags'), all_tags)
+                        if all_tags:
+                            if self.cluster_key:
+                                if tag['Key'] == self.cluster_key:
+                                    if self.dry_run == 'no':
+                                        try:
+                                            response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
+                                                                                Tags=all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                    result_resources_list.append(resource_id)
+                                    break
+                            else:
+                                if self.cluster_name in tag['Key']:
+                                    if self.dry_run == 'no':
+                                        try:
+                                            response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
+                                                                                Tags=all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                    result_resources_list.append(resource_id)
+                                    break
         return sorted(result_resources_list)
 
     def cluster_load_balancer_v2(self):
@@ -323,26 +310,27 @@ class TagClusterResources:
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if self.cluster_key:
-                            if tag['Key'] == self.cluster_key:
-                                if self.input_tags:
-                                    all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                    try:
-                                        self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
-                                    except Exception as err:
-                                        logger.exception(f'Tags are already updated, {err}')
-                                result_resources_list.append(resource_id)
-                                break
-                        else:
-                            if self.cluster_name in tag['Key']:
-                                if self.input_tags:
-                                    all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                                    try:
-                                        self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
-                                    except Exception as err:
-                                        logger.exception(f'Tags are already updated, {err}')
-                                result_resources_list.append(resource_id)
-                                break
+                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
+                        all_tags = self.__filter_tags(item.get('Tags'), all_tags)
+                        if all_tags:
+                            if self.cluster_key:
+                                if tag['Key'] == self.cluster_key:
+                                    if self.dry_run == 'no':
+                                        try:
+                                            self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                    result_resources_list.append(resource_id)
+                                    break
+                            else:
+                                if self.cluster_name in tag['Key']:
+                                    if self.dry_run == 'no':
+                                        try:
+                                            self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                    result_resources_list.append(resource_id)
+                                    break
         return sorted(result_resources_list)
 
     def cluster_vpc(self):
@@ -353,9 +341,6 @@ class TagClusterResources:
         vpcs_data = vpcs['Vpcs']
         vpc_ids = self.__generate_cluster_resources_list_by_tag(resources_list=vpcs_data,
                                                                 input_resource_id='VpcId')
-        if self.input_tags and vpc_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=vpc_ids, Tags=add_tags)
         return vpc_ids
 
     def cluster_subnet(self):
@@ -366,9 +351,6 @@ class TagClusterResources:
         subnets_data = subnets['Subnets']
         subnet_ids = self.__generate_cluster_resources_list_by_tag(resources_list=subnets_data,
                                                                    input_resource_id='SubnetId')
-        if self.input_tags and subnet_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=subnet_ids, Tags=add_tags)
         return subnet_ids
 
     def cluster_route_table(self):
@@ -379,9 +361,6 @@ class TagClusterResources:
         route_tables_data = route_tables['RouteTables']
         route_table_ids = self.__generate_cluster_resources_list_by_tag(resources_list=route_tables_data,
                                                                         input_resource_id='RouteTableId')
-        if self.input_tags and route_table_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=route_table_ids, Tags=add_tags)
         return route_table_ids
 
     def cluster_internet_gateway(self):
@@ -392,9 +371,6 @@ class TagClusterResources:
         internet_gateways_data = internet_gateways['InternetGateways']
         internet_gateway_ids = self.__generate_cluster_resources_list_by_tag(resources_list=internet_gateways_data,
                                                                              input_resource_id='InternetGatewayId')
-        if self.input_tags and internet_gateway_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=internet_gateway_ids, Tags=add_tags)
         return internet_gateway_ids
 
     def cluster_dhcp_option(self):
@@ -405,9 +381,6 @@ class TagClusterResources:
         dhcp_options_data = dhcp_options['DhcpOptions']
         dhcp_ids = self.__generate_cluster_resources_list_by_tag(resources_list=dhcp_options_data,
                                                                  input_resource_id='DhcpOptionsId')
-        if self.input_tags and dhcp_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=dhcp_ids, Tags=add_tags)
         return dhcp_ids
 
     def cluster_vpc_endpoint(self):
@@ -418,9 +391,6 @@ class TagClusterResources:
         vpc_endpoints_data = vpc_endpoints['VpcEndpoints']
         vpc_endpoint_ids = self.__generate_cluster_resources_list_by_tag(resources_list=vpc_endpoints_data,
                                                                          input_resource_id='VpcEndpointId')
-        if self.input_tags and vpc_endpoint_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=vpc_endpoint_ids, Tags=add_tags)
         return vpc_endpoint_ids
 
     def cluster_nat_gateway(self):
@@ -431,9 +401,6 @@ class TagClusterResources:
         nat_gateways_data = nat_gateways['NatGateways']
         nat_gateway_id = self.__generate_cluster_resources_list_by_tag(resources_list=nat_gateways_data,
                                                                        input_resource_id='NatGatewayId')
-        if self.input_tags and nat_gateway_id:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=nat_gateway_id, Tags=add_tags)
         return nat_gateway_id
 
     def cluster_network_acl(self):
@@ -445,9 +412,6 @@ class TagClusterResources:
         network_acls_data = network_acls['NetworkAcls']
         network_acl_ids = self.__generate_cluster_resources_list_by_vpc(resources_list=network_acls_data,
                                                                         input_resource_id='NetworkAclId')
-        if self.input_tags and network_acl_ids:
-            add_tags = self.__append_input_tags()
-            self.ec2_client.create_tags(Resources=network_acl_ids, Tags=add_tags)
         return network_acl_ids
 
     def cluster_role(self, cluster_name: str = ''):
@@ -466,13 +430,15 @@ class TagClusterResources:
                 try:
                     role = self.iam_client.get_role(RoleName=role_name)
                     role_data = role['Role']
-                    if self.input_tags:
-                        all_tags = self.__append_input_tags(current_tags=role_data['Tags'])
-                        try:
-                            self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
-                        except Exception as err:
-                            logger.exception(f'Tags are already updated, {err}')
-                    result_role_list.append(role_data['Arn'])
+                    all_tags = self.__append_input_tags(current_tags=role_data['Tags'])
+                    all_tags = self.__filter_tags(role_data.get('Tags'), all_tags)
+                    if all_tags:
+                        if self.dry_run == 'no':
+                            try:
+                                self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
+                            except Exception as err:
+                                logger.exception(f'Tags are already updated, {err}')
+                        result_role_list.append(role_data['Arn'])
                 except Exception as err:
                     logger.exception(f'Missing cluster role name: {role_name}, {err}')
 
@@ -497,10 +463,12 @@ class TagClusterResources:
                 if data.get('Tags'):
                     for tag in data['Tags']:
                         if cluster_name in tag['Key']:
-                            if self.input_tags:
-                                all_tags = self.__append_input_tags(current_tags=data['Tags'])
-                                self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
-                            result_user_list.append(user_name)
+                            all_tags = self.__append_input_tags(current_tags=data['Tags'])
+                            all_tags = self.__filter_tags(data.get('Tags'), all_tags)
+                            if all_tags:
+                                if self.dry_run == 'no':
+                                    self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
+                                result_user_list.append(user_name)
                             break
         return sorted(result_user_list)
 
@@ -539,9 +507,11 @@ class TagClusterResources:
                     bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
                     if bucket_tags:
                         bucket_tags = bucket_tags['TagSet']
-                        if self.input_tags:
-                            add_tags = self.__append_input_tags(bucket_tags)
-                            self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'), Tagging={'TagSet': add_tags})
-                        bucket_result_list.append(bucket['Name'])
+                        add_tags = self.__append_input_tags(bucket_tags)
+                        add_tags = self.__filter_tags(bucket_tags, add_tags)
+                        if add_tags:
+                            if self.dry_run == 'no':
+                                self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'), Tagging={'TagSet': add_tags})
+                            bucket_result_list.append(bucket['Name'])
 
         return sorted(bucket_result_list)
