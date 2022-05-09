@@ -8,7 +8,7 @@ class CloudTrailOperations:
     def __init__(self, region_name: str):
         self.cloudtrail = boto3.client('cloudtrail', region_name=region_name)
 
-    def get_username(self, start_time: datetime, resource_id: str, resource_type: str):
+    def get_username_by_instance_id_and_time(self, start_time: datetime, resource_id: str, resource_type: str):
         """
         This method find Username in cloud trail events according to start_time and resource_id
         @param start_time:

@@ -74,7 +74,7 @@ class TagEc2Resources:
         return add_tags
 
     def __get_instance_tags(self, launch_time: datetime, instance_id: str, tags: list):
-        username = self.cloudtrail.get_username(launch_time, instance_id, 'AWS::EC2::Instance')
+        username = self.cloudtrail.get_username_by_instance_id_and_time(launch_time, instance_id, 'AWS::EC2::Instance')
         user_tags = self.iam_client.get_user_tags(username=username)
         tag_name = username + '-' + instance_id[-4:]
         search_tags = [{'Key': 'Name', 'Value': tag_name}, {'Key': 'createdBy', 'Value': username}, {'Key': 'Launch Time', 'Value': str(launch_time)}]
@@ -124,7 +124,7 @@ class TagEc2Resources:
                         cluster = True
                         break
             if not cluster:
-                username = self.cloudtrail.get_username(volume.get('CreateTime'), volume_id, 'AWS::EC2::Volume')
+                username = self.cloudtrail.get_username_by_instance_id_and_time(volume.get('CreateTime'), volume_id, 'AWS::EC2::Volume')
                 search_tags = []
                 if not username:
                     if volume.get('Attachments'):
@@ -139,7 +139,7 @@ class TagEc2Resources:
                                             search_tags.append({'Key': 'Name', 'Value': tag_name})
                                 else:
                                     search_tags.extend(self.__append_input_tags())
-                                    username = self.cloudtrail.get_username(item.get('LaunchTime'), item.get('InstanceId'), 'AWS::EC2::Instance')
+                                    username = self.cloudtrail.get_username_by_instance_id_and_time(item.get('LaunchTime'), item.get('InstanceId'), 'AWS::EC2::Instance')
                                 break
                     else:
                         search_tags.extend(self.__append_input_tags())
@@ -151,6 +151,9 @@ class TagEc2Resources:
                     search_tags.append({'Key': 'createdBy', 'Value': username})
                     search_tags.extend(user_tags)
                     search_tags.append({'Key': 'Name', 'Value': tag_name})
+                else:
+                    search_tags.append({'Key': 'Name', 'Value': f'{volume_id[:3]}-{self.region}-{volume_id[-4:]}'})
+                    search_tags.extend(self.__append_input_tags())
                 search_tags.append({'Key': 'CreateTime', 'Value': str(volume.get('CreateTime'))})
                 volume_tags = self.__get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
                 if volume_tags:
@@ -171,7 +174,7 @@ class TagEc2Resources:
                         cluster = True
             if not cluster:
                 snapshot_id = snapshot.get('SnapshotId')
-                username = self.cloudtrail.get_username(snapshot.get('StartTime'), snapshot_id, 'AWS::EC2::Snapshot')
+                username = self.cloudtrail.get_username_by_instance_id_and_time(snapshot.get('StartTime'), snapshot_id, 'AWS::EC2::Snapshot')
                 search_tags = []
                 if not username:
                     if snapshot.get('Description') and 'Created' in snapshot.get('Description'):
@@ -184,8 +187,8 @@ class TagEc2Resources:
                                 else:
                                     search_tags.extend(self.__append_input_tags())
                                 start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
-                                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id,
-                                                                        resource_type='AWS::EC2::Ami')
+                                username = self.cloudtrail.get_username_by_instance_id_and_time(start_time=start_time, resource_id=image_id,
+                                                                                                resource_type='AWS::EC2::Ami')
                                 break
                         if not username:
                             instance_id = snapshot.get('Description').split(" ")[2].split("(")[1][:-1]
@@ -198,13 +201,10 @@ class TagEc2Resources:
                                                 search_tags.extend([tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
                                             else:
                                                 search_tags.extend(self.__append_input_tags())
-                                            username = self.cloudtrail.get_username(item.get('LaunchTime'),
-                                                                                    item.get('InstanceId'),
+                                            username = self.cloudtrail.get_username_by_instance_id_and_time(item.get('LaunchTime'),
+                                                                                                            item.get('InstanceId'),
                                                                                     'AWS::EC2::Instance')
                                             break
-                        if not username:
-                            username = 'zombie'
-                            search_tags.extend(self.__append_input_tags())
 
                 else:
                     search_tags.extend(self.__append_input_tags())
@@ -217,12 +217,12 @@ class TagEc2Resources:
                 else:
                     search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:4]}-{self.region}-{snapshot_id[-4:]}'})
                     search_tags.extend(self.__append_input_tags())
+                search_tags.append({'Key': 'StartTime', 'Value': str(snapshot.get('StartTime'))})
                 snapshot_tags = self.__get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
                 if snapshot_tags:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=[snapshot_id], Tags=snapshot_tags)
                         logger.info(f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
-                    logger.info(snapshot_tags)
                     snapshot_ids.append(snapshot_id)
         return snapshot_ids
 
@@ -238,13 +238,18 @@ class TagEc2Resources:
             if not cluster:
                 image_id = image.get('ImageId')
                 start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
-                username = self.cloudtrail.get_username(start_time=start_time, resource_id=image_id,
-                                                        resource_type='AWS::EC2::Ami')
-                user_tags = self.iam_client.get_user_tags(username=username)
-                tag_name = username + '-' + image_id[-4:]
-                search_tags = [{'Key': 'Name', 'Value': tag_name}, {'Key': 'createdBy', 'Value': username}, {'Key': 'CreationDate', 'Value': str(image.get('CreationDate'))}]
+                username = self.cloudtrail.get_username_by_instance_id_and_time(start_time=start_time, resource_id=image_id,
+                                                                                resource_type='AWS::EC2::Ami')
+                search_tags = []
                 search_tags.extend(self.__append_input_tags())
-                search_tags.extend(user_tags)
+                if username:
+                    user_tags = self.iam_client.get_user_tags(username=username)
+                    tag_name = username + '-' + image_id[-4:]
+                    search_tags.append({'Key': 'createdBy', 'Value': username})
+                    search_tags.extend(user_tags)
+                else:
+                    tag_name = image_id[:3]+'-'+self.region+'-'+image_id[-4:]
+                search_tags.extend([{'Key': 'Name', 'Value': tag_name}, {'Key': 'CreationDate', 'Value': str(image.get('CreationDate'))}])
                 image_tags = self.__get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
                 if image_tags:
                     if self.dry_run == 'no':
