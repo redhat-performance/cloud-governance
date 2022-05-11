@@ -1,3 +1,5 @@
+from multiprocessing import Process
+
 import boto3
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
@@ -111,16 +113,26 @@ class TagClusterResources:
                         instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                         add_tags.extend(instance_tags)
                         add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
+                        if resource.get('CreateTime'):
+                            add_tags = self.__remove_launchTime(add_tags)
+                            add_tags.append({'Key': 'CreateTime', 'Value': str(resource.get('CreateTime'))})
+                        elif resource.get('StartTime'):
+                            add_tags = self.__remove_launchTime(add_tags)
+                            add_tags.append({'Key': 'StartTime', 'Value': str(resource.get('StartTime'))})
                         add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
                         if add_tags:
-                            if self.dry_run == "no":
+                            if self.cluster_name:
                                 cluster_resource_name = tag.get('Key').split('/')[-1]
                                 if cluster_resource_name == self.cluster_name:
+                                    if self.dry_run == "no":
+                                        self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
+                                        logger.info(add_tags)
+                                    result_resources_list.append(resource_id)
+                            else:
+                                if self.dry_run == "no":
                                     self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
-                                else:
-                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
-                                logger.info(add_tags)
-                            result_resources_list.append(resource_id)
+                                    logger.info(add_tags)
+                                result_resources_list.append(resource_id)
         return sorted(result_resources_list)
 
     def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
@@ -128,15 +140,30 @@ class TagClusterResources:
         This method return resource list that related to input resource id according to cluster's vpc id
         """
         result_resources_list = []
+        vpc_data = self.get_cluster_vpc()
         for resource in resources_list:
             resource_id = resource[input_resource_id]
             if resource.get('VpcId'):
-                for vpc_id in self.cluster_vpc():
+                for vpc_id in vpc_data.keys():
                     if resource.get('VpcId') == vpc_id:
-                        if self.input_tags:
-                            all_tags = self.__append_input_tags()
-                            self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
-                        result_resources_list.append(resource_id)
+                        all_tags = self.__append_input_tags()
+                        all_tags.extend(vpc_data.get(vpc_id))
+                        all_tags = self.__check_name_in_tags(tags=all_tags, resource_id=resource_id)
+                        all_tags = self.__filter_resource_tags_by_add_tags(resource.get('Tags'), all_tags)
+                        cluster_tag = [tag for tag in vpc_data.get(vpc_id) if self.cluster_prefix in tag.get('Key')]
+                        if all_tags:
+                            if self.cluster_name:
+                                if self.cluster_name in cluster_tag[0].get('Key'):
+                                    if self.dry_run == 'no':
+                                        self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                        logger.info(all_tags)
+                                    result_resources_list.append(resource_id)
+                            else:
+                                if self.dry_run == 'no':
+                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                    logger.info(all_tags)
+                                result_resources_list.append(resource_id)
+                        break
         return sorted(result_resources_list)
 
     def __scan_resource_for_cluster_fullname(self, resources_list: list, tags: str = 'Tags'):
@@ -186,7 +213,6 @@ class TagClusterResources:
         self.cluster_key = self.__init_cluster_name()
         cluster_instances = {}
         result_instance_list = []
-        cluster_names = set()
         cluster_tags = {}
         instances_list = self.__get_instances_data()
         if instances_list:
@@ -199,41 +225,46 @@ class TagClusterResources:
                                 add_tags = self.__append_input_tags()
                                 cluster_name = tag.get('Key').split('/')[-1]
                                 if cluster_name in cluster_instances:
-                                    cluster_instances[cluster_name].append(instance_id)
+                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'), search_tags=cluster_tags[cluster_name])
+                                    if add_tags:
+                                        cluster_instances[cluster_name].append(instance_id)
                                     break
                                 else:
-                                    cluster_instances[cluster_name] = [instance_id]
                                     username = self.__get_username_from_instance_id_and_time(start_time=item.get('LaunchTime'), resource_id=instance_id, resource_type='AWS::EC2::Instance')
                                     if username:
                                         user_tags = self.iam_operations.get_user_tags(username=username)
                                         add_tags.extend(user_tags)
-                                    cluster_tags[cluster_name] = add_tags
+                                        add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
+                                        add_tags.append({'Key': 'LaunchTime', 'Value': str(item.get('LaunchTime'))})
+                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'), search_tags=add_tags)
+                                    if add_tags:
+                                        cluster_instances[cluster_name] = [instance_id]
+                                        cluster_tags[cluster_name] = add_tags
                                     break
             for cluster_instance_name, instance_ids in cluster_instances.items():
-                if self.dry_run == "no":
+                if self.cluster_name:
                     if cluster_instance_name == self.cluster_name:
-                        self.ec2_client.create_tags(Resources=instance_ids, Tags=cluster_tags.get(cluster_instance_name))
-                    else:
+                        if self.dry_run == 'no':
+                            self.ec2_client.create_tags(Resources=instance_ids, Tags=cluster_tags.get(cluster_instance_name))
+                            logger.info(cluster_tags.get(cluster_instance_name))
+                        result_instance_list.extend(instance_ids)
+                else:
+                    if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=instance_ids,
                                                     Tags=cluster_tags.get(cluster_instance_name))
-                    logger.info(cluster_tags.get(cluster_instance_name))
-                result_instance_list.extend(instance_ids)
-                cluster_names.add(cluster_instance_name)
-        if not self.cluster_key:
-            s3_buckets = []
-            role_ids = []
-            usernames = []
-            # for cluster_name in cluster_names:
-            #     roles = self.cluster_role(cluster_name=cluster_name)
-            #     role_ids.extend(roles)
-            #     s3_tagging = self.cluster_s3_bucket(cluster_name=cluster_name)
-            #     s3_buckets.extend(s3_tagging)
-            #     username = self.cluster_user(cluster_name=cluster_name)
-            #     usernames.extend(username)
-            # logger.info(f'cluster_roles count: {len(role_ids)}, {role_ids}')
-            # logger.info(f'cluster_user count: {len(usernames)}, {usernames}')
-            # logger.info(f'cluster_s3_bucket count: {len(s3_buckets)}, {s3_buckets}')
-        return sorted(result_instance_list)
+                        logger.info(cluster_tags.get(cluster_instance_name))
+                    result_instance_list.extend(instance_ids)
+
+            logger.info(f'cluster_instance count: {len(sorted(result_instance_list))} {sorted(result_instance_list)}')
+            if not self.cluster_key:
+                jobs = []
+                iam_list = [self.cluster_role, self.cluster_s3_bucket, self.cluster_user]
+                for iam in iam_list:
+                    p = Process(target=iam, args=(list(cluster_instances.keys()), ))
+                    jobs.append(p)
+                    p.start()
+                for job in jobs:
+                    job.join()
 
     def cluster_volume(self):
         """
@@ -243,7 +274,7 @@ class TagClusterResources:
         volumes_data = volumes['Volumes']
         volume_ids = self.__generate_cluster_resources_list_by_tag(resources_list=volumes_data,
                                                                    input_resource_id='VolumeId')
-        return volume_ids
+        logger.info(f'cluster_volume count: {len(sorted(volume_ids))} {sorted(volume_ids)}')
 
     def cluster_ami(self):
         """
@@ -252,7 +283,7 @@ class TagClusterResources:
         images = self.ec2_client.describe_images(Owners=['self'])
         images_data = images['Images']
         ami_ids = self.__generate_cluster_resources_list_by_tag(resources_list=images_data, input_resource_id='ImageId')
-        return ami_ids
+        logger.info(f'cluster_ami count: {len(sorted(ami_ids))} {sorted(ami_ids)}')
 
     def cluster_snapshot(self):
         """
@@ -262,7 +293,7 @@ class TagClusterResources:
         snapshots_data = snapshots['Snapshots']
         snapshot_ids = self.__generate_cluster_resources_list_by_tag(resources_list=snapshots_data,
                                                                      input_resource_id='SnapshotId')
-        return snapshot_ids
+        logger.info(f'cluster_snapshot count: {len(sorted(snapshot_ids))} {sorted(snapshot_ids)}')
 
     def __get_security_group_data(self):
         """
@@ -280,8 +311,7 @@ class TagClusterResources:
         security_group_ids = self.__generate_cluster_resources_list_by_tag(
             resources_list=self.__get_security_group_data(),
             input_resource_id='GroupId')
-
-        return security_group_ids
+        logger.info(f'cluster_security_group count: {len(sorted(security_group_ids))} {sorted(security_group_ids)}')
 
     def cluster_elastic_ip(self):
         """
@@ -291,7 +321,7 @@ class TagClusterResources:
         elastic_ips_data = elastic_ips['Addresses']
         elastic_ips = self.__generate_cluster_resources_list_by_tag(resources_list=elastic_ips_data,
                                                                     input_resource_id='AllocationId')
-        return elastic_ips
+        logger.info(f'cluster_elastic_ip count: {len(sorted(elastic_ips))} {sorted(elastic_ips)}')
 
     def cluster_network_interface(self):
         """
@@ -302,14 +332,13 @@ class TagClusterResources:
         network_interface_ids = self.__generate_cluster_resources_list_by_tag(resources_list=network_interfaces_data,
                                                                               input_resource_id='NetworkInterfaceId',
                                                                               tags='TagSet')
-        return network_interface_ids
+        logger.info(f'cluster_network_interface count: {len(sorted(network_interface_ids))} {sorted(network_interface_ids)}')
 
     def cluster_load_balancer(self):
         """
         This method return list of cluster's load balancer according to cluster vpc
         """
         result_resources_list = []
-        response = ''
         load_balancers = self.elb_client.describe_load_balancers()
         load_balancers_data = load_balancers['LoadBalancerDescriptions']
         for resource in load_balancers_data:
@@ -318,32 +347,37 @@ class TagClusterResources:
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                        all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
-                        if all_tags:
-                            if self.cluster_key:
-                                if tag['Key'] == self.cluster_key:
+                        if self.cluster_prefix in tag.get('Key'):
+                            all_tags = []
+                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                            if not instance_tags:
+                                all_tags = self.__append_input_tags(item.get('Tags'))
+                            all_tags.extend(instance_tags)
+                            all_tags = self.__remove_launchTime(all_tags)
+                            all_tags.append({'Key': 'CreatedTime', 'Value': str(resource.get('CreatedTime'))})
+                            all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
+                            if all_tags:
+                                if self.cluster_name:
+                                    if tag['Key'] == self.cluster_key:
+                                        try:
+                                            if self.dry_run == 'no':
+                                                self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
+                                                logger.info(all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                        result_resources_list.append(resource_id)
+                                    break
+                                else:
                                     if self.dry_run == 'no':
                                         try:
-                                            response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
-                                                                                Tags=all_tags)
+                                            self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
                                             logger.info(all_tags)
                                         except Exception as err:
                                             logger.exception(f'Tags are already updated, {err}')
                                     result_resources_list.append(resource_id)
                                     break
-                            else:
-                                if self.cluster_name in tag['Key']:
-                                    if self.dry_run == 'no':
-                                        try:
-                                            response = self.elb_client.add_tags(LoadBalancerNames=[resource_id],
-                                                                                Tags=all_tags)
-                                            logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
-                                    result_resources_list.append(resource_id)
-                                    break
-        return sorted(result_resources_list)
+                            break
+        logger.info(f'cluster_load_balancer count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
 
     def cluster_load_balancer_v2(self):
         """
@@ -358,11 +392,27 @@ class TagClusterResources:
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        all_tags = self.__append_input_tags(current_tags=item['Tags'])
-                        all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
-                        if all_tags:
-                            if self.cluster_key:
-                                if tag['Key'] == self.cluster_key:
+                        if self.cluster_prefix in tag.get('Key'):
+                            all_tags = []
+                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                            if not instance_tags:
+                                all_tags = self.__append_input_tags(item.get('Tags'))
+                            all_tags.extend(instance_tags)
+                            all_tags = self.__remove_launchTime(all_tags)
+                            all_tags.append({'Key': 'CreatedTime', 'Value': str(resource.get('CreatedTime'))})
+                            all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
+                            if all_tags:
+                                if self.cluster_name:
+                                    if tag['Key'] == self.cluster_key:
+                                        try:
+                                            if self.dry_run == 'no':
+                                                self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
+                                                logger.info(all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                        result_resources_list.append(resource_id)
+                                    break
+                                else:
                                     if self.dry_run == 'no':
                                         try:
                                             self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
@@ -371,17 +421,8 @@ class TagClusterResources:
                                             logger.exception(f'Tags are already updated, {err}')
                                     result_resources_list.append(resource_id)
                                     break
-                            else:
-                                if self.cluster_name in tag['Key']:
-                                    if self.dry_run == 'no':
-                                        try:
-                                            self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
-                                            logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
-                                    result_resources_list.append(resource_id)
-                                    break
-        return sorted(result_resources_list)
+                            break
+        logger.info(f'cluster_load_balancer_v2 count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
 
     def cluster_vpc(self):
         """
@@ -389,8 +430,20 @@ class TagClusterResources:
         """
         vpcs = self.ec2_client.describe_vpcs()
         vpcs_data = vpcs['Vpcs']
-        vpc_ids = self.__generate_cluster_resources_list_by_tag(resources_list=vpcs_data,
-                                                                input_resource_id='VpcId')
+        vpc_ids = self.__generate_cluster_resources_list_by_tag(resources_list=vpcs_data, input_resource_id='VpcId')
+        logger.info(f'cluster_vpc count: {len(sorted(vpc_ids))} {sorted(vpc_ids)}')
+        self.cluster_network_acl()
+
+    def get_cluster_vpc(self):
+        vpcs = self.ec2_client.describe_vpcs()
+        vpcs_data = vpcs['Vpcs']
+        vpc_ids = {}
+        for vpc in vpcs_data:
+            if vpc.get('Tags'):
+                for tag in vpc.get('Tags'):
+                    if self.cluster_prefix in tag.get('Key'):
+                        vpc_ids[vpc.get('VpcId')] = [tag for tag in vpc.get('Tags') if tag.get('Key') != 'Name']
+                        break
         return vpc_ids
 
     def cluster_subnet(self):
@@ -401,7 +454,7 @@ class TagClusterResources:
         subnets_data = subnets['Subnets']
         subnet_ids = self.__generate_cluster_resources_list_by_tag(resources_list=subnets_data,
                                                                    input_resource_id='SubnetId')
-        return subnet_ids
+        logger.info(f'cluster_subnet count: {len(sorted(subnet_ids))} {sorted(subnet_ids)}')
 
     def cluster_route_table(self):
         """
@@ -411,7 +464,7 @@ class TagClusterResources:
         route_tables_data = route_tables['RouteTables']
         route_table_ids = self.__generate_cluster_resources_list_by_tag(resources_list=route_tables_data,
                                                                         input_resource_id='RouteTableId')
-        return route_table_ids
+        logger.info(f'cluster_route_table count: {len(sorted(route_table_ids))} {sorted(route_table_ids)}')
 
     def cluster_internet_gateway(self):
         """
@@ -421,7 +474,7 @@ class TagClusterResources:
         internet_gateways_data = internet_gateways['InternetGateways']
         internet_gateway_ids = self.__generate_cluster_resources_list_by_tag(resources_list=internet_gateways_data,
                                                                              input_resource_id='InternetGatewayId')
-        return internet_gateway_ids
+        logger.info(f'cluster_internet_gateway count: {len(sorted(internet_gateway_ids))} {sorted(internet_gateway_ids)}')
 
     def cluster_dhcp_option(self):
         """
@@ -431,7 +484,7 @@ class TagClusterResources:
         dhcp_options_data = dhcp_options['DhcpOptions']
         dhcp_ids = self.__generate_cluster_resources_list_by_tag(resources_list=dhcp_options_data,
                                                                  input_resource_id='DhcpOptionsId')
-        return dhcp_ids
+        logger.info(f'cluster_dhcp_option count: {len(sorted(dhcp_ids))} {sorted(dhcp_ids)}')
 
     def cluster_vpc_endpoint(self):
         """
@@ -441,7 +494,7 @@ class TagClusterResources:
         vpc_endpoints_data = vpc_endpoints['VpcEndpoints']
         vpc_endpoint_ids = self.__generate_cluster_resources_list_by_tag(resources_list=vpc_endpoints_data,
                                                                          input_resource_id='VpcEndpointId')
-        return vpc_endpoint_ids
+        logger.info(f'cluster_vpc_endpoint count: {len(sorted(vpc_endpoint_ids))} {sorted(vpc_endpoint_ids)}')
 
     def cluster_nat_gateway(self):
         """
@@ -451,7 +504,7 @@ class TagClusterResources:
         nat_gateways_data = nat_gateways['NatGateways']
         nat_gateway_id = self.__generate_cluster_resources_list_by_tag(resources_list=nat_gateways_data,
                                                                        input_resource_id='NatGatewayId')
-        return nat_gateway_id
+        logger.info(f'cluster_nat_gateway count: {len(sorted(nat_gateway_id))} {sorted(nat_gateway_id)}')
 
     def cluster_network_acl(self):
         """
@@ -462,67 +515,89 @@ class TagClusterResources:
         network_acls_data = network_acls['NetworkAcls']
         network_acl_ids = self.__generate_cluster_resources_list_by_vpc(resources_list=network_acls_data,
                                                                         input_resource_id='NetworkAclId')
-        return network_acl_ids
+        logger.info(f'cluster_network_acl count: {len(network_acl_ids)}, {network_acl_ids}')
 
-    def cluster_role(self, cluster_name: str = ''):
+    def cluster_role(self, cluster_names: list = []):
         """
         This method return list of cluster's role according to cluster name
         """
         # tag_role
         result_role_list = []
         # if cluster_key exit
-        cluster_key = self.cluster_name if self.cluster_key else cluster_name
-        if cluster_key:
-            # starts with cluster name, search for specific role name for fast scan (a lot of roles)
-            role_name_list = [f"{cluster_key}-master-role", f"{cluster_key}-worker-role"]
+        if self.cluster_name:
+            cluster_names.append(self.cluster_name)
+        if cluster_names:
+            for cluster_name in cluster_names:
+                cluster_key = self.cluster_name if self.cluster_key else cluster_name
+                if cluster_key:
+                    # starts with cluster name, search for specific role name for fast scan (a lot of roles)
+                    role_name_list = [f"{cluster_key}-master-role", f"{cluster_key}-worker-role"]
 
-            for role_name in role_name_list:
-                try:
-                    role = self.iam_client.get_role(RoleName=role_name)
-                    role_data = role['Role']
-                    all_tags = self.__append_input_tags(current_tags=role_data['Tags'])
-                    all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
-                    if all_tags:
-                        if self.dry_run == 'no':
-                            try:
-                                self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
-                                logger.info(all_tags)
-                            except Exception as err:
-                                logger.exception(f'Tags are already updated, {err}')
-                        result_role_list.append(role_data['Arn'])
-                except Exception as err:
-                    logger.exception(f'Missing cluster role name: {role_name}, {err}')
+                    for role_name in role_name_list:
+                        try:
+                            role = self.iam_client.get_role(RoleName=role_name)
+                            role_data = role['Role']
+                            all_tags = []
+                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=f'{self.cluster_prefix}{cluster_key}')
+                            if not instance_tags:
+                                all_tags = self.__append_input_tags(role_data.get('Tags'))
+                            else:
+                                all_tags.extend(instance_tags)
+                            all_tags = self.__remove_launchTime(all_tags)
+                            all_tags.append({'Key': 'CreateDate', 'Value': str(role_data.get('CreateDate'))})
+                            all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
+                            if all_tags:
+                                if self.dry_run == 'no':
+                                    try:
+                                        all_tags.extend(role_data.get('Tags'))
+                                        self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
+                                        logger.info(all_tags)
+                                    except Exception as err:
+                                        logger.exception(f'Tags are already updated, {err}')
+                                result_role_list.append(role_data['Arn'])
+                        except Exception as err:
+                            logger.exception(f'Missing cluster role name: {role_name}, {err}')
+        logger.info(f'cluster_role count: {len(sorted(result_role_list))} {sorted(result_role_list)}')
 
-        return sorted(result_role_list)
-
-    def cluster_user(self, cluster_name: str = ''):
+    def cluster_user(self, cluster_names: list = []):
         """
         This method return list of cluster's user according to cluster name
         """
         # tag_user
         result_user_list = []
-        users = self.__get_details_resource_list(self.iam_client.list_users, input_tag='Users',
-                                                 check_tag='Marker')
-        # return self.__generate_cluster_resources_list_by_tag(resources_list=users_data,
-        #                                                      input_resource_id='UserId')
-        cluster_name = self.cluster_name if self.cluster_key else cluster_name
-        for user in users:
-            user_name = user['UserName']
-            if cluster_name in user_name:
-                user_data = self.iam_client.get_user(UserName=user_name)
-                data = user_data['User']
-                if data.get('Tags'):
-                    for tag in data['Tags']:
-                        if cluster_name in tag['Key']:
-                            all_tags = self.__append_input_tags(current_tags=data['Tags'])
-                            all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
-                            if all_tags:
-                                if self.dry_run == 'no':
-                                    self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
-                                    logger.info(all_tags)
-                                result_user_list.append(user_name)
-                            break
-        return sorted(result_user_list)
+        if self.cluster_name:
+            cluster_names.append(self.cluster_name)
+        if cluster_names:
+            for cluster_name in cluster_names:
+                users = self.__get_details_resource_list(self.iam_client.list_users, input_tag='Users',
+                                                         check_tag='Marker')
+                # return self.__generate_cluster_resources_list_by_tag(resources_list=users_data,
+                #                                                      input_resource_id='UserId')
+                cluster_name = self.cluster_name if self.cluster_key else cluster_name
+                for user in users:
+                    user_name = user['UserName']
+                    if cluster_name in user_name:
+                        user_data = self.iam_client.get_user(UserName=user_name)
+                        data = user_data['User']
+                        if data.get('Tags'):
+                            for tag in data['Tags']:
+                                if cluster_name in tag['Key']:
+                                    all_tags = []
+                                    instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                    if not instance_tags:
+                                        all_tags = self.__append_input_tags(data.get('Tags'))
+                                    all_tags.extend(instance_tags)
+                                    all_tags = self.__remove_launchTime(all_tags)
+                                    all_tags.append({'Key': 'CreateDate', 'Value': str(data.get('CreateDate'))})
+                                    all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
+                                    if all_tags:
+                                        if self.dry_run == 'no':
+                                            all_tags.extend(data.get('Tags'))
+                                            self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
+                                            logger.info(all_tags)
+                                        result_user_list.append(user_name)
+                                    break
+        logger.info(f'cluster_user count: {len(sorted(result_user_list))} {sorted(result_user_list)}')
 
     def __filter_resource_tags_by_add_tags(self, tags: list, search_tags: list):
         """
@@ -544,27 +619,40 @@ class TagClusterResources:
             add_tags.extend(search_tags)
         return add_tags
 
-    def cluster_s3_bucket(self, cluster_name: str = ''):
+    def __remove_launchTime(self, tags: list):
+        return [tag for tag in tags if tag.get('Key') != 'LaunchTime']
+
+    def cluster_s3_bucket(self, cluster_names: list = []):
         """
         This method return list of cluster's s3 bucket according to cluster name
         """
         bucket_result_list = []
         response = self.s3_client.list_buckets()
         # if cluster_key exit
-        cluster_key = self.cluster_name if self.cluster_key else cluster_name
-        if cluster_key:
-            for bucket in response['Buckets']:
-                # starts with cluster name
-                if bucket['Name'].startswith(cluster_key):
-                    bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
-                    if bucket_tags:
-                        bucket_tags = bucket_tags['TagSet']
-                        add_tags = self.__append_input_tags(bucket_tags)
-                        add_tags = self.__filter_resource_tags_by_add_tags(bucket_tags, add_tags)
-                        if add_tags:
-                            if self.dry_run == 'no':
-                                self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'), Tagging={'TagSet': add_tags})
-                                logger.info(add_tags)
-                            bucket_result_list.append(bucket['Name'])
-
-        return sorted(bucket_result_list)
+        if self.cluster_name:
+            cluster_names.append(self.cluster_name)
+        if cluster_names:
+            for cluster_name in cluster_names:
+                cluster_key = self.cluster_name if self.cluster_key else cluster_name
+                if cluster_key:
+                    for bucket in response['Buckets']:
+                        # starts with cluster name
+                        if bucket['Name'].startswith(cluster_key):
+                            bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
+                            if bucket_tags:
+                                bucket_tags = bucket_tags['TagSet']
+                                add_tags = []
+                                instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                if not instance_tags:
+                                    add_tags = self.__append_input_tags(bucket_tags)
+                                add_tags.extend(instance_tags)
+                                add_tags = self.__remove_launchTime(add_tags)
+                                add_tags.append({'Key': 'CreationDate', 'Value': str(bucket.get('CreationDate'))})
+                                add_tags = self.__filter_resource_tags_by_add_tags(bucket_tags, add_tags)
+                                if add_tags:
+                                    if self.dry_run == 'no':
+                                        add_tags.extend(bucket_tags)
+                                        self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'), Tagging={'TagSet': add_tags})
+                                        logger.info(add_tags)
+                                    bucket_result_list.append(bucket['Name'])
+        logger.info(f'cluster_s3_bucket count: {len(sorted(bucket_result_list))} {sorted(bucket_result_list)}')

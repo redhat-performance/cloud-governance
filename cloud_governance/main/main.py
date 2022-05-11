@@ -12,13 +12,13 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 os.environ['policy'] = 'tag_cluster_resource'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['Name'] = 'i-04b72187d7e7f7a7d'
-os.environ['dry_run'] = 'no'
+os.environ['dry_run'] = 'yes'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
@@ -29,7 +29,7 @@ os.environ['dry_run'] = 'no'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'mleader2-hhhmw'
+os.environ['resource_name'] = 'mleader2-hhhmw'
 os.environ['mandatory_tags'] = "{'Budget': 'perf-dept', 'Manager': 'Noushin'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
