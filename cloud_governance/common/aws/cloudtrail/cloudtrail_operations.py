@@ -26,7 +26,6 @@ class CloudTrailOperations:
                         if resource.get('ResourceType') == resource_type:
                             if resource.get('ResourceName') == resource_id:
                                 return event.get('Username')
-                            break
             return ''
         except:
             return ''

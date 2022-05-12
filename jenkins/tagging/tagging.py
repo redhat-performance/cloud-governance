@@ -21,5 +21,4 @@ regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1', '
            'ap-northeast-1', 'ap-southeast-1', 'ap-southeast-2', 'eu-west-3', 'sa-east-1']
 
 for region in regions:
-    os.system(f"sudo podman run --rm --name cloud-governance -e account='perf' -e policy=tag_cluster_resource -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no  -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
-    os.system(f'sudo podman run --rm --name cloud-governance -e account="perf" -e policy=tag_ec2 e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e mandatory_tags={mandatory_tags} -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance')
+    os.system(f'sudo podman run --rm --name cloud-governance -e account="perf" -e policy=tag_resources -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e mandatory_tags={mandatory_tags} -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance')

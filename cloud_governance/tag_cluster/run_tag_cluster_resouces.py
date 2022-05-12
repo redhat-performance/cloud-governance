@@ -45,7 +45,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
         func_resource_list[0]()
         func_resource_list = func_resource_list[1:]
     jobs = []
-    for index, func in enumerate(func_resource_list):
+    for _, func in enumerate(func_resource_list):
         p = Process(target=func)
         jobs.append(p)
         p.start()
@@ -53,22 +53,11 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
         job.join()
 
 
-def tag_ec2_resource(mandatory_tags: dict = None, region: str = 'us-east-2', dry_run: str = 'yes'):
+def tag_ec2_resource(instance_name: str, mandatory_tags: dict = None, region: str = 'us-east-2'):
     """
     This method update tags of ec2: instance, volume, ami, snapshot
     """
-    tag_ec2_resources = TagEc2Resources(region=region, dry_run=dry_run, input_tags=mandatory_tags)
-    func_list = [
-        tag_ec2_resources.update_ec2,
-        tag_ec2_resources.update_volumes,
-        tag_ec2_resources.update_ami,
-        tag_ec2_resources.update_snapshots
-    ]
-    logger.info(
-        f"{len(func_list)} non-cluster untagged resources  in region {region}:")
-    for func in func_list:
-        resources = func()
-        logger.info(f'{func.__name__} count: {len(resources)}, {resources}')
-    # header = {'content-type': 'application/json'}
-    # update_tags = TagEc2Resources(region=region)
-    # return update_tags.update_ec2(headers=header, data=mandatory_tags, dry_run=dry_run)
+
+    header = {'content-type': 'application/json'}
+    update_tags = TagEc2Resources(region=region)
+    return update_tags.update_ec2(headers=header, data=mandatory_tags)
