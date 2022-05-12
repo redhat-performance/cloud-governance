@@ -14,7 +14,7 @@ BUCKET_RH_PERF = os.environ['BUCKET_RH_PERF']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 LOGS = os.environ.get('LOGS', 'logs')
 
-mandatory_tags = "{'Budget': 'perf-dept', 'Manager': 'Noushin'}"
+mandatory_tags = "{'Budget': 'perf-dept''}"
 
 print('Run all policies pre active region')
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1', 'ap-south-1', 'eu-north-1',
