@@ -200,7 +200,7 @@ def test_cluster_s3_bucket():
 @mock_iam
 @mock_cloudtrail
 @mock_ec2
-def test_cluster_instance():
+def test_cluster_ec2():
     """
     This method tests the add tags of cluster instance
     @return:

@@ -3,7 +3,7 @@ from multiprocessing import Process, Queue
 import boto3
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
-from cloud_governance.common.aws.iam.iam_operations import IAMOperatons
+from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
 
@@ -28,7 +28,7 @@ class TagClusterResources:
         self.elb_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)
         self.iam_client = boto3.client('iam', region_name=region)
-        self.iam_operations = IAMOperatons()
+        self.iam_operations = IAMOperations()
         self.s3_client = boto3.client('s3')
         self.cluster_prefix = cluster_prefix
         self.cluster_name = cluster_name

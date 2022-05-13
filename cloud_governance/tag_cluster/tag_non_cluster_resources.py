@@ -3,7 +3,7 @@ from datetime import timedelta, datetime, timezone
 import boto3
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
-from cloud_governance.common.aws.iam.iam_operations import IAMOperatons
+from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.logger.init_logger import logger
 
 
@@ -20,7 +20,7 @@ class TagNonClusterResources:
         self.cluster_prefix = 'kubernetes.io/cluster/'
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.cloudtrail = CloudTrailOperations(region_name=self.region)
-        self.iam_client = IAMOperatons()
+        self.iam_client = IAMOperations()
 
     def __get_instances_data(self, instance_id: str = ''):
         """

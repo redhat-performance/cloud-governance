@@ -1,7 +1,7 @@
 import boto3
 
 
-class IAMOperatons:
+class IAMOperations:
 
     def __init__(self):
         self.iam_client = boto3.client('iam')

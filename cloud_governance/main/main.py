@@ -6,19 +6,20 @@ from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, tag_ec2_resource
+from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-os.environ['policy'] = 'tag_resources'
+os.environ['policy'] = 'tag_iam_user'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['Name'] = 'i-04b72187d7e7f7a7d'
-os.environ['dry_run'] = 'yes'
+# os.environ['dry_run'] = 'yes'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
@@ -29,8 +30,9 @@ os.environ['dry_run'] = 'yes'
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'abose-noencr1-bb55v'
-os.environ['mandatory_tags'] = "{'Budget': 'perf-dept', 'Manager': 'Noushin'}"
+# os.environ['resource_name'] = ''
+os.environ['file_type'] = 'read'
+# os.environ['mandatory_tags'] = "{'Budget': 'perf-dept', 'Manager': 'Noushin'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
 # os.environ['git_access_token'] = ''
@@ -81,6 +83,10 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         else:  # default: yes or other
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
     # Custom policy Zombie Cluster
+    elif policy == 'tag_iam_user':
+        user_type = os.environ.get('resource_name', '')
+        tag_iam_user(user_type=user_type)
+        pass
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
