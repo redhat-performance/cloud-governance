@@ -3,6 +3,7 @@ from multiprocessing import Process, Queue
 import boto3
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
+from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
@@ -13,7 +14,7 @@ from cloud_governance.common.logger.init_logger import logger
 # while "NextToken" in response:
 #     response = client.get_servers(NextToken=response["NextToken"])
 #     results.extend(response["serverList"])
-from cloud_governance.tag_cluster.tag_non_cluster_resources import TagNonClusterResources
+from cloud_governance.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
 
 class TagClusterResources:
@@ -40,6 +41,7 @@ class TagClusterResources:
         self.dry_run = dry_run
         self.non_cluster_update = TagNonClusterResources(region=region, dry_run=dry_run, input_tags=input_tags)
         self.ids = []
+        self.ec2_operations = EC2Operations()
 
     def __init_cluster_name(self):
         """
@@ -94,7 +96,7 @@ class TagClusterResources:
                 cluster_name = tag['Key']
                 break
         if not found:
-            value = cluster_name.split('/')[-1] + '-' + resource_id.split('-')[0] + '-' + resource_id[-4:]
+            value = f'{cluster_name.split("/")[-1]}-{resource_id.split("-")[0]}-{resource_id[-4:]}'
             tags.append({'Key': 'Name', 'Value': value})
         return tags
 
@@ -240,28 +242,6 @@ class TagClusterResources:
                 instances_list.append(items['Instances'])
         return instances_list
 
-    def scan_cluster_or_non_cluster_instance(self, resources: list):
-        """
-        This method returns the list of cluster and non-cluster instances.
-        @param resources:
-        @return:
-        """
-        cluster = []
-        non_cluster = []
-        for resource in resources:
-            found = False
-            for item in resource:
-                if item.get('Tags'):
-                    for tag in item.get('Tags'):
-                        if self.cluster_prefix in tag.get('Key'):
-                            found = True
-                            break
-            if found:
-                cluster.append(resource)
-            else:
-                non_cluster.append(resource)
-        return [cluster, non_cluster]
-
     def update_cluster_tags(self, resources: list, queue):
         """
         This method update the Cluster instance tags and returns the updated tags list ids.
@@ -340,7 +320,7 @@ class TagClusterResources:
         self.cluster_key = self.__init_cluster_name()
         instances_list = self.__get_instances_data()
         if instances_list:
-            cluster, non_cluster = self.scan_cluster_or_non_cluster_instance(instances_list)
+            cluster, non_cluster = self.ec2_operations.scan_cluster_or_non_cluster_instance(instances_list)
             ids = Queue()
             cluster_process = Process(target=self.update_cluster_tags, args=(cluster, ids,))
             non_cluster_process = Process(target=self.non_cluster_update.non_cluster_update_ec2, args=(non_cluster,))
@@ -350,27 +330,6 @@ class TagClusterResources:
             non_cluster_process.join()
             return ids.get()
 
-    def scan_cluster_non_cluster_resources(self, resources: list):
-        """
-        This method returns the list of cluster and non-cluster resources.
-        @param resources:
-        @return:
-        """
-        cluster = []
-        non_cluster = []
-        for resource in resources:
-            found = False
-            if resource.get('Tags'):
-                for tag in resource.get('Tags'):
-                    if self.cluster_prefix in tag.get('Key'):
-                        found = True
-                        break
-            if found:
-                cluster.append(resource)
-            else:
-                non_cluster.append(resource)
-        return [cluster, non_cluster]
-
     def cluster_volume(self):
         """
         This method return list of cluster's volume according to cluster tag name
@@ -378,7 +337,7 @@ class TagClusterResources:
         """
         volumes = self.ec2_client.describe_volumes()
         volumes_data = volumes['Volumes']
-        cluster, non_cluster = self.scan_cluster_non_cluster_resources(volumes_data)
+        cluster, non_cluster = self.ec2_operations.scan_cluster_non_cluster_resources(volumes_data)
         ids = Queue()
         cluster_process = Process(target=self.__generate_cluster_resources_list_by_tag,
                                   args=(cluster, 'VolumeId', ids,))
@@ -397,7 +356,7 @@ class TagClusterResources:
         images = self.ec2_client.describe_images(Owners=['self'])
         images_data = images['Images']
         ids = Queue()
-        cluster, non_cluster = self.scan_cluster_non_cluster_resources(images_data)
+        cluster, non_cluster = self.ec2_operations.scan_cluster_non_cluster_resources(images_data)
         cluster_process = Process(target=self.__generate_cluster_resources_list_by_tag, args=(cluster, 'ImageId',ids, ))
         non_cluster_process = Process(target=self.non_cluster_update.update_ami, args=(non_cluster,))
         cluster_process.start()
@@ -414,7 +373,7 @@ class TagClusterResources:
         snapshots = self.ec2_client.describe_snapshots(OwnerIds=['self'])
         snapshots_data = snapshots['Snapshots']
         ids = Queue()
-        cluster, non_cluster = self.scan_cluster_non_cluster_resources(snapshots_data)
+        cluster, non_cluster = self.ec2_operations.scan_cluster_non_cluster_resources(snapshots_data)
         cluster_process = Process(target=self.__generate_cluster_resources_list_by_tag, args=(cluster, 'SnapshotId',ids, ))
         non_cluster_process = Process(target=self.non_cluster_update.update_snapshots, args=(non_cluster,))
         cluster_process.start()

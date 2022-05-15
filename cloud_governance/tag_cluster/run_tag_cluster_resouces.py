@@ -1,6 +1,5 @@
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
-from cloud_governance.tag_ec2.tag_ec2_resources import TagEc2Resources
 from multiprocessing import Process
 
 
@@ -33,7 +32,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
                           tag_cluster_resources.cluster_user,
                           tag_cluster_resources.cluster_s3_bucket,
                           ]
-    if mandatory_tags:
+    if dry_run == "no":
         action = 'Tag'
     else:
         action = 'Scan'
@@ -51,13 +50,3 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
         p.start()
     for job in jobs:
         job.join()
-
-
-def tag_ec2_resource(instance_name: str, mandatory_tags: dict = None, region: str = 'us-east-2'):
-    """
-    This method update tags of ec2: instance, volume, ami, snapshot
-    """
-
-    header = {'content-type': 'application/json'}
-    update_tags = TagEc2Resources(region=region)
-    return update_tags.update_ec2(headers=header, data=mandatory_tags)

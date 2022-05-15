@@ -4,6 +4,7 @@ import boto3
 
 
 class CloudTrailOperations:
+    WAIT_TIME = 2
 
     def __init__(self, region_name: str):
         self.cloudtrail = boto3.client('cloudtrail', region_name=region_name)
@@ -16,7 +17,7 @@ class CloudTrailOperations:
         @param resource_type:
         @return:
         """
-        diff = timedelta(seconds=2)
+        diff = timedelta(seconds=self.WAIT_TIME)
         end_time = start_time + diff
         try:
             response = self.cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time)
