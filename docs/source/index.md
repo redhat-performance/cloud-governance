@@ -12,9 +12,10 @@ This tool support the following policies:
 * ec2_run: running ec2 [ec2_run](cloud_governance/policy/ec2_run.yml)
 * ebs_unattached: volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/ebs_unattached.yml)
 * ebs_in_use: in use volumes [ebs_in_use](cloud_governance/policy/ebs_in_use.yml)
-* tag_cluster_resource: Update cluster tags by input cluster name 
+* tag_resources: Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
 * zombie_cluster_resource: Delete cluster's zombie resources
-* tag_ec2_resource: tag ec2 resources (instance, volume, ami, snapshot) by instance name
+* tag_non_cluster: tag ec2 resources (instance, volume, ami, snapshot) by instance name
+* tag_iam_user: update the user tags from the csv file
 * gitleaks: scan Github repository git leak (security scan)  
 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)

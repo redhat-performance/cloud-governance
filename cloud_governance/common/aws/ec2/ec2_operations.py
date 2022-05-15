@@ -28,10 +28,12 @@ class EC2Operations:
         :return:
         """
         # elbs = self.get_full_list()
-        elbs = self.elb1_client.describe_load_balancers()
-        for elb in elbs['LoadBalancerDescriptions']:
-            if elb['LoadBalancerName'] == elb_name:
-                return True
+        elbs = self.elb1_client.describe_load_balancers()['LoadBalancerDescriptions']
+        if elbs:
+            for elb in elbs:
+                if elb['LoadBalancerName'] == elb_name:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -42,10 +44,12 @@ class EC2Operations:
         :param elb_name:
         :return:
         """
-        elbs = self.elbv2_client.describe_load_balancers()
-        for elb in elbs['LoadBalancers']:
-            if elb['LoadBalancerName'] == elb_name:
-                return True
+        elbs = self.elbv2_client.describe_load_balancers()['LoadBalancers']
+        if elbs:
+            for elb in elbs:
+                if elb['LoadBalancerName'] == elb_name:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -56,11 +60,13 @@ class EC2Operations:
         :param vpc_endpoint_id:
         :return:
         """
-        vpc_endpoints = self.ec2_client.describe_vpc_endpoints()
-        for vpc_endpoint in vpc_endpoints['VpcEndpoints']:
-            if vpc_endpoint['VpcEndpointId'] == vpc_endpoint_id:
-                if vpc_endpoint['State'] == 'deleted':
-                    return True
+        vpc_endpoints = self.ec2_client.describe_vpc_endpoints()['VpcEndpoints']
+        if vpc_endpoints:
+            for vpc_endpoint in vpc_endpoints:
+                if vpc_endpoint['VpcEndpointId'] == vpc_endpoint_id:
+                    if vpc_endpoint['State'] == 'deleted':
+                        return True
+            return False
         return False
 
     @logger_time_stamp
@@ -81,10 +87,12 @@ class EC2Operations:
         Find the DHCP option present or not
         :return:
         """
-        dhcp_options = self.ec2_client.describe_dhcp_options()
-        for dhcp_option in dhcp_options['DhcpOptions']:
-            if dhcp_option['DhcpOptionsId'] == dhcp_id:
-                return True
+        dhcp_options = self.ec2_client.describe_dhcp_options()['DhcpOptions']
+        if dhcp_options:
+            for dhcp_option in dhcp_options:
+                if dhcp_option['DhcpOptionsId'] == dhcp_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -95,10 +103,12 @@ class EC2Operations:
         :param snapshot_id:
         :return:
         """
-        snapshots = self.ec2_client.describe_snapshots()
-        for snapshot in snapshots['Snapshots']:
-            if snapshot['SnapshotId'] == snapshot_id:
-                return True
+        snapshots = self.ec2_client.describe_snapshots()['Snapshots']
+        if snapshots:
+            for snapshot in snapshots:
+                if snapshot['SnapshotId'] == snapshot_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -109,10 +119,12 @@ class EC2Operations:
         :param route_table_id:
         :return:
         """
-        route_tables = self.ec2_client.describe_route_tables()
-        for route_table in route_tables['RouteTables']:
-            if route_table['RouteTableId'] == route_table_id:
-                return True
+        route_tables = self.ec2_client.describe_route_tables()['RouteTables']
+        if route_tables:
+            for route_table in route_tables:
+                if route_table['RouteTableId'] == route_table_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -123,10 +135,12 @@ class EC2Operations:
         :param security_group_id:
         :return:
         """
-        security_groups = self.ec2_client.describe_security_groups()
-        for security_group in security_groups['SecurityGroups']:
-            if security_group['GroupId'] == security_group_id:
-                return True
+        security_groups = self.ec2_client.describe_security_groups()['SecurityGroups']
+        if security_groups:
+            for security_group in security_groups:
+                if security_group['GroupId'] == security_group_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -138,10 +152,12 @@ class EC2Operations:
         :return:
         """
         nat_gateways = self.ec2_client.describe_nat_gateways()['NatGateways']
-        for nat_gateway in nat_gateways:
-            if nat_gateway['NatGatewayId'] == nat_gateway_id:
-                if nat_gateway['State'] == 'deleted':
-                    return True
+        if nat_gateways:
+            for nat_gateway in nat_gateways:
+                if nat_gateway['NatGatewayId'] == nat_gateway_id:
+                    if nat_gateway['State'] == 'deleted':
+                        return True
+            return False
         return False
 
     @logger_time_stamp
@@ -153,9 +169,11 @@ class EC2Operations:
         :return:
         """
         network_acls = self.ec2_client.describe_network_acls()['NetworkAcls']
-        for network_acl in network_acls:
-            if network_acl['NetworkAclId'] == network_acl_id:
-                return True
+        if network_acls:
+            for network_acl in network_acls:
+                if network_acl['NetworkAclId'] == network_acl_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -167,9 +185,11 @@ class EC2Operations:
         :return:
         """
         network_interfaces = self.ec2_client.describe_network_interfaces()['NetworkInterfaces']
-        for network_interface in network_interfaces:
-            if network_interface['NetworkInterfaceId'] == network_interface_id:
-                return True
+        if network_interfaces:
+            for network_interface in network_interfaces:
+                if network_interface['NetworkInterfaceId'] == network_interface_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -181,9 +201,11 @@ class EC2Operations:
         :return:
         """
         internet_gateways = self.ec2_client.describe_network_interfaces()['NetworkInterfaces']
-        for internet_gateway in internet_gateways:
-            if internet_gateway['InternetGatewayId'] == ing_id:
-                return True
+        if internet_gateways:
+            for internet_gateway in internet_gateways:
+                if internet_gateway['InternetGatewayId'] == ing_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -195,9 +217,11 @@ class EC2Operations:
         :return:
         """
         subnets = self.ec2_client.describe_subnets()['Subnets']
-        for subnet in subnets:
-            if subnet['SubnetId'] == subnet_id:
-                return True
+        if subnets:
+            for subnet in subnets:
+                if subnet['SubnetId'] == subnet_id:
+                    return True
+            return False
         return False
 
     @logger_time_stamp
@@ -220,11 +244,13 @@ class EC2Operations:
         :return:
         """
         vpcs = self.ec2_client.describe_vpcs()['Vpcs']
-        for vpc in vpcs:
-            if vpc.get('tags'):
-                for tag in vpc.get('Tags'):
-                    if tag['Key'] == cluster_tag:
-                        return True
+        if vpcs:
+            for vpc in vpcs:
+                if vpc.get('tags'):
+                    for tag in vpc.get('Tags'):
+                        if tag['Key'] == cluster_tag:
+                            return True
+            return False
         return False
 
     @logger_time_stamp
@@ -236,7 +262,54 @@ class EC2Operations:
         :return:
         """
         images = self.ec2_client.describe_images(Owners=['self'])
-        for image in images['Images']:
-            if image['ImageId'] == image_id:
-                return True
+        if images:
+            for image in images['Images']:
+                if image['ImageId'] == image_id:
+                    return True
+            return False
         return False
+
+    @typeguard.typechecked
+    def scan_cluster_or_non_cluster_instance(self, resources: list):
+        """
+        This method returns the list of cluster and non-cluster instances.
+        @param resources:
+        @return:
+        """
+        cluster = []
+        non_cluster = []
+        for resource in resources:
+            found = False
+            for item in resource:
+                if item.get('Tags'):
+                    for tag in item.get('Tags'):
+                        if 'kubernetes.io/cluster/' in tag.get('Key'):
+                            found = True
+                            break
+            if found:
+                cluster.append(resource)
+            else:
+                non_cluster.append(resource)
+        return [cluster, non_cluster]
+
+    @typeguard.typechecked
+    def scan_cluster_non_cluster_resources(self, resources: list):
+        """
+        This method returns the list of cluster and non-cluster resources.
+        @param resources:
+        @return:
+        """
+        cluster = []
+        non_cluster = []
+        for resource in resources:
+            found = False
+            if resource.get('Tags'):
+                for tag in resource.get('Tags'):
+                    if 'kubernetes.io/cluster/' in tag.get('Key'):
+                        found = True
+                        break
+            if found:
+                cluster.append(resource)
+            else:
+                non_cluster.append(resource)
+        return [cluster, non_cluster]
