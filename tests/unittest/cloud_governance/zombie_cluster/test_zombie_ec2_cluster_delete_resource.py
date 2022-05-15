@@ -8,6 +8,7 @@ tags = [
     {'Key': 'kubernetes.io/cluster/unittest-test-cluster', 'Value': 'Owned'},
     {'Key': 'Owner', 'Value': 'unitest'}
 ]
+region_name = 'us-east-2'
 
 region_name = 'us-east-2'
 
@@ -30,7 +31,7 @@ def test_delete_ec2_ami():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami')
     zombie_cluster_resources.zombie_cluster_ami()
-    assert not EC2Operations().find_ami(image_name)
+    assert not EC2Operations(region_name).find_ami(image_name)
 
 
 @mock_ec2
@@ -50,7 +51,7 @@ def test_delete_ec2_elastic_load_balancer():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer')
     zombie_cluster_resources.zombie_cluster_load_balancer()
-    assert not EC2Operations().find_load_balancer(elb_name='test-load-balancer')
+    assert not EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
 @mock_ec2
@@ -72,7 +73,7 @@ def test_delete_ec2_elastic_load_balancer_v2():
                                                       resource_name='zombie_cluster_load_balancer_v2')
     zombie_cluster_resources.zombie_cluster_load_balancer_v2()
 
-    assert not EC2Operations().find_load_balancer_v2(elb_name='test-load-balancer-v2')
+    assert not EC2Operations(region_name).find_load_balancer_v2(elb_name='test-load-balancer-v2')
 
 
 @mock_ec2
@@ -89,7 +90,7 @@ def test_delete_ebs_volume():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_volume')
     zombie_cluster_resources.zombie_cluster_volume()
-    assert EC2Operations().find_volume()
+    assert EC2Operations(region_name).find_volume()
 
 
 @mock_ec2
@@ -107,7 +108,7 @@ def test_delete_snapshots():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_snapshot')
     zombie_cluster_resources.zombie_cluster_snapshot()
-    assert not EC2Operations().find_snapshots(snapshots['SnapshotId'])
+    assert not EC2Operations(region_name).find_snapshots(snapshots['SnapshotId'])
 
 
 @mock_ec2
@@ -127,7 +128,7 @@ def test_delete_ec2_vpc_endpoints():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_vpc_endpoint')
     zombie_cluster_resources.zombie_cluster_vpc_endpoint()
-    assert not EC2Operations().find_vpc_endpoints(vpc_endpoint_id)
+    assert EC2Operations(region_name).find_vpc_endpoints(vpc_endpoint_id)
 
 
 @mock_ec2
@@ -148,7 +149,7 @@ def test_delete_dhcp_option_set():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_dhcp_option')
     zombie_cluster_resources.zombie_cluster_dhcp_option()
-    assert not EC2Operations().find_dhcp_options(dhcp_id=dhcp['DhcpOptions']['DhcpOptionsId'])
+    assert EC2Operations(region_name).find_dhcp_options(dhcp_id=dhcp['DhcpOptions']['DhcpOptionsId'])
 
 
 @pytest.mark.skip(reason="Already created in VPC, Creating Route Table as Main Route Table by default")
@@ -171,7 +172,7 @@ def test_delete_route_table():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_route_table')
     zombie_cluster_resources.zombie_cluster_route_table()
-    assert not EC2Operations().find_route_table(route_table_id)
+    assert not EC2Operations(region_name).find_route_table(route_table_id)
 
 
 @mock_ec2
@@ -193,7 +194,7 @@ def test_delete_security_group():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_security_group')
     zombie_cluster_resources.zombie_cluster_security_group()
-    assert not EC2Operations().find_security_group(sg1)
+    assert not EC2Operations(region_name).find_security_group(sg1)
 
 
 @mock_ec2
@@ -213,7 +214,7 @@ def test_delete_nat_gateway():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_nat_gateway')
     zombie_cluster_resources.zombie_cluster_nat_gateway()
-    assert not EC2Operations().find_nat_gateway(nat_gateway_id)
+    assert EC2Operations(region_name).find_nat_gateway(nat_gateway_id)
 
 
 @mock_ec2
@@ -232,7 +233,7 @@ def test_delete_network_acl():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_network_acl')
     zombie_cluster_resources.zombie_cluster_network_acl(vpc_id)
-    assert not EC2Operations().find_network_acl(network_acl_id)
+    assert not EC2Operations(region_name).find_network_acl(network_acl_id)
 
 
 @mock_ec2
@@ -255,7 +256,7 @@ def test_delete_network_interface():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_network_interface')
     zombie_cluster_resources.zombie_cluster_network_interface()
-    assert not EC2Operations().find_network_interface(network_interface_id)
+    assert EC2Operations(region_name).find_network_interface(network_interface_id)
 
 
 @mock_ec2
@@ -275,7 +276,7 @@ def test_delete_internet_gateway():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_internet_gateway')
     zombie_cluster_resources.zombie_cluster_internet_gateway()
-    assert not EC2Operations().find_internet_gateway(ing_id)
+    assert not EC2Operations(region_name).find_internet_gateway(ing_id)
 
 
 @mock_ec2
@@ -296,7 +297,7 @@ def test_delete_subnet():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_subnet')
     zombie_cluster_resources.zombie_cluster_subnet()
-    assert not EC2Operations().find_subnet(subnet1)
+    assert not EC2Operations(region_name).find_subnet(subnet1)
 
 
 @mock_ec2
@@ -322,7 +323,7 @@ def test_delete_elastic_ip():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_elastic_ip')
     zombie_cluster_resources.zombie_cluster_elastic_ip()
-    assert EC2Operations().find_elastic_ip()
+    assert EC2Operations(region_name).find_elastic_ip()
 
 
 @mock_ec2
@@ -384,4 +385,4 @@ def test_delete_vpc():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_vpc')
     zombie_cluster_resources.zombie_cluster_vpc()
-    assert not EC2Operations().find_vpc('kubernetes.io/cluster/unittest-test-cluster')
+    assert not EC2Operations(region_name).find_vpc('kubernetes.io/cluster/unittest-test-cluster')

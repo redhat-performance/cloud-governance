@@ -10,13 +10,13 @@ class EC2Operations:
     This class is useful for writing EC2 Operations
     """
 
-    def __init__(self):
+    def __init__(self, region: str = 'us-east-2'):
         """
         Initializing the AWS resources
         """
-        self.elb1_client = boto3.client('elb')
-        self.elbv2_client = boto3.client('elbv2')
-        self.ec2_client = boto3.client('ec2')
+        self.elb1_client = boto3.client('elb', region_name=region)
+        self.elbv2_client = boto3.client('elbv2', region_name=region)
+        self.ec2_client = boto3.client('ec2', region_name=region)
         self.get_full_list = Utils().get_details_resource_list
 
     @logger_time_stamp
