@@ -10,6 +10,8 @@ tags = [
 ]
 region_name = 'us-east-2'
 
+region_name = 'us-east-2'
+
 
 @mock_ec2
 def test_delete_ec2_ami():
