@@ -39,6 +39,7 @@ Reference:
 installation
 configuration
 podman
+tagging
 pod
 pytest
 postinstallation
