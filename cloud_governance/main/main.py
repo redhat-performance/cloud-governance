@@ -5,16 +5,18 @@ from time import strftime
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, tag_ec2_resource
+from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource
+from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource
+from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-12
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_ec2'
+# os.environ['policy'] = 'tag_non_cluster'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
@@ -29,6 +31,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
+# os.environ['tag_file_option'] = 'read'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -70,16 +73,20 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     :return:
     """
     # Custom policy Tag Cluster
-    if policy == 'tag_cluster_resource':
-        cluster_name = os.environ['resource_name']
-        if dry_run == 'no':
-            mandatory_tags = os.environ.get('mandatory_tags', {})
+    if policy == 'tag_resources':
+        cluster_name = os.environ.get('resource_name', '')
+        mandatory_tags = os.environ.get('mandatory_tags', {})
+        if mandatory_tags:
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-            mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
+        if dry_run == 'no':
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
         else:  # default: yes or other
-            tag_cluster_resource(cluster_name=cluster_name, region=region)
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
     # Custom policy Zombie Cluster
+    elif policy == 'tag_iam_user':
+        user_type = os.environ.get('resource_name', '')
+        tag_iam_user(user_type=user_type)
+        pass
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
@@ -96,17 +103,17 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             s3operations = S3Operations(region_name=region)
             logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,
                                                         policy_result=zombie_result))
-    elif policy == 'tag_ec2':
-        instance_name = os.environ['resource_name']
+    elif policy == 'tag_non_cluster':
+        # instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
-        mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-        mandatory_tags['Name'] = instance_name
-        mandatory_tags['Date'] = strftime("%Y/%m/%d %H:%M:%S")
+        if mandatory_tags:
+            mandatory_tags = literal_eval(mandatory_tags)  # str to dict
+        # mandatory_tags['Name'] = instance_name
+        dry_run = os.environ.get('dry_run', 'yes')
         if dry_run == 'no':
-            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
+            response = tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
         else:
-            response = tag_ec2_resource(instance_name=instance_name, mandatory_tags=mandatory_tags, region=region)
-        logger.info(response)
+            response = tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
     elif policy == 'gitleaks':
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')

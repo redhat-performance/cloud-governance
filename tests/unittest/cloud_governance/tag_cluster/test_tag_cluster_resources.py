@@ -1,15 +1,20 @@
-
 # TEST DRY RUN: mandatory_tags = None
+import json
+import logging
+
+from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3
+import boto3
+
 from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
 
 cluster_prefix = 'kubernetes.io/cluster/'
-cluster_name = 'ocs-test'
-#cluster_name = 'ocs-test-jlhpd'
-#cluster_name = 'opc464-k7jml'
+cluster_name = ''
+# cluster_name = 'ocs-test-jlhpd'
+# cluster_name = 'opc464-k7jml'
 
 
 # input tags
-mandatory_tags = None
+mandatory_tags = {}
 # mandatory_tags = {
 #   "Name": "test-opc464",
 #   "Owner": "Eli Battat",
@@ -17,9 +22,10 @@ mandatory_tags = None
 #   "Purpose": "test",
 #   "Date": strftime("%Y/%m/%d %H:%M:%S")
 # }
-#print(strftime("%Y/%m/%d %H:%M:%S", gmtime()))
+# print(strftime("%Y/%m/%d %H:%M:%S", gmtime()))
 
-tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name, input_tags=mandatory_tags, region='us-east-2')
+tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
+                                            input_tags=mandatory_tags, region='us-east-2')
 
 
 def test_init_cluster_name():
@@ -188,3 +194,48 @@ def test_cluster_s3_bucket():
     :return:
     """
     assert len(tag_cluster_resources.cluster_s3_bucket()) >= 0
+
+
+@mock_s3
+@mock_iam
+@mock_cloudtrail
+@mock_ec2
+def test_cluster_ec2():
+    """
+    This method tests the add tags of cluster instance
+    @return:
+    """
+    tags = [
+        {'Key': 'kubernetes.io/cluster/unittest-test-cluster', 'Value': 'Owned'},
+        {'Key': 'Owner', 'Value': 'unitest'}
+    ]
+    default_ami_id = 'ami-03cf127a'
+    ec2_resource = boto3.resource('ec2', region_name='us-east-2')
+    ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1, TagSpecifications=[{
+        'ResourceType': 'instance',
+        'Tags': tags
+    }])
+    ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1, TagSpecifications=[{
+        'ResourceType': 'instance',
+        'Tags': tags
+    }])
+    ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1, TagSpecifications=[{
+        'ResourceType': 'instance',
+        'Tags': tags
+    }])
+    assume_role_policy_document = {"Version": "2012-10-17",
+                                   "Statement": [{"Sid": "", "Effect": "Allow",
+                                                  "Principal": {
+                                                      "Service": "ec2.amazonaws.com"
+                                                  },
+                                                  "Action": "sts:AssumeRole"
+                                                  }
+                                                 ]
+                                   }
+    iam_client = boto3.client('iam')
+    iam_client.create_role(RoleName='unittest-test-cluster-master-role', AssumeRolePolicyDocument=json.dumps(assume_role_policy_document), Tags=tags)
+    iam_client.create_role(RoleName='unittest-test-cluster-worker-role', AssumeRolePolicyDocument=json.dumps(assume_role_policy_document), Tags=tags)
+    tag_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
+                                        input_tags=mandatory_tags, region='us-east-2')
+    assert len(tag_resources.cluster_instance()) == 3
+

@@ -1,0 +1,45 @@
+pipeline {
+    agent { label 'cloud-governance' }
+    environment {
+        AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
+        AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
+        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
+        BUCKET_PERF = credentials('cloud-governance-bucket-perf')
+        AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
+        AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
+        BUCKET_PSAP = credentials('cloud-governance-bucket-psap')
+        AWS_ACCESS_KEY_ID_RH_PERF = credentials('cloud-governance-aws-access-key-id-rh-perf')
+        AWS_SECRET_ACCESS_KEY_RH_PERF = credentials('cloud-governance-aws-secret-access-key-rh-perf')
+        BUCKET_RH_PERF = credentials('cloud-governance-bucket-rh-perf')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+          steps {
+            checkout scm
+           }
+        }
+        stage('Run Tagging Cluster & Non-Cluster') {
+            steps {
+                 sh 'python3 jenkins/tagging/tagging.py'
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
+                subject: msg,
+                to: "${env.contact1}, ${env.contact2}"
+            }
+          }
+    }
+}
