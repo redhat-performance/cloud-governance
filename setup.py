@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-__version__ = '1.0.365'
+__version__ = '1.0.366'
 
 
 here = path.abspath(path.dirname(__file__))
@@ -40,7 +40,7 @@ setup(
     packages=find_packages(include=['cloud_governance', 'cloud_governance.*']),
 
     install_requires=[
-        'attrs==21.4.0',  # readthedocs
+        'attrs==21.2.0',  # readthedocs
         'botocore==1.22.12',  # required by c7n 0.9.14
         'boto3==1.19.12',  # required by c7n 0.9.14
         'c7n==0.9.14',  # custodian
