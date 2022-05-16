@@ -14,7 +14,7 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 # env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-12
+# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'tag_non_cluster'
 # os.environ['policy'] = 'ec2_untag'
@@ -31,7 +31,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['tag_file_option'] = 'read'
+# os.environ['user_data_csv'] = 'read'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -84,9 +84,8 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
     # Custom policy Zombie Cluster
     elif policy == 'tag_iam_user':
-        user_type = os.environ.get('resource_name', '')
-        tag_iam_user(user_type=user_type)
-        pass
+        user_data_csv = os.environ.get('user_data_csv', '')
+        tag_iam_user(user_data_csv=user_data_csv)
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
