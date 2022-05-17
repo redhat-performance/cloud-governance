@@ -10,7 +10,7 @@ This feature help you tagging your account for cluster, non cluster resource and
 
 ```sh
 # policy=tag_iam_user
-sudo podman run --rm --name cloud-governance -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e user_data_csv=read/update -v $PWD/user/tag_user.csv:/usr/local/cloud_governance/main/user/tag_user.csv -e log_level=INFO quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e user_data_csv=read/update -e file_name=tag_user.csv  -e log_level=INFO -v /home/user/tag_user.csv:/tmp/tag_user.csv --privileged quay.io/ebattat/cloud-governance
 ```
 
 2. Update all the resources Cluster/Non-Cluster by create user tags.<br>

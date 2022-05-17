@@ -16,7 +16,7 @@ def create_user():
     """
     iam_resource = boto3.client('iam')
     tags = [
-        {'Key': 'kubernetes.io/cluster/integration-test-cluster', 'Value': 'Owned'},
+        {'Key': f'kubernetes.io/cluster/{USER_NAME}', 'Value': 'Owned'},
         {'Key': 'Owner', 'Value': 'integration'}
     ]
     iam_resource.create_user(UserName=USER_NAME, Tags=tags)
@@ -29,7 +29,7 @@ def test_iam_zombie_user():
     """
     create_user()
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False,
-                                                      cluster_tag='kubernetes.io/cluster/integration-test-cluster',
+                                                      cluster_tag=f'kubernetes.io/cluster/{USER_NAME}',
                                                       resource_name='zombie_cluster_user')
     assert len(zombie_cluster_resources.zombie_cluster_user()) >= 1
 
@@ -41,7 +41,7 @@ def test_delete_iam_cluster_user():
     """
     iam_resource = boto3.client('iam')
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
-                                                      cluster_tag='kubernetes.io/cluster/integration-test-cluster',
+                                                      cluster_tag=f'kubernetes.io/cluster/{USER_NAME}',
                                                       resource_name='zombie_cluster_user')
     zombie_cluster_resources.zombie_cluster_user()
     iam_users = Utils().get_details_resource_list(func_name=iam_resource.list_users, input_tag='Users', check_tag='Marker')
