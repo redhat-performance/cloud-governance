@@ -18,12 +18,12 @@ def create_s3_bucket():
     s3_resource = boto3.resource('s3', region_name='us-east-1')
     s3_resource.create_bucket(Bucket=BUCKET_NAME)
     bucket_tagging = s3_resource.BucketTagging(BUCKET_NAME)
-    tags = [{'Key': 'kubernetes.io/cluster/integration-test-cluster',
+    tags = [{'Key': f'kubernetes.io/cluster/{BUCKET_NAME}',
              'Value': 'Owned'
              }, {
                 'Key': 'Owner',
                 'Value': 'integration'
-            }, {'Key': 'CreateTime', 'Value': str(datetime.today())}]
+            }, {'Key': 'Create Time', 'Value': str(datetime.today())}]
     bucket_tagging.put(Tagging={
         'TagSet': tags
     })
@@ -36,7 +36,7 @@ def test_s3_zombie_bucket_exists():
     """
     create_s3_bucket()
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
-                                                      cluster_tag='kubernetes.io/cluster/integration-test-cluster',
+                                                      cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
                                                       resource_name='zombie_cluster_s3_bucket')
 
     assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()) >= 1
@@ -48,7 +48,7 @@ def test_s3_zombie_bucket_delete():
     :return:
     """
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
-                                                      cluster_tag='kubernetes.io/cluster/integration-test-cluster',
+                                                      cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
                                                       resource_name='zombie_cluster_s3_bucket')
 
     zombie_cluster_resources.zombie_cluster_s3_bucket()

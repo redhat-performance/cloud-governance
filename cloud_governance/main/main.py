@@ -32,6 +32,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-orch-perf'
 # os.environ['user_data_csv'] = 'read'
+# os.environ['file_name'] = 'tag_user.csv'
 # os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -85,7 +86,8 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     # Custom policy Zombie Cluster
     elif policy == 'tag_iam_user':
         user_data_csv = os.environ.get('user_data_csv', '')
-        tag_iam_user(user_data_csv=user_data_csv)
+        file_name = os.environ.get('file_name', '')
+        tag_iam_user(user_data_csv=user_data_csv, file_name=file_name)
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
