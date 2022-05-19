@@ -238,4 +238,3 @@ def test_cluster_ec2():
     tag_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
                                         input_tags=mandatory_tags, region='us-east-2')
     assert len(tag_resources.cluster_instance()) == 3
-

@@ -5,7 +5,7 @@ from time import strftime
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource
+from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
 from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource
 from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
@@ -16,10 +16,11 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_non_cluster'
+# os.environ['policy'] = 'tag_resources'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
+# os.environ['tag_operation'] = 'read'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
@@ -30,10 +31,12 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'ocp-orch-perf'
-# os.environ['user_data_csv'] = 'read'
+# os.environ['resource_name'] = 'ocs-test'
+# os.environ['user_tag_operation'] = 'read'
+# os.environ['remove_tags'] = "['Manager', 'Project','Environment', 'Owner', 'Budget']"
+# os.environ['username'] = 'athiruma'
 # os.environ['file_name'] = 'tag_user.csv'
-# os.environ['mandatory_tags'] = "{'Owner': 'name','Email': 'name@redhat.com','Purpose': 'test'}"
+os.environ['mandatory_tags'] = "{'Budget': 'PERF-DEPT'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
 # os.environ['git_access_token'] = ''
@@ -77,17 +80,21 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     if policy == 'tag_resources':
         cluster_name = os.environ.get('resource_name', '')
         mandatory_tags = os.environ.get('mandatory_tags', {})
+        tag_operation = os.environ.get('tag_operation', '')
         if mandatory_tags:
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-        if dry_run == 'no':
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
-        else:  # default: yes or other
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region)
-    # Custom policy Zombie Cluster
+        if tag_operation == 'delete':
+            remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags)
+        else:
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
     elif policy == 'tag_iam_user':
-        user_data_csv = os.environ.get('user_data_csv', '')
+        user_tag_operation = os.environ.get('user_tag_operation', '')
         file_name = os.environ.get('file_name', '')
-        tag_iam_user(user_data_csv=user_data_csv, file_name=file_name)
+        username = os.environ.get('username', '')
+        remove_keys = os.environ.get('remove_tags', '')
+        if remove_keys:
+            remove_keys = literal_eval(remove_keys)
+        tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys, username=username)
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')

@@ -17,6 +17,6 @@ class IAMOperations:
             if user.get('Tags'):
                 return user.get('Tags')
             else:
-                return ''
+                return []
         except:
-            return ''
+            return []
