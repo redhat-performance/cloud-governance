@@ -126,7 +126,7 @@ class TagUser:
             tagging[username] = []
             for i in range(1, len(row)):
                 key = header[i].strip()
-                value = row[i].strip()
+                value = row[i].strip().upper()
                 if value:
                     tagging[username].append(self.__get_tag(key, value))
         return tagging
@@ -148,10 +148,11 @@ class TagUser:
             json_data = self.__get_json_data(header, rows)
             for key, tags in json_data.items():
                 user_tags = self.IAMOperations.get_user_tags(username=key)
+                tags.append({'Key': 'User', 'Value': key})
                 filter_tags = self.__filter_tags_user_tags(user_tags, tags)
                 if filter_tags:
                     self.iam_client.tag_user(UserName=key, Tags=filter_tags)
-                    logger.info(f'{key}: {filter_tags}')
+                    logger.info(f'Username :: {key} {filter_tags}')
                     updated_usernames.append(key)
                     count += 1
         logger.info(f'Updated Tags of IAM Users = {count} :: Usernames {updated_usernames}')

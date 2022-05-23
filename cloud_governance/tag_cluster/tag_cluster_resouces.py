@@ -185,7 +185,7 @@ class TagClusterResources:
             if resource.get('VpcId'):
                 for vpc_id in vpc_data.keys():
                     if resource.get('VpcId') == vpc_id:
-                        all_tags = self.__append_input_tags()
+                        all_tags = []
                         all_tags.extend(vpc_data.get(vpc_id))
                         all_tags = self.__check_name_in_tags(tags=all_tags, resource_id=resource_id)
                         all_tags = self.__filter_resource_tags_by_add_tags(resource.get('Tags'), all_tags)
@@ -242,6 +242,9 @@ class TagClusterResources:
                 instances_list.append(items['Instances'])
         return instances_list
 
+    def remove_creation_date(self, tags: list):
+        return [tag for tag in tags if tag.get('Key') != 'CreationDate']
+
     def update_cluster_tags(self, resources: list, queue):
         """
         This method update the Cluster instance tags and returns the updated tags list ids.
@@ -276,6 +279,7 @@ class TagClusterResources:
                                     add_tags.extend(user_tags)
                                     add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                                 add_tags.append({'Key': 'LaunchTime', 'Value': str(item.get('LaunchTime'))})
+                                add_tags = self.remove_creation_date(add_tags)
                                 add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
                                                                                    search_tags=add_tags)
                                 if add_tags:
@@ -667,12 +671,11 @@ class TagClusterResources:
                             else:
                                 all_tags.extend(instance_tags)
                             all_tags = self.__remove_launchTime(all_tags)
-                            all_tags.append({'Key': 'CreateDate', 'Value': str(role_data.get('CreateDate'))})
+                            all_tags.append({'Key': 'CreationDate', 'Value': str(role_data.get('CreateDate'))})
                             all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
                             if all_tags:
                                 if self.dry_run == 'no':
                                     try:
-                                        all_tags.extend(role_data.get('Tags'))
                                         self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
                                         logger.info(all_tags)
                                     except Exception as err:
@@ -715,11 +718,10 @@ class TagClusterResources:
                                         all_tags = self.__append_input_tags(data.get('Tags'))
                                     all_tags.extend(instance_tags)
                                     all_tags = self.__remove_launchTime(all_tags)
-                                    all_tags.append({'Key': 'CreateDate', 'Value': str(data.get('CreateDate'))})
+                                    all_tags.append({'Key': 'CreationDate', 'Value': str(data.get('CreateDate'))})
                                     all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
                                     if all_tags:
                                         if self.dry_run == 'no':
-                                            all_tags.extend(data.get('Tags'))
                                             self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
                                             logger.info(all_tags)
                                         result_user_list.append(user_name)

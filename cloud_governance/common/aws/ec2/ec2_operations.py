@@ -293,9 +293,10 @@ class EC2Operations:
         return [cluster, non_cluster]
 
     @typeguard.typechecked
-    def scan_cluster_non_cluster_resources(self, resources: list):
+    def scan_cluster_non_cluster_resources(self, resources: list, tags: str = 'Tags'):
         """
         This method returns the list of cluster and non-cluster resources.
+        @param tags:
         @param resources:
         @return:
         """
@@ -303,8 +304,8 @@ class EC2Operations:
         non_cluster = []
         for resource in resources:
             found = False
-            if resource.get('Tags'):
-                for tag in resource.get('Tags'):
+            if resource.get(tags):
+                for tag in resource.get(tags):
                     if 'kubernetes.io/cluster/' in tag.get('Key'):
                         found = True
                         break
