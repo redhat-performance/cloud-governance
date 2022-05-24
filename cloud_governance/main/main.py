@@ -6,7 +6,7 @@ from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
-from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource
+from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource
 from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
@@ -16,7 +16,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_resources'
+# os.environ['policy'] = 'tag_non_cluster'
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
@@ -31,12 +31,12 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'ocs-test'
+# os.environ['resource_name'] = 'ocp-test'
 # os.environ['user_tag_operation'] = 'read'
 # os.environ['remove_tags'] = "['Manager', 'Project','Environment', 'Owner', 'Budget']"
 # os.environ['username'] = 'athiruma'
 # os.environ['file_name'] = 'tag_user.csv'
-os.environ['mandatory_tags'] = "{'Budget': 'PERF-DEPT'}"
+# os.environ['mandatory_tags'] = "{'Budget': 'PERF-DEPT'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
 # os.environ['git_access_token'] = ''
@@ -114,14 +114,14 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     elif policy == 'tag_non_cluster':
         # instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
+        tag_operation = os.environ.get('tag_operation', '')
         if mandatory_tags:
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         # mandatory_tags['Name'] = instance_name
-        dry_run = os.environ.get('dry_run', 'yes')
-        if dry_run == 'no':
-            response = tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
+        if tag_operation == 'delete':
+            remove_tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run='no')
         else:
-            response = tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run=dry_run)
+            tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
     elif policy == 'gitleaks':
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')

@@ -1,3 +1,4 @@
+from datetime import datetime
 from multiprocessing import Process, Queue
 
 import boto3
@@ -119,6 +120,12 @@ class TagClusterResources:
                                     return [i_tag for i_tag in i_tags if i_tag.get('Key') != cluster_name]
         return []
 
+    def get_date_from_date(self, date_time: datetime):
+        return date_time.strftime('%Y/%m/%d')
+
+    def get_date_from_date_time(self, date_time: datetime):
+        return date_time.strftime('%Y/%m/%d %H:%M:%S')
+
     def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str, ids=None,
                                                  tags: str = 'Tags'):
         """
@@ -139,12 +146,6 @@ class TagClusterResources:
                         instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                         add_tags.extend(instance_tags)
                         add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
-                        if resource.get('CreateTime'):
-                            add_tags = self.__remove_launchTime(add_tags)
-                            add_tags.append({'Key': 'CreateTime', 'Value': str(resource.get('CreateTime'))})
-                        elif resource.get('StartTime'):
-                            add_tags = self.__remove_launchTime(add_tags)
-                            add_tags.append({'Key': 'StartTime', 'Value': str(resource.get('StartTime'))})
                         add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
                         if add_tags:
                             if self.cluster_name:
@@ -278,7 +279,7 @@ class TagClusterResources:
                                     user_tags = self.iam_operations.get_user_tags(username=username)
                                     add_tags.extend(user_tags)
                                     add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-                                add_tags.append({'Key': 'LaunchTime', 'Value': str(item.get('LaunchTime'))})
+                                add_tags.append({'Key': 'LaunchTime', 'Value': self.get_date_from_date_time(item.get('LaunchTime'))})
                                 add_tags = self.remove_creation_date(add_tags)
                                 add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
                                                                                    search_tags=add_tags)
@@ -292,16 +293,14 @@ class TagClusterResources:
                     if self.dry_run == 'no':
                         self.ec2_client.create_tags(Resources=instance_ids,
                                                     Tags=cluster_tags.get(cluster_instance_name))
-                        logger.info(cluster_tags.get(cluster_instance_name))
+                        logger.info(f'Cluster :: {cluster_instance_name} :: InstanceId :: {instance_ids} :: {cluster_tags.get(cluster_instance_name)}')
                     result_instance_list.extend(instance_ids)
             else:
                 if self.dry_run == 'no':
                     self.ec2_client.create_tags(Resources=instance_ids,
                                                 Tags=cluster_tags.get(cluster_instance_name))
-                    logger.info(cluster_tags.get(cluster_instance_name))
+                    logger.info(f'Cluster :: {cluster_instance_name} :: InstanceId :: {instance_ids} :: {cluster_tags.get(cluster_instance_name)}')
                 result_instance_list.extend(instance_ids)
-
-        logger.info(f'cluster_instance count: {len(sorted(result_instance_list))} {sorted(result_instance_list)}')
         if not self.cluster_key:
             jobs = []
             iam_list = [self.cluster_role, self.cluster_s3_bucket, self.cluster_user]
@@ -450,8 +449,6 @@ class TagClusterResources:
                             if not instance_tags:
                                 all_tags = self.__append_input_tags(item.get('Tags'))
                             all_tags.extend(instance_tags)
-                            all_tags = self.__remove_launchTime(all_tags)
-                            all_tags.append({'Key': 'CreatedTime', 'Value': str(resource.get('CreatedTime'))})
                             all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
                             if all_tags:
                                 if self.cluster_name:
@@ -498,8 +495,6 @@ class TagClusterResources:
                             if not instance_tags:
                                 all_tags = self.__append_input_tags(item.get('Tags'))
                             all_tags.extend(instance_tags)
-                            all_tags = self.__remove_launchTime(all_tags)
-                            all_tags.append({'Key': 'CreatedTime', 'Value': str(resource.get('CreatedTime'))})
                             all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
                             if all_tags:
                                 if self.cluster_name:
@@ -670,8 +665,6 @@ class TagClusterResources:
                                 all_tags = self.__append_input_tags(role_data.get('Tags'))
                             else:
                                 all_tags.extend(instance_tags)
-                            all_tags = self.__remove_launchTime(all_tags)
-                            all_tags.append({'Key': 'CreationDate', 'Value': str(role_data.get('CreateDate'))})
                             all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
                             if all_tags:
                                 if self.dry_run == 'no':
@@ -717,8 +710,6 @@ class TagClusterResources:
                                     if not instance_tags:
                                         all_tags = self.__append_input_tags(data.get('Tags'))
                                     all_tags.extend(instance_tags)
-                                    all_tags = self.__remove_launchTime(all_tags)
-                                    all_tags.append({'Key': 'CreationDate', 'Value': str(data.get('CreateDate'))})
                                     all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
                                     if all_tags:
                                         if self.dry_run == 'no':
@@ -784,8 +775,6 @@ class TagClusterResources:
                                 if not instance_tags:
                                     add_tags = self.__append_input_tags(bucket_tags)
                                 add_tags.extend(instance_tags)
-                                add_tags = self.__remove_launchTime(add_tags)
-                                add_tags.append({'Key': 'CreationDate', 'Value': str(bucket.get('CreationDate'))})
                                 add_tags = self.__filter_resource_tags_by_add_tags(bucket_tags, add_tags)
                                 if add_tags:
                                     if self.dry_run == 'no':

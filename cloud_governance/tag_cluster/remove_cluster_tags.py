@@ -75,18 +75,16 @@ class RemoveClusterTags:
         @return:
         """
         tags_dict = self.get_tags(tags)
-        username = tags_dict.get('Username')
+        username = tags_dict.get('User')
         if not username:
             username = self.__get_username_from_instance_id_and_time(
-                start_time=datetime.strptime(tags_dict.get('LaunchTime'), '%Y-%m-%d %H:%M:%S+00:00'),
+                start_time=datetime.strptime(tags_dict.get('LaunchTime'), '%Y/%m/%d %H:%M:%S'),
                 resource_id=instance_list[0],
                 resource_type='AWS::EC2::Instance')
         added_tags = self.iam_operations.get_user_tags(username=username)
         added_tags.append({'Key': 'LaunchTime', 'Value': tags_dict.get('LaunchTime')})
         added_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
         added_tags.extend(self.__input_tags_list_builder())
-        if 'email' in tags:
-            added_tags.append({'email': 'LaunchTime', 'Value': f'{username}@redhat.com'})
         self.ec2_client.delete_tags(Resources=instance_list, Tags=added_tags)
         logger.info(f'InstanceId :: {instance_list} {added_tags}')
         return added_tags
@@ -152,23 +150,11 @@ class RemoveClusterTags:
                     if self.cluster_prefix in tag.get('Key'):
                         if self.cluster_name:
                             if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
-                                if resource.get('CreateTime'):
-                                    instance_tags[tag.get('Key')].append(
-                                        {'Key': 'CreateTime', 'Value': str(resource.get('CreateTime'))})
-                                if resource.get('StartTime'):
-                                    instance_tags[tag.get('Key')].append(
-                                        {'Key': 'StartTime', 'Value': str(resource.get('StartTime'))})
                                 if tag.get('Key') in cluster_resources:
                                     cluster_resources[tag.get('Key')].append(resource.get(resource_id))
                                 else:
                                     cluster_resources[tag.get('Key')] = [resource.get(resource_id)]
                         else:
-                            if resource.get('CreateTime'):
-                                instance_tags[tag.get('Key')].append(
-                                    {'Key': 'CreateTime', 'Value': str(resource.get('CreateTime'))})
-                            if resource.get('StartTime'):
-                                instance_tags[tag.get('Key')].append(
-                                    {'Key': 'StartTime', 'Value': str(resource.get('StartTime'))})
                             if tag.get('Key') in cluster_resources:
                                 cluster_resources[tag.get('Key')].append(resource.get(resource_id))
                             else:
@@ -237,17 +223,11 @@ class RemoveClusterTags:
                         if self.cluster_prefix in tag.get('Key'):
                             if self.cluster_name:
                                 if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
-                                    if item.get('CreatedTime'):
-                                        instance_tags[tag.get('Key')].append(
-                                            {'Key': 'CreatedTime', 'Value': str(item.get('CreatedTime'))})
                                     if tag.get('Key') in cluster_resources:
                                         cluster_resources[tag.get('Key')].append(resource.get('LoadBalancerName'))
                                     else:
                                         cluster_resources[tag.get('Key')] = [resource.get('LoadBalancerName')]
                             else:
-                                if item.get('CreatedTime'):
-                                    instance_tags[tag.get('Key')].append(
-                                        {'Key': 'CreatedTime', 'Value': str(item.get('CreatedTime'))})
                                 if tag.get('Key') in cluster_resources:
                                     cluster_resources[tag.get('Key')].append(resource.get('LoadBalancerName'))
                                 else:
@@ -276,17 +256,11 @@ class RemoveClusterTags:
                         if self.cluster_prefix in tag.get('Key'):
                             if self.cluster_name:
                                 if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
-                                    if item.get('CreatedTime'):
-                                        instance_tags[tag.get('Key')].append(
-                                            {'Key': 'CreatedTime', 'Value': str(item.get('CreatedTime'))})
                                     if tag.get('Key') in cluster_resources:
                                         cluster_resources[tag.get('Key')].append(resource_id)
                                     else:
                                         cluster_resources[tag.get('Key')] = [resource_id]
                             else:
-                                if item.get('CreatedTime'):
-                                    instance_tags[tag.get('Key')].append(
-                                        {'Key': 'CreatedTime', 'Value': str(item.get('CreatedTime'))})
                                 if tag.get('Key') in cluster_resources:
                                     cluster_resources[tag.get('Key')].append(resource_id)
                                 else:
@@ -440,13 +414,11 @@ class RemoveClusterTags:
                     if self.cluster_name in role_name:
                         full_name = f'{self.cluster_prefix}{self.cluster_name}'
                         keys = self.tag_keys(list(instance_tags.get(full_name)))
-                        keys.append('CreationDate')
                         self.iam_client.untag_role(RoleName=role_name, TagKeys=keys)
                         tags = list(instance_tags.get(full_name))
                 else:
                     full_name = f'{self.cluster_prefix}{cluster_name}'
                     keys = self.tag_keys(list(instance_tags.get(full_name)))
-                    keys.append('CreationDate')
                     self.iam_client.untag_role(RoleName=role_name, TagKeys=keys)
                     tags = list(instance_tags.get(full_name))
             logger.info(f'Role Name :: {role_name_list} {tags}')
@@ -473,13 +445,13 @@ class RemoveClusterTags:
                         if self.cluster_name in user_name:
                             full_name = f'{self.cluster_prefix}{self.cluster_name}'
                             keys = self.tag_keys(instance_tags.get(full_name))
-                            keys.append('CreationDate')
                             self.iam_client.untag_user(UserName=user_name, TagKeys=keys)
                             usernames.append(user_name)
                             tags = list(instance_tags.get(full_name))
                     else:
                         full_name = f'{self.cluster_prefix}{cluster_name}'
-                        self.iam_client.untag_user(UserName=user_name, TagKeys=self.tag_keys(list(instance_tags.get(full_name))))
+                        keys = self.tag_keys(list(instance_tags.get(full_name)))
+                        self.iam_client.untag_user(UserName=user_name, TagKeys=keys)
                         usernames.append(user_name)
                         tags = list(instance_tags.get(full_name))
             logger.info(f'UserName :: {usernames} {tags}')
@@ -520,7 +492,6 @@ class RemoveClusterTags:
                         bucket_tags = bucket_tags['TagSet']
                         full_name = f'{self.cluster_prefix}{cluster_name}'
                         added_tags = instance_tags.get(full_name)
-                        added_tags.append({'Key': 'CreationDate', 'Value': str(bucket.get('CreationDate'))})
                         add_tags = self.get_bucket_tags_to_add(added_tags, bucket_tags)
                         if self.cluster_name:
                             if self.cluster_name in bucket.get('Name'):
