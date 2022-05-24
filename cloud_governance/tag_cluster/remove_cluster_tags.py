@@ -408,7 +408,12 @@ class RemoveClusterTags:
         cluster_ids = []
         for cluster_name in cluster_names:
             tags = []
-            role_name_list = [f"{cluster_name}-master-role", f"{cluster_name}-worker-role"]
+            role_name_list = []
+            roles = self.__get_details_resource_list(func_name=self.iam_client.list_roles, input_tag='Roles',
+                                                     check_tag='Marker')
+            for role in roles:
+                if cluster_name in role.get('RoleName'):
+                    role_name_list.append(role.get('RoleName'))
             for role_name in role_name_list:
                 if self.cluster_name:
                     if self.cluster_name in role_name:
