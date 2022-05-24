@@ -207,20 +207,19 @@ class RemoveNonClusterTags:
                         instance_id = snapshot.get('Description').split(" ")[2].split("(")[1][:-1]
                         instances = self.__get_instances_data(instance_id)
                         if instances:
-                            for instance in instances:
-                                if instance.get('InstanceId') == instance_id:
-                                    for item in instance:
-                                        if item.get('tags'):
-                                            search_tags.extend(
-                                                [tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
-                                        else:
-                                            search_tags.extend(self.__append_input_tags())
-                                        username = self.cloudtrail.get_username_by_instance_id_and_time(
-                                            item.get('LaunchTime'),
-                                            item.get('InstanceId'),
-                                            'AWS::EC2::Instance')
-                                        break
+                            for item in instances:
+                                if item.get('InstanceId') == instance_id:
+                                    if item.get('Tags'):
+                                        search_tags.extend(
+                                            [tag for tag in item.get('Tags') if not tag.get('Key') == 'Name'])
+                                    else:
+                                        search_tags.extend(self.__append_input_tags())
+                                    username = self.cloudtrail.get_username_by_instance_id_and_time(
+                                        item.get('LaunchTime'),
+                                        item.get('InstanceId'),
+                                        'AWS::EC2::Instance')
                                     search_tags.append({'Key': 'LaunchTime', 'Value': item.get('LaunchTime').strftime('%Y/%m/%d %H:%M:%S')})
+                                    break
             else:
                 search_tags.extend(self.__append_input_tags())
             if username:

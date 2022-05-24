@@ -301,6 +301,7 @@ class TagClusterResources:
                                                 Tags=cluster_tags.get(cluster_instance_name))
                     logger.info(f'Cluster :: {cluster_instance_name} :: InstanceId :: {instance_ids} :: {cluster_tags.get(cluster_instance_name)}')
                 result_instance_list.extend(instance_ids)
+        logger.info(f'cluster_instance :: {len(result_instance_list)} :: {result_instance_list}')
         if not self.cluster_key:
             jobs = []
             iam_list = [self.cluster_role, self.cluster_s3_bucket, self.cluster_user]
@@ -652,30 +653,36 @@ class TagClusterResources:
                 cluster_key = self.cluster_name if self.cluster_key else cluster_name
                 if cluster_key:
                     # starts with cluster name, search for specific role name for fast scan (a lot of roles)
-                    role_name_list = [f"{cluster_key}-master-role", f"{cluster_key}-worker-role"]
-
-                    for role_name in role_name_list:
-                        try:
-                            role = self.iam_client.get_role(RoleName=role_name)
-                            role_data = role['Role']
-                            all_tags = []
-                            instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                cluster_name=f'{self.cluster_prefix}{cluster_key}')
-                            if not instance_tags:
-                                all_tags = self.__append_input_tags(role_data.get('Tags'))
-                            else:
-                                all_tags.extend(instance_tags)
-                            all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
-                            if all_tags:
-                                if self.dry_run == 'no':
-                                    try:
-                                        self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
-                                        logger.info(all_tags)
-                                    except Exception as err:
-                                        logger.exception(f'Tags are already updated, {err}')
-                                result_role_list.append(role_data['Arn'])
-                        except Exception as err:
-                            logger.exception(f'Missing cluster role name: {role_name}, {err}')
+                    role_name_list = []
+                    roles = self.__get_details_resource_list(func_name=self.iam_client.list_roles, input_tag='Roles',check_tag='Marker')
+                    for role in roles:
+                        if cluster_key in role.get('RoleName'):
+                            role_name_list.append(role.get('RoleName'))
+                    if role_name_list:
+                        for role_name in role_name_list:
+                            try:
+                                role = self.iam_client.get_role(RoleName=role_name)
+                                role_data = role['Role']
+                                all_tags = []
+                                instance_tags = self.__get_cluster_tags_by_instance_cluster(
+                                    cluster_name=f'{self.cluster_prefix}{cluster_key}')
+                                if not instance_tags:
+                                    all_tags = self.__append_input_tags(role_data.get('Tags'))
+                                else:
+                                    all_tags.extend(instance_tags)
+                                all_tags = self.__filter_resource_tags_by_add_tags(role_data.get('Tags'), all_tags)
+                                if all_tags:
+                                    if self.dry_run == 'no':
+                                        try:
+                                            self.iam_client.tag_role(RoleName=role_name, Tags=all_tags)
+                                            logger.info(all_tags)
+                                        except Exception as err:
+                                            logger.exception(f'Tags are already updated, {err}')
+                                    result_role_list.append(role_data['Arn'])
+                            except Exception as err:
+                                logger.exception(f'Missing cluster role name: {role_name}, {err}')
+                    else:
+                        logger.info(f'No roles for this {cluster_name}')
         logger.info(f'cluster_role count: {len(sorted(result_role_list))} {sorted(result_role_list)}')
         return sorted(result_role_list)
 
