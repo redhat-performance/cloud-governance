@@ -122,7 +122,7 @@ sudo podman run --rm --name cloud-governance -e policy=zombie_cluster_resource -
 sudo podman run --rm --name cloud-governance -e policy=tag_resources -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e tag_operation=read/update/delete -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
 
 # policy=tag_non_cluster
-sudo podman run --rm --name cloud-governance -e policy=tag_non_cluster -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
+sudo podman run --rm --name cloud-governance -e policy=tag_non_cluster -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e tag_operation=read/update/delete -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level=INFO -v /etc/localtime:/etc/localtime quay.io/ebattat/cloud-governance
 
 # policy=tag_iam_user
 sudo podman run --rm --name cloud-governance -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e user_tag_operation=read/update/delete -e remove_tags="['Environment', 'Test']" -e username=test_username -e file_name=tag_user.csv  -e log_level=INFO -v /home/user/tag_user.csv:/tmp/tag_user.csv --privileged quay.io/ebattat/cloud-governance
