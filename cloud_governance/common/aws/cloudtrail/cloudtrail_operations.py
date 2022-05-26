@@ -7,7 +7,7 @@ class CloudTrailOperations:
     WAIT_TIME = 2
 
     def __init__(self, region_name: str):
-        self.cloudtrail = boto3.client('cloudtrail', region_name=region_name)
+        self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
 
     def get_username_by_instance_id_and_time(self, start_time: datetime, resource_id: str, resource_type: str):
         """
@@ -20,7 +20,7 @@ class CloudTrailOperations:
         diff = timedelta(seconds=self.WAIT_TIME)
         end_time = start_time + diff
         try:
-            response = self.cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time)
+            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time)
             for event in response['Events']:
                 if event.get('Resources'):
                     for resource in event.get('Resources'):
@@ -30,3 +30,6 @@ class CloudTrailOperations:
             return ''
         except:
             return ''
+
+    def set_cloudtrail(self):
+        self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')

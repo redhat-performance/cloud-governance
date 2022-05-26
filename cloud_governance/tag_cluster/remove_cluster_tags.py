@@ -8,6 +8,7 @@ from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.tag_non_cluster.remove_non_cluster_tags import RemoveNonClusterTags
 
 
 class RemoveClusterTags:
@@ -17,6 +18,8 @@ class RemoveClusterTags:
 
     def __init__(self, input_tags: dict, cluster_name: str = None, cluster_prefix: str = None,
                  region: str = 'us-east-2'):
+        self.utils = Utils(region=region)
+        self.ec2_operations = EC2Operations(region=region)
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)
@@ -29,7 +32,8 @@ class RemoveClusterTags:
         self.__get_details_resource_list = Utils().get_details_resource_list
         self.__get_username_from_instance_id_and_time = CloudTrailOperations(
             region_name=region).get_username_by_instance_id_and_time
-        self.ec2_operations = EC2Operations()
+        self.non_cluster_update = RemoveNonClusterTags(region=region, dry_run='no', input_tags=input_tags)
+
 
     def __get_instances_data(self):
         """
@@ -37,8 +41,7 @@ class RemoveClusterTags:
         @return:
         """
         instances_list = []
-        ec2s_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_instances,
-                                                     input_tag='Reservations', check_tag='NextToken')
+        ec2s_data = self.ec2_operations.get_instances()
         for items in ec2s_data:
             if items.get('Instances'):
                 instances_list.append(items['Instances'])
@@ -75,18 +78,29 @@ class RemoveClusterTags:
         @return:
         """
         tags_dict = self.get_tags(tags)
-        username = tags_dict.get('User')
-        if not username:
-            username = self.__get_username_from_instance_id_and_time(
-                start_time=datetime.strptime(tags_dict.get('LaunchTime'), '%Y/%m/%d %H:%M:%S'),
-                resource_id=instance_list[0],
-                resource_type='AWS::EC2::Instance')
-        added_tags = self.iam_operations.get_user_tags(username=username)
-        added_tags.append({'Key': 'LaunchTime', 'Value': tags_dict.get('LaunchTime')})
-        added_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-        added_tags.extend(self.__input_tags_list_builder())
-        self.ec2_client.delete_tags(Resources=instance_list, Tags=added_tags)
-        logger.info(f'InstanceId :: {instance_list} {added_tags}')
+        added_tags = []
+        if tags_dict.get('LaunchTime'):
+            username = tags_dict.get('User')
+            if not username:
+                username = self.__get_username_from_instance_id_and_time(
+                    start_time=datetime.strptime(tags_dict.get('LaunchTime'), '%Y/%m/%d %H:%M:%S'),
+                    resource_id=instance_list[0],
+                    resource_type='AWS::EC2::Instance')
+            if username == 'AutoScaling':
+                added_tags.append({'Key': 'User', 'Value': username})
+            elif username == 'NA':
+                added_tags.append({'Key': 'User', 'Value': 'NA'})
+            else:
+                user_tags = self.iam_operations.get_user_tags(username=username)
+                if user_tags:
+                    added_tags.extend(user_tags)
+                else:
+                    added_tags.append({'Key': 'User', 'Value': username})
+            added_tags.append({'Key': 'LaunchTime', 'Value': tags_dict.get('LaunchTime')})
+            added_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
+            added_tags.extend(self.__input_tags_list_builder())
+            self.ec2_client.delete_tags(Resources=instance_list, Tags=added_tags)
+            logger.info(f'InstanceId :: {instance_list} {added_tags}')
         return added_tags
 
     def get_cluster(self, clusters: list):
@@ -120,6 +134,20 @@ class RemoveClusterTags:
                                 break
         return [cluster_dict, cluster_tags]
 
+    def cluster_update_tags(self, cluster: list, queue: Queue):
+        """
+        This method run all over instances and aggregate the clusters by name and its tags
+        @param queue:
+        @param cluster:
+        @return:
+        """
+        cluster_list, cluster_tags = self.get_cluster(cluster)
+        result = {}
+        for cluster_name, cluster_ids in cluster_list.items():
+            added_tags = (self.remove_instance_tags(cluster_ids, cluster_tags.get(cluster_name)))
+            result[cluster_name] = added_tags
+        queue.put(result)
+
     def cluster_instance(self):
         """
         This method removes the tags of cluster and non-cluster
@@ -127,12 +155,14 @@ class RemoveClusterTags:
         """
         instance_list = self.__get_instances_data()
         cluster, non_cluster = self.ec2_operations.scan_cluster_or_non_cluster_instance(instance_list)
-        cluster_list, cluster_tags = self.get_cluster(cluster)
-        result = {}
-        for cluster_name, cluster_ids in cluster_list.items():
-            added_tags = (self.remove_instance_tags(cluster_ids, cluster_tags.get(cluster_name)))
-            result[cluster_name] = added_tags
-        return result
+        queue = Queue()
+        cluster_process = Process(target=self.cluster_update_tags, args=(cluster, queue, ))
+        cluster_process.start()
+        non_cluster_process = Process(target=self.non_cluster_update.non_cluster_update_ec2, args=(non_cluster, ))
+        non_cluster_process.start()
+        cluster_process.join()
+        non_cluster_process.join()
+        return queue.get()
 
     def remove_tags_of_resources(self, resource_list: list, instance_tags: dict, resource_id: str, tags: str = 'Tags'):
         """
@@ -160,7 +190,8 @@ class RemoveClusterTags:
                             else:
                                 cluster_resources[tag.get('Key')] = [resource.get(resource_id)]
         for cluster_name, resource_ids in cluster_resources.items():
-            self.ec2_client.delete_tags(Resources=resource_ids, Tags=instance_tags.get(cluster_name))
+            if instance_tags.get(cluster_name):
+                self.ec2_client.delete_tags(Resources=resource_ids, Tags=instance_tags.get(cluster_name))
             logger.info(f'{resource_id} :: {resource_ids} {instance_tags.get(cluster_name)}')
 
     def cluster_volume(self, instance_tags: dict):
@@ -169,10 +200,14 @@ class RemoveClusterTags:
         @param instance_tags:
         @return:
         """
-        volumes_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes',
-                                                        check_tag='NextToken')
+        volumes_data = self.ec2_operations.get_volumes()
         cluster_volume, non_cluster_volume = self.ec2_operations.scan_cluster_non_cluster_resources(volumes_data)
-        self.remove_tags_of_resources(cluster_volume, instance_tags, 'VolumeId')
+        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_volume, instance_tags, 'VolumeId',))
+        cluster_process.start()
+        non_cluster_process = Process(target=self.non_cluster_update.update_volumes, args=(non_cluster_volume,))
+        non_cluster_process.start()
+        cluster_process.join()
+        non_cluster_process.join()
         return len(cluster_volume)
 
     def cluster_images(self, instance_tags: dict):
@@ -181,9 +216,14 @@ class RemoveClusterTags:
         @param instance_tags:
         @return:
         """
-        images_data = self.ec2_client.describe_images(Owners=['self'])['Images']
-        cluster_images, non_cluster_ = self.ec2_operations.scan_cluster_non_cluster_resources(images_data)
-        self.remove_tags_of_resources(cluster_images, instance_tags, 'ImageId')
+        images_data = self.ec2_operations.get_images()
+        cluster_images, non_cluster_images = self.ec2_operations.scan_cluster_non_cluster_resources(images_data)
+        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_images, instance_tags, 'ImageId', ))
+        cluster_process.start()
+        non_cluster_process = Process(target=self.non_cluster_update.update_ami, args=(non_cluster_images, ))
+        non_cluster_process.start()
+        cluster_process.join()
+        non_cluster_process.join()
         return len(cluster_images)
 
     def cluster_snapshot(self, instance_tags: dict):
@@ -191,9 +231,14 @@ class RemoveClusterTags:
         This method return list of cluster's snapshot according to cluster tag name
         @return:
         """
-        snapshots_data = self.ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+        snapshots_data = self.ec2_operations.get_snapshots()
         cluster_snapshot, non_cluster_snapshot = self.ec2_operations.scan_cluster_non_cluster_resources(snapshots_data)
-        self.remove_tags_of_resources(cluster_snapshot, instance_tags, 'SnapshotId')
+        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_snapshot, instance_tags, 'SnapshotId', ))
+        cluster_process.start()
+        non_cluster_process = Process(target=self.non_cluster_update.update_snapshots, args=(non_cluster_snapshot,))
+        non_cluster_process.start()
+        cluster_process.join()
+        non_cluster_process.join()
         return len(cluster_snapshot)
 
     def generate_tag_key(self, tags: list):
@@ -213,7 +258,7 @@ class RemoveClusterTags:
         @return:
         """
         cluster_resources = {}
-        load_balancers_data = self.elb_client.describe_load_balancers()['LoadBalancerDescriptions']
+        load_balancers_data = self.ec2_operations.get_load_balancers()
         for resource in load_balancers_data:
             resource_id = resource['LoadBalancerName']
             tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id])
@@ -246,7 +291,7 @@ class RemoveClusterTags:
         @return:
         """
         cluster_resources = {}
-        load_balancers_data = self.elbv2_client.describe_load_balancers()['LoadBalancers']
+        load_balancers_data = self.ec2_operations.get_load_balancers_v2()
         for resource in load_balancers_data:
             resource_id = resource['LoadBalancerArn']
             tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id])
@@ -278,9 +323,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster network_interfaces
         @return:
         """
-        network_interfaces_data = self.__get_details_resource_list(
-            func_name=self.ec2_client.describe_network_interfaces,
-            input_tag='NetworkInterfaces', check_tag='NextToken')
+        network_interfaces_data = self.ec2_operations.get_network_interface()
         cluster_eni, non_cluster_eni = self.ec2_operations.scan_cluster_non_cluster_resources(network_interfaces_data,
                                                                                               tags='TagSet')
         self.remove_tags_of_resources(cluster_eni, instance_tags, 'NetworkInterfaceId', tags='TagSet')
@@ -291,7 +334,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster elastic_ip
         @return:
         """
-        elastic_ips_data = self.ec2_client.describe_addresses()['Addresses']
+        elastic_ips_data = self.ec2_operations.get_elastic_ips()
         cluster_eip, non_cluster_eip = self.ec2_operations.scan_cluster_non_cluster_resources(elastic_ips_data)
         self.remove_tags_of_resources(cluster_eip, instance_tags, 'AllocationId')
         return len(cluster_eip)
@@ -301,7 +344,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster security group
         @return:
         """
-        security_groups_data = self.ec2_client.describe_security_groups()['SecurityGroups']
+        security_groups_data = self.ec2_operations.get_security_groups()
         cluster_sg, non_cluster_sg = self.ec2_operations.scan_cluster_non_cluster_resources(security_groups_data)
         self.remove_tags_of_resources(cluster_sg, instance_tags, 'GroupId')
         return len(cluster_sg)
@@ -311,7 +354,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster vpc
         @return:
         """
-        vpcs_data = self.ec2_client.describe_vpcs()['Vpcs']
+        vpcs_data = self.ec2_operations.get_vpcs()
         cluster_vpc, non_cluster_vpc = self.ec2_operations.scan_cluster_non_cluster_resources(vpcs_data)
         self.remove_tags_of_resources(cluster_vpc, instance_tags, 'VpcId')
         return len(cluster_vpc)
@@ -321,7 +364,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster subnet
         @return:
         """
-        subnets_data = self.ec2_client.describe_subnets()['Subnets']
+        subnets_data = self.ec2_operations.get_subnets()
         cluster_subnet, non_cluster_subnet = self.ec2_operations.scan_cluster_non_cluster_resources(subnets_data)
         self.remove_tags_of_resources(cluster_subnet, instance_tags, 'SubnetId')
         return len(cluster_subnet)
@@ -331,7 +374,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster route table
         @return:
         """
-        route_tables_data = self.ec2_client.describe_route_tables()['RouteTables']
+        route_tables_data = self.ec2_operations.get_route_tables()
         cluster_rt, non_cluster_rt = self.ec2_operations.scan_cluster_non_cluster_resources(route_tables_data)
         self.remove_tags_of_resources(cluster_rt, instance_tags, 'RouteTableId')
         return len(cluster_rt)
@@ -341,7 +384,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster internet gateway
         @return:
         """
-        internet_gateways_data = self.ec2_client.describe_internet_gateways()['InternetGateways']
+        internet_gateways_data = self.ec2_operations.get_internet_gateways()
         cluster_ign, non_cluster_ign = self.ec2_operations.scan_cluster_non_cluster_resources(internet_gateways_data)
         self.remove_tags_of_resources(cluster_ign, instance_tags, 'InternetGatewayId')
         return len(cluster_ign)
@@ -351,7 +394,7 @@ class RemoveClusterTags:
         This method remove the tags of cluster dhcp
         @return:
         """
-        dhcp_options_data = self.ec2_client.describe_dhcp_options()['DhcpOptions']
+        dhcp_options_data = self.ec2_operations.get_dhcp_options()
         cluster_dhcp, non_cluster_dhcp = self.ec2_operations.scan_cluster_non_cluster_resources(dhcp_options_data)
         self.remove_tags_of_resources(cluster_dhcp, instance_tags, 'DhcpOptionsId')
         return cluster_dhcp
@@ -361,7 +404,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster vpc endpoints
         @return:
         """
-        vpc_endpoints_data = self.ec2_client.describe_vpc_endpoints()['VpcEndpoints']
+        vpc_endpoints_data = self.ec2_operations.get_vpce()
         cluster_vpce, non_cluster_vpce = self.ec2_operations.scan_cluster_non_cluster_resources(vpc_endpoints_data)
         self.remove_tags_of_resources(cluster_vpce, instance_tags, 'VpcEndpointId')
         return cluster_vpce
@@ -371,7 +414,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster nat gateway
         @return:
         """
-        nat_gateways_data = self.ec2_client.describe_nat_gateways()['NatGateways']
+        nat_gateways_data = self.ec2_operations.get_nat_gateways()
         cluster_ngw, non_cluster_ngw = self.ec2_operations.scan_cluster_non_cluster_resources(nat_gateways_data)
         self.remove_tags_of_resources(cluster_ngw, instance_tags, 'NatGatewayId')
         return cluster_ngw
@@ -382,7 +425,7 @@ class RemoveClusterTags:
         Missing OpenShift Tags for it based on VPCs
         @return:
         """
-        network_acls_data = self.ec2_client.describe_network_acls()['NetworkAcls']
+        network_acls_data = self.ec2_operations.get_nacls()
         cluster_nacl, non_cluster_nacl = self.ec2_operations.scan_cluster_non_cluster_resources(network_acls_data)
         self.remove_tags_of_resources(cluster_nacl, instance_tags, 'NetworkAclId')
         return cluster_nacl
@@ -409,8 +452,7 @@ class RemoveClusterTags:
         for cluster_name in cluster_names:
             tags = []
             role_name_list = []
-            roles = self.__get_details_resource_list(func_name=self.iam_client.list_roles, input_tag='Roles',
-                                                     check_tag='Marker')
+            roles = self.iam_operations.get_roles()
             for role in roles:
                 if cluster_name in role.get('RoleName'):
                     role_name_list.append(role.get('RoleName'))
@@ -440,7 +482,7 @@ class RemoveClusterTags:
         cluster_names = [name.split('/')[-1] for name in instance_tags.keys()]
         user_ids = []
         for cluster_name in cluster_names:
-            users = self.__get_details_resource_list(self.iam_client.list_users, input_tag='Users', check_tag='Marker')
+            users = self.iam_operations.get_users()
             usernames = []
             tags = []
             for user in users:

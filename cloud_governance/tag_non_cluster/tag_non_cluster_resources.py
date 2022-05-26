@@ -5,6 +5,7 @@ import boto3
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
+from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
 
 
@@ -12,6 +13,10 @@ class TagNonClusterResources:
     """
     This class update tags of Non-Cluster Resources
     """
+    
+    SHORT_RESOURCE_ID = 5
+    SHORT_RESOURCE_NAME = 3
+    SHOT_SNAPSHOT_ID = 4
 
     def __init__(self, region: str = 'us-east-2', dry_run: str = 'yes', input_tags: dict = ''):
         self.region = region
@@ -22,14 +27,15 @@ class TagNonClusterResources:
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.cloudtrail = CloudTrailOperations(region_name=self.region)
         self.iam_client = IAMOperations()
-        self.ec2_operations = EC2Operations()
+        self.ec2_operations = EC2Operations(region=region)
+        self.utils = Utils(region=region)
 
     def __get_instances_data(self, instance_id: str = ''):
         """
         This method go over all instances
         :return:
         """
-        ec2s_data = self.ec2_client.describe_instances()['Reservations']
+        ec2s_data = self.ec2_operations.get_instances()
         if instance_id:
             for items in ec2s_data:
                 if items.get('Instances'):
@@ -83,12 +89,14 @@ class TagNonClusterResources:
         """
         username = self.cloudtrail.get_username_by_instance_id_and_time(launch_time, instance_id, 'AWS::EC2::Instance')
         search_tags = []
+        user_tags = []
         if not username:
             username = 'zombie'
+            search_tags.append({'Key': 'User', 'Value': 'NA'})
         else:
             search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-        user_tags = self.iam_client.get_user_tags(username=username)
-        tag_name = f'{username}-{instance_id[-4:]}'
+            user_tags = self.iam_client.get_user_tags(username=username)
+        tag_name = f'{username}-{instance_id[--self.SHORT_RESOURCE_ID:]}'
         search_tags.extend([{'Key': 'Name', 'Value': tag_name},
                             {'Key': 'LaunchTime', 'Value': launch_time.strftime('%Y/%m/%d %H:%M:%S')}])
         search_tags.extend(self.__append_input_tags())
@@ -112,11 +120,11 @@ class TagNonClusterResources:
                 launch_time = item.get('LaunchTime')
                 add_tags = self.__get_instance_tags(launch_time=launch_time, instance_id=instance_id,
                                                     tags=item.get('Tags'))
-            if add_tags:
-                if self.dry_run == 'no':
-                    self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
-                    logger.info(f'added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
-                instances_ids.append(instance_id)
+                if add_tags:
+                    if self.dry_run == 'no':
+                        self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
+                        logger.info(f'added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
+                    instances_ids.append(instance_id)
         logger.info(f'non_cluster_ec2 count: {len(sorted(instances_ids))} {sorted(instances_ids)}')
         return sorted(instances_ids)
 
@@ -127,7 +135,7 @@ class TagNonClusterResources:
         @return:
         """
         if not volumes_data:
-            volumes_data = self.ec2_client.describe_volumes()['Volumes']
+            volumes_data = self.ec2_operations.get_volumes()
             _, volumes_data = self.ec2_operations.scan_cluster_non_cluster_resources(volumes_data)
         volume_ids = []
         for volume in volumes_data:
@@ -146,7 +154,7 @@ class TagNonClusterResources:
                                 for tag in item.get('Tags'):
                                     if tag.get('Key') == 'User':
                                         username = tag.get('Key')
-                                        tag_name = f'{username}-{volume_id[-4:]}'
+                                        tag_name = f'{username}-{volume_id[--self.SHORT_RESOURCE_ID:]}'
                                         search_tags.append({'Key': 'Name', 'Value': tag_name})
                                     elif tag.get('Key') == 'LaunchTime':
                                         search_tags.append({'Key': 'LaunchTime', 'Value': tag.get('Key')})
@@ -161,7 +169,7 @@ class TagNonClusterResources:
             else:
                 search_tags.extend(self.__append_input_tags())
             if username and not tag_name:
-                tag_name = f'{username}-{volume_id[-4:]}'
+                tag_name = f'{username}-{volume_id[--self.SHORT_RESOURCE_ID:]}'
                 user_tags = self.iam_client.get_user_tags(username=username)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                 search_tags.extend(user_tags)
@@ -169,7 +177,8 @@ class TagNonClusterResources:
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
-                search_tags.append({'Key': 'Name', 'Value': f'{volume_id[:3]}-{self.region}-{volume_id[-4:]}'})
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
+                search_tags.append({'Key': 'Name', 'Value': f'{volume_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{volume_id[--self.SHORT_RESOURCE_ID:]}'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append({'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             volume_tags = self.__get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
@@ -188,7 +197,7 @@ class TagNonClusterResources:
         @return:
         """
         if not snapshots:
-            snapshots = self.ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+            snapshots = self.ec2_operations.get_snapshots()
             _, snapshots = self.ec2_operations.scan_cluster_non_cluster_resources(snapshots)
         snapshot_ids = []
         for snapshot in snapshots:
@@ -236,12 +245,13 @@ class TagNonClusterResources:
                 user_tags = self.iam_client.get_user_tags(username=username)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                 search_tags.extend(user_tags)
-                tag_name = f'{username}-{snapshot_id[-4:]}'
+                tag_name = f'{username}-{snapshot_id[--self.SHORT_RESOURCE_ID:]}'
                 search_tags.append({'Key': 'Name', 'Value': tag_name})
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
-                search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:4]}-{self.region}-{snapshot_id[-4:]}'})
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
+                search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:self.SHOT_SNAPSHOT_ID]}-{self.region}-{snapshot_id[--self.SHORT_RESOURCE_ID:]}'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append({'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             snapshot_tags = self.__get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
@@ -261,7 +271,7 @@ class TagNonClusterResources:
         @return:
         """
         if not images:
-            images = self.ec2_client.describe_images(Owners=['self'])['Images']
+            images = self.ec2_operations.get_images()
             _, images = self.ec2_operations.scan_cluster_non_cluster_resources(images)
         image_ids = []
         for image in images:
@@ -274,11 +284,12 @@ class TagNonClusterResources:
             search_tags.extend(self.__append_input_tags())
             if username:
                 user_tags = self.iam_client.get_user_tags(username=username)
-                tag_name = f'{username}-{image_id[-4:]}'
+                tag_name = f'{username}-{image_id[--self.SHORT_RESOURCE_ID:]}'
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                 search_tags.extend(user_tags)
             else:
-                tag_name = f'{image_id[:3]}-{self.region}-{image_id[-4:]}'
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
+                tag_name = f'{image_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{image_id[--self.SHORT_RESOURCE_ID:]}'
             search_tags.extend([{'Key': 'Name', 'Value': tag_name},
                                 {'Key': 'LaunchTime', 'Value': start_time.strftime('%Y/%m/%d %H:%M:%S')}])
             image_tags = self.__get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
