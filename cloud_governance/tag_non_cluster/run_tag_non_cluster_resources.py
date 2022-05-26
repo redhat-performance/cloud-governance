@@ -18,7 +18,7 @@ def tag_non_cluster_resource(mandatory_tags: dict, region: str, tag_operation: s
                           tag_non_cluster_resources.update_ami,
                           tag_non_cluster_resources.update_snapshots,
                           ]
-    logger.info(f"{action} {len(func_resource_list)} cluster resources  in region {region}:")
+    logger.info(f"{action} {len(func_resource_list)} non-cluster resources  in region {region}:")
     for func in func_resource_list:
         func()
 
@@ -35,6 +35,6 @@ def remove_tag_non_cluster_resource(mandatory_tags: dict, region: str, dry_run: 
         action = 'Tag'
     else:
         action = 'Scan'
-    logger.info(f"{action} {len(func_resource_list)} cluster resources  in region {region}:")
+    logger.info(f"{action} {len(func_resource_list)} non-cluster resources  in region {region}:")
     for func in func_resource_list:
         func()

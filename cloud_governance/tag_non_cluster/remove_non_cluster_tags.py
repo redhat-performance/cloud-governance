@@ -5,6 +5,7 @@ import boto3
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
+from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
 
 
@@ -19,14 +20,15 @@ class RemoveNonClusterTags:
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.cloudtrail = CloudTrailOperations(region_name=self.region)
         self.iam_client = IAMOperations()
-        self.ec2_operations = EC2Operations()
+        self.ec2_operations = EC2Operations(region=region)
+        self.utils = Utils(region=region)
 
     def __get_instances_data(self, instance_id: str = ''):
         """
         This method go over all instances
         :return:
         """
-        ec2s_data = self.ec2_client.describe_instances()['Reservations']
+        ec2s_data = self.ec2_operations.get_instances()
         if instance_id:
             for items in ec2s_data:
                 if items.get('Instances'):
@@ -83,10 +85,10 @@ class RemoveNonClusterTags:
         user_tags = self.iam_client.get_user_tags(username=username)
         if not username:
             username = 'zombie'
+            search_tags.append({'Key': 'User', 'Value': 'NA'})
         else:
             search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-        search_tags.extend([{'Key': 'Email', 'Value': f'{username}@redhat.com'},
-                            {'Key': 'LaunchTime', 'Value': launch_time.strftime('%Y/%m/%d %H:%M:%S')}])
+        search_tags.extend([{'Key': 'LaunchTime', 'Value': launch_time.strftime('%Y/%m/%d %H:%M:%S')}])
         search_tags.extend(self.__append_input_tags())
         search_tags.extend(user_tags)
         return search_tags
@@ -101,17 +103,16 @@ class RemoveNonClusterTags:
             _, instances_list = self.ec2_operations.scan_cluster_or_non_cluster_instance(instances_list)
         instances_ids = []
         for instance in instances_list:
-            add_tags = []
             for item in instance:
                 instance_id = item.get('InstanceId')
                 launch_time = item.get('LaunchTime')
                 add_tags = self.__get_instance_tags(launch_time=launch_time, instance_id=instance_id,
                                                     tags=item.get('Tags'))
-            if add_tags:
-                if self.dry_run == 'no':
-                    self.ec2_client.delete_tags(Resources=[instance_id], Tags=add_tags)
-                    logger.info(f'delete tags of instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
-                instances_ids.append(instance_id)
+                if add_tags:
+                    if self.dry_run == 'no':
+                        self.ec2_client.delete_tags(Resources=[instance_id], Tags=add_tags)
+                        logger.info(f'delete tags of instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
+                    instances_ids.append(instance_id)
         logger.info(f'non_cluster_ec2 count: {len(sorted(instances_ids))} {sorted(instances_ids)}')
         return sorted(instances_ids)
 
@@ -122,7 +123,7 @@ class RemoveNonClusterTags:
         @return:
         """
         if not volumes_data:
-            volumes_data = self.ec2_client.describe_volumes()['Volumes']
+            volumes_data = self.ec2_operations.get_volumes()
             _, volumes_data = self.ec2_operations.scan_cluster_non_cluster_resources(volumes_data)
         volume_ids = []
         for volume in volumes_data:
@@ -161,6 +162,7 @@ class RemoveNonClusterTags:
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
@@ -179,7 +181,7 @@ class RemoveNonClusterTags:
         @return:
         """
         if not snapshots:
-            snapshots = self.ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+            snapshots = self.ec2_operations.get_snapshots()
             _, snapshots = self.ec2_operations.scan_cluster_non_cluster_resources(snapshots)
         snapshot_ids = []
         for snapshot in snapshots:
@@ -229,6 +231,7 @@ class RemoveNonClusterTags:
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
@@ -248,7 +251,7 @@ class RemoveNonClusterTags:
         @return:
         """
         if not images:
-            images = self.ec2_client.describe_images(Owners=['self'])['Images']
+            images = self.ec2_operations.get_images()
             _, images = self.ec2_operations.scan_cluster_non_cluster_resources(images)
         image_ids = []
         for image in images:
@@ -263,6 +266,8 @@ class RemoveNonClusterTags:
                 user_tags = self.iam_client.get_user_tags(username=username)
                 search_tags.extend(user_tags)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
+            else:
+                search_tags.append({'Key': 'User', 'Value': 'NA'})
             search_tags.extend([{'Key': 'LaunchTime', 'Value': start_time.strftime('%Y/%m/%d %H:%M:%S')}])
             if search_tags:
                 if self.dry_run == 'no':

@@ -1,5 +1,6 @@
 from typing import Callable
 
+import boto3
 import typeguard
 
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
@@ -10,7 +11,8 @@ class Utils:
     This is global methods
     """
 
-    def __init__(self):
+    def __init__(self, region: str = 'us-east-2'):
+        self.region = region
         pass
 
     @typeguard.typechecked

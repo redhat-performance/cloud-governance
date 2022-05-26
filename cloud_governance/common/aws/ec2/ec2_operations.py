@@ -18,6 +18,7 @@ class EC2Operations:
         self.elbv2_client = boto3.client('elbv2', region_name=region)
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.get_full_list = Utils().get_details_resource_list
+        self.utils = Utils(region=region)
 
     @logger_time_stamp
     @typeguard.typechecked
@@ -314,3 +315,122 @@ class EC2Operations:
             else:
                 non_cluster.append(resource)
         return [cluster, non_cluster]
+
+    def get_instances(self):
+        """
+        This method returns all instances from the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_instances, input_tag='Reservations', check_tag='NextToken')
+
+    def get_volumes(self):
+        """
+        This method returns all volumes in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes', check_tag='NextToken')
+
+    def get_images(self):
+        """
+        This method returns all images in the region
+        @return:
+        """
+        return self.ec2_client.describe_images(Owners=['self'])['Images']
+
+    def get_snapshots(self):
+        """
+        This method returns all snapshots in the region
+        @return:
+        """
+        return self.ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+
+    def get_security_groups(self):
+        """
+        This method returns security groups in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_security_groups, input_tag='SecurityGroups', check_tag='NextToken')
+
+    def get_elastic_ips(self):
+        """
+        This method returns elastic_ips in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_addresses, input_tag='Addresses', check_tag='NextToken')
+
+    def get_network_interface(self):
+        """
+        This method returns network_interface in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_network_interfaces, input_tag='NetworkInterfaces', check_tag='NextToken')
+
+    def get_load_balancers(self):
+        """
+        This method returns load balancers in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.elb1_client.describe_load_balancers, input_tag='LoadBalancerDescriptions', check_tag='Marker')
+
+    def get_load_balancers_v2(self):
+        """
+        This method returns load balancers v2 in the region
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.elbv2_client.describe_load_balancers, input_tag='LoadBalancers', check_tag='Marker')
+
+    def get_vpcs(self):
+        """
+        This method returns all vpcs
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_vpcs, input_tag='Vpcs', check_tag='NextToken')
+
+    def get_subnets(self):
+        """
+        This method returns all subnets
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_subnets, input_tag='Subnets', check_tag='NextToken')
+
+    def get_route_tables(self):
+        """
+        This method returns all route tables
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_route_tables, input_tag='RouteTables', check_tag='NextToken')
+
+    def get_internet_gateways(self):
+        """
+        This method returns all internet gateways
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_internet_gateways, input_tag='InternetGateways', check_tag='NextToken')
+
+    def get_dhcp_options(self):
+        """
+        This method returns all dhcp options
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_dhcp_options, input_tag='DhcpOptions', check_tag='NextToken')
+
+    def get_vpce(self):
+        """
+        This method returns all vpc endpoints
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_vpc_endpoints, input_tag='VpcEndpoints', check_tag='NextToken')
+
+    def get_nat_gateways(self):
+        """
+        This method returns all nat gateways
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_nat_gateways, input_tag='NatGateways', check_tag='NextToken')
+
+    def get_nacls(self):
+        """
+        This method returns all network acls
+        @return:
+        """
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_network_acls, input_tag='NetworkAcls', check_tag='NextToken')

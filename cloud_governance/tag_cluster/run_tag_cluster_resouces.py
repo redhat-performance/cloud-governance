@@ -41,6 +41,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
                           ]
 
     logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
+    logger.info(f"{action} 4 non-cluster resources in region {region}:")
     if not cluster_name:
         func_resource_list[0]()
         func_resource_list = func_resource_list[1:-3]
