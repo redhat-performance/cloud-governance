@@ -4,7 +4,7 @@ import boto3
 
 
 class CloudTrailOperations:
-    WAIT_TIME = 2
+    SEARCH_SECONDS = 10
 
     def __init__(self, region_name: str):
         self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
@@ -15,12 +15,15 @@ class CloudTrailOperations:
         @param start_time:
         @param resource_id:
         @param resource_type:
-        @return:
+        @return: if user not found it return empty string
         """
-        diff = timedelta(seconds=self.WAIT_TIME)
-        end_time = start_time + diff
+        search_time = timedelta(seconds=self.SEARCH_SECONDS)
+        end_time = start_time + search_time
+        start_time = start_time - search_time
         try:
-            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time)
+            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+                'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
+            }])
             for event in response['Events']:
                 if event.get('Resources'):
                     for resource in event.get('Resources'):
