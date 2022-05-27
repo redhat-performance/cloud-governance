@@ -31,7 +31,7 @@ pipeline {
         }
         stage('Run Tagging Cluster & Non-Cluster') {
             steps {
-                 sh 'python3 jenkins/tagging.py'
+                 sh 'python3 jenkins/tagging/tagging.py'
             }
         }
         stage('Cleanup workspace') {
