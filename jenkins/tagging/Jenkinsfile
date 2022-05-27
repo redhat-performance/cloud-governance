@@ -19,6 +19,11 @@ pipeline {
         contact2 = "athiruma@redhat.com"
     }
     stages {
+        stage('Image Cleanup'){
+            steps {
+                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+              }
+        }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
           steps {
             checkout scm
@@ -28,6 +33,12 @@ pipeline {
             steps {
                  sh 'python3 jenkins/tagging/tagging.py'
             }
+        }
+        stage('Cleanup workspace') {
+            steps {
+                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+              deleteDir()
+              }
         }
     }
     post {
