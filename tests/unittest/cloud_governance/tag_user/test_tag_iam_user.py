@@ -17,7 +17,7 @@ def test_generate_user_csv():
     @return:
     """
     iam_client = boto3.client('iam')
-    iam_client.create_user(UserName='test-user', Tags=[{'Key': 'Username', 'Value': 'test-user'}])
+    iam_client.create_user(UserName='testuser', Tags=[{'Key': 'Username', 'Value': 'test-user'}])
     tag_user = TagUser(file_name=file_name)
     tag_user.generate_user_csv()
     assert os.path.exists(file_name)
@@ -30,7 +30,7 @@ def test_update_user_tags():
     @return:
     """
     iam_client = boto3.client('iam')
-    iam_client.create_user(UserName='test-user', Tags=[{'Key': 'Username', 'Value': 'test-user'}])
+    iam_client.create_user(UserName='testuser', Tags=[{'Key': 'Username', 'Value': 'test-user'}])
     tag_user = TagUser(file_name=file_name)
     rows = []
     headers = []
