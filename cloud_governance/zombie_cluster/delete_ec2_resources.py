@@ -1,8 +1,10 @@
 import time
 
+import boto3
 import typeguard
 from botocore.client import BaseClient
 
+from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
 
@@ -39,11 +41,13 @@ class DeleteEC2Resources:
 
     SLEEP_TIME = 30
 
-    def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient):
+    def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient, region: str = 'us-east-2'):
         self.client = client
         self.elb_client = elb_client
         self.elbv2_client = elbv2_client
         self.get_detail_list = Utils().get_details_resource_list
+        self.ec2_operations = EC2Operations(region=region)
+        self.efs_client = boto3.client('efs', region_name=region)
 
     @typeguard.typechecked
     def delete_zombie_resource(self, resource: str, resource_id: str, vpc_id: str = '',
@@ -133,11 +137,14 @@ class DeleteEC2Resources:
         :param resource_id:
         :return:
         """
-        try:
-            self.elbv2_client.delete_load_balancer(LoadBalancerArn=resource_id)
-            logger.info(f'delete_load_balancer: {resource_id}')
-        except Exception as err:
-            logger.exception(f'Cannot delete_load_balancer: {resource_id}, {err}')
+        load_balances = self.elbv2_client.describe_load_balancers()['LoadBalancers']
+        for load_balancer in load_balances:
+            if load_balancer.get('LoadBalancerArn').endswith(resource_id):
+                try:
+                    self.elbv2_client.delete_load_balancer(LoadBalancerArn=load_balancer.get('LoadBalancerArn'))
+                    logger.info(f'delete_load_balancer: {resource_id}')
+                except Exception as err:
+                    logger.exception(f'Cannot delete_load_balancer: {resource_id}, {err}')
 
     @typeguard.typechecked
     def __delete_volume(self, resource_id: str):
@@ -194,8 +201,7 @@ class DeleteEC2Resources:
         """
         # @todo call vpc deletion
         try:
-            route_tables = self.get_detail_list(func_name=self.client.describe_route_tables, input_tag='RouteTables',
-                                                check_tag='NextToken')
+            route_tables = self.ec2_operations.get_route_tables()
             subnets = self.__get_cluster_references(resource_id=resource_id, resource_list=route_tables,
                                                     input_resource_id='RouteTableId',
                                                     output_result='Associations')
@@ -224,8 +230,7 @@ class DeleteEC2Resources:
         :return:
         """
         try:
-            security_groups = self.get_detail_list(func_name=self.client.describe_security_groups,
-                                                   input_tag='SecurityGroups', check_tag='NextToken')
+            security_groups = self.ec2_operations.get_security_groups()
             vpc_security_groups = self.__get_cluster_references(resource_id=vpc_id, resource_list=security_groups,
                                                                 input_resource_id='VpcId',
                                                                 output_result='')
@@ -234,8 +239,7 @@ class DeleteEC2Resources:
                     self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'),
                                                               IpPermissions=vpc_security_group.get('IpPermissions'))
 
-            network_interfaces = self.get_detail_list(func_name=self.client.describe_network_interfaces,
-                                                      input_tag='NetworkInterfaces', check_tag='NextToken')
+            network_interfaces = self.ec2_operations.get_network_interface()
             network_interface_ids = self.__get_cluster_references(resource_id=vpc_id, resource_list=network_interfaces,
                                                                   input_resource_id='VpcId',
                                                                   output_result='')
@@ -279,8 +283,7 @@ class DeleteEC2Resources:
     @typeguard.typechecked
     def __delete_network_acl(self, resource_id, vpc_id: str):
         try:
-            nacls = self.get_detail_list(func_name=self.client.describe_network_acls,
-                                         input_tag='NetworkAcls', check_tag='NextToken')
+            nacls = self.ec2_operations.get_nacls()
             vpc_nacls = self.__get_cluster_references(resource_id=resource_id, resource_list=nacls,
                                                       input_resource_id='NetworkAclId', output_result='Associations')
             default_nacl = self.__get_cluster_references(resource_id=resource_id, resource_list=nacls,
@@ -306,8 +309,7 @@ class DeleteEC2Resources:
         :return:
         """
         try:
-            resource_list = self.get_detail_list(func_name=self.client.describe_network_interfaces,
-                                                 input_tag='NetworkInterfaces', check_tag='NextToken')
+            resource_list = self.ec2_operations.get_network_interface()
             descriptions = self.__get_cluster_references(resource_id=resource_id, resource_list=resource_list,
                                                          input_resource_id='NetworkInterfaceId',
                                                          output_result="Description")
@@ -315,9 +317,16 @@ class DeleteEC2Resources:
             if descriptions:
                 for description in descriptions:
                     if "ELB" in description:
-                        self.__delete_load_balancer(description.split(" ")[-1])
+                        loadbalancer = description.split(" ")[-1]
+                        if '/' in loadbalancer:
+                            self.__delete_load_balancer_v2(loadbalancer)
+                        else:
+                            self.__delete_load_balancer(loadbalancer)
                     elif "NAT" in description:
                         self.__delete_nat_gateways(resource_id=description.split(" ")[-1])
+                        delete = True
+                    elif 'EFS' in description:
+                        self.__delete_efs(resource_id=description.split(" ")[-2])
                         delete = True
             if resource_list and not delete:
                 attachments = self.__get_cluster_references(resource_id=resource_id, resource_list=resource_list,
@@ -330,6 +339,26 @@ class DeleteEC2Resources:
         except Exception as err:
             logger.exception(f'Cannot disassociate_address: {resource_id}, {err}')
 
+    def __delete_efs(self, resource_id: str):
+        """
+        This method deletes the EFS file system
+        @param resource_id:
+        @return:
+        """
+        efs_data = self.efs_client.describe_file_systems()['FileSystems']
+
+        for efs in efs_data:
+            if efs.get('FileSystemId') == resource_id:
+                efsmt_data = self.efs_client.describe_mount_targets(FileSystemId=resource_id)['MountTargets']
+                for efsmt in efsmt_data:
+                    self.efs_client.delete_mount_target(MountTargetId=efsmt.get('MountTargetId'))
+                    logger.info(f'deleted Efs Mount target {efsmt.get("MountTargetId")}')
+                try:
+                    self.efs_client.delete_file_system(FileSystemId=efs.get('FileSystemId'))
+                except Exception as err:
+                    logger.info(f'{err}')
+                logger.info(f'Deleted the EFS file system {efs.get("FileSystemId")}')
+
     @typeguard.typechecked
     def network_interface(self, subnet_id: str = ''):
         """
@@ -337,8 +366,7 @@ class DeleteEC2Resources:
         :param subnet_id:
         :return:
         """
-        network_interfaces = self.get_detail_list(func_name=self.client.describe_network_interfaces,
-                                                  input_tag='NetworkInterfaces', check_tag='NextToken')
+        network_interfaces = self.ec2_operations.get_network_interface()
         network_interface_ids = self.__get_cluster_references(resource_id=subnet_id,
                                                               resource_list=network_interfaces,
                                                               input_resource_id='SubnetId',
@@ -357,8 +385,7 @@ class DeleteEC2Resources:
         :return:
         """
         try:
-            network_interfaces = self.get_detail_list(func_name=self.client.describe_network_interfaces,
-                                                      input_tag='NetworkInterfaces', check_tag='NextToken')
+            network_interfaces = self.ec2_operations.get_network_interface()
             network_interface_ids = self.__get_cluster_references(resource_id=vpc_id, resource_list=network_interfaces,
                                                                   input_resource_id='VpcId',
                                                                   output_result='NetworkInterfaceId')
@@ -397,7 +424,7 @@ class DeleteEC2Resources:
         """
         try:
             if deletion_type:
-                elastic_ips = self.client.describe_addresses()['Addresses']
+                elastic_ips = self.ec2_operations.get_elastic_ips()
                 network_interfaces = self.__get_cluster_references(resource_id=resource_id, resource_list=elastic_ips,
                                                                    input_resource_id='AssociationId',
                                                                    output_result='NetworkInterfaceId')
