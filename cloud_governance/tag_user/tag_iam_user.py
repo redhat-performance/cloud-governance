@@ -38,7 +38,8 @@ class TagUser:
         """
         with open(self.file_name, 'w') as file:
             file.write('Username, ')
-            tag_keys.remove('Username')
+            if 'Username' in tag_keys:
+                tag_keys.remove('Username')
             for index, tag in enumerate(tag_keys):
                 file.write(f'{tag}, ')
             file.write('\n')
@@ -61,24 +62,25 @@ class TagUser:
         @return:
         """
         users = self.get_detail_resource_list(func_name=self.iam_client.list_users, input_tag='Users',
-                                              check_tag='Marker')
+                                          check_tag='Marker')
         tag_keys = set()
         tag_values = {}
         for user in users:
             user_name = user.get('UserName')
-            user_tags = self.IAMOperations.get_user_tags(username=user_name)
-            tag_values[user_name] = {}
-            for tag in user_tags:
-                if not self.__cluster_user(tags=user_tags):
-                    key = tag.get('Key')
-                    if key == "Name":
-                        key = 'Username'
-                    value = tag.get('Value')
-                    tag_keys.add(key)
-                    tag_values[user_name][key] = value
-                else:
-                    del tag_values[user_name]
-                    break
+            if '-' not in user_name:
+                user_tags = self.IAMOperations.get_user_tags(username=user_name)
+                tag_values[user_name] = {}
+                for tag in user_tags:
+                    if not self.__cluster_user(tags=user_tags):
+                        key = tag.get('Key')
+                        if key == "Name":
+                            key = 'Username'
+                        value = tag.get('Value')
+                        tag_keys.add(key)
+                        tag_values[user_name][key] = value
+                    else:
+                        del tag_values[user_name]
+                        break
         tag_keys = list(sorted(tag_keys))
         self.__write_into_csv_file(tag_keys=tag_keys, tag_values=tag_values)
         with open(self.file_name) as file:
