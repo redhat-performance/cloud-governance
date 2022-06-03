@@ -376,6 +376,8 @@ class TagClusterResources:
             cluster_process.join()
             non_cluster_process.join()
             return ids.get()
+        else:
+            return []
 
     def cluster_volume(self):
         """
