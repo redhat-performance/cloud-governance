@@ -10,8 +10,6 @@ tags = [
 ]
 region_name = 'us-east-2'
 
-region_name = 'us-east-2'
-
 
 @mock_ec2
 def test_delete_ec2_ami():
@@ -224,7 +222,7 @@ def test_delete_network_acl():
     :return:
     """
     ec2_client = boto3.client('ec2', region_name=region_name)
-    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])
     vpc_id = vpc_response['Vpc']['VpcId']
     network_acl_id = ec2_client.create_network_acl(VpcId=vpc_id, TagSpecifications=[{'ResourceType': 'network-acl',
                                                                                      'Tags': tags}])['NetworkAcl']['NetworkAclId']
