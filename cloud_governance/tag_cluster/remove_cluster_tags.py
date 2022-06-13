@@ -17,7 +17,8 @@ class RemoveClusterTags:
     """
 
     def __init__(self, input_tags: dict, cluster_name: str = None, cluster_prefix: str = None,
-                 region: str = 'us-east-2'):
+                 region: str = 'us-east-2', cluster_only: bool = False):
+        self.cluster_only = cluster_only
         self.utils = Utils(region=region)
         self.ec2_operations = EC2Operations(region=region)
         self.ec2_client = boto3.client('ec2', region_name=region)
@@ -89,7 +90,12 @@ class RemoveClusterTags:
             if username == 'AutoScaling':
                 added_tags.append({'Key': 'User', 'Value': username})
             elif username == 'NA':
-                added_tags.append({'Key': 'User', 'Value': 'NA'})
+                added_tags.append({'Key': 'User', 'Value': username})
+                added_tags.append(({'Key': 'Manager', 'Value': username}))
+                added_tags.append(({'Key': 'Email', 'Value': username}))
+                added_tags.append(({'Key': 'Environment', 'Value': username}))
+                added_tags.append(({'Key': 'Project', 'Value': username}))
+                added_tags.append(({'Key': 'Owner', 'Value': username}))
             else:
                 user_tags = self.iam_operations.get_user_tags(username=username)
                 if user_tags:
@@ -156,12 +162,17 @@ class RemoveClusterTags:
         instance_list = self.__get_instances_data()
         cluster, non_cluster = self.ec2_operations.scan_cluster_or_non_cluster_instance(instance_list)
         queue = Queue()
-        cluster_process = Process(target=self.cluster_update_tags, args=(cluster, queue, ))
-        cluster_process.start()
-        non_cluster_process = Process(target=self.non_cluster_update.non_cluster_update_ec2, args=(non_cluster, ))
-        non_cluster_process.start()
-        cluster_process.join()
-        non_cluster_process.join()
+        if not self.cluster_only:
+            cluster_process = Process(target=self.cluster_update_tags, args=(cluster, queue, ))
+            cluster_process.start()
+            non_cluster_process = Process(target=self.non_cluster_update.non_cluster_update_ec2, args=(non_cluster, ))
+            non_cluster_process.start()
+            cluster_process.join()
+            non_cluster_process.join()
+        else:
+            cluster_process = Process(target=self.cluster_update_tags, args=(cluster, queue,))
+            cluster_process.start()
+            cluster_process.join()
         return queue.get()
 
     def remove_tags_of_resources(self, resource_list: list, instance_tags: dict, resource_id: str, tags: str = 'Tags'):
@@ -202,12 +213,18 @@ class RemoveClusterTags:
         """
         volumes_data = self.ec2_operations.get_volumes()
         cluster_volume, non_cluster_volume = self.ec2_operations.scan_cluster_non_cluster_resources(volumes_data)
-        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_volume, instance_tags, 'VolumeId',))
-        cluster_process.start()
-        non_cluster_process = Process(target=self.non_cluster_update.update_volumes, args=(non_cluster_volume,))
-        non_cluster_process.start()
-        cluster_process.join()
-        non_cluster_process.join()
+        if not self.cluster_only:
+            cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_volume, instance_tags, 'VolumeId',))
+            cluster_process.start()
+            non_cluster_process = Process(target=self.non_cluster_update.update_volumes, args=(non_cluster_volume,))
+            non_cluster_process.start()
+            cluster_process.join()
+            non_cluster_process.join()
+        else:
+            cluster_process = Process(target=self.remove_tags_of_resources,
+                                      args=(cluster_volume, instance_tags, 'VolumeId',))
+            cluster_process.start()
+            cluster_process.join()
         return len(cluster_volume)
 
     def cluster_images(self, instance_tags: dict):
@@ -218,12 +235,17 @@ class RemoveClusterTags:
         """
         images_data = self.ec2_operations.get_images()
         cluster_images, non_cluster_images = self.ec2_operations.scan_cluster_non_cluster_resources(images_data)
-        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_images, instance_tags, 'ImageId', ))
-        cluster_process.start()
-        non_cluster_process = Process(target=self.non_cluster_update.update_ami, args=(non_cluster_images, ))
-        non_cluster_process.start()
-        cluster_process.join()
-        non_cluster_process.join()
+        if not self.cluster_only:
+            cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_images, instance_tags, 'ImageId', ))
+            cluster_process.start()
+            non_cluster_process = Process(target=self.non_cluster_update.update_ami, args=(non_cluster_images, ))
+            non_cluster_process.start()
+            cluster_process.join()
+            non_cluster_process.join()
+        else:
+            cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_images, instance_tags, 'ImageId',))
+            cluster_process.start()
+            cluster_process.join()
         return len(cluster_images)
 
     def cluster_snapshot(self, instance_tags: dict):
@@ -232,13 +254,19 @@ class RemoveClusterTags:
         @return:
         """
         snapshots_data = self.ec2_operations.get_snapshots()
-        cluster_snapshot, non_cluster_snapshot = self.ec2_operations.scan_cluster_non_cluster_resources(snapshots_data)
-        cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_snapshot, instance_tags, 'SnapshotId', ))
-        cluster_process.start()
-        non_cluster_process = Process(target=self.non_cluster_update.update_snapshots, args=(non_cluster_snapshot,))
-        non_cluster_process.start()
-        cluster_process.join()
-        non_cluster_process.join()
+        cluster_snapshot, non_cluster_snapshot = self.ec2_operations.scan_cluster_non_cluster_resources(
+            snapshots_data)
+        if not self.cluster_only:
+            cluster_process = Process(target=self.remove_tags_of_resources, args=(cluster_snapshot, instance_tags, 'SnapshotId', ))
+            cluster_process.start()
+            non_cluster_process = Process(target=self.non_cluster_update.update_snapshots, args=(non_cluster_snapshot,))
+            non_cluster_process.start()
+            cluster_process.join()
+            non_cluster_process.join()
+        else:
+            cluster_process = Process(target=self.remove_tags_of_resources,args=(cluster_snapshot, instance_tags, 'SnapshotId',))
+            cluster_process.start()
+            cluster_process.join()
         return len(cluster_snapshot)
 
     def generate_tag_key(self, tags: list):
