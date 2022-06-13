@@ -1,6 +1,7 @@
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.tag_non_cluster.remove_non_cluster_tags import RemoveNonClusterTags
 from cloud_governance.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
+from cloud_governance.tag_non_cluster.update_na_tag_resources import UpdateNATags
 
 
 def tag_non_cluster_resource(mandatory_tags: dict, region: str, tag_operation: str = 'read'):
@@ -38,3 +39,22 @@ def remove_tag_non_cluster_resource(mandatory_tags: dict, region: str, dry_run: 
     logger.info(f"{action} {len(func_resource_list)} non-cluster resources  in region {region}:")
     for func in func_resource_list:
         func()
+
+
+def tag_na_resources(file_name: str, file_path: str = '/tmp/', tag_operation: str = 'read', region: str = 'us-east-2'):
+    """
+    This method generate the NA tag file and update tags of each region
+    @param file_path:
+    @param tag_operation:
+    @param region:
+    @param file_name:
+    @return:
+    """
+    file_name = f'{file_path}{region}-{file_name}'
+    update_na_tags = UpdateNATags(region=region, file_name=file_name)
+    if tag_operation == 'read':
+        logger.info('Generating the CSV file')
+        update_na_tags.create_csv()
+    elif tag_operation == 'update':
+        update_na_tags.update_tags()
+
