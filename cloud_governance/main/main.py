@@ -6,7 +6,8 @@ from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
-from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource
+from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
+    remove_tag_non_cluster_resource, tag_na_resources
 from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
@@ -87,6 +88,16 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags)
         else:
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+    elif policy == 'tag_cluster':
+        cluster_name = os.environ.get('resource_name', '')
+        mandatory_tags = os.environ.get('mandatory_tags', {})
+        tag_operation = os.environ.get('tag_operation', '')
+        if mandatory_tags:
+            mandatory_tags = literal_eval(mandatory_tags)  # str to dict
+        if tag_operation == 'delete':
+            remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags, cluster_only=True)
+        else:
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation, cluster_only=True )
     elif policy == 'tag_iam_user':
         user_tag_operation = os.environ.get('user_tag_operation', '')
         file_name = os.environ.get('file_name', '')
@@ -115,13 +126,17 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         # instance_name = os.environ['resource_name']
         mandatory_tags = os.environ.get('mandatory_tags', {})
         tag_operation = os.environ.get('tag_operation', '')
-        if mandatory_tags:
-            mandatory_tags = literal_eval(mandatory_tags)  # str to dict
-        # mandatory_tags['Name'] = instance_name
-        if tag_operation == 'delete':
-            remove_tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run='no')
+        file_name = os.environ.get('file_name', '')
+        if file_name:
+            tag_na_resources(file_name=file_name, region=region, tag_operation=tag_operation)
         else:
-            tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+            if mandatory_tags:
+                mandatory_tags = literal_eval(mandatory_tags)  # str to dict
+            # mandatory_tags['Name'] = instance_name
+            if tag_operation == 'delete':
+                remove_tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, dry_run='no')
+            else:
+                tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
     elif policy == 'gitleaks':
         git_access_token = os.environ.get('git_access_token')
         git_repo = os.environ.get('git_repo')

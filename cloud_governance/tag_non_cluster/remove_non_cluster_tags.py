@@ -84,8 +84,12 @@ class RemoveNonClusterTags:
         search_tags = []
         user_tags = self.iam_client.get_user_tags(username=username)
         if not username:
-            username = 'zombie'
             search_tags.append({'Key': 'User', 'Value': 'NA'})
+            search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+            search_tags.append({'Key': 'Project', 'Value': 'NA'})
+            search_tags.append({'Key': 'Email', 'Value': 'NA'})
+            search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+            search_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
         else:
             search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
         search_tags.extend([{'Key': 'LaunchTime', 'Value': launch_time.strftime('%Y/%m/%d %H:%M:%S')}])
@@ -163,6 +167,11 @@ class RemoveNonClusterTags:
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
@@ -232,6 +241,11 @@ class RemoveNonClusterTags:
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
@@ -268,6 +282,11 @@ class RemoveNonClusterTags:
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
             search_tags.extend([{'Key': 'LaunchTime', 'Value': start_time.strftime('%Y/%m/%d %H:%M:%S')}])
             if search_tags:
                 if self.dry_run == 'no':

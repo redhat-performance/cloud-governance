@@ -4,7 +4,7 @@ from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResource
 from multiprocessing import Process
 
 
-def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', tag_operation: str = 'yes'):
+def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', tag_operation: str = 'yes', cluster_only: bool = False):
     """
     This method scan for cluster name in all the cluster resources
     :return: list of cluster resources according to cluster name
@@ -17,7 +17,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
         action = 'read'
         dry_run = 'yes'
     tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
-                                                input_tags=mandatory_tags, region=region, dry_run=dry_run)
+                                                input_tags=mandatory_tags, region=region, dry_run=dry_run, cluster_only=cluster_only)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
                           tag_cluster_resources.cluster_volume,
@@ -39,9 +39,11 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
                           tag_cluster_resources.cluster_user,
                           tag_cluster_resources.cluster_s3_bucket,
                           ]
-
-    logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
-    logger.info(f"{action} 4 non-cluster resources in region {region}:")
+    if cluster_only:
+        logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
+    else:
+        logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
+        logger.info(f"{action} 4 non-cluster resources in region {region}:")
     if not cluster_name:
         func_resource_list[0]()
         func_resource_list = func_resource_list[1:-3]
@@ -57,15 +59,16 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
         job.join()
 
 
-def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: dict):
+def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: dict, cluster_only: bool = False):
     """
     This method removes the tags from the AWS resources
+    @param cluster_only:
     @param region:
     @param cluster_name:
     @param input_tags:
     @return:
     """
-    remove_cluster_tags = RemoveClusterTags(region=region, cluster_name=cluster_name, cluster_prefix='kubernetes.io/cluster/', input_tags=input_tags)
+    remove_cluster_tags = RemoveClusterTags(region=region, cluster_name=cluster_name, cluster_prefix='kubernetes.io/cluster/', input_tags=input_tags, cluster_only=cluster_only)
     func_resource_list = [remove_cluster_tags.cluster_instance,
                           remove_cluster_tags.cluster_volume,
                           remove_cluster_tags.cluster_images,

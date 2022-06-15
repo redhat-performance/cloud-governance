@@ -71,7 +71,7 @@ class TagNonClusterResources:
             for search_tag in search_tags:
                 found = False
                 for tag in tags:
-                    if tag.get('Key') == search_tag.get('Key'):
+                    if tag.get('Key') == search_tag.get('Key') and tag.get('Value') in search_tag.get('Value'):
                         found = True
                 if not found:
                     add_tags.append(search_tag)
@@ -91,12 +91,16 @@ class TagNonClusterResources:
         search_tags = []
         user_tags = []
         if not username:
-            username = 'zombie'
             search_tags.append({'Key': 'User', 'Value': 'NA'})
+            search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+            search_tags.append({'Key': 'Project', 'Value': 'NA'})
+            search_tags.append({'Key': 'Email', 'Value': 'NA'})
+            search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+            search_tags.append({'Key': 'Owner', 'Value': 'NA'})
         else:
             search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
             user_tags = self.iam_client.get_user_tags(username=username)
-        tag_name = f'{username}-{instance_id[--self.SHORT_RESOURCE_ID:]}'
+        tag_name = f'{instance_id[0:1]}-{self.region}-{instance_id[-self.SHORT_RESOURCE_ID:]}'
         search_tags.extend([{'Key': 'Name', 'Value': tag_name},
                             {'Key': 'LaunchTime', 'Value': launch_time.strftime('%Y/%m/%d %H:%M:%S')}])
         search_tags.extend(self.__append_input_tags())
@@ -154,7 +158,7 @@ class TagNonClusterResources:
                                 for tag in item.get('Tags'):
                                     if tag.get('Key') == 'User':
                                         username = tag.get('Key')
-                                        tag_name = f'{username}-{volume_id[--self.SHORT_RESOURCE_ID:]}'
+                                        tag_name = f'{username}-{volume_id[-self.SHORT_RESOURCE_ID:]}'
                                         search_tags.append({'Key': 'Name', 'Value': tag_name})
                                     elif tag.get('Key') == 'LaunchTime':
                                         search_tags.append({'Key': 'LaunchTime', 'Value': tag.get('Key')})
@@ -178,7 +182,12 @@ class TagNonClusterResources:
                     {'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
-                search_tags.append({'Key': 'Name', 'Value': f'{volume_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{volume_id[--self.SHORT_RESOURCE_ID:]}'})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                search_tags.append({'Key': 'Name', 'Value': f'{volume_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{volume_id[-self.SHORT_RESOURCE_ID:]}'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append({'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             volume_tags = self.__get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
@@ -245,13 +254,18 @@ class TagNonClusterResources:
                 user_tags = self.iam_client.get_user_tags(username=username)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                 search_tags.extend(user_tags)
-                tag_name = f'{username}-{snapshot_id[--self.SHORT_RESOURCE_ID:]}'
+                tag_name = f'{username}-{snapshot_id[-self.SHORT_RESOURCE_ID:]}'
                 search_tags.append({'Key': 'Name', 'Value': tag_name})
                 search_tags.append(
                     {'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
-                search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:self.SHOT_SNAPSHOT_ID]}-{self.region}-{snapshot_id[--self.SHORT_RESOURCE_ID:]}'})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                search_tags.append({'Key': 'Name', 'Value': f'{snapshot_id[:self.SHOT_SNAPSHOT_ID]}-{self.region}-{snapshot_id[-self.SHORT_RESOURCE_ID:]}'})
                 search_tags.extend(self.__append_input_tags())
                 search_tags.append({'Key': 'LaunchTime', 'Value': snapshot.get('StartTime').strftime('%Y/%m/%d %H:%M:%S')})
             snapshot_tags = self.__get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
@@ -284,12 +298,17 @@ class TagNonClusterResources:
             search_tags.extend(self.__append_input_tags())
             if username:
                 user_tags = self.iam_client.get_user_tags(username=username)
-                tag_name = f'{username}-{image_id[--self.SHORT_RESOURCE_ID:]}'
+                tag_name = f'{username}-{image_id[-self.SHORT_RESOURCE_ID:]}'
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                 search_tags.extend(user_tags)
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
-                tag_name = f'{image_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{image_id[--self.SHORT_RESOURCE_ID:]}'
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Email', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                tag_name = f'{image_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{image_id[-self.SHORT_RESOURCE_ID:]}'
             search_tags.extend([{'Key': 'Name', 'Value': tag_name},
                                 {'Key': 'LaunchTime', 'Value': start_time.strftime('%Y/%m/%d %H:%M:%S')}])
             image_tags = self.__get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
