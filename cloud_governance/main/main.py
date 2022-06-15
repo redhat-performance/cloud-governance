@@ -6,8 +6,7 @@ from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
-from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
-    remove_tag_non_cluster_resource, tag_na_resources
+from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
 from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
@@ -37,6 +36,7 @@ from cloud_governance.common.aws.s3.s3_operations import S3Operations
 # os.environ['remove_tags'] = "['Manager', 'Project','Environment', 'Owner', 'Budget']"
 # os.environ['username'] = 'athiruma'
 # os.environ['file_name'] = 'tag_user.csv'
+# os.environ['file_path'] = ''
 # os.environ['mandatory_tags'] = "{'Budget': 'PERF-DEPT'}"
 # os.environ['mandatory_tags'] = ''
 # os.environ['policy'] = 'gitleaks'
@@ -128,7 +128,11 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         tag_operation = os.environ.get('tag_operation', '')
         file_name = os.environ.get('file_name', '')
         if file_name:
-            tag_na_resources(file_name=file_name, region=region, tag_operation=tag_operation)
+            file_path = os.environ.get('file_path', '')
+            if file_path:
+                tag_na_resources(file_name=file_name, region=region, tag_operation=tag_operation, file_path=file_path)
+            else:
+                tag_na_resources(file_name=file_name, region=region, tag_operation=tag_operation)
         else:
             if mandatory_tags:
                 mandatory_tags = literal_eval(mandatory_tags)  # str to dict

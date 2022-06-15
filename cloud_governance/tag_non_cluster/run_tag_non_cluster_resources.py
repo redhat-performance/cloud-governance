@@ -41,14 +41,16 @@ def remove_tag_non_cluster_resource(mandatory_tags: dict, region: str, dry_run: 
         func()
 
 
-def tag_na_resources(file_name: str, tag_operation: str = 'read', region: str = 'us-east-2'):
+def tag_na_resources(file_name: str, file_path: str = '/tmp/', tag_operation: str = 'read', region: str = 'us-east-2'):
     """
     This method generate the NA tag file and update tags of each region
+    @param file_path:
     @param tag_operation:
     @param region:
     @param file_name:
     @return:
     """
+    file_name = f'{file_path}{region}-{file_name}'
     update_na_tags = UpdateNATags(region=region, file_name=file_name)
     if tag_operation == 'read':
         logger.info('Generating the CSV file')

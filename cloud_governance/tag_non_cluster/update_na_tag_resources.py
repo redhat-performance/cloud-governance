@@ -135,7 +135,7 @@ class UpdateNATags:
         return [resource_ids, set(keys)]
 
     def create_csv(self):
-        with open(f'/tmp/{self.region}-{self.file_name}', 'w') as file:
+        with open(f'{self.file_name}', 'w') as file:
             instances, instance_tags = self.__resource_list(resource_id='InstanceId', resource_name='instance')
             volumes, volume_tags = self.__resource_list(resource_id='VolumeId', resource_name='volume')
             snapshots, snapshot_tags = self.__resource_list(resource_id='SnapshotId', resource_name='snapshot')

@@ -23,7 +23,9 @@ def test_create_csv():
     }])
     update_na_tags = UpdateNATags(region='us-east-2', file_name='tag_na.csv')
     update_na_tags.create_csv()
-    assert os.path.exists('/tmp/tag_user.csv')
+    assert os.path.exists('tag_na.csv')
+    if os.path.exists('tag_na.csv'):
+        os.remove('tag_na.csv')
 
 
 @mock_ec2
@@ -43,6 +45,7 @@ def test_update_tags():
     }])
     update_na_tags = UpdateNATags(region='us-east-2', file_name='tag_na.csv')
     update_na_tags.create_csv()
-    update_na_tags = UpdateNATags(region='us-east-2', file_name='/tmp/us-east-2-tag_na.csv')
+    update_na_tags = UpdateNATags(region='us-east-2', file_name='tag_na.csv')
     assert update_na_tags.update_tags() == 1
-
+    if os.path.exists('tag_na.csv'):
+        os.remove('tag_na.csv')
