@@ -9,12 +9,6 @@ from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
 
-# @todo add next token
-# response = client.get_servers()
-# results = response["serverList"]
-# while "NextToken" in response:
-#     response = client.get_servers(NextToken=response["NextToken"])
-#     results.extend(response["serverList"])
 from cloud_governance.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
 
@@ -44,7 +38,6 @@ class TagClusterResources:
         self.__get_username_from_instance_id_and_time = CloudTrailOperations(region_name=region).get_username_by_instance_id_and_time
         self.dry_run = dry_run
         self.non_cluster_update = TagNonClusterResources(region=region, dry_run=dry_run, input_tags=input_tags)
-
 
     def __init_cluster_name(self):
         """
@@ -798,7 +791,7 @@ class TagClusterResources:
             for search_tag in search_tags:
                 found = False
                 for tag in tags:
-                    if tag.get('Key') == search_tag.get('Key') and tag.get('Value') in search_tag.get('Value'):
+                    if tag.get('Key') == search_tag.get('Key'):
                         found = True
                 if not found:
                     add_tags.append(search_tag)

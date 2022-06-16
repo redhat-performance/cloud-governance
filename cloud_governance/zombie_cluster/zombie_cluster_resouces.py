@@ -39,7 +39,7 @@ class ZombieClusterResources:
         self.ec2_operations = EC2Operations(region=region)
         self.__get_details_resource_list = Utils().get_details_resource_list
 
-    def _all_cluster_instance(self):
+    def all_cluster_instance(self):
         """
         This method return list of cluster's instance tag name that contains openshift tag prefix from all regions
         :return: list of cluster's instance tag name
@@ -48,8 +48,8 @@ class ZombieClusterResources:
         result_instance = {}
         regions_data = self.ec2_client.describe_regions()
         for region in regions_data['Regions']:
-            self.__ec2 = boto3.client('ec2', region_name=region['RegionName'])
-            ec2s_data = self.__get_details_resource_list(func_name=self.ec2_client.describe_instances, input_tag='Reservations', check_tag='NextToken')
+            __ec2 = boto3.client('ec2', region_name=region['RegionName'])
+            ec2s_data = self.__get_details_resource_list(func_name=__ec2.describe_instances, input_tag='Reservations', check_tag='NextToken')
             for items in ec2s_data:
                 if items.get('Instances'):
                     instances_list.append(items['Instances'])
@@ -172,7 +172,7 @@ class ZombieClusterResources:
         This method filter zombie resource, meaning no active instance for this cluster in all regions
         """
         zombie_resources = {}
-        zombies_values = set(exist_resources.values()) - set(self._all_cluster_instance().values())
+        zombies_values = set(exist_resources.values()) - set(self.all_cluster_instance().values())
 
         for zombie_value in zombies_values:
             for key, value in exist_resources.items():

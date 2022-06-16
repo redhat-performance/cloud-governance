@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime
+
 import boto3
 
 from cloud_governance.common.aws.utils.utils import Utils
@@ -11,7 +13,8 @@ def test_iam_zombie_user_create_and_delete():
     :return:
     """
     short_random_id = uuid.uuid1()
-    USER_NAME = f'integration-ocp-user-{short_random_id}'
+    time_ms = str(datetime.utcnow().strftime('%f'))
+    USER_NAME = f'integration-ocp-{short_random_id}-{time_ms}'
     iam_resource = boto3.client('iam')
     tags = [
         {'Key': f'kubernetes.io/cluster/{USER_NAME}', 'Value': 'Owned'},
@@ -34,3 +37,5 @@ def test_iam_zombie_user_create_and_delete():
             find = True
             break
     assert not find
+    # @Todo delete this print when we get stabled test
+    print(USER_NAME)
