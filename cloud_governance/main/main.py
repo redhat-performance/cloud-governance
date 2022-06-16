@@ -12,6 +12,7 @@ from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
+from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
 
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -88,6 +89,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags)
         else:
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+    elif policy == 'validate_cluster':
+        file_path = os.environ.get('file_path', '')
+        file_name = os.environ.get('file_name', '')
+        file_path = file_path+file_name
+        validate_zombies = ValidateZombies(file_path=file_path, region=region)
+        validate_zombies.read_csv()
     elif policy == 'tag_cluster':
         cluster_name = os.environ.get('resource_name', '')
         mandatory_tags = os.environ.get('mandatory_tags', {})

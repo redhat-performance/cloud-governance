@@ -7,7 +7,7 @@ zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/
 
 
 def test_all_clusters():
-    assert len(zombie_cluster_resources._all_cluster_instance()) >= 0
+    assert len(zombie_cluster_resources.all_cluster_instance()) >= 0
 
 
 def test_cluster_instance():
