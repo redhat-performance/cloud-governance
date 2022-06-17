@@ -1,8 +1,10 @@
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/cloud-governance.svg)](https://pypi.org/project/cloud-governance/)
+[![Container Repository on Quay](https://quay.io/repository/projectquay/quay/status "Container Repository on Quay")](https://quay.io/repository/ebattat/cloud-governance?tab=tags)
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
 [![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/cloud-governance/badge/?version=latest)](https://cloud-governance.readthedocs.io/en/latest/?badge=latest)
+[![python](https://img.shields.io/pypi/pyversions/cloud-governance.svg?color=%2334D058)](https://pypi.org/project/cloud-governance)
 [![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
 
 
@@ -26,6 +28,7 @@ This tool support the following policies:
 * zombie_cluster_resource: Delete cluster's zombie resources
 * tag_non_cluster: tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * tag_iam_user: update the user tags from the csv file
+* cost_explorer: Get data from cost explorer and upload to ElasticSearch
 * gitleaks: scan Github repository git leak (security scan)  
 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
@@ -126,6 +129,11 @@ sudo podman run --rm --name cloud-governance -e policy=tag_non_cluster -e AWS_AC
 
 # policy=tag_iam_user
 sudo podman run --rm --name cloud-governance -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e user_tag_operation=read/update/delete -e remove_tags="['Environment', 'Test']" -e username=test_username -e file_name=tag_user.csv  -e log_level=INFO -v /home/user/tag_user.csv:/tmp/tag_user.csv --privileged quay.io/ebattat/cloud-governance
+
+# policy=cost_explorer
+sudo podman run --rm --name cloud-governance -e policy=cost_explorer -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e es_host=elasticsearch_host -e es_port=elasticsearch_port -e es_index=elasticsearch_index -e metric_type=BlendedCost/UnBlendedCost -e cost_explorer_tags="['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']" -e log_level=INFO quay.io/ebattat/cloud-governance:latest
+sudo podman run --rm --name cloud-governance -e policy=cost_explorer -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e es_index=elasticsearch_index -e metric_type=BlendedCost/UnBlendedCost -e cost_explorer_tags="['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']" -e file_name=cost_explorer.txt -v /home/cost_explorer.txt:/tmp/cost_explorer.txt -e log_level=INFO quay.io/ebattat/cloud-governance:latest
+
 
 # policy=gitleaks
 sudo podman run --rm --name cloud-governance -e policy=gitleaks -e git_access_token=$git_access_token -e git_repo=https://github.com/redhat-performance/cloud-governance -e several_repos=no -e log_level=INFO quay.io/ebattat/cloud-governance
