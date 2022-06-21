@@ -67,11 +67,13 @@ for region in regions:
 
 
 es_index = 'cost-explorer-perf'
-metric_type = 'BlendedCost'
 cost_tags = ['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']
 
 # Cost Explorer upload to ElasticSearch
-os.system(f"""sudo podman run --rm --name cloud-governance -e account='perf' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e metric_type={metric_type} -e cost_explorer_tags="{cost_tags}" -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
+cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
+granularity = 'DAILY' # DAILY/MONTHLY/HOURLY
+os.system(f"""sudo podman run --rm --name cloud-governance -e account='perf' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
+
 
 # Gitleaks run on github not related to any aws account
 print("Upload data to ElasticSearch - gitleaks index")

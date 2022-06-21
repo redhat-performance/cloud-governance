@@ -8,7 +8,12 @@ AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PER
 BUCKET_PERF = os.environ['BUCKET_PERF']
 AWS_ACCESS_KEY_ID_PSAP = os.environ['AWS_ACCESS_KEY_ID_PSAP']
 AWS_SECRET_ACCESS_KEY_PSAP = os.environ['AWS_SECRET_ACCESS_KEY_PSAP']
+AWS_ACCESS_KEY_ID_DELETE_PSAP = os.environ['AWS_ACCESS_KEY_ID_DELETE_PSAP']
+AWS_SECRET_ACCESS_KEY_DELETE_PSAP = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PSAP']
 BUCKET_PSAP = os.environ['BUCKET_PSAP']
+AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE']
+AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE']
+BUCKET_PERF_SCALE = os.environ['BUCKET_PERF_SCALE']
 AWS_ACCESS_KEY_ID_RH_PERF = os.environ['AWS_ACCESS_KEY_ID_RH_PERF']
 AWS_SECRET_ACCESS_KEY_RH_PERF = os.environ['AWS_SECRET_ACCESS_KEY_RH_PERF']
 BUCKET_RH_PERF = os.environ['BUCKET_RH_PERF']
@@ -41,6 +46,8 @@ for region in regions:
         # Delete zombie cluster resource every night
         if policy == 'zombie_cluster_resource':
             os.system(f"sudo podman run --rm --name cloud-governance -e account='perf' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+            os.system(f"sudo podman run --rm --name cloud-governance -e account='psap' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PSAP} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PSAP}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+            os.system(f"sudo podman run --rm --name cloud-governance -e account='perf-scale' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PERF_SCALE}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"sudo podman run --rm --name cloud-governance -e account='perf' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"sudo podman run --rm --name cloud-governance -e account='psap' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PSAP} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PSAP}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"sudo podman run --rm --name cloud-governance -e account='rh-perf' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RH_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RH_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_RH_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
