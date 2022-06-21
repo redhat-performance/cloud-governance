@@ -37,5 +37,3 @@ def test_iam_zombie_user_create_and_delete():
             find = True
             break
     assert not find
-    # @Todo delete this print when we get stabled test
-    print(USER_NAME)

@@ -260,16 +260,22 @@ class DeleteEC2Resources:
             security_groups = self.ec2_operations.get_security_groups()
             vpc_security_groups = self.__get_cluster_references(resource_id=vpc_id, resource_list=security_groups, input_resource_id='VpcId', output_result='')
             for vpc_security_group in vpc_security_groups:
-                if vpc_security_group.get('Tags'):
-                    if self.__is_cluster_resource(tags=vpc_security_group.get('Tags'), cluster_tag=self.cluster_tag):
-                        logger.info(vpc_security_group.get('GroupId'))
-                        if vpc_security_group.get('IpPermissions'):
-                            for ip_permission in vpc_security_group.get('IpPermissions'):
-                                if ip_permission.get('UserIdGroupPairs'):
-                                    for user_id_group_pair in ip_permission.get('UserIdGroupPairs'):
-                                        if user_id_group_pair.get('GroupId') == resource_id:
-                                            self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ip_permission])
-                                            logger.info(f'Removed the Ingress rules of Security Group {resource_id} from {vpc_security_group.get("GroupId")}')
+                if vpc_security_group.get('GroupName') == 'default':
+                    if vpc_security_group.get('IpPermissions'):
+                        for ip_permission in vpc_security_group.get('IpPermissions'):
+                            self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ip_permission])
+                            logger.info(f'Removed the Ingress rules of Security Group {resource_id} :: {ip_permission}')
+                else:
+                    if vpc_security_group.get('Tags'):
+                        if self.__is_cluster_resource(tags=vpc_security_group.get('Tags'), cluster_tag=self.cluster_tag):
+                            logger.info(vpc_security_group.get('GroupId'))
+                            if vpc_security_group.get('IpPermissions'):
+                                for ip_permission in vpc_security_group.get('IpPermissions'):
+                                    if ip_permission.get('UserIdGroupPairs'):
+                                        for user_id_group_pair in ip_permission.get('UserIdGroupPairs'):
+                                            if user_id_group_pair.get('GroupId') == resource_id:
+                                                self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ip_permission])
+                                                logger.info(f'Removed the Ingress rules of Security Group {resource_id} from {vpc_security_group.get("GroupId")}')
             network_interfaces = self.ec2_operations.get_network_interface()
             network_interface_ids = self.__get_cluster_references(resource_id=vpc_id, resource_list=network_interfaces,
                                                                   input_resource_id='VpcId',

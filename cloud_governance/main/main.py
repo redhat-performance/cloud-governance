@@ -18,8 +18,11 @@ from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'tag_non_cluster'
-# os.environ['metric_type'] = ''
+# os.environ['policy'] = 'cost_explorer'
+# os.environ['cost_metric'] = ''
+# os.environ['start_date'] = ''
+# os.environ['end_date'] = ''
+# os.environ['granularity'] = ''
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
@@ -96,10 +99,18 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         es_host = os.environ.get('es_host', '')
         es_port = os.environ.get('es_port', '')
         es_index = os.environ.get('es_index', '')
-        metric_type = os.environ.get('metric_type', '')
+        cost_metric = os.environ.get('cost_metric', '')
+        start_date = os.environ.get('start_date', '')
+        end_date = os.environ.get('end_date', '')
+        granularity = os.environ.get('granularity', '')
         file_name = os.environ.get('file_name', '')
         cost_explorer_tags = literal_eval(os.environ.get('cost_explorer_tags', {}))
-        run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, metric_type=metric_type, file_name=file_name)
+        if granularity and cost_metric:
+            run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, cost_metric=cost_metric, file_name=file_name,
+                                                           start_date=start_date, end_date=end_date, granularity=granularity)
+        else:
+            run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, file_name=file_name,
+                                                           start_date=start_date, end_date=end_date)
         run_cost_explorer.upload_tags_cost_to_elastic_search()
     elif policy == 'validate_cluster':
         file_path = os.environ.get('file_path', '')

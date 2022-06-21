@@ -8,7 +8,11 @@ from cloud_governance.common.elasticsearch.elasticsearch_operations import Elast
 
 class GenerateCostExplorerReport:
 
-    def __init__(self, cost_tags: list, es_host: str = '', es_port: str = '', es_index: str = '', metric_type: str = 'BlendedCost', file_name: str = ''):
+    def __init__(self, cost_tags: list, granularity: str = 'DAILY', es_host: str = '', es_port: str = '', es_index: str = '', cost_metric: str = 'UnblendedCost', file_name: str = '', start_date: str = '', end_date: str = ''):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.granularity = granularity
+        self.cost_metric = cost_metric
         self.cost_tags = cost_tags
         self.__cost_explorer = CostExplorerOperations()
         self.file_name = file_name
@@ -16,7 +20,6 @@ class GenerateCostExplorerReport:
         self.__es_port = es_port
         self.__es_index = es_index
         self.__elastic_search_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
-        self.metric_type = metric_type
 
     def filter_data_by_tag(self, groups: list, tag: str):
         """
@@ -33,7 +36,7 @@ class GenerateCostExplorerReport:
                 name = group.get('Keys')[0].split('$')[-1]
                 name = name if name else 'NoTagKey'
             if group.get('Metrics'):
-                amount = group.get('Metrics').get(self.metric_type).get('Amount')
+                amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:
                 data.append({tag: name, 'Cost': round(float(amount), 3)})
         return data
@@ -43,14 +46,17 @@ class GenerateCostExplorerReport:
         This method extracts the costs by tags and upload to elastic search
         @return:
         """
-        if not self.metric_type:
-            self.metric_type = 'BlendedCost'
         data_house = {}
         for tag in self.cost_tags:
-            response = self.__cost_explorer.get_daily_cost_usage(tag=tag, metrics_type=self.metric_type)
+            if self.start_date and self.end_date:
+                response = self.__cost_explorer.get_cost_by_tags(tag=tag, start_date=self.start_date, end_date=self.end_date, granularity=self.granularity, cost_metric=self.cost_metric)
+            else:
+                response = self.__cost_explorer.get_cost_by_tags(tag=tag, granularity=self.granularity, cost_metric=self.cost_metric)
             results_by_time = response.get('ResultsByTime')
             if results_by_time:
-                data_house[tag] = self.filter_data_by_tag(results_by_time[0].get('Groups'), tag)
+                data_house[tag] = []
+                for result in results_by_time:
+                    data_house[tag].extend(self.filter_data_by_tag(result.get('Groups'), tag))
         return data_house
 
     def __upload_data(self, data: list, index: str):
@@ -74,6 +80,7 @@ class GenerateCostExplorerReport:
         This method upload daily tag cost into ElasticSearch
         @return:
         """
+        logger.info(f'Get {self.granularity} Cost usage by metric: {self.cost_metric}')
         cost_data = self.__get_daily_cost_by_tags()
         jobs = []
         for key, values in cost_data.items():
