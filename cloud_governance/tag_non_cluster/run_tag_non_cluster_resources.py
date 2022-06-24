@@ -50,7 +50,7 @@ def tag_na_resources(file_name: str, file_path: str = '/tmp/', tag_operation: st
     @param file_name:
     @return:
     """
-    file_name = f'{file_path}{region}-{file_name}'
+    file_name = f'{file_path}{file_name}'
     update_na_tags = UpdateNATags(region=region, file_name=file_name)
     if tag_operation == 'read':
         logger.info('Generating the CSV file')
