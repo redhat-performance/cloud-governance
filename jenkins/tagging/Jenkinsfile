@@ -26,7 +26,7 @@ pipeline {
     stages {
         stage('Image Cleanup'){
             steps {
-                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null)" != "" ]];then sudo podman rm -f $(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null); fi'''
               }
         }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -41,7 +41,7 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-                 sh '''if [[ "$(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sudo podman rmi -f $(sudo podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                  sh '''if [[ "$(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null)" != "" ]];then sudo podman rm -f $(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null); fi'''
               deleteDir()
               }
         }

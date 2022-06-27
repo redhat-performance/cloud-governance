@@ -147,27 +147,29 @@ class TagClusterResources:
         for resource in resources_list:
             resource_id = resource[input_resource_id]
             if resource.get(tags):
-                for tag in resource[tags]:
-                    if self.cluster_prefix in tag.get('Key'):
-                        add_tags = self.__append_input_tags(resource.get(tags))
-                        instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
-                        add_tags.extend(instance_tags)
-                        add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
-                        add_tags = self.__remove_tags_start_with_aws(add_tags)
-                        add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
-                        if add_tags:
-                            if self.cluster_name:
-                                cluster_resource_name = tag.get('Key').split('/')[-1]
-                                if cluster_resource_name == self.cluster_name:
+                # search that not exist permanent tags in the resource
+                if not self.__validate_existing_tag(resource.get(tags)):
+                    for tag in resource[tags]:
+                        if self.cluster_prefix in tag.get('Key'):
+                            add_tags = self.__append_input_tags(resource.get(tags))
+                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                            add_tags.extend(instance_tags)
+                            add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
+                            add_tags = self.__remove_tags_start_with_aws(add_tags)
+                            add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
+                            if add_tags:
+                                if self.cluster_name:
+                                    cluster_resource_name = tag.get('Key').split('/')[-1]
+                                    if cluster_resource_name == self.cluster_name:
+                                        if self.dry_run == "no":
+                                            self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
+                                            logger.info(f'{input_resource_id} :: {add_tags}')
+                                        result_resources_list.append(resource_id)
+                                else:
                                     if self.dry_run == "no":
                                         self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
                                         logger.info(f'{input_resource_id} :: {add_tags}')
                                     result_resources_list.append(resource_id)
-                            else:
-                                if self.dry_run == "no":
-                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
-                                    logger.info(f'{input_resource_id} :: {add_tags}')
-                                result_resources_list.append(resource_id)
         if ids is not None:
             ids.put(sorted(result_resources_list))
         else:
@@ -255,13 +257,25 @@ class TagClusterResources:
 
     def __check_user_in_username_tags(self, tags: list):
         """
-        This method check User tag in username tahs
+        This method check User tag in username tags
         @param tags:
         @return:
         """
         for tag in tags:
             if tag.get('Key') == 'User':
                 return True
+        return False
+
+    def __validate_existing_tag(self, tags: list):
+        """
+        This method validates that permanent tag exists in tags list
+        @param tags:
+        @return:
+        """
+        for tag in tags:
+            for key, value in self.input_tags.items():
+                if tag.get('Key') == key:
+                    return True
         return False
 
     def update_cluster_tags(self, resources: list, queue):
@@ -278,57 +292,59 @@ class TagClusterResources:
             for item in instance:
                 instance_id = item['InstanceId']
                 if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if self.cluster_prefix in tag.get('Key'):
-                            add_tags = self.__append_input_tags()
-                            cluster_name = tag.get('Key').split('/')[-1]
-                            if cluster_name in cluster_instances:
-                                add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
-                                                                                   search_tags=cluster_tags[
-                                                                                       cluster_name])
-                                if add_tags:
-                                    cluster_instances[cluster_name].append(instance_id)
-                                break
-                            else:
-                                username = self.__get_username_from_instance_id_and_time(
-                                    start_time=item.get('LaunchTime'), resource_id=instance_id,
-                                    resource_type='AWS::EC2::Instance')
-                                if username:
-                                    if username == 'AutoScaling':
-                                        add_tags.append({'Key': 'User', 'Value': username})
-                                        logger.info(f'Autoscaling instance :: {instance_id}')
-                                    else:
-                                        user_tags = self.iam_operations.get_user_tags(username=username)
-                                        if not self.__check_user_in_username_tags(user_tags):
-                                            try:
-                                                user = self.iam_client.get_user(UserName=username)['User']
-                                                username = self.cloudtrail.get_username_by_instance_id_and_time(
-                                                    start_time=user.get('CreateDate'), resource_id=username,
-                                                    resource_type='AWS::IAM::User')
-                                                user_tags = self.iam_operations.get_user_tags(username=username)
-                                            except:
-                                                add_tags.append({'Key': 'User', 'Value': username})
-                                        if user_tags:
-                                            add_tags.extend(user_tags)
-                                            add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-                                        else:
-                                            add_tags.append({'Key': 'User', 'Value': username})
+                    # search that not exist permanent tags in the resource
+                    if not self.__validate_existing_tag(item.get('Tags')):
+                        for tag in item['Tags']:
+                            if self.cluster_prefix in tag.get('Key'):
+                                add_tags = self.__append_input_tags()
+                                cluster_name = tag.get('Key').split('/')[-1]
+                                if cluster_name in cluster_instances:
+                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
+                                                                                       search_tags=cluster_tags[
+                                                                                           cluster_name])
+                                    if add_tags:
+                                        cluster_instances[cluster_name].append(instance_id)
+                                    break
                                 else:
-                                    username = 'NA'
-                                    add_tags.append({'Key': 'User', 'Value': username})
-                                    add_tags.append(({'Key': 'Manager', 'Value': username}))
-                                    add_tags.append(({'Key': 'Email', 'Value': username}))
-                                    add_tags.append(({'Key': 'Project', 'Value': username}))
-                                    add_tags.append(({'Key': 'Environment', 'Value': username}))
-                                    add_tags.append(({'Key': 'Owner', 'Value': username}))
-                                add_tags.append({'Key': 'LaunchTime', 'Value': self.get_date_from_date_time(item.get('LaunchTime'))})
-                                add_tags = self.remove_creation_date(add_tags)
-                                add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
-                                                                                   search_tags=add_tags)
-                                if add_tags:
-                                    cluster_instances[cluster_name] = [instance_id]
-                                    cluster_tags[cluster_name] = add_tags
-                                break
+                                    username = self.__get_username_from_instance_id_and_time(
+                                        start_time=item.get('LaunchTime'), resource_id=instance_id,
+                                        resource_type='AWS::EC2::Instance')
+                                    if username:
+                                        if username == 'AutoScaling':
+                                            add_tags.append({'Key': 'User', 'Value': username})
+                                            logger.info(f'Autoscaling instance :: {instance_id}')
+                                        else:
+                                            user_tags = self.iam_operations.get_user_tags(username=username)
+                                            if not self.__check_user_in_username_tags(user_tags):
+                                                try:
+                                                    user = self.iam_client.get_user(UserName=username)['User']
+                                                    username = self.cloudtrail.get_username_by_instance_id_and_time(
+                                                        start_time=user.get('CreateDate'), resource_id=username,
+                                                        resource_type='AWS::IAM::User')
+                                                    user_tags = self.iam_operations.get_user_tags(username=username)
+                                                except:
+                                                    add_tags.append({'Key': 'User', 'Value': username})
+                                            if user_tags:
+                                                add_tags.extend(user_tags)
+                                                add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
+                                            else:
+                                                add_tags.append({'Key': 'User', 'Value': username})
+                                    else:
+                                        username = 'NA'
+                                        add_tags.append({'Key': 'User', 'Value': username})
+                                        add_tags.append(({'Key': 'Manager', 'Value': username}))
+                                        add_tags.append(({'Key': 'Email', 'Value': username}))
+                                        add_tags.append(({'Key': 'Project', 'Value': username}))
+                                        add_tags.append(({'Key': 'Environment', 'Value': username}))
+                                        add_tags.append(({'Key': 'Owner', 'Value': username}))
+                                    add_tags.append({'Key': 'LaunchTime', 'Value': self.get_date_from_date_time(item.get('LaunchTime'))})
+                                    add_tags = self.remove_creation_date(add_tags)
+                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
+                                                                                       search_tags=add_tags)
+                                    if add_tags:
+                                        cluster_instances[cluster_name] = [instance_id]
+                                        cluster_tags[cluster_name] = add_tags
+                                    break
         for cluster_instance_name, instance_ids in cluster_instances.items():
             if self.cluster_name:
                 if cluster_instance_name == self.cluster_name:
@@ -760,22 +776,24 @@ class TagClusterResources:
                         user_data = self.iam_client.get_user(UserName=user_name)
                         data = user_data['User']
                         if data.get('Tags'):
-                            for tag in data['Tags']:
-                                if cluster_name in tag['Key']:
-                                    all_tags = []
-                                    instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                        cluster_name=f'{self.cluster_prefix}{cluster_name}')
-                                    if not instance_tags:
-                                        all_tags = self.__append_input_tags(data.get('Tags'))
-                                    all_tags.extend(instance_tags)
-                                    all_tags = self.__remove_tags_start_with_aws(all_tags)
-                                    all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
-                                    if all_tags:
-                                        if self.dry_run == 'no':
-                                            self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
-                                            logger.info(all_tags)
-                                        result_user_list.append(user_name)
-                                    break
+                            # search that not exist permanent tags in the resource
+                            if not self.__validate_existing_tag(data.get('Tags')):
+                                for tag in data['Tags']:
+                                    if cluster_name in tag['Key']:
+                                        all_tags = []
+                                        instance_tags = self.__get_cluster_tags_by_instance_cluster(
+                                            cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                        if not instance_tags:
+                                            all_tags = self.__append_input_tags(data.get('Tags'))
+                                        all_tags.extend(instance_tags)
+                                        all_tags = self.__remove_tags_start_with_aws(all_tags)
+                                        all_tags = self.__filter_resource_tags_by_add_tags(data.get('Tags'), all_tags)
+                                        if all_tags:
+                                            if self.dry_run == 'no':
+                                                self.iam_client.tag_user(UserName=user_name, Tags=all_tags)
+                                                logger.info(all_tags)
+                                            result_user_list.append(user_name)
+                                        break
         logger.info(f'cluster_user count: {len(sorted(result_user_list))} {sorted(result_user_list)}')
         return sorted(result_user_list)
 
@@ -828,20 +846,22 @@ class TagClusterResources:
                             bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
                             if bucket_tags:
                                 bucket_tags = bucket_tags['TagSet']
-                                add_tags = []
-                                instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                    cluster_name=f'{self.cluster_prefix}{cluster_name}')
-                                if not instance_tags:
-                                    add_tags = self.__append_input_tags(bucket_tags)
-                                add_tags.extend(instance_tags)
-                                add_tags = self.__remove_tags_start_with_aws(add_tags)
-                                add_tags = self.__filter_resource_tags_by_add_tags(bucket_tags, add_tags)
-                                if add_tags:
-                                    if self.dry_run == 'no':
-                                        add_tags.extend(bucket_tags)
-                                        self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'),
-                                                                          Tagging={'TagSet': add_tags})
-                                        logger.info(add_tags)
-                                    bucket_result_list.append(bucket['Name'])
+                                # search that not exist permanent tags in the resource
+                                if not self.__validate_existing_tag(bucket_tags):
+                                    add_tags = []
+                                    instance_tags = self.__get_cluster_tags_by_instance_cluster(
+                                        cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                    if not instance_tags:
+                                        add_tags = self.__append_input_tags(bucket_tags)
+                                    add_tags.extend(instance_tags)
+                                    add_tags = self.__remove_tags_start_with_aws(add_tags)
+                                    add_tags = self.__filter_resource_tags_by_add_tags(bucket_tags, add_tags)
+                                    if add_tags:
+                                        if self.dry_run == 'no':
+                                            add_tags.extend(bucket_tags)
+                                            self.s3_client.put_bucket_tagging(Bucket=bucket.get('Name'),
+                                                                              Tagging={'TagSet': add_tags})
+                                            logger.info(add_tags)
+                                        bucket_result_list.append(bucket['Name'])
         logger.info(f'cluster_s3_bucket count: {len(sorted(bucket_result_list))} {sorted(bucket_result_list)}')
         return sorted(bucket_result_list)
