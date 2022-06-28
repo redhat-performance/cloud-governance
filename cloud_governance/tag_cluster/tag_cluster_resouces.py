@@ -518,38 +518,38 @@ class TagClusterResources:
             tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id])
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if self.cluster_prefix in tag.get('Key'):
-                            all_tags = []
-                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
-                            if not instance_tags:
-                                all_tags = self.__append_input_tags(item.get('Tags'))
-                            all_tags.extend(instance_tags)
-                            all_tags = self.__remove_tags_start_with_aws(all_tags)
-                            all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
-                            if all_tags:
-                                if self.cluster_name:
-                                    if tag['Key'] == self.cluster_key:
-                                        try:
-                                            if self.dry_run == 'no':
+                    if not self.__validate_existing_tag(item.get('Tags')):
+                        for tag in item['Tags']:
+                            if self.cluster_prefix in tag.get('Key'):
+                                all_tags = []
+                                instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                                if not instance_tags:
+                                    all_tags = self.__append_input_tags(item.get('Tags'))
+                                all_tags.extend(instance_tags)
+                                all_tags = self.__remove_tags_start_with_aws(all_tags)
+                                all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
+                                if all_tags:
+                                    if self.cluster_name:
+                                        if tag['Key'] == self.cluster_key:
+                                            try:
+                                                if self.dry_run == 'no':
+                                                    self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
+                                                    logger.info(all_tags)
+                                            except Exception as err:
+                                                logger.exception(f'Tags are already updated, {err}')
+                                            result_resources_list.append(resource_id)
+                                        break
+                                    else:
+                                        if self.dry_run == 'no':
+                                            try:
                                                 self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
                                                 logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
+                                            except Exception as err:
+                                                logger.exception(f'Tags are already updated, {err}')
                                         result_resources_list.append(resource_id)
-                                    break
-                                else:
-                                    if self.dry_run == 'no':
-                                        try:
-                                            self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=all_tags)
-                                            logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
-                                    result_resources_list.append(resource_id)
-                                    break
-                            break
-        logger.info(
-            f'cluster_load_balancer count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
+                                        break
+                                break
+        logger.info(f'cluster_load_balancer count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
         return sorted(result_resources_list)
 
     def cluster_load_balancer_v2(self):
@@ -564,38 +564,38 @@ class TagClusterResources:
             tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id])
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if self.cluster_prefix in tag.get('Key'):
-                            all_tags = []
-                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
-                            if not instance_tags:
-                                all_tags = self.__append_input_tags(item.get('Tags'))
-                            all_tags.extend(instance_tags)
-                            all_tags = self.__remove_tags_start_with_aws(all_tags)
-                            all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
-                            if all_tags:
-                                if self.cluster_name:
-                                    if tag['Key'] == self.cluster_key:
-                                        try:
-                                            if self.dry_run == 'no':
+                    if not self.__validate_existing_tag(item.get('Tags')):
+                        for tag in item['Tags']:
+                            if self.cluster_prefix in tag.get('Key'):
+                                all_tags = []
+                                instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                                if not instance_tags:
+                                    all_tags = self.__append_input_tags(item.get('Tags'))
+                                all_tags.extend(instance_tags)
+                                all_tags = self.__remove_tags_start_with_aws(all_tags)
+                                all_tags = self.__filter_resource_tags_by_add_tags(item.get('Tags'), all_tags)
+                                if all_tags:
+                                    if self.cluster_name:
+                                        if tag['Key'] == self.cluster_key:
+                                            try:
+                                                if self.dry_run == 'no':
+                                                    self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
+                                                    logger.info(all_tags)
+                                            except Exception as err:
+                                                logger.exception(f'Tags are already updated, {err}')
+                                            result_resources_list.append(resource_id)
+                                        break
+                                    else:
+                                        if self.dry_run == 'no':
+                                            try:
                                                 self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
                                                 logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
+                                            except Exception as err:
+                                                logger.exception(f'Tags are already updated, {err}')
                                         result_resources_list.append(resource_id)
-                                    break
-                                else:
-                                    if self.dry_run == 'no':
-                                        try:
-                                            self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=all_tags)
-                                            logger.info(all_tags)
-                                        except Exception as err:
-                                            logger.exception(f'Tags are already updated, {err}')
-                                    result_resources_list.append(resource_id)
-                                    break
-                            break
-        logger.info(
-            f'cluster_load_balancer_v2 count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
+                                        break
+                                break
+        logger.info(f'cluster_load_balancer_v2 count: {len(sorted(result_resources_list))} {sorted(result_resources_list)}')
         return sorted(result_resources_list)
 
     def cluster_vpc(self):
