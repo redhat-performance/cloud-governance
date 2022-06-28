@@ -53,8 +53,8 @@ jobs:
           pip install coveralls
           COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
 
-  build:
-    name: build
+  pypi_upload:
+    name: pypi_upload
     needs: [ test ]
     runs-on: ubuntu-latest
     steps:
@@ -72,6 +72,22 @@ jobs:
           pip install setuptools wheel twine
           python setup.py sdist bdist_wheel
           twine upload dist/*
+
+  pypi_validate:
+    name: pypi_validate
+    needs: [ test, pypi_upload ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Validate upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |        
           echo '⌛ Wait till package will be updated in PyPI'
           # Verfiy and wait till latest cloud-governance version will be updated in Pypi (timeout 900 seconds)
           timeout=900
@@ -100,6 +116,17 @@ jobs:
                 fi
               fi
           done
+
+  quay_upload:
+    name: quay_upload
+    needs: [ test, pypi_upload, pypi_validate ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
       - name: ⌛ Upload to 🐋 quay.io
         run: |
           version=$(python3 setup.py --version)
@@ -113,7 +140,7 @@ jobs:
   bump_version:
     name: bump_version
     runs-on: ubuntu-latest
-    needs: [ test, build ]
+    needs: [ test, pypi_upload, pypi_validate, quay_upload ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
@@ -137,7 +164,7 @@ jobs:
 
   e2e:
     name: e2e
-    needs: [test, build, bump_version]
+    needs: [test, pypi_upload, pypi_validate, quay_upload, bump_version]
     runs-on: ubuntu-latest
     strategy:
       matrix:
