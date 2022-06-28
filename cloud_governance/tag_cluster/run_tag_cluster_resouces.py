@@ -50,13 +50,8 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         func_resource_list[0]()
         func_resource_list = func_resource_list[1:]
-    jobs = []
     for _, func in enumerate(func_resource_list):
-        p = Process(target=func)
-        jobs.append(p)
-        p.start()
-    for job in jobs:
-        job.join()
+        func()
 
 
 def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: dict, cluster_only: bool = False):
@@ -93,12 +88,7 @@ def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: di
     else:
         logger.info(f"{len(func_resource_list)} remove tag cluster resources  in region {region}:")
     response = func_resource_list[0]()
-    jobs = []
     for func in func_resource_list[1:]:
-        p = Process(target=func, args=(response, ))
-        p.start()
-        jobs.append(p)
-    for job in jobs:
-        job.join()
+        func(instance_tags=response)
     logger.info(response)
 
