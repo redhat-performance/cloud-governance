@@ -1,6 +1,7 @@
 import os
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.tag_user.iam_user_tags import ValidateIAMUserTags
 from cloud_governance.tag_user.remove_user_tags import RemoveUserTags
 from cloud_governance.tag_user.tag_iam_user import TagUser
 
@@ -30,3 +31,21 @@ def tag_iam_user(user_tag_operation: str, remove_keys: list, username: str = '',
         remove_tags = RemoveUserTags(remove_keys=remove_keys, username=username)
         count = remove_tags.user_tags_remove()
         logger.info(f'Removed tags of {count} users')
+
+
+def run_validate_iam_user_tags(es_host: str, es_port: str, es_index: str, validate_type: str, user_tags: list = None):
+    """
+    This method runs the validation of tags and upload to es
+    @param es_host:
+    @param es_port:
+    @param es_index:
+    @param validate_type:
+    @param user_tags:
+    @return:
+    """
+    validate_iam_user_tags = ValidateIAMUserTags(es_host=es_host, es_port=es_port, es_index=es_index)
+    if validate_type == 'spaces':
+        validate_iam_user_tags.upload_trailing_user_tags()
+    elif validate_type == 'tags':
+        validate_iam_user_tags.upload_user_without_mandatory_tags(mandatory_tags=user_tags)
+

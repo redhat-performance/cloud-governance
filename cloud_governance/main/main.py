@@ -8,7 +8,7 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, 
 from cloud_governance.cost_expenditure.generate_cost_explorer_report import GenerateCostExplorerReport
 from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
 from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
-from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user
+from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
 from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
@@ -19,6 +19,8 @@ from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
 # os.environ['policy'] = 'cost_explorer'
+# os.environ['validate_type'] = 'tags'
+# os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''
 # os.environ['start_date'] = ''
 # os.environ['end_date'] = ''
@@ -95,6 +97,16 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags)
         else:
             tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+    elif policy == 'validate_iam_user_tags':
+        es_host = os.environ.get('es_host', '')
+        es_port = os.environ.get('es_port', '')
+        es_index = os.environ.get('es_index', '')
+        validate_type = os.environ.get('validate_type', '')
+        user_tags = os.environ.get('user_tags', {})
+        if user_tags:
+            user_tags = literal_eval(user_tags)
+        run_validate_iam_user_tags(es_host=es_host, es_port=es_port, es_index=es_index, validate_type=validate_type, user_tags=user_tags)
+
     elif policy == 'cost_explorer':
         es_host = os.environ.get('es_host', '')
         es_port = os.environ.get('es_port', '')
