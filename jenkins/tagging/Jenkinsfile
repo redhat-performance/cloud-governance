@@ -1,5 +1,11 @@
 pipeline {
-    agent { label 'cloud-governance' }
+    agent {
+        docker {
+            label 'cloud-governance-slave'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '--rm -u root -v /tmp/tagging/:/var/lib/containers --privileged'
+        }
+    }
     environment {
         AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
         AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
@@ -24,14 +30,9 @@ pipeline {
         contact2 = "athiruma@redhat.com"
     }
     stages {
-        stage('Image Cleanup'){
-            steps {
-                 sh '''if [[ "$(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null)" != "" ]];then sudo podman rm -f $(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null); fi'''
-              }
-        }
         stage('Checkout') { // Checkout (git clone ...) the projects repository
-          steps {
-            checkout scm
+           steps {
+                 checkout scm
            }
         }
         stage('Run Tagging Cluster & Non-Cluster') {
@@ -41,9 +42,9 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-                  sh '''if [[ "$(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null)" != "" ]];then sudo podman rm -f $(sudo podman ps -aqf "name=cloud-governance-tagging" 2> /dev/null); fi'''
-              deleteDir()
-              }
+                 sh 'rm -rf /tmp/tagging/'
+                 deleteDir()
+            }
         }
     }
     post {
@@ -52,9 +53,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,
-                subject: msg,
-                to: "${env.contact1}, ${env.contact2}"
+            """,subject: msg, to: "${contact1}, ${contact2}"
             }
           }
     }
