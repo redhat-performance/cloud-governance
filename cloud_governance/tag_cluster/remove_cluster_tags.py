@@ -89,6 +89,11 @@ class RemoveClusterTags:
                     resource_type='AWS::EC2::Instance')
             if username == 'AutoScaling':
                 added_tags.append({'Key': 'User', 'Value': username})
+                added_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
+                added_tags.append(({'Key': 'Email', 'Value': 'NA'}))
+                added_tags.append(({'Key': 'Project', 'Value': 'NA'}))
+                added_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
+                added_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
             elif username == 'NA':
                 added_tags.append({'Key': 'User', 'Value': username})
                 added_tags.append(({'Key': 'Manager', 'Value': username}))
@@ -102,6 +107,11 @@ class RemoveClusterTags:
                     added_tags.extend(user_tags)
                 else:
                     added_tags.append({'Key': 'User', 'Value': username})
+                    added_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
+                    added_tags.append(({'Key': 'Email', 'Value': 'NA'}))
+                    added_tags.append(({'Key': 'Project', 'Value': 'NA'}))
+                    added_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
+                    added_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
             added_tags.append({'Key': 'LaunchTime', 'Value': tags_dict.get('LaunchTime')})
             added_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
             added_tags.extend(self.__input_tags_list_builder())

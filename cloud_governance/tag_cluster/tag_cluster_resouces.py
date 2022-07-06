@@ -312,6 +312,11 @@ class TagClusterResources:
                                     if username:
                                         if username == 'AutoScaling':
                                             add_tags.append({'Key': 'User', 'Value': username})
+                                            add_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
+                                            add_tags.append(({'Key': 'Email', 'Value': 'NA'}))
+                                            add_tags.append(({'Key': 'Project', 'Value': 'NA'}))
+                                            add_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
+                                            add_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
                                             logger.info(f'Autoscaling instance :: {instance_id}')
                                         else:
                                             user_tags = self.iam_operations.get_user_tags(username=username)
@@ -329,6 +334,11 @@ class TagClusterResources:
                                                 add_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
                                             else:
                                                 add_tags.append({'Key': 'User', 'Value': username})
+                                                add_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
+                                                add_tags.append(({'Key': 'Email', 'Value': 'NA'}))
+                                                add_tags.append(({'Key': 'Project', 'Value': 'NA'}))
+                                                add_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
+                                                add_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
                                     else:
                                         username = 'NA'
                                         add_tags.append({'Key': 'User', 'Value': username})
