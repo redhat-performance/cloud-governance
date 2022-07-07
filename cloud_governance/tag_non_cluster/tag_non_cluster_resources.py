@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime, timezone
 
 import boto3
+import botocore
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
@@ -142,8 +143,11 @@ class TagNonClusterResources:
                                                     tags=item.get('Tags'))
                 if add_tags:
                     if self.dry_run == 'no':
-                        self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
-                        logger.info(f'added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
+                        try:
+                            self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
+                            logger.info(f'added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
+                        except Exception as err:
+                            logger.info(err)
                     instances_ids.append(instance_id)
         logger.info(f'non_cluster_ec2 count: {len(sorted(instances_ids))} {sorted(instances_ids)}')
         return sorted(instances_ids)
@@ -211,8 +215,11 @@ class TagNonClusterResources:
             volume_tags = self.__get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
             if volume_tags:
                 if self.dry_run == 'no':
-                    self.ec2_client.create_tags(Resources=[volume_id], Tags=volume_tags)
-                    logger.info(f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
+                    try:
+                        self.ec2_client.create_tags(Resources=[volume_id], Tags=volume_tags)
+                        logger.info(f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
+                    except Exception as err:
+                        logger.info(err)
                 volume_ids.append(volume_id)
         logger.info(f'non_cluster_volumes count: {len(sorted(volume_ids))} {sorted(volume_ids)}')
         return sorted(volume_ids)
@@ -291,9 +298,11 @@ class TagNonClusterResources:
             snapshot_tags = self.__get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
             if snapshot_tags:
                 if self.dry_run == 'no':
-                    self.ec2_client.create_tags(Resources=[snapshot_id], Tags=snapshot_tags)
-                    logger.info(
-                        f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
+                    try:
+                        self.ec2_client.create_tags(Resources=[snapshot_id], Tags=snapshot_tags)
+                        logger.info(f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
+                    except Exception as err:
+                        logger.info(err)
                 snapshot_ids.append(snapshot_id)
         logger.info(f'non_cluster_snapshot count: {len(sorted(snapshot_ids))} {sorted(snapshot_ids)}')
         return sorted(snapshot_ids)
@@ -335,8 +344,11 @@ class TagNonClusterResources:
             image_tags = self.__get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
             if image_tags:
                 if self.dry_run == 'no':
-                    self.ec2_client.create_tags(Resources=[image_id], Tags=image_tags)
-                    logger.info(f'added tags to image: {image_id} total: {len(image_tags)} tags: {image_tags}')
+                    try:
+                        self.ec2_client.create_tags(Resources=[image_id], Tags=image_tags)
+                        logger.info(f'added tags to image: {image_id} total: {len(image_tags)} tags: {image_tags}')
+                    except Exception as err:
+                        logger.info(err)
                 image_ids.append(image_id)
         logger.info(f'non_cluster_amis count: {len(sorted(image_ids))} {sorted(image_ids)}')
         return sorted(image_ids)
