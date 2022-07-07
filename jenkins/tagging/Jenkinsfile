@@ -42,7 +42,6 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-                 sh 'rm -rf /tmp/tagging/'
                  deleteDir()
             }
         }

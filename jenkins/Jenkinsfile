@@ -47,7 +47,6 @@ pipeline {
         }
         stage('Cleanup workspace') {
             steps {
-                sh 'rm -rf /tmp/zombie/'
                  deleteDir()
             }
         }
@@ -55,14 +54,6 @@ pipeline {
     post {
        always {
            deleteDir()
-//            script {
-//                 msg = "${env.JOB_NAME} ${env.BUILD_NUMBER} completed successfully"
-//                 emailext body: """\
-//              Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-//               """,
-//                 subject: msg,
-//                 to: env.contact
-//             }
        }
         failure {
               script {
