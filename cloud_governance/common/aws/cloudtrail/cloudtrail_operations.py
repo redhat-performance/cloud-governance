@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta, datetime
 
 import boto3
@@ -29,10 +30,24 @@ class CloudTrailOperations:
                     for resource in event.get('Resources'):
                         if resource.get('ResourceType') == resource_type:
                             if resource.get('ResourceName') == resource_id:
+                                event_record = json.loads(event.get('CloudTrailEvent'))
+                                if event_record.get('userIdentity').get('type') == "AssumedRole":
+                                    return self.__get_username_from_assumed_role(start_time, end_time, event.get('Username'), "AWS::STS::AssumedRole")
                                 return event.get('Username')
             return ''
         except:
             return ''
+
+    def __get_username_from_assumed_role(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str):
+        response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+            'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
+        }])
+        for event in response['Events']:
+            if event.get('Resources'):
+                for resource in event.get('Resources'):
+                    if resource.get('ResourceType') == resource_type:
+                        if resource.get('ResourceName') == resource_id:
+                            return event.get('Username')
 
     def set_cloudtrail(self):
         self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')

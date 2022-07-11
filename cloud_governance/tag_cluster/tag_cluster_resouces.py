@@ -132,8 +132,7 @@ class TagClusterResources:
                 filter_tags.append(tag)
         return filter_tags
 
-    def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str, ids=None,
-                                                 tags: str = 'Tags'):
+    def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str, tags: str = 'Tags'):
         """
         This method return resource list that related to input resource id according to cluster's tag name and update the tags
         @param resources_list:
@@ -142,7 +141,8 @@ class TagClusterResources:
         @param tags:
         @return:
         """
-        result_resources_list = []
+        cluster_ids = {}
+        cluster_tags = {}
         for resource in resources_list:
             resource_id = resource[input_resource_id]
             if resource.get(tags):
@@ -150,32 +150,33 @@ class TagClusterResources:
                 if not self.__validate_existing_tag(resource.get(tags)):
                     for tag in resource[tags]:
                         if self.cluster_prefix in tag.get('Key'):
-                            add_tags = self.__append_input_tags(resource.get(tags))
-                            instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
-                            add_tags.extend(instance_tags)
-                            add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
-                            add_tags = self.__remove_tags_start_with_aws(add_tags)
-                            add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
-                            if add_tags:
-                                if self.cluster_name:
-                                    cluster_resource_name = tag.get('Key').split('/')[-1]
-                                    if cluster_resource_name == self.cluster_name:
-                                        if self.dry_run == "no":
-                                            self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
-                                            logger.info(f'{input_resource_id} :: {add_tags}')
-                                        result_resources_list.append(resource_id)
-                                else:
-                                    if self.dry_run == "no":
-                                        try:
-                                            self.ec2_client.create_tags(Resources=[resource_id], Tags=add_tags)
-                                            logger.info(f'{input_resource_id} :: {add_tags}')
-                                        except Exception as err:
-                                            logger.info(err)
-                                    result_resources_list.append(resource_id)
-        if ids is not None:
-            ids.put(sorted(result_resources_list))
-        else:
-            ids = sorted(result_resources_list)
+                            if tag.get('Key') not in cluster_tags:
+                                cluster_tags[tag.get('Key')] = []
+                                cluster_ids[tag.get('Key')] = []
+                                add_tags = self.__append_input_tags(resource.get(tags))
+                                instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
+                                add_tags.extend(instance_tags)
+                                add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
+                                add_tags = self.__remove_tags_start_with_aws(add_tags)
+                                add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
+                                if add_tags:
+                                    cluster_tags[tag.get('Key')].extend(add_tags)
+                                    cluster_ids[tag.get('Key')].append(resource_id)
+                            else:
+                                cluster_ids[tag.get('Key')].append(resource_id)
+        result_resources_list = []
+        for cluster_name, cluster_id in cluster_ids.items():
+            if self.cluster_name in cluster_name:
+                if self.dry_run == "no":
+                    self.ec2_client.create_tags(Resources=cluster_id, Tags=cluster_tags.get(cluster_name))
+                    logger.info(f'{input_resource_id} :: {cluster_id} :: {cluster_name} :: {len(cluster_id)} :: {cluster_tags.get(cluster_name)}')
+                result_resources_list.extend(cluster_id)
+            else:
+                if self.dry_run == "no":
+                    self.ec2_client.create_tags(Resources=cluster_id, Tags=cluster_tags.get(cluster_name))
+                    logger.info(f'{input_resource_id} :: {cluster_id} :: {len(cluster_id)} :: {cluster_tags.get(cluster_name)}')
+                result_resources_list.extend(cluster_id)
+        ids = sorted(result_resources_list)
         if input_resource_id == 'ImageId':
             logger.info(f'cluster_ami count: {len(result_resources_list)} {sorted(result_resources_list)}')
         elif input_resource_id == 'VolumeId':
