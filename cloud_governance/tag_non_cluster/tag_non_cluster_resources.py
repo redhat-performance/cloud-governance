@@ -113,6 +113,12 @@ class TagNonClusterResources:
         else:
             search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
             user_tags = self.iam_client.get_user_tags(username=username)
+            if not user_tags:
+                search_tags.append({'Key': 'User', 'Value': username})
+                search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                search_tags.append({'Key': 'Owner', 'Value': 'NA'})
         if not self.__check_name_in_tags(tags):
             if username:
                 tag_name = f'{username}-{instance_id[-self.SHORT_RESOURCE_ID:]}'
@@ -198,8 +204,15 @@ class TagNonClusterResources:
                     tag_name = f'{username}-{volume_id[-self.SHORT_RESOURCE_ID:]}'
                     search_tags.append({'Key': 'Name', 'Value': tag_name})
                 user_tags = self.iam_client.get_user_tags(username=username)
+                if not user_tags:
+                    search_tags.append({'Key': 'User', 'Value': username})
+                    search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                else:
+                    search_tags.extend(user_tags)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-                search_tags.extend(user_tags)
                 search_tags.append({'Key': 'LaunchTime', 'Value': volume.get('CreateTime').strftime('%Y/%m/%d %H:%M:%S')})
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
@@ -278,7 +291,14 @@ class TagNonClusterResources:
             if username:
                 user_tags = self.iam_client.get_user_tags(username=username)
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-                search_tags.extend(user_tags)
+                if not user_tags:
+                    search_tags.append({'Key': 'User', 'Value': username})
+                    search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                else:
+                    search_tags.extend(user_tags)
                 if not self.__check_name_in_tags(snapshot.get('Tags')):
                     tag_name = f'{username}-{snapshot_id[-self.SHORT_RESOURCE_ID:]}'
                     search_tags.append({'Key': 'Name', 'Value': tag_name})
@@ -329,7 +349,14 @@ class TagNonClusterResources:
                 user_tags = self.iam_client.get_user_tags(username=username)
                 tag_name = f'{username}-{image_id[-self.SHORT_RESOURCE_ID:]}'
                 search_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-                search_tags.extend(user_tags)
+                if not user_tags:
+                    search_tags.append({'Key': 'User', 'Value': username})
+                    search_tags.append({'Key': 'Manager', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Project', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Environment', 'Value': 'NA'})
+                    search_tags.append({'Key': 'Owner', 'Value': 'NA'})
+                else:
+                    search_tags.extend(user_tags)
             else:
                 search_tags.append({'Key': 'User', 'Value': 'NA'})
                 search_tags.append({'Key': 'Manager', 'Value': 'NA'})
