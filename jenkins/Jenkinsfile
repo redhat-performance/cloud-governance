@@ -35,7 +35,7 @@ pipeline {
             checkout scm
            }
         }
-        stage('Image Cleanup') {
+        stage('Initial Cleanup') {
             steps {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
@@ -50,7 +50,7 @@ pipeline {
                 sh 'python3 jenkins/run_upload_es.py'
             }
         }
-        stage('Image Cleanup') {
+        stage('Finalize Cleanup') {
             steps {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
                  deleteDir()
