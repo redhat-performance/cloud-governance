@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-slave'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm -u root -v /tmp/zombie/:/var/lib/containers --privileged'
+            args  '--rm -u root -v /tmp/cloud-governance/:/var/lib/containers --privileged'
         }
     }
     environment {
@@ -35,6 +35,11 @@ pipeline {
             checkout scm
            }
         }
+        stage('Image Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
         stage('Run Policies') {
             steps {
                  sh 'python3 jenkins/run_policies.py'
@@ -45,8 +50,9 @@ pipeline {
                 sh 'python3 jenkins/run_upload_es.py'
             }
         }
-        stage('Cleanup workspace') {
+        stage('Image Cleanup') {
             steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
                  deleteDir()
             }
         }
