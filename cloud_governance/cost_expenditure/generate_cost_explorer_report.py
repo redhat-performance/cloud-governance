@@ -8,7 +8,7 @@ from cloud_governance.common.elasticsearch.elasticsearch_operations import Elast
 
 class GenerateCostExplorerReport:
 
-    def __init__(self, cost_tags: list, granularity: str = 'DAILY', es_host: str = '', es_port: str = '', es_index: str = '', cost_metric: str = 'UnblendedCost', file_name: str = '', start_date: str = '', end_date: str = ''):
+    def __init__(self, cost_tags: list, account: str, granularity: str = 'DAILY', es_host: str = '', es_port: str = '', es_index: str = '', cost_metric: str = 'UnblendedCost', file_name: str = '', start_date: str = '', end_date: str = ''):
         self.start_date = start_date
         self.end_date = end_date
         self.granularity = granularity
@@ -19,6 +19,7 @@ class GenerateCostExplorerReport:
         self.__es_host = es_host
         self.__es_port = es_port
         self.__es_index = es_index
+        self.acconut = account
         self.__elastic_search_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
 
     def filter_data_by_tag(self, groups: list, tag: str):
@@ -69,9 +70,15 @@ class GenerateCostExplorerReport:
         if self.file_name:
             with open(f'/tmp/{self.file_name}', 'a') as file:
                 for value in data:
+                    if self.__es_index == 'cloud-governance-cost-explorer-global':
+                        if 'Budget' not in value:
+                            value['Budget'] = self.acconut
                     file.write(f'{value}\n')
         else:
             for value in data:
+                if self.__es_index == 'cloud-governance-cost-explorer-global':
+                    if 'Budget' not in value:
+                        value['Budget'] = self.acconut
                 self.__elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
         logger.info(f'Data uploaded to {index}')
 
