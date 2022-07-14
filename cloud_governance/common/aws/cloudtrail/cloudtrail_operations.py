@@ -67,21 +67,24 @@ class CloudTrailOperations:
         @param resource_type:
         @return:
         """
-        start_time, end_time = self.__get_role_start_time_end_time(role_arn=resource_arn, event_name=event_name)
-        responses = self.__get_cloudtrail_responses(start_time, end_time, resource_arn)
-        for event in responses:
-            if event.get('EventName') == event_name:
-                if event.get('Resources'):
-                    for resource in event.get('Resources'):
-                        if resource.get('ResourceType') == resource_type:
-                            if resource.get('ResourceName') == resource_arn:
-                                role_username = event.get('Username')
-                                role_username = self.__check_filter_username(role_username, event)
-                                username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
-                                if username:
-                                    return [username, assumed_event]
-                                return [role_username, event]
-        return ['', '']
+        try:
+            start_time, end_time = self.__get_role_start_time_end_time(role_arn=resource_arn, event_name=event_name)
+            responses = self.__get_cloudtrail_responses(start_time, end_time, resource_arn)
+            for event in responses:
+                if event.get('EventName') == event_name:
+                    if event.get('Resources'):
+                        for resource in event.get('Resources'):
+                            if resource.get('ResourceType') == resource_type:
+                                if resource.get('ResourceName') == resource_arn:
+                                    role_username = event.get('Username')
+                                    role_username = self.__check_filter_username(role_username, event)
+                                    username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
+                                    if username:
+                                        return [username, assumed_event]
+                                    return [role_username, event]
+            return ['', '']
+        except Exception as err:
+            return ['', '']
 
     def __check_event_is_assumed_role(self, cloudtrail_event: str):
         """
@@ -89,12 +92,15 @@ class CloudTrailOperations:
         @param cloudtrail_event:
         @return:
         """
-        cloudtrail_event = json.loads(cloudtrail_event)
-        if cloudtrail_event.get('userIdentity').get('type') == "AssumedRole":
-            role_name = cloudtrail_event.get('userIdentity').get('sessionContext').get('sessionIssuer').get('arn')
-            assumerole_username, event = self.__get_username_by_role(role_name, "CreateRole", "AWS::IAM::Role")
-            return [assumerole_username, event]
-        return [False, '']
+        try:
+            cloudtrail_event = json.loads(cloudtrail_event)
+            if cloudtrail_event.get('userIdentity').get('type') == "AssumedRole":
+                role_name = cloudtrail_event.get('userIdentity').get('sessionContext').get('sessionIssuer').get('arn')
+                assumerole_username, event = self.__get_username_by_role(role_name, "CreateRole", "AWS::IAM::Role")
+                return [assumerole_username, event]
+            return [False, '']
+        except Exception as err:
+            return [False, '']
 
     def __get_user_by_resource_id(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str):
         """
@@ -105,19 +111,22 @@ class CloudTrailOperations:
         @param resource_type:
         @return:
         """
-        response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
-            'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
-        }])
-        for event in response['Events']:
-            if event.get('Resources'):
-                for resource in event.get('Resources'):
-                    if resource.get('ResourceType') == resource_type:
-                        if resource.get('ResourceName') == resource_id:
-                            username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
-                            if username:
-                                return [username, assumed_event]
-                            return [event.get('Username'), event]
-        return ['', '']
+        try:
+            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+                'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
+            }])
+            for event in response['Events']:
+                if event.get('Resources'):
+                    for resource in event.get('Resources'):
+                        if resource.get('ResourceType') == resource_type:
+                            if resource.get('ResourceName') == resource_id:
+                                username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
+                                if username:
+                                    return [username, assumed_event]
+                                return [event.get('Username'), event]
+            return ['', '']
+        except Exception as err:
+            return ['', '']
 
     def get_username_by_instance_id_and_time(self, start_time: datetime, resource_id: str, resource_type: str):
         """
