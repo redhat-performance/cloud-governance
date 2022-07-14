@@ -12,8 +12,8 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
-        max-parallel: 1
         python-version: [ '3.8', '3.9' ]
     steps:
       - uses: actions/checkout@v2
