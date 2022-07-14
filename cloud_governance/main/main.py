@@ -116,13 +116,16 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         end_date = os.environ.get('end_date', '')
         granularity = os.environ.get('granularity', '')
         file_name = os.environ.get('file_name', '')
+        account = os.environ.get('account', '')
+        if account:
+            account = account.upper()
         cost_explorer_tags = literal_eval(os.environ.get('cost_explorer_tags', {}))
         if granularity and cost_metric:
             run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, cost_metric=cost_metric, file_name=file_name,
-                                                           start_date=start_date, end_date=end_date, granularity=granularity)
+                                                           start_date=start_date, end_date=end_date, granularity=granularity, account=account)
         else:
             run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, file_name=file_name,
-                                                           start_date=start_date, end_date=end_date)
+                                                           start_date=start_date, end_date=end_date, account=account)
         run_cost_explorer.upload_tags_cost_to_elastic_search()
     elif policy == 'validate_cluster':
         file_path = os.environ.get('file_path', '')
