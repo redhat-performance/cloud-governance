@@ -1,7 +1,7 @@
 
 # Test dry run against ec2/ami name '@@@@####@@@@'
 import boto3
-from moto import mock_ec2
+from moto import mock_ec2, mock_iam, mock_cloudtrail
 
 from cloud_governance.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
@@ -10,6 +10,8 @@ region_name = 'us-east-2'
 tag_resources = TagNonClusterResources(input_tags=mandatory_tags, dry_run='no')
 
 
+@mock_cloudtrail
+@mock_iam
 @mock_ec2
 def test_non_cluster_update_ec2():
     """
@@ -25,6 +27,8 @@ def test_non_cluster_update_ec2():
     assert len(tag_resources.non_cluster_update_ec2()) == 3
 
 
+@mock_cloudtrail
+@mock_iam
 @mock_ec2
 def test_update_ami():
     """
@@ -41,6 +45,8 @@ def test_update_ami():
     assert len(tag_resources.update_ami()) == 1
 
 
+@mock_cloudtrail
+@mock_iam
 @mock_ec2
 def test_update_volumes():
     """
@@ -54,6 +60,8 @@ def test_update_volumes():
     assert len(tag_resources.update_volumes()) == 2
 
 
+@mock_cloudtrail
+@mock_iam
 @mock_ec2
 def test_update_snapshots():
     """
