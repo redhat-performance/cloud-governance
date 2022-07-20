@@ -35,7 +35,7 @@ class GenerateCostExplorerReport:
             amount = ''
             if group.get('Keys'):
                 name = group.get('Keys')[0].split('$')[-1]
-                name = name if name else 'NoTagKey'
+                name = name if name else f'{self.acconut}-REFUND'
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:

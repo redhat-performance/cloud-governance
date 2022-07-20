@@ -14,6 +14,7 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
+from cloud_governance.zombie_non_cluster.run_zombie_non_cluster_resources import zombie_non_cluster_resource
 
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -151,6 +152,8 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         if remove_keys:
             remove_keys = literal_eval(remove_keys)
         tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys, username=username)
+    elif policy == 'zombie_non_cluster_resource':
+        zombie_non_cluster_resource(dry_run=dry_run, region=region)
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')

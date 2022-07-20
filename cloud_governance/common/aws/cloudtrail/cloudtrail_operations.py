@@ -37,10 +37,16 @@ class CloudTrailOperations:
         @return:
         """
         responses = []
-        response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}])
+        if start_time:
+            response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}])
+        else:
+            response = self.__global_cloudtrail.lookup_events(LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}])
         responses.extend(response.get('Events'))
         while response.get('NextToken'):
-            response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}], NextToken=response.get('NextToken'))
+            if start_time:
+                response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}], NextToken=response.get('NextToken'))
+            else:
+                response = self.__global_cloudtrail.lookup_events(LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}], NextToken=response.get('NextToken'))
             responses.extend(response.get('Events'))
         return responses
 
@@ -51,13 +57,16 @@ class CloudTrailOperations:
         @param event_name:
         @return:
         """
-        role_name = role_arn.split('/')[-1]
-        if event_name == 'CreateUser':
-            start_time = self.__iam_client.get_user(UserName=role_name)['User'].get('CreateDate')
-        elif event_name == 'CreateRole':
-            start_time = self.__iam_client.get_role(RoleName=role_name)['Role'].get('CreateDate')
-        end_time = start_time + timedelta(seconds=self.SEARCH_SECONDS)
-        return [start_time, end_time]
+        try:
+            role_name = role_arn.split('/')[-1]
+            if event_name == 'CreateUser':
+                start_time = self.__iam_client.get_user(UserName=role_name)['User'].get('CreateDate')
+            elif event_name == 'CreateRole':
+                start_time = self.__iam_client.get_role(RoleName=role_name)['Role'].get('CreateDate')
+            end_time = start_time + timedelta(seconds=self.SEARCH_SECONDS)
+            return [start_time, end_time]
+        except:
+            return ['', '']
 
     def __get_username_by_role(self, resource_arn: str, event_name: str, resource_type: str):
         """
@@ -144,3 +153,4 @@ class CloudTrailOperations:
 
     def set_cloudtrail(self):
         self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')
+
