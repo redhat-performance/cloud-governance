@@ -229,8 +229,9 @@ class S3Operations:
         try:
             if '_' in policy:
                 policy = policy.replace('_', '-')
+            date_key = datetime.datetime.now().strftime("%Y/%m/%d")
             objs = self.__s3_client.list_objects_v2(Bucket=bucket,
-                                                    Prefix=f'{logs_bucket_key}/{policy}')['Contents']
+                                                    Prefix=f'{logs_bucket_key}/{policy}/{date_key}')['Contents']
         except:
             return None
         get_last_modified_key = lambda obj: int(obj['LastModified'].strftime('%s'))

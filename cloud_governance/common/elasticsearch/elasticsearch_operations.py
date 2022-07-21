@@ -138,11 +138,11 @@ class ElasticSearchOperations:
         df = pd.DataFrame(resource_data)
         # MUST : every fix, change ec2/ebs title
         # cost column: remove space
-        df[df.columns[1]] = df[df.columns[1]].str.strip()
+        df[df.columns[2]] = df[df.columns[2]].str.strip()
         # cost column: change to float
-        df[df.columns[1]] = df[df.columns[1]].astype(float).round(3)
+        df[df.columns[2]] = df[df.columns[2]].astype(float).round(3)
         # group by cluster owned column
-        cluster_cost = df.groupby(df.columns[-1])[df.columns[1]].sum()
+        cluster_cost = df.groupby(df.columns[-1])[df.columns[2]].sum()
         cluster_cost_results = []
         # cluster
         # title: cluster# | cost($) | user | launch time | cluster owned
@@ -170,11 +170,11 @@ class ElasticSearchOperations:
         df = pd.DataFrame(resource_data)
         # MUST : every fix, change ec2/ebs title
         # cost column: remove space
-        df[df.columns[1]] = df[df.columns[1]].str.strip()
+        df[df.columns[2]] = df[df.columns[2]].str.strip()
         # cost column: change to float
-        df[df.columns[1]] = df[df.columns[1]].astype(float).round(3)
+        df[df.columns[2]] = df[df.columns[2]].astype(float).round(3)
         # group by user
-        user_cost = df.groupby(df.columns[0])[df.columns[1]].sum()
+        user_cost = df.groupby(df.columns[1])[df.columns[2]].sum()
         user_cost_results = []
         # user
         # title: user# | cost($) | user
@@ -218,7 +218,6 @@ class ElasticSearchOperations:
                 ebs_monthly_cost = 0.1 * item_data['Size']
             return round(ebs_monthly_cost, 3)
 
-
     def upload_last_policy_to_elasticsearch(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
@@ -260,7 +259,7 @@ class ElasticSearchOperations:
                             if val['Value'] == 'owned':
                                 cluster_owned = val['Key']
                     # ec2 - MUST: every fix, change also cluster title
-                    # title:  user | cost($) | state | instance type | launch time | name | instance id | cluster owned
+                    # title:  instance id | user | cost($) | state | instance type | launch time | name | cluster owned
                     if item.get('InstanceId'):
                         resource = 'ec2'
                         lt_datetime = datetime.strptime(item['LaunchTime'], '%Y-%m-%dT%H:%M:%S+00:00')
@@ -272,10 +271,10 @@ class ElasticSearchOperations:
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {item['InstanceId']} | {cluster_owned} ")
+                        data_dict['resources_list'].append(f"{item['InstanceId']} | {user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {cluster_owned} ")
 
                     # ebs - MUST: every fix, change also cluster title
-                    # title: user | cost($/month) | state | volume type | create time | size(gb) | name | volume id | cluster owned
+                    # title: volume id | user | cost($/month) | state | volume type | create time | size(gb) | name |  cluster owned
                     if item.get('VolumeId'):
                         resource = 'ebs'
                         lt_datetime = datetime.strptime(item['CreateTime'], '%Y-%m-%dT%H:%M:%S.%f+00:00')
@@ -287,7 +286,7 @@ class ElasticSearchOperations:
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{user} | {ebs_monthly_cost} | {item['State']} | {item['VolumeType']} | {create_time_format} | {item['Size']} | {ec2_ebs_name} |  {item['VolumeId']} | {cluster_owned} ")
+                        data_dict['resources_list'].append(f"{item['VolumeId']} | {user} | {ebs_monthly_cost} | {item['State']} | {item['VolumeType']} | {create_time_format} | {item['Size']} | {ec2_ebs_name} |  {cluster_owned} ")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
@@ -325,7 +324,6 @@ class ElasticSearchOperations:
             return True
         except Exception:
             raise
-
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
