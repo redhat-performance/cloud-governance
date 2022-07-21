@@ -36,6 +36,13 @@ class ZombieNonClusterResources:
             image_ids.append(image.get('ImageId'))
         return image_ids
 
+    def __get_tag_name(self, tags: list):
+        if tags:
+            for tag in tags:
+                if tag.get('Key') == 'Name':
+                    return tag.get('Value')
+        return 'None'
+
     def zombie_snapshots(self):
         """
         This methods removes the zombie snapshots
@@ -47,7 +54,11 @@ class ZombieNonClusterResources:
         for snapshot in snapshots:
             if snapshot.get('Description'):
                 snapshot_images = self.__get_image_ids_from_description(snapshot.get('Description'))
-                if set(snapshot_images) - set(image_ids):
+                found = False
+                for snapshot_image in snapshot_images:
+                    if snapshot_image in image_ids:
+                        found = True
+                if not found:
                     zombie_snapshots.append(snapshot.get('SnapshotId'))
         for zombie_id in zombie_snapshots:
             if self.dry_run == "no":
