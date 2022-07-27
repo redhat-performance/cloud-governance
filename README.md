@@ -112,6 +112,9 @@ sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KE
 # policy=ec2_run
 sudo podman run --rm --name cloud-governance -e policy=ec2_run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 
+# select policy ['ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+sudo podman run --rm --name cloud-governance -e policy=policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes  -e log_level=INFO quay.io/ebattat/cloud-governance
+
 # policy=ebs_unattached
 sudo podman run --rm --name cloud-governance -e policy=ebs_unattached -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance
 

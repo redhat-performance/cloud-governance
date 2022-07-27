@@ -1,7 +1,6 @@
 
 import os
 import typeguard
-from time import strftime
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
@@ -14,12 +13,12 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.zombie_non_cluster.run_zombie_non_cluster_resources import zombie_non_cluster_resource
+from cloud_governance.policy.custom_polices import CustomPolicies
 
 # env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'cost_explorer'
+os.environ['policy'] = 'empty_buckets'
 # os.environ['validate_type'] = 'tags'
 # os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''
@@ -37,7 +36,7 @@ from cloud_governance.zombie_non_cluster.run_zombie_non_cluster_resources import
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['cluster_tag'] = ''
 # os.environ['cluster_tag'] = ''
-# os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
+os.environ['policy_output'] = 's3://redhat-cloud-governance/test'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-test'
@@ -152,8 +151,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         if remove_keys:
             remove_keys = literal_eval(remove_keys)
         tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys, username=username)
-    elif policy == 'zombie_non_cluster_resource':
-        zombie_non_cluster_resource(dry_run=dry_run, region=region)
     elif policy == 'zombie_cluster_resource':
         policy_output = os.environ.get('policy_output', '')
         resource = os.environ.get('resource', '')
@@ -267,6 +264,16 @@ def main():
     es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
+    custom_polices = ['ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+    custom_policy_runner = None
+    is_custom_policy_runner = policy in custom_polices
+    if is_custom_policy_runner:
+        custom_policy_runner = CustomPolicies()
+
+    @logger_time_stamp
+    def run_custom_policy_runner():
+        custom_policy_runner.run()
+
     # 1. ELK Uploader
     if upload_data_es:
         input_data = {'es_host': es_host,
@@ -283,6 +290,8 @@ def main():
         elk_uploader = ESUploader(**input_data)
         elk_uploader.upload_to_es(account=account)
     # 2. POLICY
+    elif is_custom_policy_runner:
+        run_custom_policy_runner()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')
