@@ -21,9 +21,9 @@ class CustomPolicies(NonClusterZombiePolicy):
         for cls in inspect.getmembers(custom_policy_module, inspect.isclass):
             if self._custom_policy.replace('_', '') == cls[0].lower():
                 response = cls[1]().run()
-                logger.info(f'key: {cls[0]}, length: {len(response)}, {response}')
+                logger.info(f'key: {cls[0]}, count: {len(response)}, {response}')
                 if self._policy_output:
                     beautify_data = self._beautify_upload_data(upload_resource_data=response)
                     policy_result = {'count': len(beautify_data), self._custom_policy: beautify_data }
                     logger.info(policy_result)
-                    # self._s3operations.save_results_to_s3(policy=self._custom_policy.replace('_', '-'), policy_output=self._policy_output, policy_result=policy_result)
+                    self._s3operations.save_results_to_s3(policy=self._custom_policy.replace('_', '-'), policy_output=self._policy_output, policy_result=policy_result)

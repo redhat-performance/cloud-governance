@@ -42,7 +42,7 @@ pipeline {
         }
         stage('Upload ElasticSearch') {
             steps {
-                sh 'python3 jenkins/cost_explorer/Jenkinsfile'
+                sh 'python3 jenkins/cost_explorer/run_upload_es.py'
             }
         }
         stage('Finalize Cleanup') {
