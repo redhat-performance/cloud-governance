@@ -74,25 +74,6 @@ for region in regions:
         os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PERF-SCALE' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF_SCALE} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
 
 
-es_index_perf = 'cloud-governance-cost-explorer-perf'
-es_index_psap = 'cloud-governance-cost-explorer-psap'
-es_index_perf_scale = 'cloud-governance-cost-explorer-perf-scale'
-es_index_global = 'cloud-governance-cost-explorer-global'
-
-cost_tags = ['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']
-
-# Cost Explorer upload to ElasticSearch
-cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
-granularity = 'DAILY'  # DAILY/MONTHLY/HOURLY
-os.system(f"""podman run --rm --name cloud-governance -e account='perf-dept' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_perf} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e account='psap' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PSAP} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_psap} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e account='perf-scale' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_perf_scale} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-
-os.system(f"""podman run --rm --name cloud-governance -e account='perf-dept' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_global} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e account='psap' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PSAP} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_global} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e account='perf-scale' -e policy=cost_explorer -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index_global} -e cost_explorer_tags="{cost_tags}" -e granularity={granularity} -e cost_metric={cost_metric} -e log_level=INFO quay.io/ebattat/cloud-governance:latest""")
-
-
 es_index_perf = 'cloud-governance-non-tag-users-perf-dept'
 es_index_psap = 'cloud-governance-non-tag-users-psap'
 es_index_perf_scale = 'cloud-governance-non-tag-users-perf-scale'
