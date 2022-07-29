@@ -30,10 +30,11 @@ def get_custodian_policies(type: str = None):
     policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cloud_governance/policy')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
-            if not type:
-                custodian_policies.append(os.path.splitext(filename)[0])
-            elif type and type in filename:
-                custodian_policies.append(os.path.splitext(filename)[0])
+            if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
+                if not type:
+                    custodian_policies.append(os.path.splitext(filename)[0])
+                elif type and type in filename:
+                    custodian_policies.append(os.path.splitext(filename)[0])
     return custodian_policies
 
 

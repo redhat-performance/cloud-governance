@@ -16,9 +16,9 @@ from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
 from cloud_governance.policy.custom_polices import CustomPolicies
 
 # env tests
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-os.environ['policy'] = 'empty_buckets'
+os.environ['policy'] = 'zombie_elastic_ips'
 # os.environ['validate_type'] = 'tags'
 # os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''
@@ -27,7 +27,7 @@ os.environ['policy'] = 'empty_buckets'
 # os.environ['granularity'] = ''
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
-# os.environ['dry_run'] = 'yes'
+# os.environ['dry_run'] = 'no'
 # os.environ['tag_operation'] = 'read'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
@@ -36,7 +36,7 @@ os.environ['policy'] = 'empty_buckets'
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['cluster_tag'] = ''
 # os.environ['cluster_tag'] = ''
-os.environ['policy_output'] = 's3://redhat-cloud-governance/test'
+# os.environ['policy_output'] = 's3://redhat-cloud-governance/test'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-test'
