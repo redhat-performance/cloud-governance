@@ -3,8 +3,8 @@ import datetime
 
 import boto3
 
-from build.lib.cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
-from build.lib.cloud_governance.common.aws.iam.iam_operations import IAMOperations
+from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
+from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
