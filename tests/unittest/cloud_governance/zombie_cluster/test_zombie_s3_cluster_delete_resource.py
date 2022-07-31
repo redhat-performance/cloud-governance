@@ -2,7 +2,7 @@ import boto3
 from moto import mock_s3, mock_ec2
 
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resource import ZombieClusterResources
 
 
 @mock_ec2

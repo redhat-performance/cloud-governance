@@ -1,6 +1,6 @@
 
 # TEST DRY RUN: delete=False
-from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resource import ZombieClusterResources
 
 
 zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False, region='us-east-2')

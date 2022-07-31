@@ -1,7 +1,7 @@
 import typeguard
 
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resource import ZombieClusterResources
 
 
 @typeguard.typechecked
