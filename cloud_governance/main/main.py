@@ -18,7 +18,7 @@ from cloud_governance.zombie_non_cluster.zombie_non_cluster_polices import Zombi
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'zombie_cluster_resources'
+# os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['validate_type'] = 'tags'
 # os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''

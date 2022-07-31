@@ -4,7 +4,7 @@ from moto import mock_iam, mock_ec2
 import boto3
 
 from cloud_governance.common.aws.utils.utils import Utils
-from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resource import ZombieClusterResources
 
 
 EC2_POLICY = {
