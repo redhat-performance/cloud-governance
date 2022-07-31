@@ -30,10 +30,11 @@ def get_custodian_policies(type: str = None):
     policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cloud_governance/policy')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
-            if not type:
-                custodian_policies.append(os.path.splitext(filename)[0])
-            elif type and type in filename:
-                custodian_policies.append(os.path.splitext(filename)[0])
+            if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
+                if not type:
+                    custodian_policies.append(os.path.splitext(filename)[0])
+                elif type and type in filename:
+                    custodian_policies.append(os.path.splitext(filename)[0])
     return custodian_policies
 
 
@@ -62,6 +63,7 @@ for region in regions:
         os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='RH-PERF' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_RH_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RH_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RH_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PERF-SCALE' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF_SCALE} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
 
+
 print("Upload data to ElasticSearch - zombie index")
 es_index = 'cloud-governance-zombie-index'
 es_doc_type = '_doc'
@@ -73,6 +75,17 @@ for region in regions:
         os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='RH-PERF' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_RH_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RH_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RH_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PERF-SCALE' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF_SCALE} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
 
+
+print("Upload data to ElasticSearch - empty index")
+es_index = 'cloud-governance-zombie-empty-index'
+es_doc_type = '_doc'
+policies = get_custodian_policies(type='empty')
+for region in regions:
+    for policy in policies:
+        os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PERF-DPET' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+        os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PSAP' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PSAP} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PSAP} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+        os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='RH-PERF' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_RH_PERF} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RH_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RH_PERF} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+        os.system(f"podman run --rm --name cloud-governance -e upload_data_es='upload_data_es' -e account='PERF-SCALE' -e es_host={ES_HOST} -e es_port={ES_PORT} -e es_index={es_index} -e es_doc_type={es_doc_type} -e bucket={BUCKET_PERF_SCALE} -e policy={policy} -e AWS_DEFAULT_REGION={region} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
 
 es_index_perf = 'cloud-governance-non-tag-users-perf-dept'
 es_index_psap = 'cloud-governance-non-tag-users-psap'

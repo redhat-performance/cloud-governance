@@ -7,5 +7,10 @@ policies:
      - type: value 
        key: "State"
        value: "available"
+     - not:
+         - type: value
+           key: "tag:Policy"
+           op: in
+           value: [ NOT_DELETE, not_delete, notdelete, NOTDELETE, not-delete, NOT-DELETE,Not_Delete, not_Delete ]
    actions:
      - delete

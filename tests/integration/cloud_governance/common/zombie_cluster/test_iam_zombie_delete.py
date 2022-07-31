@@ -4,7 +4,7 @@ from datetime import datetime
 import boto3
 
 from cloud_governance.common.aws.utils.utils import Utils
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
 
 
 def test_iam_zombie_user_create_and_delete():

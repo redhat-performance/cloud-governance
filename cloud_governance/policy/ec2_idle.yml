@@ -19,5 +19,10 @@ policies:
         value: 10000
         op: lt
         days: 7
+      - not:
+          - type: value
+            key: "tag:Policy"
+            op: in
+            value: [ NOT_DELETE, not_delete, notdelete, NOTDELETE, not-delete, NOT-DELETE,Not_Delete, not_Delete ]
     actions:
       - stop
