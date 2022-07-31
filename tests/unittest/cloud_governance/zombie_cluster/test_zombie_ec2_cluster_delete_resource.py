@@ -1,7 +1,7 @@
 import boto3
 import pytest
 from moto import mock_ec2, mock_elb, mock_elbv2, mock_s3
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 
 tags = [

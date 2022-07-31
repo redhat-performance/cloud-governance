@@ -13,12 +13,12 @@ from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
 from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.policy.custom_polices import CustomPolicies
+from cloud_governance.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
 
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'cost_exploer'
+# os.environ['policy'] = 'zombie_cluster_resources'
 # os.environ['validate_type'] = 'tags'
 # os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''
@@ -72,10 +72,11 @@ def get_custodian_policies(type: str = None):
     policies_path = os.path.join(os.path.dirname(__file__), 'policy')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
-            if not type:
-                custodian_policies.append(os.path.splitext(filename)[0])
-            elif type and type in filename:
-                custodian_policies.append(os.path.splitext(filename)[0])
+            if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
+                if not type:
+                    custodian_policies.append(os.path.splitext(filename)[0])
+                elif type and type in filename:
+                    custodian_policies.append(os.path.splitext(filename)[0])
     return custodian_policies
 
 
@@ -86,7 +87,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     This method run policy per region, first the custom policy and after custodian policy
     :return:
     """
-    # Custom policy Tag Cluster
+    # policy Tag Cluster
     if policy == 'tag_resources':
         cluster_name = os.environ.get('resource_name', '')
         mandatory_tags = os.environ.get('mandatory_tags', {})
@@ -264,15 +265,15 @@ def main():
     es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
-    custom_polices = ['ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
-    custom_policy_runner = None
-    is_custom_policy_runner = policy in custom_polices
-    if is_custom_policy_runner:
-        custom_policy_runner = CustomPolicies()
+    zombie_non_cluster_polices = ['ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+    zombie_non_cluster_polices_runner = None
+    is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices
+    if is_zombie_non_cluster_polices_runner:
+        zombie_non_cluster_polices_runner = ZombieNonClusterPolicies()
 
     @logger_time_stamp
-    def run_custom_policy_runner():
-        custom_policy_runner.run()
+    def run_zombie_non_cluster_polices_runner():
+        zombie_non_cluster_polices_runner.run()
 
     # 1. ELK Uploader
     if upload_data_es:
@@ -282,7 +283,7 @@ def main():
                       'es_doc_type': es_doc_type,
                       'es_add_items': {'account': account},
                       'bucket': bucket,
-                      'logs_bucket_key': 'test',
+                      'logs_bucket_key': 'logs',
                       's3_file_name': 'resources.json',
                       'region': region_env,
                       'policy': policy,
@@ -290,8 +291,8 @@ def main():
         elk_uploader = ESUploader(**input_data)
         elk_uploader.upload_to_es(account=account)
     # 2. POLICY
-    elif is_custom_policy_runner:
-        run_custom_policy_runner()
+    elif is_zombie_non_cluster_polices_runner:
+        run_zombie_non_cluster_polices_runner()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')

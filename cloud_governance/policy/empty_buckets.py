@@ -1,7 +1,7 @@
 from botocore.exceptions import ClientError
 
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.policy.non_cluster_zombie_policy import NonClusterZombiePolicy
+from cloud_governance.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
 class EmptyBuckets(NonClusterZombiePolicy):

@@ -4,7 +4,7 @@ from datetime import datetime
 import boto3
 
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
 
 short_random_id = str(uuid.uuid1())[0:4]
 BUCKET_NAME = f'integration-test-ocp-{short_random_id}-image-registry'

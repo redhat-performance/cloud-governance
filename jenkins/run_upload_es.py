@@ -77,7 +77,7 @@ for region in regions:
 
 
 print("Upload data to ElasticSearch - empty index")
-es_index = 'cloud-governance-empty-index'
+es_index = 'cloud-governance-zombie-empty-index'
 es_doc_type = '_doc'
 policies = get_custodian_policies(type='empty')
 for region in regions:

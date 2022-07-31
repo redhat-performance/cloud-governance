@@ -7,7 +7,7 @@ from build.lib.cloud_governance.common.aws.cloudtrail.cloudtrail_operations impo
 from build.lib.cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
 
 
 class NonClusterZombiePolicy:
@@ -16,7 +16,7 @@ class NonClusterZombiePolicy:
         self._account = os.environ.get('account', '')
         self._dry_run = os.environ.get('dry_run', 'yes')
         self._region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
-        self._custom_policy = os.environ.get('policy', '')
+        self._policy = os.environ.get('policy', '')
         self._policy_output = os.environ.get('policy_output', '')
         self._ec2_client = boto3.client('ec2', region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)

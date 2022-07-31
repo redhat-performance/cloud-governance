@@ -1,10 +1,9 @@
-import datetime
 from datetime import date
 
 import boto3
 
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
-from cloud_governance.zombie_cluster.zombie_cluster_resouces import ZombieClusterResources
+from cloud_governance.policy.zombie_cluster_resouce import ZombieClusterResources
 
 
 def create_vpc():
