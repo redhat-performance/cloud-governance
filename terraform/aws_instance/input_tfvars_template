@@ -1,0 +1,11 @@
+instance_details = {
+    "small_instance" = {
+      "image_id" = "{{ image_id }}"
+      "instance_type" = "{{ instance_type }}"
+      "tags" = {
+      {% for key, value in tags.items() %}
+            {{ key }} = "{{ value }}"
+      {% endfor %}
+             }
+    }
+}
