@@ -38,14 +38,50 @@ jobs:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: us-east-2
+      - name: Install terraform and terragrunt
+        run: |
+          # Install Terrafrom
+          sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get -y update && sudo apt-get install -y terraform
+          pip3 install jinja2
+          # install terragrunt
+          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
+          mv terragrunt_linux_amd64 terragrunt
+          mv terragrunt /usr/local/bin/terragrunt
+          chmod 775 /usr/local/bin/terragrunt
+      - name: Create Terraform AWS instance
+        env:
+          IMAGE_ID: ${{ secrets.IMAGE_ID }}
+          INSTANCE_TYPE: ${{ secrets.INSTANCE_TYPE }}
+          ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+          ROLE_NAME: ${{ secrets.ROLE_NAME }}
+          REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
+          TAG_NAME: ${{ secrets.TAG_NAME }}
+        run: |
+          cd terraform/aws_instance
+          # terrafrom apply
+          terragrunt apply -auto-approve 1> /dev/null
+          echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_ENV"
       - name: 📃 Unittest and Integration tests with pytest
         env:
           BUCKET: ${{ secrets.BUCKET }}
           REGION: ${{ secrets.REGION }}
+          INSTANCE_ID: ${{ env.INSTANCE_ID }}
         run: |
           pytest --cov=cloud_governqance --cov-report=term-missing
           coverage run -m pytest
           coverage report -m
+      - name: Destroy AWS Terraform instance
+        env:
+          ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+          ROLE_NAME: ${{ secrets.ROLE_NAME }}
+          REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
+        run: |
+          cd terraform/aws_instance
+          # terraform destroy/
+          terragrunt destroy -auto-approve 1> /dev/null
       - name: 🎥 Publish to coveralls.io
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
