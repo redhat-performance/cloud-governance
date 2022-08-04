@@ -69,9 +69,13 @@ def test_update_snapshots():
     :return:
     """
     tag_resources = TagNonClusterResources(input_tags=mandatory_tags, dry_run='no')
-    ec2_client = boto3.client('ec2')
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    snapshots = ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+    images = ec2_client.describe_images()['Images']
+    for image in images:
+        ec2_client.deregister_image(ImageId=image.get('ImageId'))
+    for snapshot in snapshots:
+        ec2_client.delete_snapshot(SnapshotId=snapshot.get('SnapshotId'))
     volume = ec2_client.create_volume(AvailabilityZone=region_name, Size=123)
     ec2_client.create_snapshot(VolumeId=volume['VolumeId'])
-    assert len(tag_resources.update_snapshots()) >= 1
-
-
+    assert len(tag_resources.update_snapshots()) == 1

@@ -206,3 +206,9 @@ fabric.properties
 filled_test_environment_variables.py
 empty_test_environment_variables.py
 /venv.sh
+
+/terraform/aws_instance/.terraform*
+/terraform/aws_instance/terraform.tfstate
+/terraform/aws_instance/terraform.tfstate.backup
+/terraform/aws_instance/provider.tf
+/terraform/aws_instance/input_vars.tfvars

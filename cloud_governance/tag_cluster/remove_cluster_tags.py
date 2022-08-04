@@ -8,55 +8,20 @@ from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.tag_cluster.tag_cluster_operations import TagClusterOperations
 from cloud_governance.tag_non_cluster.remove_non_cluster_tags import RemoveNonClusterTags
 
 
-class RemoveClusterTags:
+class RemoveClusterTags(TagClusterOperations):
     """
     This class removes the tags of cluster resources
     """
 
     def __init__(self, input_tags: dict, cluster_name: str = None, cluster_prefix: str = None,
                  region: str = 'us-east-2', cluster_only: bool = False):
-        self.cluster_only = cluster_only
-        self.utils = Utils(region=region)
-        self.ec2_operations = EC2Operations(region=region)
-        self.ec2_client = boto3.client('ec2', region_name=region)
-        self.elb_client = boto3.client('elb', region_name=region)
-        self.elbv2_client = boto3.client('elbv2', region_name=region)
-        self.iam_client = boto3.client('iam', region_name=region)
-        self.iam_operations = IAMOperations()
-        self.s3_client = boto3.client('s3')
-        self.cluster_prefix = cluster_prefix
-        self.cluster_name = cluster_name
-        self.input_tags = input_tags
+        super().__init__(cluster_name=cluster_name, cluster_prefix=cluster_prefix, input_tags=input_tags, region=region, dry_run='no', cluster_only=cluster_only)
         self.__get_details_resource_list = Utils().get_details_resource_list
-        self.__get_username_from_instance_id_and_time = CloudTrailOperations(
-            region_name=region).get_username_by_instance_id_and_time
         self.non_cluster_update = RemoveNonClusterTags(region=region, dry_run='no', input_tags=input_tags)
-
-
-    def __get_instances_data(self):
-        """
-        This method go over all instances
-        @return:
-        """
-        instances_list = []
-        ec2s_data = self.ec2_operations.get_instances()
-        for items in ec2s_data:
-            if items.get('Instances'):
-                instances_list.append(items['Instances'])
-        return instances_list
-
-    def __input_tags_list_builder(self):
-        """
-        This method build tags list according to input tags dictionary
-        @return:
-        """
-        tags_list = []
-        for key, value in self.input_tags.items():
-            tags_list.append({'Key': key, 'Value': value})
-        return tags_list
 
     def get_tags(self, tags: list):
         """
@@ -83,38 +48,23 @@ class RemoveClusterTags:
         if tags_dict.get('LaunchTime'):
             username = tags_dict.get('User')
             if not username:
-                username = self.__get_username_from_instance_id_and_time(
+                username = self._get_username_from_instance_id_and_time(
                     start_time=datetime.strptime(tags_dict.get('LaunchTime'), '%Y/%m/%d %H:%M:%S'),
                     resource_id=instance_list[0],
                     resource_type='AWS::EC2::Instance')
             if username == 'AutoScaling':
-                added_tags.append({'Key': 'User', 'Value': username})
-                added_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
-                added_tags.append(({'Key': 'Email', 'Value': 'NA'}))
-                added_tags.append(({'Key': 'Project', 'Value': 'NA'}))
-                added_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
-                added_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
+                added_tags.extend(self._fill_na_tags(user=username))
             elif username == 'NA':
-                added_tags.append({'Key': 'User', 'Value': username})
-                added_tags.append(({'Key': 'Manager', 'Value': username}))
-                added_tags.append(({'Key': 'Email', 'Value': username}))
-                added_tags.append(({'Key': 'Environment', 'Value': username}))
-                added_tags.append(({'Key': 'Project', 'Value': username}))
-                added_tags.append(({'Key': 'Owner', 'Value': username}))
+                added_tags.extend(self._fill_na_tags())
             else:
                 user_tags = self.iam_operations.get_user_tags(username=username)
                 if user_tags:
                     added_tags.extend(user_tags)
                 else:
-                    added_tags.append({'Key': 'User', 'Value': username})
-                    added_tags.append(({'Key': 'Manager', 'Value': 'NA'}))
-                    added_tags.append(({'Key': 'Email', 'Value': 'NA'}))
-                    added_tags.append(({'Key': 'Project', 'Value': 'NA'}))
-                    added_tags.append(({'Key': 'Environment', 'Value': 'NA'}))
-                    added_tags.append(({'Key': 'Owner', 'Value': 'NA'}))
+                    added_tags.extend(self._fill_na_tags(user=username))
             added_tags.append({'Key': 'LaunchTime', 'Value': tags_dict.get('LaunchTime')})
             added_tags.append({'Key': 'Email', 'Value': f'{username}@redhat.com'})
-            added_tags.extend(self.__input_tags_list_builder())
+            added_tags.extend(self._input_tags_list_builder())
             self.ec2_client.delete_tags(Resources=instance_list, Tags=added_tags)
             logger.info(f'InstanceId :: {instance_list} {added_tags}')
         return added_tags
@@ -169,7 +119,7 @@ class RemoveClusterTags:
         This method removes the tags of cluster and non-cluster
         @return:
         """
-        instance_list = self.__get_instances_data()
+        instance_list = self._get_instances_data()
         cluster, non_cluster = self.ec2_operations.scan_cluster_or_non_cluster_instance(instance_list)
         queue = Queue()
         if not self.cluster_only:
@@ -213,7 +163,7 @@ class RemoveClusterTags:
         for cluster_name, resource_ids in cluster_resources.items():
             if instance_tags.get(cluster_name):
                 self.ec2_client.delete_tags(Resources=resource_ids, Tags=instance_tags.get(cluster_name))
-            logger.info(f'{resource_id} :: {resource_ids} {instance_tags.get(cluster_name)}')
+            logger.info(f'{resource_id}:: {cluster_name}, count: {len(resource_ids)}, {resource_ids} {instance_tags.get(cluster_name)}')
 
     def cluster_volume(self, instance_tags: dict):
         """
@@ -351,7 +301,8 @@ class RemoveClusterTags:
         tags_remove_ids = []
         for cluster_name, cluster_ids in cluster_resources.items():
             for cluster_id in cluster_ids:
-                self.elbv2_client.remove_tags(ResourceArns=[cluster_id], TagKeys=self.tag_keys(instance_tags.get(cluster_name)))
+                if self.tag_keys(instance_tags.get(cluster_name)):
+                    self.elbv2_client.remove_tags(ResourceArns=[cluster_id], TagKeys=self.tag_keys(instance_tags.get(cluster_name)))
             logger.info(f'LoadBalancerArn :: {cluster_ids} {instance_tags.get(cluster_name)}')
             tags_remove_ids.extend(cluster_ids)
         return len(tags_remove_ids)
@@ -539,7 +490,7 @@ class RemoveClusterTags:
                         self.iam_client.untag_user(UserName=user_name, TagKeys=keys)
                         usernames.append(user_name)
                         tags = list(instance_tags.get(full_name))
-            logger.info(f'UserName :: {usernames} {tags}')
+            logger.info(f'IAM Users : {usernames}, {tags}')
             user_ids.extend(usernames)
         return user_ids
 
