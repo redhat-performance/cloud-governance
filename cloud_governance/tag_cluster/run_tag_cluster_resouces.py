@@ -1,7 +1,6 @@
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.tag_cluster.remove_cluster_tags import RemoveClusterTags
 from cloud_governance.tag_cluster.tag_cluster_resouces import TagClusterResources
-from multiprocessing import Process
 
 
 def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', tag_operation: str = 'yes', cluster_only: bool = False):
@@ -67,6 +66,7 @@ def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: di
     func_resource_list = [remove_cluster_tags.cluster_instance,
                           remove_cluster_tags.cluster_volume,
                           remove_cluster_tags.cluster_images,
+                          remove_cluster_tags.cluster_snapshot,
                           remove_cluster_tags.cluster_load_balancer,
                           remove_cluster_tags.cluster_load_balancer_v2,
                           remove_cluster_tags.cluster_network_interface,
