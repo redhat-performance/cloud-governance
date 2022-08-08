@@ -1,6 +1,8 @@
 import boto3
 from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
+from cloud_governance.common.logger.init_logger import logger
+
 
 class DynamoDbOperations:
 
@@ -10,6 +12,7 @@ class DynamoDbOperations:
         self.__iam_client = boto3.client('iam')
         self.__serializer = TypeSerializer()
         self.__deserializer = TypeDeserializer()
+        self.__db_resource = boto3.resource('dynamodb', region_name=self.__region_name)
 
     def __get_default_user_tags(self):
         user = self.__iam_client.get_user()['User']
@@ -17,7 +20,7 @@ class DynamoDbOperations:
             return user.get('Tags')
         return [{'Key': 'User', 'Value': user.get('UserName')}]
 
-    def __serialize_data_dynamodb_data(self, item: dict):
+    def serialize_data_dynamodb_data(self, item: dict):
         """
         This method return the dict of DynamoDb data
         @param item:
@@ -25,7 +28,7 @@ class DynamoDbOperations:
         """
         return {key: self.__serializer.serialize(value) for key, value in item.items()}
 
-    def __deserialize_dynamodb_data(self, item: dict):
+    def deserialize_dynamodb_data(self, item: dict):
         """
         This method deserialize the dynamodb data to dict
         @param item:
@@ -69,11 +72,16 @@ class DynamoDbOperations:
         @return:
         """
         try:
-            table = self.__db_client.Table(table_name)
+            responses = []
+            table = self.__db_resource.Table(table_name)
             response = table.scan(**scan_kwargs)
-            return response
+            responses.extend(response['Items'])
+            while response.get('LastEvaluatedKey'):
+                response = table.scan(**scan_kwargs, ExclusiveStartKey=response['LastEvaluatedKey'])
+                responses.extend(response['Items'])
+            return responses
         except Exception as err:
-            print(err)
+            logger.info(err)
 
     def get_item(self, table_name: str, key_name: str, item_type: str, item: str):
         """ This method get item """
@@ -93,9 +101,12 @@ class DynamoDbOperations:
         except Exception as err:
             raise
 
-
-db = DynamoDbOperations(region_name='ap-south-1')
-db.create_table(table_name='athiruma-test', key_name='roll_no')
-
-
-
+    # def batch_write(self, table_name: str, items: list):
+    #     """
+    #     This method groups put_item into the dynamoDb
+    #     @return:
+    #     """
+    #     table_resource = self.__db_resource.Table(table_name)
+    #     with table_resource.batch_writer() as writer:
+    #         for item in items:
+    #             writer.put_item(Item=item)
