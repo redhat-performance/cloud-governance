@@ -1,4 +1,5 @@
 import os
+from operator import le
 
 import boto3
 from moto import mock_s3, mock_ec2
@@ -19,7 +20,7 @@ def test_empty_buckets():
     s3_client = boto3.client('s3', region_name='us-east-1')
     s3_client.create_bucket(Bucket='cloud-governance-test-s3-empty-delete', CreateBucketConfiguration={'LocationConstraint': 'us-east-2'})
     empty_buckets = EmptyBuckets()
-    empty_buckets.run()
+    empty_buckets._EmptyBuckets__delete_empty_bucket(sign=le, bucket_days=0)
     buckets = s3_client.list_buckets()['Buckets']
     assert len(buckets) == 0
 
@@ -40,7 +41,6 @@ def test_empty_buckets_not_delete():
     s3_client.create_bucket(Bucket='cloud-governance-test-s3-empty-delete', CreateBucketConfiguration={'LocationConstraint': 'us-east-2'})
     s3_client.put_bucket_tagging(Bucket='cloud-governance-test-s3-empty-delete', Tagging={'TagSet': tags})
     empty_buckets = EmptyBuckets()
-    empty_buckets.run()
+    empty_buckets._EmptyBuckets__delete_empty_bucket(sign=le, bucket_days=0)
     buckets = s3_client.list_buckets()['Buckets']
     assert len(buckets) == 1
-

@@ -18,6 +18,12 @@ AWS_ACCESS_KEY_ID_RH_PERF = os.environ['AWS_ACCESS_KEY_ID_RH_PERF']
 AWS_SECRET_ACCESS_KEY_RH_PERF = os.environ['AWS_SECRET_ACCESS_KEY_RH_PERF']
 BUCKET_RH_PERF = os.environ['BUCKET_RH_PERF']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
+SENDER_MAIL = os.environ['SENDER_MAIL']
+SENDER_PASSWORD = os.environ['SENDER_PASSWORD']
+special_user_mails = os.environ['CLOUD_GOVERNANCE_SPECIAL_USER_MAILS']
+
 LOGS = os.environ.get('LOGS', 'logs')
 
 
@@ -49,10 +55,18 @@ for region in regions:
             os.system(f"podman run --rm --name cloud-governance -e account='PERF-DEPT' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
             os.system(f"podman run --rm --name cloud-governance -e account='PSAP' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PSAP} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PSAP}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
             os.system(f"podman run --rm --name cloud-governance -e account='PERF-SCALE' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PERF_SCALE}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+        elif policy in ('ec2_stop', 'ec2_idle', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots'):
+            os.system(f"podman run --rm --name cloud-governance -e account='PERF-DEPT' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+            os.system(f"podman run --rm --name cloud-governance -e account='PERF-SCALE' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e AWS_DEFAULT_REGION={region} -e dry_run=no -e policy_output=s3://{BUCKET_PERF_SCALE}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e account='PERF-DEPT' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e account='PSAP' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_PSAP} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_PSAP} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PSAP}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e account='RH-PERF' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_RH_PERF} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_RH_PERF} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_RH_PERF}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
         os.system(f"podman run --rm --name cloud-governance -e account='PERF-SCALE' -e policy={policy} -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e AWS_DEFAULT_REGION={region} -e dry_run=yes -e policy_output=s3://{BUCKET_PERF_SCALE}/{LOGS}/{region} -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+
+# Update AWS IAM User tags
+os.system(f"podman run --rm --name cloud-governance -e account='PERF-DEPT' -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e user_tag_operation=update -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+os.system(f"podman run --rm --name cloud-governance -e account='PERF-SCALE' -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e user_tag_operation=update -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
+os.system(f"podman run --rm --name cloud-governance -e account='PSAP' -e policy=tag_iam_user -e AWS_ACCESS_KEY_ID={AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE} -e AWS_SECRET_ACCESS_KEY={AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE} -e user_tag_operation=update -e log_level=INFO quay.io/ebattat/cloud-governance:latest")
 
 # Gitleaks run on github not related to any aws account
 print("run gitleaks")
