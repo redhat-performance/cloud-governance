@@ -59,7 +59,7 @@ class EC2Idle(NonClusterZombiePolicy):
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
-        return running_idle_instances.values()
+        return list(running_idle_instances.values())
 
     def __get_metrics_average(self, metric_list: list, metric_period: int):
         """
