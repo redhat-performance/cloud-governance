@@ -24,6 +24,26 @@ class EC2Idle(NonClusterZombiePolicy):
         super().__init__()
         self._cloudwatch = CloudWatchOperations(region=self._region)
 
+    def __organise_instance_data(self, instances_data: list):
+        """
+        This method convert all datetime into string
+        @param instances_data:
+        @return:
+        """
+        organize_data = []
+        for instance in instances_data:
+            instance['LaunchTime'] = str(instance['LaunchTime'])
+            for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
+                instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = str(device_mappings['Ebs']['AttachTime'])
+            for index, network_interface in enumerate(instance['NetworkInterfaces']):
+                instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = str(
+                    network_interface['Attachment']['AttachTime'])
+            instance['UsageOperationUpdateTime'] = str(instance['UsageOperationUpdateTime'])
+            for index, metric in enumerate(instance['metrics']):
+                instance['metrics'][index]['Timestamps'] = [str(date) for date in metric['Timestamps']]
+            organize_data.append(instance)
+        return organize_data
+
     def run(self):
         """
         This method list all stopped instances for more than 30 days and terminate if dry_run no
@@ -59,7 +79,7 @@ class EC2Idle(NonClusterZombiePolicy):
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
-        return list(running_idle_instances.values())
+        return self.__organise_instance_data(list(running_idle_instances.values()))
 
     def __get_metrics_average(self, metric_list: list, metric_period: int):
         """
