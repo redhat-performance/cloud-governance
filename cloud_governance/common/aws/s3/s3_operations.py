@@ -15,7 +15,11 @@ class S3Operations:
     """ This class is responsible for S3 operations """
 
     def __init__(self, region_name,  report_file_name: str = "zombie_report.json", resource_file_name: str = "resources.json.gz"):
-        self.__s3_client = boto3.client('s3', region_name=region_name)
+        #  @Todo ask AWS support regarding about this issue
+        if region_name == 'eu-south-1':
+            self.__s3_client = boto3.client('s3', region_name='us-east-1')
+        else:
+            self.__s3_client = boto3.client('s3', region_name=region_name)
         self.__region = region_name
         self.__report_file_name = report_file_name
         self.__resource_file_name = resource_file_name
