@@ -19,7 +19,7 @@ class EmptyBuckets(NonClusterZombiePolicy):
         This method return all Empty buckets and delete if dry_run no
         @return:
         """
-        self.__delete_empty_bucket(bucket_days=self.BUCKET_DAYS, sign=ge)
+        return self.__delete_empty_bucket(bucket_days=self.BUCKET_DAYS, sign=ge)
 
     def __delete_empty_bucket(self, bucket_days: int, sign: operator = ge):
         """
