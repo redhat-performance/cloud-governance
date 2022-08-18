@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-slave'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm -u root -v /tmp/cloud-governance/:/var/lib/containers --privileged'
+            args  '--rm -u root -v /tmp/cloud-governance-cost/:/var/lib/containers --privileged'
         }
     }
     environment {

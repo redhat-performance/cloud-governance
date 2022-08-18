@@ -32,8 +32,9 @@ def test_tag_non_cluster_update_ec2():
     This method tests, tags are updated to the specific instance or not
     @return:
     """
-    tags = ['User', 'Budget', 'Email', 'Owner', 'Manager', 'Project', 'Environment', 'LaunchTime']
+    expected_tags = ['User', 'Budget', 'Email', 'Owner', 'Manager', 'Project', 'Environment', 'LaunchTime', 'Name']
     instance_tags = ec2_client.describe_tags(Filters=[{'Name': 'resource-id',
                                                        'Values': [INSTANCE_ID]}])['Tags']
-    tag_keys = [tag.get('Key') for tag in instance_tags]
-    assert set(tags).issubset(set(tag_keys))
+    actual_tags = [tag.get('Key') for tag in instance_tags]
+    assert len(expected_tags) == len(actual_tags)
+    assert expected_tags.sort() == actual_tags.sort()
