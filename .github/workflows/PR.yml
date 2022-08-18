@@ -65,13 +65,11 @@ jobs:
         # terrafrom apply
         terragrunt apply -auto-approve 1> /dev/null
         echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_ENV"
-        echo "USER_NAME=$(terragrunt output -raw user_name)" >> "$GITHUB_ENV"
     - name: 📃 Unittest and Integration tests with pytest
       env:
         BUCKET: ${{ secrets.BUCKET }}
         REGION: ${{ secrets.REGION }}
         INSTANCE_ID: ${{ env.INSTANCE_ID }}
-        USER_NAME: ${{ env.USER_NAME }}
       run: |
         python -m pytest
     - name: Destroy instance
