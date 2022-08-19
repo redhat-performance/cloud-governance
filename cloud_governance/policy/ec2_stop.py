@@ -50,7 +50,7 @@ class EC2Stop(NonClusterZombiePolicy):
                     else:
                         logger.info('User is missing')
                 if sign(days, instance_days):
-                    if days == delete_instance_days:
+                    if days >= delete_instance_days:
                         stopped_instance_tags[resource.get('InstanceId')] = resource.get('Tags')
                     stopped_instances.append([resource.get('InstanceId'), self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
                                               self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'), str(resource.get('LaunchTime')),
@@ -59,6 +59,7 @@ class EC2Stop(NonClusterZombiePolicy):
         if self._dry_run == "no":
             for instance_id, tags in stopped_instance_tags.items():
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
+                    tags.append({'Key': 'Policy', 'Value': 'backup'})
                     tag_specifications = [{'ResourceType': 'image', 'Tags': tags}]
                     if sign == ge:
                         tag_specifications.append({'ResourceType': 'snapshot', 'Tags': tags})
