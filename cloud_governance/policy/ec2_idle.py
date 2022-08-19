@@ -19,6 +19,7 @@ class EC2Idle(NonClusterZombiePolicy):
     CPU_UTILIZATION_PERCENTAGE = 2
     NETWORK_IN_BYTES = 5000
     NETWORK_OUT_BYTES = 5000
+    INSTANCE_LAUNCH_DAYS = 4
 
     def __init__(self):
         super().__init__()
@@ -32,21 +33,29 @@ class EC2Idle(NonClusterZombiePolicy):
         """
         organize_data = []
         for instance in instances_data:
-            instance['LaunchTime'] = str(instance['LaunchTime'])
+            instance['LaunchTime'] = instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
             for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
-                instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = str(device_mappings['Ebs']['AttachTime'])
+                instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
             for index, network_interface in enumerate(instance['NetworkInterfaces']):
-                instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = str(
-                    network_interface['Attachment']['AttachTime'])
-            instance['UsageOperationUpdateTime'] = str(instance['UsageOperationUpdateTime'])
+                instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = network_interface['Attachment']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+            if instance.get('UsageOperationUpdateTime'):
+                instance['UsageOperationUpdateTime'] = instance['UsageOperationUpdateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
             for index, metric in enumerate(instance['metrics']):
-                instance['metrics'][index]['Timestamps'] = [str(date) for date in metric['Timestamps']]
+                instance['metrics'][index]['Timestamps'] = [date.strftime("%Y-%m-%dT%H:%M:%S+00:00") for date in metric['Timestamps']]
             organize_data.append(instance)
         return organize_data
 
     def run(self):
         """
-        This method list all stopped instances for more than 30 days and terminate if dry_run no
+        This method list all idle instances and stop if it is idle since 4 days
+        @return:
+        """
+        return self.__stop_idle_instances(instance_launch_days=self.INSTANCE_LAUNCH_DAYS)
+
+    def __stop_idle_instances(self, instance_launch_days: int):
+        """
+        This method list all idle instances and stop  if it s idle since 4 days
+        @param instance_launch_days:
         @return:
         """
         instances = self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])['Reservations']
@@ -55,25 +64,27 @@ class EC2Idle(NonClusterZombiePolicy):
         for instance in instances:
             for resource in instance['Instances']:
                 launch_days = self.__get_time_difference(launch_time=resource.get('LaunchTime'))
-                if launch_days > 4:
+                if launch_days > instance_launch_days:
                     instance_id = resource.get('InstanceId')
                     metrics_2_days = self.__get_metrics_from_cloud_watch(instance_id=instance_id, instance_period=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS)
                     cpu_metric_2_days, network_in_2_days, network_out_2_days = self.__get_proposed_metrics(metrics=metrics_2_days, metric_period=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS)
                     if cpu_metric_2_days < self.CPU_UTILIZATION_PERCENTAGE and network_in_2_days < self.NETWORK_IN_BYTES and network_out_2_days < self.NETWORK_OUT_BYTES:
-                        resource['metrics'] = metrics_2_days
-                        running_idle_instances[instance_id] = resource
+                        if not self._ec2_operations.is_cluster_resource(resource_id=instance_id):
+                            resource['metrics'] = metrics_2_days
+                            running_idle_instances[instance_id] = resource
                         user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                         if user:
                             resource_metrics = [str(cpu_metric_2_days), str(network_in_2_days), str(network_out_2_days)]
                             self.__trigger_mail(user=user, resource_id=instance_id, metrics=resource_metrics)
                         else:
                             logger.info('User is missing')
-                    metrics_4_days = self.__get_metrics_from_cloud_watch(instance_id=instance_id, instance_period=self.STOP_INSTANCE_IDLE_DAYS)
-                    cpu_metric_4_days, network_in_4_days, network_out_4_days = self.__get_proposed_metrics(metrics=metrics_4_days, metric_period=self.STOP_INSTANCE_IDLE_DAYS)
-                    if cpu_metric_4_days < self.CPU_UTILIZATION_PERCENTAGE and network_in_4_days < self.NETWORK_IN_BYTES and network_out_4_days < self.NETWORK_OUT_BYTES:
-                        resource['metrics'] = metrics_4_days
-                        running_idle_instances[instance_id] = resource
-                        running_instance_tags[instance_id] = resource.get('Tags')
+                    if not self._ec2_operations.is_cluster_resource(resource_id=instance_id):
+                        metrics_4_days = self.__get_metrics_from_cloud_watch(instance_id=instance_id, instance_period=self.STOP_INSTANCE_IDLE_DAYS)
+                        cpu_metric_4_days, network_in_4_days, network_out_4_days = self.__get_proposed_metrics(metrics=metrics_4_days, metric_period=self.STOP_INSTANCE_IDLE_DAYS)
+                        if cpu_metric_4_days < self.CPU_UTILIZATION_PERCENTAGE and network_in_4_days < self.NETWORK_IN_BYTES and network_out_4_days < self.NETWORK_OUT_BYTES:
+                            resource['metrics'] = metrics_4_days
+                            running_idle_instances[instance_id] = resource
+                            running_instance_tags[instance_id] = resource.get('Tags')
         if self._dry_run == "no":
             for instance_id, tags in running_instance_tags.items():
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
