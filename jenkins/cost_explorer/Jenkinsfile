@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            label 'cloud-governance-slave'
+            label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
             args  '--rm -u root -v /tmp/cloud-governance-cost/:/var/lib/containers --privileged'
         }
