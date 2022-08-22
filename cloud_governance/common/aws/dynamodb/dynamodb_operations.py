@@ -15,10 +15,13 @@ class DynamoDbOperations:
         self.__db_resource = boto3.resource('dynamodb', region_name=self.__region_name)
 
     def __get_default_user_tags(self):
-        user = self.__iam_client.get_user()['User']
-        if user.get('Tags'):
-            return user.get('Tags')
-        return [{'Key': 'User', 'Value': user.get('UserName')}]
+        try:
+            user = self.__iam_client.get_user()['User']
+            if user.get('Tags'):
+                return user.get('Tags')
+            return [{'Key': 'User', 'Value': user.get('UserName')}]
+        except:
+            []
 
     def serialize_data_dynamodb_data(self, item: dict):
         """
@@ -44,10 +47,17 @@ class DynamoDbOperations:
         @return:
         """
         try:
-            self.__db_client.create_table(TableName=table_name, Tags=self.__get_default_user_tags(),
-                                          AttributeDefinitions=[{'AttributeName': key_name, 'AttributeType': 'S'}],
-                                          KeySchema=[{'AttributeName': key_name, 'KeyType': 'HASH'}],
-                                          ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacityUnits': 10})
+            tags = self.__get_default_user_tags()
+            if tags:
+                self.__db_client.create_table(TableName=table_name, Tags=tags,
+                                              AttributeDefinitions=[{'AttributeName': key_name, 'AttributeType': 'S'}],
+                                              KeySchema=[{'AttributeName': key_name, 'KeyType': 'HASH'}],
+                                              ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacityUnits': 10})
+            else:
+                self.__db_client.create_table(TableName=table_name,
+                                              AttributeDefinitions=[{'AttributeName': key_name, 'AttributeType': 'S'}],
+                                              KeySchema=[{'AttributeName': key_name, 'KeyType': 'HASH'}],
+                                              ProvisionedThroughput={'ReadCapacityUnits': 10, 'WriteCapacityUnits': 10})
         except Exception as err:
             print(err)
 
@@ -71,17 +81,18 @@ class DynamoDbOperations:
         @param scan_kwargs:
         @return:
         """
+        responses = []
         try:
-            responses = []
             table = self.__db_resource.Table(table_name)
             response = table.scan(**scan_kwargs)
             responses.extend(response['Items'])
             while response.get('LastEvaluatedKey'):
                 response = table.scan(**scan_kwargs, ExclusiveStartKey=response['LastEvaluatedKey'])
                 responses.extend(response['Items'])
-            return responses
+
         except Exception as err:
-            logger.info(err)
+            responses = []
+        return responses
 
     def get_item(self, table_name: str, key_name: str, item_type: str, item: str):
         """ This method get item """

@@ -2,9 +2,6 @@ import json
 from datetime import timedelta, datetime
 
 import boto3
-from boto3.dynamodb.conditions import Attr
-
-from cloud_governance.common.aws.dynamodb.dynamodb_operations import DynamoDbOperations
 
 
 class CloudTrailOperations:
@@ -14,18 +11,6 @@ class CloudTrailOperations:
         self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
         self.__global_cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')
         self.__iam_client = boto3.client('iam')
-        self.__db_operations = DynamoDbOperations(region_name=region_name)
-        self.__table_name = 'test-data'
-        self.__find_in_database = False
-
-    def get_regional_cloudtrail_responses(self, **kwargs):
-        responses = []
-        response = self.__cloudtrail.lookup_events(**kwargs)
-        responses.extend(response.get('Events'))
-        while response.get('NextToken'):
-            response = self.__cloudtrail.lookup_events(**kwargs, NextToken=response.get('NextToken'))
-            responses.extend(response.get('Events'))
-        return responses
 
     def __check_filter_username(self, username: str, event: dict):
         """
@@ -43,7 +28,7 @@ class CloudTrailOperations:
                     username = assumerole_username
         return username
 
-    def __get_cloudtrail_responses(self, start_time: datetime, end_time: datetime, resource_arn: str = ''):
+    def __get_cloudtrail_responses(self, start_time: datetime, end_time: datetime, resource_arn: str):
         """
         This method return all the responses from the cloudtrail for a certain time period
         @param start_time:
@@ -52,24 +37,17 @@ class CloudTrailOperations:
         @return:
         """
         responses = []
-        if not self.__find_in_database:
-            if start_time:
-                kwargs = {"StartTime": start_time, "EndTime": end_time, "LookupAttributes": [{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}]}
-            else:
-                kwargs = {"LookupAttributes": [{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}]}
-            response = self.__global_cloudtrail.lookup_events(**kwargs)
-            responses.extend(response.get('Events'))
-            while response.get('NextToken'):
-                response = self.__global_cloudtrail.lookup_events(**kwargs, NextToken=response.get('NextToken'))
-                responses.extend(response.get('Events'))
+        if start_time:
+            response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}])
         else:
+            response = self.__global_cloudtrail.lookup_events(LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}])
+        responses.extend(response.get('Events'))
+        while response.get('NextToken'):
             if start_time:
-                start_time = round(start_time.timestamp())
-                end_time = round(end_time.timestamp())
-                kwargs = {'FilterExpression': Attr("EventTime").between(start_time, end_time)}
+                response = self.__global_cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}], NextToken=response.get('NextToken'))
             else:
-                kwargs = Attr("ResourceName").eq(resource_arn)
-            responses.extend(self.__db_operations.scan_table(table_name=self.__table_name, scan_kwargs=kwargs))
+                response = self.__global_cloudtrail.lookup_events(LookupAttributes=[{'AttributeKey': 'ResourceName', 'AttributeValue': resource_arn}], NextToken=response.get('NextToken'))
+            responses.extend(response.get('Events'))
         return responses
 
     def __get_role_start_time_end_time(self, role_arn: str, event_name: str):
@@ -109,8 +87,7 @@ class CloudTrailOperations:
                                 if resource.get('ResourceName') == resource_arn:
                                     role_username = event.get('Username')
                                     role_username = self.__check_filter_username(role_username, event)
-                                    username, assumed_event = self.__check_event_is_assumed_role(
-                                        event.get('CloudTrailEvent'))
+                                    username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
                                     if username:
                                         return [username, assumed_event]
                                     return [role_username, event]
@@ -134,7 +111,7 @@ class CloudTrailOperations:
         except Exception as err:
             return [False, '']
 
-    def __get_user_by_resource_id(self, start_time: any, end_time: any, resource_id: str, resource_type: str):
+    def __get_user_by_resource_id(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str):
         """
         This method find the username of the resource_id with given resource_type
         @param start_time:
@@ -144,31 +121,21 @@ class CloudTrailOperations:
         @return:
         """
         try:
-            response = []
-            if isinstance(start_time, datetime):
-                response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
-                    'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
-                }])['Events']
-            elif isinstance(start_time, int):
-                kwargs = {'FilterExpression': Attr("EventTime").between(start_time, end_time)}
-                response = self.__db_operations.scan_table(table_name=self.__table_name, scan_kwargs=kwargs)
-            if response:
-                username, event = self.__get_username_from_events(events=response, resource_type=resource_type, resource_id=resource_id)
-                return [username, event]
+            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+                'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
+            }])
+            for event in response['Events']:
+                if event.get('Resources'):
+                    for resource in event.get('Resources'):
+                        if resource.get('ResourceType') == resource_type:
+                            if resource.get('ResourceName') == resource_id:
+                                username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
+                                if username:
+                                    return [username, assumed_event]
+                                return [event.get('Username'), event]
             return ['', '']
         except Exception as err:
             return ['', '']
-
-    def __get_username_from_events(self, events: list, resource_type: str, resource_id: str):
-        for event in events:
-            if event.get('Resources'):
-                for resource in event.get('Resources'):
-                    if resource.get('ResourceType') == resource_type:
-                        if resource.get('ResourceName') == resource_id:
-                            username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
-                            if username:
-                                return [username, assumed_event]
-                            return [event.get('Username'), event]
 
     def get_username_by_instance_id_and_time(self, start_time: datetime, resource_id: str, resource_type: str):
         """
@@ -182,14 +149,7 @@ class CloudTrailOperations:
         end_time = start_time + search_time
         start_time = start_time - search_time
         username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type)
-        username = self.__check_filter_username(username, event)
-        if not username:
-            self.__find_in_database = True
-            start_time = round(start_time.timestamp())
-            end_time = round(end_time.timestamp())
-            username, event = self.__get_user_by_resource_id(start_time=start_time, end_time=end_time, resource_type=resource_type, resource_id=resource_id)
-            username = self.__check_filter_username(username, event)
-        return username
+        return self.__check_filter_username(username, event)
 
     def get_stop_time(self, resource_id: str, event_name: str):
         """
@@ -222,3 +182,4 @@ class CloudTrailOperations:
 
     def set_cloudtrail(self):
         self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')
+

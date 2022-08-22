@@ -18,7 +18,7 @@ from cloud_governance.zombie_non_cluster.zombie_non_cluster_polices import Zombi
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'zombie_non_cluster'
+# os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['validate_type'] = 'tags'
 # os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
 # os.environ['cost_metric'] = ''
@@ -28,7 +28,7 @@ from cloud_governance.zombie_non_cluster.zombie_non_cluster_polices import Zombi
 # os.environ['policy'] = 'ec2_untag'
 # os.environ['policy'] = 'zombie_cluster_resource'
 # os.environ['dry_run'] = 'yes'
-# os.environ['tag_operation'] = 'scan'
+# os.environ['tag_operation'] = 'read'
 # os.environ['service_type'] = 'ec2_zombie_resource_service'
 # os.environ['service_type'] = 'iam_zombie_resource_service'
 # os.environ['service_type'] = 's3_zombie_resource_service'
