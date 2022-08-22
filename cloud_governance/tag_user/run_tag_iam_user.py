@@ -1,5 +1,6 @@
 import os
 
+from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.tag_user.iam_user_tags import ValidateIAMUserTags
 from cloud_governance.tag_user.remove_user_tags import RemoveUserTags
@@ -16,6 +17,12 @@ def tag_iam_user(user_tag_operation: str, remove_keys: list, username: str = '',
     @param file_name:
     @return:
     """
+    account_name = os.environ.get("account", '').upper()
+    spreadsheet_id = os.environ.get('SPREADSHEET_ID', '')
+    if user_tag_operation == 'update' and not file_name and spreadsheet_id:
+        google_drive = GoogleDriveOperations()
+        google_drive.download_spreadsheet(spreadsheet_id=spreadsheet_id, sheet_name=account_name, file_path='/tmp')
+        file_name = f'{account_name}.csv'
     if not file_name:
         file_name = 'tag_user.csv'
     file_path = f'/tmp/{file_name}'

@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-__version__ = '1.0.406'
+__version__ = '1.0.418'
 
 
 here = path.abspath(path.dirname(__file__))
@@ -54,6 +54,9 @@ setup(
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'typing==3.7.4.3',
         'typeguard==2.13.3',  # checking types
+        'google-api-python-client==2.57.0',  # google drive
+        'google-auth-httplib2==0.1.0',  # google drive
+        'google-auth-oauthlib==0.5.2'  # google drive
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
