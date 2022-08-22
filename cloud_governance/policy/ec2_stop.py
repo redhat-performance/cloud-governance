@@ -1,3 +1,4 @@
+import datetime
 import operator
 
 from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
@@ -41,7 +42,7 @@ class EC2Stop(NonClusterZombiePolicy):
                 instance_id = resource.get('InstanceId')
                 stopped_time = self._cloudtrail.get_stop_time(resource_id=instance_id, event_name='StopInstances')
                 if not stopped_time:
-                    stopped_time = resource.get('LaunchTime')
+                    stopped_time = datetime.datetime.now()
                 days = self._calculate_days(create_date=stopped_time)
                 if days in (instance_days, self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS):
                     user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
