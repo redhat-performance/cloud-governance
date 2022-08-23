@@ -1,10 +1,15 @@
 import csv
+import os
+from ast import literal_eval
 
 import boto3
+import pandas as pd
 
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.utils.utils import Utils
+from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.mails.mail import Mail
 
 
 class TagUser:
@@ -17,6 +22,18 @@ class TagUser:
         self.get_detail_resource_list = Utils().get_details_resource_list
         self.IAMOperations = IAMOperations()
         self.file_name = file_name
+        self.__SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID', '')
+        if self.__SPREADSHEET_ID:
+            self.__google_drive_operations = GoogleDriveOperations()
+            self.__sheet_name = os.environ.get('account', '')
+            self.__mail = Mail()
+            self._special_user_mails = os.environ.get('special_user_mails', '{}')
+
+    def __literal_eval(self):
+        tags = {}
+        if self._special_user_mails:
+            tags = literal_eval(self._special_user_mails)
+        return tags
 
     def __cluster_user(self, tags: list):
         """
@@ -163,3 +180,61 @@ class TagUser:
                     logger.info(err)
         logger.info(f'Updated Tags of IAM Users = {count} :: Usernames {updated_usernames}')
         return count
+
+    def __format_tags(self, username: str, headers: list):
+        tags = {}
+        tags['User'] = username
+        user_tags = self.IAMOperations.get_user_tags(username=username)
+        for user_tag in user_tags:
+            if user_tag.get('Key') in headers:
+                tags[user_tag.get('Key')] = user_tag.get('Value')
+        return tags
+
+    def delete_update_user_from_doc(self):
+        """
+        This method removes IAM user if not in the IAM list
+        @return:
+        """
+        iam_file = pd.read_csv(self.file_name)
+        iam_users = [user['UserName'] for user in self.IAMOperations.get_users()]
+        csv_iam_users = list(iam_file['User'])
+        for index, user in enumerate(csv_iam_users):
+            if user not in iam_users:
+                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name, row_number=index+1)
+                logger.info('removed user ', user)
+        append_data = []
+        for user in iam_users:
+            if '-' not in user:
+                if user not in csv_iam_users:
+                    tags = self.__format_tags(username=user, headers=list(iam_file.columns))
+                    df2 = pd.DataFrame.from_dict([tags])
+                    iam_file = pd.concat([iam_file, df2], ignore_index=True)
+                    iam_file = iam_file.fillna('')
+                    append_data.append(list(iam_file.iloc[-1]))
+                    if len(tags) < len(list(iam_file.columns)):
+                        self.__trigger_mail(user=user)
+        if append_data:
+            self.__google_drive_operations.append_values(spreadsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name, values=append_data)
+
+    def __trigger_mail(self, user: str):
+        """
+        This method send mail
+        @param user:
+        @return:
+        """
+        if user in self.__literal_eval():
+            receivers_list = [f'{self.__literal_eval()[user]}@redhat.com']
+        else:
+            receivers_list = [f'{user}@redhat.com']
+        subject = f'cloud-governance alert: Missing tags in AWS IAM User'
+        body = f"""
+Hi,
+
+{os.environ.get('account')} IAM User: {user} has missing tags 
+Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{self.__SPREADSHEET_ID}.
+If you already filled the tags, please ignore the mail.
+
+Best Regards
+Thirumalesh
+Cloud-governance Team""".strip()
+        self.__mail.send_mail(receivers_list=receivers_list, body=body, subject=subject)

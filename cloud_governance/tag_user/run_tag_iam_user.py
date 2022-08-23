@@ -33,6 +33,8 @@ def tag_iam_user(user_tag_operation: str, remove_keys: list, username: str = '',
     elif user_tag_operation == 'update':
         logger.info('Updating a user tags from csv file')
         tag_user.update_user_tags()
+        if spreadsheet_id and user_tag_operation == 'update':
+            tag_user.delete_update_user_from_doc()
     elif user_tag_operation == 'delete':
         logger.info(f'Deleting a {username if username else "user"} tags from csv file')
         remove_tags = RemoveUserTags(remove_keys=remove_keys, username=username)
@@ -55,4 +57,3 @@ def run_validate_iam_user_tags(es_host: str, es_port: str, es_index: str, valida
         validate_iam_user_tags.upload_trailing_user_tags()
     elif validate_type == 'tags':
         validate_iam_user_tags.upload_user_without_mandatory_tags(mandatory_tags=user_tags)
-

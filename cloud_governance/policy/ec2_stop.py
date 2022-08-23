@@ -37,6 +37,8 @@ class EC2Stop(NonClusterZombiePolicy):
         instances = self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])['Reservations']
         stopped_instances = []
         stopped_instance_tags = {}
+        stopped_time = ''
+        days = 0
         for instance in instances:
             for resource in instance['Instances']:
                 instance_id = resource.get('InstanceId')
@@ -64,12 +66,14 @@ class EC2Stop(NonClusterZombiePolicy):
                     tag_specifications = [{'ResourceType': 'image', 'Tags': tags}]
                     if sign == ge:
                         tag_specifications.append({'ResourceType': 'snapshot', 'Tags': tags})
-                    self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)
+                    ami_id = self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)['ImageId']
+                    self.__trigger_mail(user=self._get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                        stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id)
                     self._ec2_client.terminate_instances(InstanceIds=[instance_id])
                     logger.info(f'Deleted the instance: {instance_id}')
         return stopped_instances
 
-    def __trigger_mail(self, user: str, stopped_time: str, resource_id: str, days: int):
+    def __trigger_mail(self, user: str, stopped_time: str, resource_id: str, days: int, image_id: str = ''):
         """
         This method send triggering mail
         @param user:
@@ -82,14 +86,18 @@ class EC2Stop(NonClusterZombiePolicy):
             receivers_list = [f'{self._literal_eval()[user]}@redhat.com']
         else:
             receivers_list = [f'{user}@redhat.com']
-        subject = f'Instance- {resource_id} stopped more than {days} days'
+        subject = f'cloud-governance alert: delete ec2-stop more than {days} days'
+        content = ''
+        if image_id == '':
+            content = f'You can find a image of the deleted image under AMI: {image_id}'
         body = f"""
 Hi,
 
-Instance: {resource_id} is stopped on {stopped_time} is stopped more than {days} days.  
-After {self.DELETE_INSTANCE_DAYS} days of instance is stopped we delete that instance. Please backup your data. If you don't want to delete this instance add Policy=Not_Delete tag to your instance.
-If you already added the Policy=Not_Delete tag ignore this mail.
+Instance: {resource_id} was stopped on {stopped_time}, it stopped more than {days} days.  
+This instance will be deleted due to it was stopped more than {self.DELETE_INSTANCE_DAYS} days.
+{content}
 
-Thanks
-Thirumalesh""".strip()
+Best regards,
+Thirumalesh
+Cloud-governance Team""".strip()
         self._mail.send_mail(receivers_list=receivers_list, body=body, subject=subject)

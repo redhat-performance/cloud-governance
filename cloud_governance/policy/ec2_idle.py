@@ -74,8 +74,7 @@ class EC2Idle(NonClusterZombiePolicy):
                             running_idle_instances[instance_id] = resource
                         user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                         if user:
-                            resource_metrics = [str(cpu_metric_2_days), str(network_in_2_days), str(network_out_2_days)]
-                            self.__trigger_mail(user=user, resource_id=instance_id, metrics=resource_metrics)
+                            self.__trigger_mail(user=user, resource_id=instance_id, days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS)
                         else:
                             logger.info('User is missing')
                     if not self._ec2_operations.is_cluster_resource(resource_id=instance_id):
@@ -90,6 +89,7 @@ class EC2Idle(NonClusterZombiePolicy):
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
+                    self.__trigger_mail(user=self._get_tag_name_from_tags(tags=tags, tag_name='User'), resource_id=instance_id, days=self.STOP_INSTANCE_IDLE_DAYS)
         return self.__organise_instance_data(list(running_idle_instances.values()))
 
     def __get_metrics_average(self, metric_list: list, metric_period: int):
@@ -136,7 +136,7 @@ class EC2Idle(NonClusterZombiePolicy):
         end_time = datetime.now()
         return (end_time - launch_time.replace(tzinfo=None)).days
 
-    def __trigger_mail(self, user: str, resource_id: str, metrics: list):
+    def __trigger_mail(self, user: str, resource_id: str, days: int):
         """
         This method send triggering mail
         @param user:
@@ -147,17 +147,16 @@ class EC2Idle(NonClusterZombiePolicy):
             receivers_list = [f'{self._literal_eval()[user]}@redhat.com']
         else:
             receivers_list = [f'{user}@redhat.com']
-        subject = f'Instance- {resource_id} idle more than {self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS} days'
+        subject = f'cloud-governance alert: Stopped ec2-idle more than 4 days'
         body = f"""
 Hi,
 
-Instance: {resource_id} is idle since {self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS}.  
-After {self.STOP_INSTANCE_IDLE_DAYS} days of instance is idle we stop that instance. If you don't want to stop this instance add Policy=Not_Delete tag to your instance. 
+Instance: {resource_id} is idle more than {days} days.
+This instance will be stopped. 
+If you want that cloud-governance will not stop it add Policy=Not_Delete tag to your instance. 
 If you already added the Policy=Not_Delete tag ignore this mail.
-FYI, Here the Average of {self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS} days of metrics:
-CpuUtilization, NetworkIn, NwtworkOut
-{", ".join(metrics)}
 
-Thanks
-Thirumalesh""".strip()
+Best Regards,
+Thirumalesh
+Cloud-governance Team""".strip()
         self._mail.send_mail(receivers_list=receivers_list, body=body, subject=subject)
