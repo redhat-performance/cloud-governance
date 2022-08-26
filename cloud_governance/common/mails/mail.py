@@ -17,10 +17,11 @@ class Mail:
         self.sender_mail = os.environ.get('SENDER_MAIL', '')
         self.sender_password = os.environ.get('SENDER_PASSWORD', '')
 
-    def send_mail(self, receivers_list: list, subject: str, body):
+    def send_mail(self, receivers_list: list, subject: str, body: str, cc: list):
         """
         This method sends email
         sender_password: generate from gmail apps
+        @param cc:
         @param receivers_list:
         @param subject:
         @param body:
@@ -31,9 +32,10 @@ class Mail:
 From: %s
 To: %s
 Subject: %s
+CC: %s
 
 %s
-""" % (self.sender_mail, ", ".join(receivers_list), subject, body)
+""" % (self.sender_mail, ", ".join(receivers_list), subject, ", ".join(cc), body)
             try:
                 smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', self.SMTP_PORT)
                 smtp_server.ehlo()
