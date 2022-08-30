@@ -182,8 +182,7 @@ class TagUser:
         return count
 
     def __format_tags(self, username: str, headers: list):
-        tags = {}
-        tags['User'] = username
+        tags = {'User': username}
         user_tags = self.IAMOperations.get_user_tags(username=username)
         for user_tag in user_tags:
             if user_tag.get('Key') in headers:
@@ -201,7 +200,7 @@ class TagUser:
         for index, user in enumerate(csv_iam_users):
             if user not in iam_users:
                 self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name, row_number=index+1)
-                logger.info('removed user ', user)
+                logger.info(f'removed user {user}')
         append_data = []
         for user in iam_users:
             if '-' not in user:
@@ -222,10 +221,9 @@ class TagUser:
         @param user:
         @return:
         """
-        if user in self.__literal_eval():
-            receivers_list = [f'{self.__literal_eval()[user]}@redhat.com']
-        else:
-            receivers_list = [f'{user}@redhat.com']
+        special_user_mails = self.__literal_eval()
+        receivers_list = [f'{user}@redhat.com' if user not in special_user_mails else f'{special_user_mails[user]}@gmail.com']
+        cc = [os.environ.get("account_admin")]
         subject = f'cloud-governance alert: Missing tags in AWS IAM User'
         body = f"""
 Hi,
@@ -237,4 +235,4 @@ If you already filled the tags, please ignore the mail.
 Best Regards
 Thirumalesh
 Cloud-governance Team""".strip()
-        self.__mail.send_mail(receivers_list=receivers_list, body=body, subject=subject)
+        self.__mail.send_mail(receivers_list=receivers_list, body=body, subject=subject, cc=cc)

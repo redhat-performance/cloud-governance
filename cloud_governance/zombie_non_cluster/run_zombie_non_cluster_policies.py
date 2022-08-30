@@ -30,12 +30,14 @@ class NonClusterZombiePolicy:
         self._s3operations = S3Operations(region_name=self._region)
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
         self._special_user_mails = os.environ.get('special_user_mails', '{}')
+        self._account_admin = os.environ.get('account_admin', '')
+        self._users_managers_mails = os.environ.get('users_managers_mails', '{}')
         self._mail = Mail()
 
-    def _literal_eval(self):
+    def _literal_eval(self, data: any):
         tags = {}
-        if self._special_user_mails:
-            tags = literal_eval(self._special_user_mails)
+        if data:
+            tags = literal_eval(data)
         return tags
 
     def _check_live_cluster_tag(self, tags: list, active_clusters: list):
