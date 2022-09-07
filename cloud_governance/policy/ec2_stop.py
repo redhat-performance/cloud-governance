@@ -99,13 +99,13 @@ class EC2Stop(NonClusterZombiePolicy):
         receivers_list.append(account_admin)
         cc.append(account_admin)
         subject = f'cloud-governance alert: delete ec2-stop more than {days} days'
-        content = 'This instance will be deleted after 30 days'
+        content = 'This instance will be deleted after 30 days.\nPlease add Policy=Not_Delete to your tags for skipping this policy. If you already added ignore this email.'
         message = ''
-        if image_id == '':
+        if image_id != '':
             content = f'You can find a image of the deleted image under AMI: {image_id}'
             message = f'This instance will be deleted due to it was stopped more than {self.DELETE_INSTANCE_DAYS} days.'
         body = f"""
-Hi,
+Greetings AWS User,
 
 Instance: {instance_name}: {resource_id} in {region} on AWS account: {account} was stopped on {stopped_time}, it stopped more than {days} days.  
 {message}
