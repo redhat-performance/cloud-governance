@@ -31,7 +31,7 @@ class NonClusterZombiePolicy:
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
         self._special_user_mails = os.environ.get('special_user_mails', '{}')
         self._account_admin = os.environ.get('account_admin', '')
-        self._users_managers_mails = os.environ.get('users_managers_mails', '{}')
+        self._users_managers_mails = os.environ.get('users_manager_mails', '{}')
         self._mail = Mail()
 
     def _literal_eval(self, data: any):
