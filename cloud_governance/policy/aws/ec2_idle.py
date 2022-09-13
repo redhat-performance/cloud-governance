@@ -154,8 +154,6 @@ class EC2Idle(NonClusterZombiePolicy):
             manager_mail = users_managers_mails.get(manager_name.upper())
             if manager_mail:
                 cc.append(f'{manager_mail}@redhat.com')
-                receivers_list.append(f'{manager_mail}@redhat.com')
-        receivers_list.append(account_admin)
         cc.append(account_admin)
         if days == self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS:
             subject = f'cloud-governance alert:  ec2-idle is 2 days'

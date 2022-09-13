@@ -95,8 +95,6 @@ class EC2Stop(NonClusterZombiePolicy):
             manager_mail = users_managers_mails.get(manager_name)
             if manager_mail:
                 cc.append(f'{manager_mail}@redhat.com')
-                receivers_list.append(f'{manager_mail}@redhat.com')
-        receivers_list.append(account_admin)
         cc.append(account_admin)
         subject = f'cloud-governance alert: delete ec2-stop more than {days} days'
         content = 'This instance will be deleted after 30 days.\nPlease add Policy=Not_Delete to your tags for skipping this policy. If you already added ignore this email.'
