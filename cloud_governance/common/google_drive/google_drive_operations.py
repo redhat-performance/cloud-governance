@@ -16,8 +16,9 @@ class GoogleDriveOperations:
     """
 
     def __init__(self):
-        self.__creds, _ = google.auth.default()
-        self.__service = build('sheets', 'v4', credentials=self.__creds)
+        if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
+            self.__creds, _ = google.auth.default()
+            self.__service = build('sheets', 'v4', credentials=self.__creds)
 
     def download_spreadsheet(self, spreadsheet_id: str, sheet_name: str, file_path: str):
         """

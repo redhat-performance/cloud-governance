@@ -5,3 +5,4 @@ moto==2.3.2
 pandas
 requests==2.27.1
 typeguard==2.13.3
+SoftLayer==6.1.1
