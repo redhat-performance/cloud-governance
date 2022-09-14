@@ -52,7 +52,7 @@ _**Table of Contents**_
 <!-- TOC -->
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Run Policy Using Podman](#run-policy-using-podman)
+- [Run AWS Policy Using Podman](#run-policy-using-podman)
 - [Run Policy Using Pod](#run-policy-using-pod)
 - [Pytest](#pytest)
 - [Post Installation](#post-installation)
@@ -104,7 +104,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 * Create user with IAM [iam](iam)
 * Create a logs bucket [create_bucket.sh](iam/create_bucket.sh)
 
-## Run Policy Using Podman 
+## Run AWS Policy Using Podman 
 ```sh
 # policy=ec2_idle
 sudo podman run --rm --name cloud-governance -e policy=ec2_idle -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=us-east-2 -e dry_run=yes -e policy_output=s3://bucket/logs -e log_level=INFO quay.io/ebattat/cloud-governance

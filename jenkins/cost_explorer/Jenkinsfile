@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm -u root -v /tmp/cloud-governance-cost/:/var/lib/containers --privileged'
+            args  '--rm --network host -u root -v /tmp/cloud-governance-cost/:/var/lib/containers --privileged'
         }
     }
     environment {
@@ -26,6 +26,9 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
+        CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }

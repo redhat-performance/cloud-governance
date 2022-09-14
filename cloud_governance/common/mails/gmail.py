@@ -4,10 +4,11 @@ import smtplib
 from cloud_governance.common.logger.init_logger import logger
 
 
-class Mail:
+class Gmail:
     """
     This class send mail by accepting the receivers list and body
     export sender_mail and sender_password
+    before creating a password enable two-factor authentication
     create sender_password by GoogleAccount ->  Security --> Apps password
     """
 

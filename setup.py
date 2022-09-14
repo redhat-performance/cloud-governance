@@ -3,7 +3,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-__version__ = '1.0.425'
+__version__ = '1.1.1'
 
 
 here = path.abspath(path.dirname(__file__))
@@ -56,7 +56,9 @@ setup(
         'typeguard==2.13.3',  # checking types
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
-        'google-auth-oauthlib==0.5.2'  # google drive
+        'google-auth-oauthlib==0.5.2',  # google drive
+        'python-ldap==3.4.2',  # ldapsearch
+        'SoftLayer==6.1.1',  # IBM SoftLayer
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

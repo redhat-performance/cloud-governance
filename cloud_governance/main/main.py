@@ -3,13 +3,15 @@ import os
 import typeguard
 from ast import literal_eval  # str to dict
 import boto3  # regions
+
+from cloud_governance.aws.cost_expenditure.cost_report_policies import CostReportPolicies
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.aws.cost_expenditure.generate_cost_explorer_report import GenerateCostExplorerReport
 from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
 from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
 from cloud_governance.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
 from cloud_governance.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
+from cloud_governance.ibm.ibm_operations.tag_resources import TagResources
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.aws.zombie_cluster.validate_zombies import ValidateZombies
@@ -107,27 +109,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         if user_tags:
             user_tags = literal_eval(user_tags)
         run_validate_iam_user_tags(es_host=es_host, es_port=es_port, es_index=es_index, validate_type=validate_type, user_tags=user_tags)
-
-    elif policy == 'cost_explorer':
-        es_host = os.environ.get('es_host', '')
-        es_port = os.environ.get('es_port', '')
-        es_index = os.environ.get('es_index', '')
-        cost_metric = os.environ.get('cost_metric', '')
-        start_date = os.environ.get('start_date', '')
-        end_date = os.environ.get('end_date', '')
-        granularity = os.environ.get('granularity', '')
-        file_name = os.environ.get('file_name', '')
-        account = os.environ.get('account', '')
-        if account:
-            account = account.upper()
-        cost_explorer_tags = literal_eval(os.environ.get('cost_explorer_tags', '{}'))
-        if granularity and cost_metric:
-            run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, cost_metric=cost_metric, file_name=file_name,
-                                                           start_date=start_date, end_date=end_date, granularity=granularity, account=account)
-        else:
-            run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, file_name=file_name,
-                                                           start_date=start_date, end_date=end_date, account=account)
-        run_cost_explorer.upload_tags_cost_to_elastic_search()
     elif policy == 'validate_cluster':
         file_path = os.environ.get('file_path', '')
         file_name = os.environ.get('file_name', '')
@@ -271,9 +252,28 @@ def main():
     if is_zombie_non_cluster_polices_runner:
         zombie_non_cluster_polices_runner = ZombieNonClusterPolicies()
 
+    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm']
+    tag_ibm_classic_infrastructure_runner = None
+    is_tag_ibm_classic_infrastructure_runner = policy in tag_ibm_classic_infrastructure_policies
+    if is_tag_ibm_classic_infrastructure_runner:
+        tag_ibm_classic_infrastructure_runner = TagResources()
+
+    cost_explorer_policies = ['cost_explorer', 'cost_over_usage']
+    cost_explorer_policies_runner = None
+    is_cost_explorer_policies_runner = policy in cost_explorer_policies
+    if is_cost_explorer_policies_runner:
+        cost_explorer_policies_runner = CostReportPolicies()
+
     @logger_time_stamp
     def run_zombie_non_cluster_polices_runner():
         zombie_non_cluster_polices_runner.run()
+
+    def run_tag_ibm_classic_infrastructure_runner():
+        tag_ibm_classic_infrastructure_runner.run()
+
+    @logger_time_stamp
+    def run_cost_explorer_policies_runner():
+        cost_explorer_policies_runner.run()
 
     # 1. ELK Uploader
     if upload_data_es:
@@ -293,6 +293,10 @@ def main():
     # 2. POLICY
     elif is_zombie_non_cluster_polices_runner:
         run_zombie_non_cluster_polices_runner()
+    elif is_tag_ibm_classic_infrastructure_runner:
+        run_tag_ibm_classic_infrastructure_runner()
+    elif is_cost_explorer_policies_runner:
+        run_cost_explorer_policies_runner()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')

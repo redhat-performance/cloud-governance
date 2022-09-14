@@ -1,25 +1,35 @@
+import os
 from multiprocessing import Process
 
+import numpy as np
+import pandas as pd
+
+from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 
 
-class GenerateCostExplorerReport:
+class CostExplorer(ElasticUpload):
 
-    def __init__(self, cost_tags: list, account: str, granularity: str = 'DAILY', es_host: str = '', es_port: str = '', es_index: str = '', cost_metric: str = 'UnblendedCost', file_name: str = '', start_date: str = '', end_date: str = ''):
-        self.start_date = start_date
-        self.end_date = end_date
-        self.granularity = granularity
-        self.cost_metric = cost_metric
-        self.cost_tags = cost_tags
+    def __init__(self):
+        super().__init__()
+        self.start_date = os.environ.get('start_date', '')  # yyyy-mm-dd
+        self.end_date = os.environ.get('end_date', '')  # yyyy-mm-dd
+        self.granularity = os.environ.get('granularity', 'DAILY')
+        self.cost_metric = os.environ.get('cost_metric', 'UnblendedCost')
+        self.cost_tags = self._literal_eval(os.environ.get('cost_explorer_tags', '{}'))
+        self.file_name = os.environ.get('file_name', '')
         self.__cost_explorer = CostExplorerOperations()
-        self.file_name = file_name
-        self.__es_host = es_host
-        self.__es_port = es_port
-        self.__es_index = es_index
-        self.acconut = account
-        self.__elastic_search_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
+        self._ec2_operations = EC2Operations()
+
+    def get_user_resources(self):
+        """
+        This method get User all region ec2 instances
+        @return:
+        """
+        ec2_global_list_user_resources = self._ec2_operations.get_global_ec2_list_by_user()
+        return ec2_global_list_user_resources
 
     def filter_data_by_tag(self, groups: list, tag: str):
         """
@@ -29,16 +39,22 @@ class GenerateCostExplorerReport:
         @return: converted into dict format
         """
         data = []
+        user_resources = []
+        if tag == 'User':
+            user_resources = self.get_user_resources()
         for group in groups:
             name = ''
             amount = ''
             if group.get('Keys'):
                 name = group.get('Keys')[0].split('$')[-1]
-                name = name if name else f'{self.acconut}-REFUND'
+                name = name if name else f'{self.account}-REFUND'
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:
-                data.append({tag: name, 'Cost': round(float(amount), 3)})
+                upload_data = {tag: name, 'Cost': round(float(amount), 3)}
+                if user_resources and name in user_resources:
+                    upload_data['Instances'] = user_resources[name]
+                data.append(upload_data)
         return data
 
     def __get_daily_cost_by_tags(self):
@@ -69,16 +85,16 @@ class GenerateCostExplorerReport:
         if self.file_name:
             with open(f'/tmp/{self.file_name}', 'a') as file:
                 for value in data:
-                    if self.__es_index == 'cloud-governance-cost-explorer-global':
+                    if self._es_index == 'cloud-governance-cost-explorer-global':
                         if 'Budget' not in value:
-                            value['Budget'] = self.acconut
+                            value['Budget'] = self.account
                     file.write(f'{value}\n')
         else:
             for value in data:
-                if self.__es_index == 'cloud-governance-cost-explorer-global':
+                if self._es_index == 'cloud-governance-cost-explorer-global':
                     if 'Budget' not in value:
-                        value['Budget'] = self.acconut
-                self.__elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
+                        value['Budget'] = self.account
+                self._elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
         logger.info(f'Data uploaded to {index}')
 
     def upload_tags_cost_to_elastic_search(self):
@@ -90,9 +106,16 @@ class GenerateCostExplorerReport:
         cost_data = self.__get_daily_cost_by_tags()
         jobs = []
         for key, values in cost_data.items():
-            index = f'{self.__es_index}-{key.lower()}'
+            index = f'{self._es_index}-{key.lower()}'
             p = Process(target=self.__upload_data, args=(values, index, ))
             p.start()
             jobs.append(p)
         for job in jobs:
             job.join()
+
+    def run(self):
+        """
+        This method run the operations
+        @return:
+        """
+        self.upload_tags_cost_to_elastic_search()

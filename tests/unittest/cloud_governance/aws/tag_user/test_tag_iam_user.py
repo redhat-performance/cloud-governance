@@ -30,6 +30,7 @@ def test_update_user_tags():
     @return:
     """
     iam_client = boto3.client('iam')
+    os.environ['special_user_mails'] = "{'testuser': 'mockuser'}"
     iam_client.create_user(UserName='testuser', Tags=[{'Key': 'Username', 'Value': 'test-user'}])
     tag_user = TagUser(file_name=file_name)
     rows = []

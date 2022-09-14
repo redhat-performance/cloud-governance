@@ -1,3 +1,5 @@
+import os
+
 import boto3
 import typeguard
 
@@ -321,14 +323,16 @@ class EC2Operations:
         This method returns all instances from the region
         @return:
         """
-        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_instances, input_tag='Reservations', check_tag='NextToken')
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_instances,
+                                                    input_tag='Reservations', check_tag='NextToken')
 
     def get_volumes(self):
         """
         This method returns all volumes in the region
         @return:
         """
-        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes', check_tag='NextToken')
+        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes',
+                                                    check_tag='NextToken')
 
     def get_images(self):
         """
@@ -447,3 +451,54 @@ class EC2Operations:
                 if 'kubernetes.io/cluster/' in tag.get('Key'):
                     return True
         return False
+
+    def get_ec2_list(self, instances_list: list):
+        """
+        This method return all instances in one list by taking instances_list
+        @param instances_list:
+        @return:
+        """
+        instances = []
+        for resources in instances_list:
+            for resource in resources['Instances']:
+                instances.append(resource)
+        return instances
+
+    def get_tag(self, name: str, tags: list):
+        """
+        This method get tag name fom the tags
+        @param name:
+        @param tags:
+        @return:
+        """
+        if tags:
+            for tag in tags:
+                if tag.get('Key') == name:
+                    return tag.get('Value')
+        return 'NA'
+
+    def get_global_ec2_list_by_user(self):
+        """
+        This method get ec2-instances based on User tag
+        @return:
+        """
+        users_list = {}
+        regions = self.ec2_client.describe_regions()['Regions']
+        for region in regions:
+            region_ec2_client = boto3.client('ec2', region_name=region.get('RegionName'))
+            instances = self.get_ec2_list(region_ec2_client.describe_instances()['Reservations'])
+            for instance in instances:
+                user_data = {'InstanceId': instance.get('InstanceId'),
+                             'Name': self.get_tag(name='Name', tags=instance.get('Tags')),
+                             'InstanceType': instance.get('InstanceType'),
+                             'LaunchTime': instance.get('LaunchTime').strftime('%Y/%m/%d %H:%M:%S'),
+                             'Region': region.get('RegionName'),
+                             'Account': os.environ.get('account', '').upper(),
+                             'State': instance.get('State')['Name']
+                             }
+                user = self.get_tag(name='User', tags=instance.get('Tags'))
+                if user in users_list:
+                    users_list[user].append(user_data)
+                else:
+                    users_list[user] = [user_data]
+        return users_list

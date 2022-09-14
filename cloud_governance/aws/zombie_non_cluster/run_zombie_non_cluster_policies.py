@@ -8,7 +8,9 @@ from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import 
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
-from cloud_governance.common.mails.mail import Mail
+from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.mails.mail_message import MailMessage
+from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
 
@@ -31,8 +33,10 @@ class NonClusterZombiePolicy:
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
         self._special_user_mails = os.environ.get('special_user_mails', '{}')
         self._account_admin = os.environ.get('account_admin', '')
-        self._users_managers_mails = os.environ.get('users_manager_mails', '{}')
-        self._mail = Mail()
+        self._mail = Postfix()
+        self._mail_description = MailMessage()
+        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
 
     def _literal_eval(self, data: any):
         tags = {}
