@@ -12,8 +12,8 @@ from elasticsearch_dsl import Search
 from elasticsearch import Elasticsearch
 from typeguard import typechecked
 
-from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.common.aws.price.price import AWSPrice
+from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.clouds.aws.price.price import AWSPrice
 from cloud_governance.common.elasticsearch.elasticsearch_exceptions import ElasticSearchDataNotUploaded
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 

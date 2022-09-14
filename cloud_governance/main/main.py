@@ -4,16 +4,16 @@ import typeguard
 from ast import literal_eval  # str to dict
 import boto3  # regions
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.cost_expenditure.generate_cost_explorer_report import GenerateCostExplorerReport
-from cloud_governance.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
-from cloud_governance.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
-from cloud_governance.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
-from cloud_governance.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
+from cloud_governance.aws.cost_expenditure.generate_cost_explorer_report import GenerateCostExplorerReport
+from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
+from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
+from cloud_governance.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
+from cloud_governance.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.main.es_uploader import ESUploader
-from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
+from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.aws.zombie_cluster.validate_zombies import ValidateZombies
+from cloud_governance.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
 
 # env tests
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -69,7 +69,7 @@ def get_custodian_policies(type: str = None):
     # path for debug only
     # policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy')
     # policies_path working only inside the docker
-    policies_path = os.path.join(os.path.dirname(__file__), 'policy')
+    policies_path = os.path.join(os.path.dirname(__file__), 'policy', 'aws')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
             if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
@@ -120,7 +120,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         account = os.environ.get('account', '')
         if account:
             account = account.upper()
-        cost_explorer_tags = literal_eval(os.environ.get('cost_explorer_tags', {}))
+        cost_explorer_tags = literal_eval(os.environ.get('cost_explorer_tags', '{}'))
         if granularity and cost_metric:
             run_cost_explorer = GenerateCostExplorerReport(cost_tags=cost_explorer_tags, es_host=es_host, es_port=es_port, es_index=es_index, cost_metric=cost_metric, file_name=file_name,
                                                            start_date=start_date, end_date=end_date, granularity=granularity, account=account)
@@ -221,7 +221,7 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
         policy_output = os.environ.get('policy_output', '')
         # policies_path working only inside the docker
         # run from local - policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy', f'{policy}.yml')
-        policies_path = os.path.join(os.path.dirname(__file__), 'policy')
+        policies_path = os.path.join(os.path.dirname(__file__), 'policy', 'aws')
         if os.path.isfile(f'{policies_path}/{policy}.yml'):
             os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
         else:
