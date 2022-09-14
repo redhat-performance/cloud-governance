@@ -434,3 +434,16 @@ class EC2Operations:
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_network_acls, input_tag='NetworkAcls', check_tag='NextToken')
+
+    def is_cluster_resource(self, resource_id: str):
+        """
+        This method checks tags have cluster key, if cluster return True else False
+        @param resource_id:
+        @return:
+        """
+        resource_tags = self.ec2_client.describe_tags(Filters=[{'Name': 'resource-id', 'Values': [resource_id]}])
+        if resource_tags.get('Tags'):
+            for tag in resource_tags['Tags']:
+                if 'kubernetes.io/cluster/' in tag.get('Key'):
+                    return True
+        return False

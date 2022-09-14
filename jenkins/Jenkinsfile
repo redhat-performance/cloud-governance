@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            label 'cloud-governance-slave'
+            label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
             args  '--rm -u root -v /tmp/cloud-governance/:/var/lib/containers --privileged'
         }
@@ -26,6 +26,14 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
+        SENDER_MAIL = credentials('cloud-governance-sender-mail')
+        SENDER_PASSWORD = credentials('cloud-governance-sender-password')
+        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
+        ACCOUNT_ADMIN = credentials('cloud-governance-account-admin')
+        USERS_MANAGER_MAILS = credentials('cloud-governance-users-managers-mails')
+
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }

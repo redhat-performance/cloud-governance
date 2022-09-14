@@ -151,6 +151,35 @@ class CloudTrailOperations:
         username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type)
         return self.__check_filter_username(username, event)
 
+    def get_stop_time(self, resource_id: str, event_name: str):
+        """
+        This method return the time of when instance is stopped
+        @param resource_id:
+        @param event_name:
+        @return:
+        """
+        responses = []
+        try:
+            response = self.__cloudtrail.lookup_events(LookupAttributes=[
+                {'AttributeKey': 'ResourceName', 'AttributeValue': resource_id},
+            ])
+            responses.extend(response['Events'])
+            while response.get('NextToken'):
+                response = self.__cloudtrail.lookup_events(LookupAttributes=[
+                    {'AttributeKey': 'ResourceName', 'AttributeValue': resource_id},
+                ], NextToken=response.get('NextToken'))
+                responses.extend(response['Events'])
+
+            for event in responses:
+                if event.get('EventName') == event_name:
+                    if event.get('Resources'):
+                        for resource in event.get('Resources'):
+                            if resource.get('ResourceName') == resource_id:
+                                return event.get('EventTime')
+            return ''
+        except:
+            return ''
+
     def set_cloudtrail(self):
         self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')
 

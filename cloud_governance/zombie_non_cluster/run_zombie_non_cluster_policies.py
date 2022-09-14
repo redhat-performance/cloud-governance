@@ -1,5 +1,6 @@
 import os
 import datetime
+from ast import literal_eval
 
 import boto3
 
@@ -7,6 +8,7 @@ from cloud_governance.common.aws.cloudtrail.cloudtrail_operations import CloudTr
 from cloud_governance.common.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.mails.mail import Mail
 from cloud_governance.policy.zombie_cluster_resource import ZombieClusterResources
 
 
@@ -27,6 +29,16 @@ class NonClusterZombiePolicy:
         self._zombie_cluster = ZombieClusterResources(cluster_prefix=self._cluster_prefix)
         self._s3operations = S3Operations(region_name=self._region)
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
+        self._special_user_mails = os.environ.get('special_user_mails', '{}')
+        self._account_admin = os.environ.get('account_admin', '')
+        self._users_managers_mails = os.environ.get('users_manager_mails', '{}')
+        self._mail = Mail()
+
+    def _literal_eval(self, data: any):
+        tags = {}
+        if data:
+            tags = literal_eval(data)
+        return tags
 
     def _check_live_cluster_tag(self, tags: list, active_clusters: list):
         """
