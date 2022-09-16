@@ -37,14 +37,16 @@ class Postfix:
         msg.set_content(content)
         email_string = msg.as_string()
         email_host = 'localhost'
-        with smtplib.SMTP(email_host) as s:
-            try:
-                logger.debug(email_string)
-                s.send_message(msg)
-                logger.info(f'Mail sent successfully to {to}@redhat.com')
-            except smtplib.SMTPException as ex:
-                logger.debug(ex)
-                logger.error("Error while sending mail")
-                print(ex)
-                return False
-        return True
+        try:
+            with smtplib.SMTP(email_host) as s:
+                try:
+                    logger.debug(email_string)
+                    s.send_message(msg)
+                    logger.info(f'Mail sent successfully to {to}@redhat.com')
+                except smtplib.SMTPException as ex:
+                    logger.info(f'Error while sending mail, {ex}')
+                    return False
+            return True
+        except Exception as err:
+            logger.info(f'Some error occurred, {err}')
+            return False
