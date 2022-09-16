@@ -9,7 +9,8 @@ from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.common.mails.mail import Mail
+from cloud_governance.common.mails.mail_message import MailMessage
+from cloud_governance.common.mails.postfix import Postfix
 
 
 class TagUser:
@@ -26,7 +27,7 @@ class TagUser:
         if self.__SPREADSHEET_ID:
             self.__google_drive_operations = GoogleDriveOperations()
             self.__sheet_name = os.environ.get('account', '')
-            self.__mail = Mail()
+            self.__mail = Postfix()
             self._special_user_mails = os.environ.get('special_user_mails', '{}')
 
     def __literal_eval(self):
@@ -222,17 +223,7 @@ class TagUser:
         @return:
         """
         special_user_mails = self.__literal_eval()
-        receivers_list = [f'{user}@redhat.com' if user not in special_user_mails else f'{special_user_mails[user]}@gmail.com']
-        cc = [os.environ.get("account_admin")]
-        subject = f'cloud-governance alert: Missing tags in AWS IAM User'
-        body = f"""
-Hi,
-
-{os.environ.get('account')} IAM User: {user} has missing tags 
-Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{self.__SPREADSHEET_ID}.
-If you already filled the tags, please ignore the mail.
-
-Best Regards
-Thirumalesh
-Cloud-governance Team""".strip()
-        self.__mail.send_mail(receivers_list=receivers_list, body=body, subject=subject, cc=cc)
+        receivers_list = user if user not in special_user_mails else special_user_mails[user]
+        cc = [os.environ.get("account_admin", '')]
+        subject, body = MailMessage().iam_user_add_tags(user=user, spreadsheet_id=self.__SPREADSHEET_ID)
+        self.__mail.send_email_postfix(to=receivers_list, content=body, subject=subject, cc=cc)

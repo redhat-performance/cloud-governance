@@ -85,31 +85,13 @@ class EC2Stop(NonClusterZombiePolicy):
         @return:
         """
         special_user_mails = self._literal_eval(self._special_user_mails)
-        account_admin = self._account_admin
         users_managers_mails = self._literal_eval(self._users_managers_mails)
         user, instance_name, manager_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name'), self._get_tag_name_from_tags(tags=tags, tag_name='Manager')
-        region, account = self._region, self._account
-        receivers_list = [f'{user}@redhat.com' if user not in special_user_mails else f'{special_user_mails[user]}@gmail.com']
-        cc = []
+        to = user if user not in special_user_mails else special_user_mails[user]
+        cc = [self._account_admin]
         if users_managers_mails:
             manager_mail = users_managers_mails.get(manager_name)
             if manager_mail:
                 cc.append(f'{manager_mail}@redhat.com')
-        cc.append(account_admin)
-        subject = f'cloud-governance alert: delete ec2-stop more than {days} days'
-        content = 'This instance will be deleted after 30 days.\nPlease add Policy=Not_Delete to your tags for skipping this policy. If you already added ignore this email.'
-        message = ''
-        if image_id != '':
-            content = f'You can find a image of the deleted image under AMI: {image_id}'
-            message = f'This instance will be deleted due to it was stopped more than {self.DELETE_INSTANCE_DAYS} days.'
-        body = f"""
-Greetings AWS User,
-
-Instance: {instance_name}: {resource_id} in {region} on AWS account: {account} was stopped on {stopped_time}, it stopped more than {days} days.  
-{message}
-{content}
-
-Best regards,
-Thirumalesh
-Cloud-governance Team""".strip()
-        self._mail.send_mail(receivers_list=receivers_list, body=body, subject=subject, cc=cc)
+        subject, body = self._mail_description.ec2_stop(days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time)
+        self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
