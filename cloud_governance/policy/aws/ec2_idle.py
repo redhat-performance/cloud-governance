@@ -144,34 +144,13 @@ class EC2Idle(NonClusterZombiePolicy):
         @return:
         """
         special_user_mails = self._literal_eval(self._special_user_mails)
-        account_admin = self._account_admin
         users_managers_mails = self._literal_eval(self._users_managers_mails)
         user, instance_name, manager_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name'), self._get_tag_name_from_tags(tags=tags, tag_name='Manager')
-        region, account = self._region, self._account
-        receivers_list = [f'{user}@redhat.com' if user not in special_user_mails else f'{special_user_mails[user]}@gmail.com']
-        cc = []
+        to = user if user not in special_user_mails else special_user_mails[user]
+        cc = [self._account_admin]
         if users_managers_mails:
             manager_mail = users_managers_mails.get(manager_name.upper())
             if manager_mail:
                 cc.append(f'{manager_mail}@redhat.com')
-        cc.append(account_admin)
-        if days == self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS:
-            subject = f'cloud-governance alert:  ec2-idle is 2 days'
-            cause = f'This instance will be stopped if it is idle {self.STOP_INSTANCE_IDLE_DAYS} days'
-            content = 'If you want that cloud-governance will not stop it add Policy=Not_Delete tag to your instance. '
-        else:
-            subject = f'cloud-governance alert: Stopped ec2-idle more than 4 days'
-            cause = f'This instance will be stopped.'
-            content = 'In future cloud-governance will not stop it add Policy=Not_Delete tag to your instance'
-        body = f"""
-Greetings AWS User,
-
-Instance: {instance_name}: {resource_id} in {region} on AWS account: {account} is idle more than {days} days.
-{cause}
-{content}
-If you already added the Policy=Not_Delete tag ignore this mail.
-
-Best Regards,
-Thirumalesh
-Cloud-governance Team""".strip()
-        self._mail.send_mail(receivers_list=receivers_list, body=body, subject=subject, cc=cc)
+        subject, body = self._mail_description.ec2_idle(days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
+        self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
