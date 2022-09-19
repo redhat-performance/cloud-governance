@@ -3,6 +3,8 @@ import os
 
 class MailMessage:
 
+    RESTRICTION = 'Please dont replay this email'
+
     def __init__(self):
         self.account = os.environ.get('account', '')
         self.region = os.environ.get('AWS_DEFAULT_REGION', '')
@@ -20,6 +22,7 @@ Greetings AWS User,
 Instance: {instance_name}: {resource_id} in {self.region} on AWS account: {self.account} was stopped on {stopped_time}, it stopped more than {days} days.  
 {message}
 {content}
+{self.RESTRICTION}
 
 Best regards,
 Thirumalesh
@@ -42,6 +45,7 @@ Instance: {instance_name}: {resource_id} in {self.region} on AWS account: {self.
 {cause}
 {content}
 If you already added the Policy=Not_Delete tag ignore this mail.
+{self.RESTRICTION}
 
 Best Regards,
 Thirumalesh
@@ -56,6 +60,24 @@ Greetings AWS User,
 {os.environ.get('account')} IAM User: {user} has missing tags 
 Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{spreadsheet_id}.
 If you already filled the tags, please ignore the mail.
+{self.RESTRICTION}
+
+Best Regards
+Thirumalesh
+Cloud-governance Team""".strip()
+        return subject, body
+
+    def aws_user_over_usage_cost(self, user: str, usage_cost: int):
+        """
+        This method send subject, body to over usage cost
+        @return:
+        """
+        subject = f'cloud-governance alert: Last 7 days cost report'
+        body = f"""
+Greetings AWS User,
+
+{os.environ.get('account')} IAM User: {user} has used the amount of {usage_cost} in the last 7 days.
+{self.RESTRICTION}
 
 Best Regards
 Thirumalesh
