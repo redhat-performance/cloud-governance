@@ -23,7 +23,3 @@ class TagResources(IBMOperations):
                     response = cls[1]().run()
                     if len(response) > 0:
                         logger.info(f'key: {cls[0]}, count: {len(response)}, {response}')
-
-
-tr = TagResources()
-tr.run()
