@@ -16,9 +16,12 @@ class LdapSearch:
         @param manager_data:
         @return:
         """
-        manager_id = manager_data.replace('=', ':').split(',')[0].split(':')[-1]
-        manager_details = self.get_details(user_name=manager_id)
-        return str(manager_details.get('cn')[0], 'UTF-8'), manager_id
+        try:
+            manager_id = manager_data.replace('=', ':').split(',')[0].split(':')[-1]
+            manager_details = self.get_details(user_name=manager_id)
+            return str(manager_details.get('cn')[0], 'UTF-8'), manager_id
+        except Exception as err:
+            return []
 
     def __organise_user_details(self, data: dict):
         """
