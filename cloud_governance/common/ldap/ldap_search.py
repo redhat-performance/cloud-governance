@@ -16,9 +16,12 @@ class LdapSearch:
         @param manager_data:
         @return:
         """
-        manager_id = manager_data.replace('=', ':').split(',')[0].split(':')[-1]
-        manager_details = self.get_details(user_name=manager_id)
-        return str(manager_details.get('cn')[0], 'UTF-8'), manager_id
+        try:
+            manager_id = manager_data.replace('=', ':').split(',')[0].split(':')[-1]
+            manager_details = self.get_details(user_name=manager_id)
+            return str(manager_details.get('cn')[0], 'UTF-8'), manager_id
+        except Exception as err:
+            return []
 
     def __organise_user_details(self, data: dict):
         """
@@ -26,11 +29,14 @@ class LdapSearch:
         @param data:
         @return:
         """
-        user_data = {'displayName': str(data['displayName'][0], 'UTF-8'), 'FullName': str(data['cn'][0], 'UTF-8')}
-        manager_name, manager_id = self.__get_manager_name(manager_data=str(data['manager'][0], 'UTF-8'))
-        user_data['managerName'] = manager_name
-        user_data['managerId'] = manager_id
-        return user_data
+        try:
+            user_data = {'displayName': str(data['displayName'][0], 'UTF-8'), 'FullName': str(data['cn'][0], 'UTF-8')}
+            manager_name, manager_id = self.__get_manager_name(manager_data=str(data['manager'][0], 'UTF-8'))
+            user_data['managerName'] = manager_name
+            user_data['managerId'] = manager_id
+            return user_data
+        except Exception as err:
+            return []
 
     def get_details(self, user_name: str):
         """
