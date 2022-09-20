@@ -1,13 +1,13 @@
 import os
 
-from cloud_governance.common.classes.elastic_upload import ElasticUpload
+from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 
 
 class CostOverUsage(ElasticUpload):
 
-    DAYS = 7
-    COST_USAGE = 1000
+    FETCH_DAYS = 7
+    COST_USAGE_DOLLAR = 1000
 
     def __init__(self):
         super().__init__()
@@ -30,7 +30,7 @@ class CostOverUsage(ElasticUpload):
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self.__ldap.get_user_details(user_name=to)
                 manager_mail = f'{ldap_data.get("managerId")}@redhat.com'
-                subject, body = self._mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=ldap_data.get('displayName'), usage_cost=self.COST_USAGE)
+                subject, body = self._mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=ldap_data.get('displayName'), usage_cost=self.COST_USAGE_DOLLAR)
                 self._postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=[manager_mail])
                 users.append(to)
         return users
@@ -40,4 +40,4 @@ class CostOverUsage(ElasticUpload):
         This method runs the cost usage
         @return:
         """
-        return self.aws_user_usage(days=self.DAYS, cost_usage=self.COST_USAGE)
+        return self.aws_user_usage(days=self.FETCH_DAYS, cost_usage=self.COST_USAGE_DOLLAR)

@@ -1,7 +1,7 @@
 import os
 from multiprocessing import Process
 
-from cloud_governance.common.classes.elastic_upload import ElasticUpload
+from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.logger.init_logger import logger
 

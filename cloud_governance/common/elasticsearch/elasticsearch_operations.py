@@ -457,7 +457,7 @@ class ElasticSearchOperations:
     @logger_time_stamp
     def get_index_hits(self, days: int, index: str):
         search = Search(using=self.__es, index=index).filter('range', timestamp={'gte': f'now-{days}d', 'lt': 'now'})
-        search = search[0:10000]
+        search = search[0:self.MAX_SEARCH_RESULTS]
         search_response = search.execute()
         df = pd.DataFrame()
         for row in search_response:
