@@ -144,13 +144,9 @@ class EC2Idle(NonClusterZombiePolicy):
         @return:
         """
         special_user_mails = self._literal_eval(self._special_user_mails)
-        users_managers_mails = self._literal_eval(self._users_managers_mails)
-        user, instance_name, manager_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name'), self._get_tag_name_from_tags(tags=tags, tag_name='Manager')
+        user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
         to = user if user not in special_user_mails else special_user_mails[user]
-        cc = [self._account_admin]
-        if users_managers_mails:
-            manager_mail = users_managers_mails.get(manager_name.upper())
-            if manager_mail:
-                cc.append(f'{manager_mail}@redhat.com')
-        subject, body = self._mail_description.ec2_idle(days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
+        ldap_data = self._ldap.get_user_details(user_name=to)
+        cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+        subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
         self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
