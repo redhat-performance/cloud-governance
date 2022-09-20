@@ -143,10 +143,13 @@ class EC2Idle(NonClusterZombiePolicy):
         @param resource_id:
         @return:
         """
-        special_user_mails = self._literal_eval(self._special_user_mails)
-        user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
-        to = user if user not in special_user_mails else special_user_mails[user]
-        ldap_data = self._ldap.get_user_details(user_name=to)
-        cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
-        subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
-        self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
+        try:
+            special_user_mails = self._literal_eval(self._special_user_mails)
+            user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
+            to = user if user not in special_user_mails else special_user_mails[user]
+            ldap_data = self._ldap.get_user_details(user_name=to)
+            cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+            subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
+        except Exception as err:
+            logger.info(err)
