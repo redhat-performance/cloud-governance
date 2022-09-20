@@ -28,12 +28,12 @@ class Postfix:
         msg["Subject"] = subject
         msg["From"] = "%s <%s>" % (
             'cloud-governance',
-            "@".join(["cloud-governance", 'redhat.com']),
+            "@".join(["noreply-cloud-governance", 'redhat.com']),
         )
         msg["To"] = "@".join([to, 'redhat.com'])
         msg["Cc"] = ",".join(cc)
-        msg.add_header("Reply-To", self.reply_to)
-        msg.add_header("User-Agent", self.reply_to)
+        # msg.add_header("Reply-To", self.reply_to)
+        # msg.add_header("User-Agent", self.reply_to)
         msg.set_content(content)
         email_string = msg.as_string()
         email_host = 'localhost'

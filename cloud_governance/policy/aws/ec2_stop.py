@@ -85,13 +85,9 @@ class EC2Stop(NonClusterZombiePolicy):
         @return:
         """
         special_user_mails = self._literal_eval(self._special_user_mails)
-        users_managers_mails = self._literal_eval(self._users_managers_mails)
-        user, instance_name, manager_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name'), self._get_tag_name_from_tags(tags=tags, tag_name='Manager')
+        user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
         to = user if user not in special_user_mails else special_user_mails[user]
-        cc = [self._account_admin]
-        if users_managers_mails:
-            manager_mail = users_managers_mails.get(manager_name)
-            if manager_mail:
-                cc.append(f'{manager_mail}@redhat.com')
-        subject, body = self._mail_description.ec2_stop(days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time)
+        ldap_data = self._ldap.get_user_details(user_name=to)
+        cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+        subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time)
         self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
