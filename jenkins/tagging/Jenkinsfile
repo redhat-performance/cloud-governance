@@ -48,7 +48,7 @@ pipeline {
         stage('Finalize Cleanup') {
             steps {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sleep 30); fi'''
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sleep 30; fi'''
                  deleteDir()
             }
         }
