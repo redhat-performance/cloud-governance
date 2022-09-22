@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm -u root -v /tmp/tagging/:/var/lib/containers --privileged'
+            args  '--rm  --network host -u root -v /tmp/tagging/:/var/lib/containers --privileged'
         }
     }
     environment {
@@ -48,7 +48,6 @@ pipeline {
         stage('Finalize Cleanup') {
             steps {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then sleep 30; fi'''
                  deleteDir()
             }
         }

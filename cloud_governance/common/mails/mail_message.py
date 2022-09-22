@@ -52,10 +52,10 @@ Best Regards,
 Cloud-governance Team""".strip()
         return subject, body
 
-    def iam_user_add_tags(self, user: str, spreadsheet_id: str):
+    def iam_user_add_tags(self, name: str, user: str, spreadsheet_id: str):
         subject = f'cloud-governance alert: Missing tags in AWS IAM User'
         body = f"""
-Greetings AWS User,
+Hi {name},
 
 {os.environ.get('account')} IAM User: {user} has missing tags 
 Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{spreadsheet_id}.

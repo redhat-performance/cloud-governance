@@ -22,6 +22,7 @@ class CostOverUsage(ElasticUpload):
         @return:
         """
         users = []
+        cc = []
         user_data = self._elastic_search_operations.get_index_hits(days=days, index=self._es_index)
         for user_usage in user_data:
             user = user_usage['User']
@@ -29,9 +30,12 @@ class CostOverUsage(ElasticUpload):
                 special_user_mails = self._literal_eval(self._special_user_mails)
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self.__ldap.get_user_details(user_name=to)
-                manager_mail = f'{ldap_data.get("managerId")}@redhat.com'
-                subject, body = self._mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=ldap_data.get('displayName'), usage_cost=self.COST_USAGE_DOLLAR)
-                self._postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=[manager_mail])
+                name = to
+                if ldap_data:
+                    cc.append(f'{ldap_data.get("managerId")}@redhat.com')
+                    name = ldap_data.get('displayName')
+                subject, body = self._mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=name, usage_cost=self.COST_USAGE_DOLLAR)
+                self._postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc)
                 users.append(to)
         return users
 
