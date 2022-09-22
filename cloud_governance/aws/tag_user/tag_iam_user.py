@@ -8,6 +8,7 @@ import pandas as pd
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
+from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
@@ -24,6 +25,8 @@ class TagUser:
         self.IAMOperations = IAMOperations()
         self.file_name = file_name
         self.__SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID', '')
+        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         if self.__SPREADSHEET_ID:
             self.__google_drive_operations = GoogleDriveOperations()
             self.__sheet_name = os.environ.get('account', '')
@@ -223,7 +226,12 @@ class TagUser:
         @return:
         """
         special_user_mails = self.__literal_eval()
-        receivers_list = user if user not in special_user_mails else special_user_mails[user]
+        to = user if user not in special_user_mails else special_user_mails[user]
+        ldap_data = self.__ldap.get_user_details(user_name=to)
         cc = [os.environ.get("account_admin", '')]
-        subject, body = MailMessage().iam_user_add_tags(user=user, spreadsheet_id=self.__SPREADSHEET_ID)
-        self.__mail.send_email_postfix(to=receivers_list, content=body, subject=subject, cc=cc)
+        name = to
+        if ldap_data:
+            cc.append(f'{ldap_data.get("managerId")}@redhat.com')
+            name = ldap_data.get('displayName')
+        subject, body = MailMessage().iam_user_add_tags(name=name, user=user, spreadsheet_id=self.__SPREADSHEET_ID)
+        self.__mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
