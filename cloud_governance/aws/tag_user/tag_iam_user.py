@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 from ast import literal_eval
 
 import boto3
@@ -27,17 +28,17 @@ class TagUser:
         self.__SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID', '')
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
+        self._special_user_mails = self.__literal_eval(os.environ.get('special_user_mails', '{}'))
         if self.__SPREADSHEET_ID:
             self.__google_drive_operations = GoogleDriveOperations()
             self.__sheet_name = os.environ.get('account', '')
             self.__mail = Postfix()
-            self._special_user_mails = os.environ.get('special_user_mails', '{}')
 
-    def __literal_eval(self):
-        tags = {}
-        if self._special_user_mails:
-            tags = literal_eval(self._special_user_mails)
-        return tags
+
+    def __literal_eval(self, data: any):
+        if data:
+            return literal_eval(data)
+        return data
 
     def __cluster_user(self, tags: list):
         """
@@ -83,7 +84,7 @@ class TagUser:
         @return:
         """
         users = self.get_detail_resource_list(func_name=self.iam_client.list_users, input_tag='Users',
-                                          check_tag='Marker')
+                                              check_tag='Marker')
         tag_keys = set()
         tag_values = {}
         for user in users:
@@ -155,6 +156,19 @@ class TagUser:
                     tagging[username].append(self.__get_tag(key, value))
         return tagging
 
+    def get_user_details_from_ldap(self, user_name: str):
+        """
+        This method get user details from ldap
+        @param user_name:
+        @return:
+        """
+        user_name = user_name if user_name not in self._special_user_mails else self._special_user_mails[user_name]
+        ldap_data = self.__ldap.get_user_details(user_name=user_name.lower())
+        if ldap_data:
+            return [{'Key': 'Owner', 'Value': re.sub('\W+', ' ', ldap_data.get('FullName').upper())},
+                    {'Key': 'Manager', 'Value': re.sub('\W+', ' ', ldap_data.get('managerName').upper())}]
+        return []
+
     def update_user_tags(self):
         """
         This method updates the user tags from the csv file
@@ -168,12 +182,12 @@ class TagUser:
             rows = []
             for row in csvreader:
                 rows.append(row)
-
             json_data = self.__get_json_data(header, rows)
             for key, tags in json_data.items():
                 try:
                     user_tags = self.IAMOperations.get_user_tags(username=key)
                     tags.append({'Key': 'User', 'Value': key})
+                    tags.extend(self.get_user_details_from_ldap(user_name=key))
                     filter_tags = self.__filter_tags_user_tags(user_tags, tags)
                     if filter_tags:
                         self.iam_client.tag_user(UserName=key, Tags=filter_tags)
@@ -190,7 +204,7 @@ class TagUser:
         user_tags = self.IAMOperations.get_user_tags(username=username)
         for user_tag in user_tags:
             if user_tag.get('Key') in headers:
-                tags[user_tag.get('Key')] = user_tag.get('Value')
+                tags[user_tag.get('Key').strip()] = user_tag.get('Value').strip()
         return tags
 
     def delete_update_user_from_doc(self):
@@ -203,7 +217,8 @@ class TagUser:
         csv_iam_users = list(iam_file['User'])
         for index, user in enumerate(csv_iam_users):
             if user not in iam_users:
-                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name, row_number=index+1)
+                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
+                                                           sheet_name=self.__sheet_name, row_number=index + 1)
                 logger.info(f'removed user {user}')
         append_data = []
         for user in iam_users:
@@ -217,7 +232,10 @@ class TagUser:
                     if len(tags) < len(list(iam_file.columns)):
                         self.__trigger_mail(user=user)
         if append_data:
-            self.__google_drive_operations.append_values(spreadsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name, values=append_data)
+            response = self.__google_drive_operations.append_values(spreadsheet_id=self.__SPREADSHEET_ID,
+                                                                    sheet_name=self.__sheet_name, values=append_data)
+            if response:
+                logger.info(f'Updated the users in the spreadsheet')
 
     def __trigger_mail(self, user: str):
         """
@@ -225,8 +243,7 @@ class TagUser:
         @param user:
         @return:
         """
-        special_user_mails = self.__literal_eval()
-        to = user if user not in special_user_mails else special_user_mails[user]
+        to = user if user not in self._special_user_mails else self._special_user_mails[user]
         ldap_data = self.__ldap.get_user_details(user_name=to)
         cc = [os.environ.get("account_admin", '')]
         name = to

@@ -72,7 +72,7 @@ Cloud-governance Team""".strip()
         This method send subject, body to over usage cost
         @return:
         """
-        subject = f'cloud-governance alert: last week cost overage {usage_cost}$ per user'
+        subject = f'cloud-governance alert: last week cost over usage {usage_cost}$ per user'
         body = f"""
 Hi {name},
 Your AWS user:{user} in account:{os.environ.get('account')} cost was {user_usage}$ in the last week. 
