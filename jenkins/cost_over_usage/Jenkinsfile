@@ -28,6 +28,7 @@ pipeline {
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        IGNORE_MAILS = credentials('cloud-governance-ignore-mails')
 
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
@@ -45,7 +46,7 @@ pipeline {
         }
         stage('Upload ElasticSearch') {
             steps {
-                sh 'jenkins/cost_over_usage/run_upload_es.py'
+                sh 'python3 jenkins/cost_over_usage/run_upload_es.py'
             }
         }
         stage('Finalize Cleanup') {
