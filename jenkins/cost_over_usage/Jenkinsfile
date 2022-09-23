@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm --net host -u root -v /tmp/cloud-governance/:/var/lib/containers --privileged'
+            args  '--rm --network host -u root -v /tmp/cloud-governance-cost-over-usage/:/var/lib/containers --privileged'
         }
     }
     environment {
@@ -26,12 +26,7 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
-        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
-        ACCOUNT_ADMIN = credentials('cloud-governance-account-admin')
-        USERS_MANAGER_MAILS = credentials('cloud-governance-users-managers-mails')
-        REPLY_TO = credentials('cloud-governance-reply-to')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
 
         contact1 = "ebattat@redhat.com"
@@ -48,14 +43,9 @@ pipeline {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Run Policies') {
-            steps {
-                 sh 'python3 jenkins/run_policies.py'
-            }
-        }
         stage('Upload ElasticSearch') {
             steps {
-                sh 'python3 jenkins/run_upload_es.py'
+                sh 'jenkins/cost_over_usage/run_upload_es.py'
             }
         }
         stage('Finalize Cleanup') {
