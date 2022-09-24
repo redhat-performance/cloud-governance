@@ -1,10 +1,7 @@
 
 import os
 import json
-import gzip
-import datetime
 from github import Github
-from cloud_governance.common.aws.s3.s3_operations import S3Operations
 
 
 class GitLeaks:

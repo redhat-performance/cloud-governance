@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm -u root -v /tmp/tagging/:/var/lib/containers --privileged'
+            args  '--rm  --network host -u root -v /tmp/tagging/:/var/lib/containers --privileged'
         }
     }
     environment {

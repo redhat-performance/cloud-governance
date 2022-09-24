@@ -19,6 +19,8 @@ AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = os.environ['AWS_SECRET_ACCESS_KEY_DELE
 BUCKET_PERF_SCALE = os.environ['BUCKET_PERF_SCALE']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+special_user_mails = os.environ['CLOUD_GOVERNANCE_SPECIAL_USER_MAILS']
 
 
 es_index_perf = 'cloud-governance-cost-explorer-perf'

@@ -6,7 +6,7 @@ ARG VERSION
 # install gitleaks
 ARG gitleaks_version=7.0.2
 RUN apt-get update \
-     && apt-get install -y wget \
+     && apt-get install -y wget build-essential python3-dev libldap2-dev libsasl2-dev vim \
      && export VER=${gitleaks_version}  \
      && wget https://github.com/zricethezav/gitleaks/releases/download/v$VER/gitleaks-linux-amd64 \
      && mv gitleaks-linux-amd64 gitleaks \

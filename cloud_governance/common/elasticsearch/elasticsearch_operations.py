@@ -12,8 +12,8 @@ from elasticsearch_dsl import Search
 from elasticsearch import Elasticsearch
 from typeguard import typechecked
 
-from cloud_governance.common.aws.s3.s3_operations import S3Operations
-from cloud_governance.common.aws.price.price import AWSPrice
+from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.clouds.aws.price.price import AWSPrice
 from cloud_governance.common.elasticsearch.elasticsearch_exceptions import ElasticSearchDataNotUploaded
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 
@@ -452,3 +452,15 @@ class ElasticSearchOperations:
         :return:
         """
         return self.__es.get(index=index, id=id)
+
+    @typechecked()
+    @logger_time_stamp
+    def get_index_hits(self, days: int, index: str):
+        search = Search(using=self.__es, index=index).filter('range', timestamp={'gte': f'now-{days}d', 'lt': 'now'})
+        search = search[0:self.MAX_SEARCH_RESULTS]
+        search_response = search.execute()
+        df = pd.DataFrame()
+        for row in search_response:
+            df = pd.concat([df, pd.DataFrame([row.to_dict()])], ignore_index=True)
+        df = df.groupby('User').sum().reset_index()
+        return df.to_dict('records')
