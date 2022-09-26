@@ -461,6 +461,5 @@ class ElasticSearchOperations:
         search_response = search.execute()
         df = pd.DataFrame()
         for row in search_response:
-            df = pd.concat([df, pd.DataFrame([row.to_dict()])], ignore_index=True)
-        df = df.groupby('User').sum().reset_index()
+            df = pd.concat([df, pd.DataFrame([row.to_dict()])], ignore_index=True).fillna({})
         return df.to_dict('records')

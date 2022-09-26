@@ -1,6 +1,8 @@
 import os
 import smtplib
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from cloud_governance.common.logger.init_logger import logger
 
@@ -23,8 +25,8 @@ class Postfix:
     def __init__(self):
         self.reply_to = os.environ.get('REPLY_TO', 'dev-null@redhat.com')
 
-    def send_email_postfix(self, subject: str, to: str, cc: list, content: str):
-        msg = EmailMessage()
+    def send_email_postfix(self, subject: str, to: str, cc: list, content: str, **kwargs):
+        msg = MIMEMultipart('alternative')
         msg["Subject"] = subject
         msg["From"] = "%s <%s>" % (
             'cloud-governance',
@@ -34,7 +36,12 @@ class Postfix:
         msg["Cc"] = ",".join(cc)
         # msg.add_header("Reply-To", self.reply_to)
         # msg.add_header("User-Agent", self.reply_to)
-        msg.set_content(content)
+        if kwargs:
+            attachment = MIMEText(open(kwargs['filename']).read())
+            attachment.add_header('Content-Disposition', 'attachment',
+                                  filename=kwargs['filename'].split('/')[-1])
+            msg.attach(attachment)
+        msg.attach(MIMEText(content))
         email_string = msg.as_string()
         email_host = 'localhost'
         try:
