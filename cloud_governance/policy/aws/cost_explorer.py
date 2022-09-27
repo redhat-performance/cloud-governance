@@ -40,9 +40,8 @@ class CostExplorer(ElasticUpload):
         """
         data = []
         user_resources = []
-        if 'global' not in self._es_index:
-            if tag == 'User':
-                user_resources = self.get_user_resources()
+        if tag == 'User':
+            user_resources = self.get_user_resources()
         for group in groups:
             name = ''
             amount = ''
