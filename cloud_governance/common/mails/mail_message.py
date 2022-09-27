@@ -1,3 +1,4 @@
+import json
 import os
 
 
@@ -77,6 +78,7 @@ Cloud-governance Team""".strip()
 Hi {name},
 Your AWS user:{user} in account:{os.environ.get('account')} cost was {user_usage}$ in the last week. 
 Please verify that you are using all the resources.
+Please verify that you are using all the resources in attached {user}_resource.json file.
 
 {self.RESTRICTION}
 
