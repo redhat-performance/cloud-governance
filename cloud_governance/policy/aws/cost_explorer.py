@@ -1,6 +1,10 @@
 import os
 from multiprocessing import Process
 
+import numpy as np
+import pandas as pd
+
+from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -17,6 +21,15 @@ class CostExplorer(ElasticUpload):
         self.cost_tags = self._literal_eval(os.environ.get('cost_explorer_tags', '{}'))
         self.file_name = os.environ.get('file_name', '')
         self.__cost_explorer = CostExplorerOperations()
+        self._ec2_operations = EC2Operations()
+
+    def get_user_resources(self):
+        """
+        This method get User all region ec2 instances
+        @return:
+        """
+        ec2_global_list_user_resources = self._ec2_operations.get_global_ec2_list_by_user()
+        return ec2_global_list_user_resources
 
     def filter_data_by_tag(self, groups: list, tag: str):
         """
@@ -26,6 +39,9 @@ class CostExplorer(ElasticUpload):
         @return: converted into dict format
         """
         data = []
+        user_resources = []
+        if tag == 'User':
+            user_resources = self.get_user_resources()
         for group in groups:
             name = ''
             amount = ''
@@ -35,7 +51,10 @@ class CostExplorer(ElasticUpload):
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:
-                data.append({tag: name, 'Cost': round(float(amount), 3)})
+                upload_data = {tag: name, 'Cost': round(float(amount), 3)}
+                if user_resources and name in user_resources:
+                    upload_data['Instances'] = user_resources[name]
+                data.append(upload_data)
         return data
 
     def __get_daily_cost_by_tags(self):
