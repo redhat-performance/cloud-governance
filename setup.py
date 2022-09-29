@@ -57,7 +57,8 @@ setup(
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
         'google-auth-oauthlib==0.5.2',  # google drive
-        'python-ldap==3.4.2'  # ldapsearch
+        'python-ldap==3.4.2',  # ldapsearch
+        'SoftLayer==6.1.1',  # IBM SoftLayer
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
