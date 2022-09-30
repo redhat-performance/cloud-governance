@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import timedelta, datetime
 
 import boto3
@@ -6,6 +7,7 @@ import boto3
 
 class CloudTrailOperations:
     SEARCH_SECONDS = 10
+    SLEEP_SECONDS = 120
 
     def __init__(self, region_name: str):
         self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
@@ -111,6 +113,16 @@ class CloudTrailOperations:
         except Exception as err:
             return [False, '']
 
+    def __get_time_difference(self, start_time: datetime):
+        """
+        This method returns seconds in difference of current time and start time
+        @param start_time:
+        @return:
+        """
+        current_time = datetime.now(start_time.tzinfo).replace(tzinfo=None)
+        seconds = (current_time - start_time.replace(tzinfo=None)).seconds
+        return seconds
+
     def __get_user_by_resource_id(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str):
         """
         This method find the username of the resource_id with given resource_type
@@ -121,6 +133,8 @@ class CloudTrailOperations:
         @return:
         """
         try:
+            if self.__get_time_difference(start_time=start_time) <= self.SEARCH_SECONDS:
+                time.sleep(120)
             response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
                 'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
             }])
