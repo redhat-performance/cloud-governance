@@ -6,3 +6,4 @@ pandas
 requests==2.27.1
 typeguard==2.13.3
 python-ldap==3.4.2
+SoftLayer==6.0.0
