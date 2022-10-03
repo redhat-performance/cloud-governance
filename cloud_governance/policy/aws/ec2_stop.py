@@ -37,6 +37,7 @@ class EC2Stop(NonClusterZombiePolicy):
         instances = self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])['Reservations']
         stopped_instances = []
         stopped_instance_tags = {}
+        ec2_types = {}
         stopped_time = ''
         days = 0
         for instance in instances:
@@ -49,12 +50,13 @@ class EC2Stop(NonClusterZombiePolicy):
                 if days in (instance_days, self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS):
                     user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                     if user:
-                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days)
+                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id)
                     else:
                         logger.info('User is missing')
                 if sign(days, instance_days):
                     if days >= delete_instance_days:
-                        stopped_instance_tags[resource.get('InstanceId')] = resource.get('Tags')
+                        stopped_instance_tags[instance_id] = resource.get('Tags')
+                        ec2_types[instance_id] = resource.get('InstanceType')
                     stopped_instances.append([resource.get('InstanceId'), self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
                                               self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'), str(resource.get('LaunchTime')),
                                               self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Policy')
@@ -68,14 +70,14 @@ class EC2Stop(NonClusterZombiePolicy):
                         tag_specifications.append({'ResourceType': 'snapshot', 'Tags': tags})
                     try:
                         ami_id = self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)['ImageId']
-                        self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id)
+                        self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id, ec2_type=ec2_types[instance_id], instance_id=instance_id)
                         self._ec2_client.terminate_instances(InstanceIds=[instance_id])
                         logger.info(f'Deleted the instance: {instance_id}')
                     except Exception as err:
                         logger.info(err)
         return stopped_instances
 
-    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = ''):
+    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '', ec2_type: str = '', instance_id: str = ''):
         """
         This method send triggering mail
         @param tags:
@@ -90,7 +92,7 @@ class EC2Stop(NonClusterZombiePolicy):
             to = user if user not in special_user_mails else special_user_mails[user]
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
-            subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
+            subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, instance_id=instance_id)
         except Exception as err:
             logger.info(err)
