@@ -13,7 +13,8 @@ def test_tag_update_hardware():
     os.environ['tag_operation'] = 'update'
     tags = ['test:tags', 'user:athiuma']
     tag_baremetal = TagBareMetal()
-    assert len(tag_baremetal.tag_update_hardware(user_tags=tags, hardware_tags=[], hardware_id='', hardware_name='')) == 2
+    actual_tags = tag_baremetal.tag_update_hardware(user_tags=tags, hardware_tags=[], hardware_id='', hardware_name='')
+    assert len(actual_tags) == 2
 
 
 @ibm_mock
