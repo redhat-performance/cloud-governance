@@ -37,3 +37,9 @@ sudo podman pull quay.io/ebattat/cloud-governance
 
 ##### Choose log level, default INFO
 (optional)log_level=INFO (default = INFO)
+
+#### LDAP hostname to fetch mail records
+LDAP_HOST_NAME=ldap.example.com
+
+#### Enable Google Drive API in console and create Service account
+GOOGLE_APPLICATION_CREDENTIALS=$pwd/service_account.json
