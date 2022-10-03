@@ -61,6 +61,7 @@ class EC2Idle(NonClusterZombiePolicy):
         instances = self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])['Reservations']
         running_idle_instances = {}
         running_instance_tags = {}
+        ec2_types = {}
         for instance in instances:
             for resource in instance['Instances']:
                 launch_days = self.__get_time_difference(launch_time=resource.get('LaunchTime'))
@@ -74,7 +75,8 @@ class EC2Idle(NonClusterZombiePolicy):
                             running_idle_instances[instance_id] = resource
                         user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                         if user:
-                            self.__trigger_mail(tags=resource.get('Tags'), resource_id=instance_id, days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS)
+                            self.__trigger_mail(tags=resource.get('Tags'), resource_id=instance_id, days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, ec2_type=resource.get('InstanceType'),
+                                                instance_id=instance_id)
                         else:
                             logger.info('User is missing')
                     if not self._ec2_operations.is_cluster_resource(resource_id=instance_id):
@@ -84,12 +86,13 @@ class EC2Idle(NonClusterZombiePolicy):
                             resource['metrics'] = metrics_4_days
                             running_idle_instances[instance_id] = resource
                             running_instance_tags[instance_id] = resource.get('Tags')
+                            ec2_types[instance_id] = resource.get('InstanceId')
         if self._dry_run == "no":
             for instance_id, tags in running_instance_tags.items():
                 if self._get_policy_value(tags=tags) != 'NOTDELETE':
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
-                    self.__trigger_mail(tags=tags, resource_id=instance_id, days=self.STOP_INSTANCE_IDLE_DAYS)
+                    self.__trigger_mail(tags=tags, resource_id=instance_id, days=self.STOP_INSTANCE_IDLE_DAYS, ec2_type=ec2_types[instance_id], instance_id=instance_id)
         return self.__organise_instance_data(list(running_idle_instances.values()))
 
     def __get_metrics_average(self, metric_list: list, metric_period: int):
@@ -136,7 +139,7 @@ class EC2Idle(NonClusterZombiePolicy):
         end_time = datetime.now()
         return (end_time - launch_time.replace(tzinfo=None)).days
 
-    def __trigger_mail(self, tags: list, resource_id: str, days: int):
+    def __trigger_mail(self, tags: list, resource_id: str, days: int, ec2_type: str = '', instance_id: str = ''):
         """
         This method send triggering mail
         @param tags:
@@ -149,7 +152,7 @@ class EC2Idle(NonClusterZombiePolicy):
             to = user if user not in special_user_mails else special_user_mails[user]
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
-            subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc)
+            subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id, ec2_type=ec2_type)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, instance_id=instance_id)
         except Exception as err:
             logger.info(err)

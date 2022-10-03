@@ -10,7 +10,7 @@ class MailMessage:
         self.account = os.environ.get('account', '')
         self.region = os.environ.get('AWS_DEFAULT_REGION', '')
 
-    def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str, resource_id: str, stopped_time: str):
+    def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str, resource_id: str, stopped_time: str, ec2_type: str):
         subject = f'cloud-governance alert: delete ec2-stop more than {days} days'
         content = 'This instance will be deleted after 30 days.\nPlease add Policy=Not_Delete to your tags for skipping this policy. If you already added ignore this email.'
         message = ''
@@ -20,7 +20,7 @@ class MailMessage:
         body = f"""
 Greetings {name},
 
-Instance: {instance_name}: {resource_id} in {self.region} on AWS account: {self.account} was stopped on {stopped_time}, it stopped more than {days} days.  
+Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} on AWS account: {self.account} was stopped on {stopped_time}, it stopped more than {days} days.  
 {message}
 {content}
 
@@ -30,7 +30,7 @@ Best regards,
 Cloud-governance Team""".strip()
         return subject, body
 
-    def ec2_idle(self, name: str, days: int, notification_days: int, stop_days: int, instance_name: str, resource_id: str):
+    def ec2_idle(self, name: str, days: int, notification_days: int, stop_days: int, instance_name: str, resource_id: str, ec2_type: str):
         if days == notification_days:
             subject = f'cloud-governance alert:  ec2-idle is {notification_days} days'
             cause = f'This instance will be stopped if it is idle {stop_days} days'
@@ -42,7 +42,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Greetings {name},
 
-Instance: {instance_name}: {resource_id} in {self.region} on AWS account: {self.account} is idle more than {days} days.
+Instance: {instance_name}: {resource_id} ( InstanceType:{ec2_type} ) in {self.region} on AWS account: {self.account} is idle more than {days} days.
 {cause}
 {content}
 If you already added the Policy=Not_Delete tag ignore this mail.
