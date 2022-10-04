@@ -72,6 +72,8 @@ class Postfix:
                         s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
                         content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
                     data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper()}
+                    if kwargs.get('instance_id'):
+                        data['InstanceId'] = kwargs['instance_id']
                     self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                 except smtplib.SMTPException as ex:
                     logger.info(f'Error while sending mail, {ex}')
