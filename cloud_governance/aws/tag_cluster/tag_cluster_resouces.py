@@ -46,7 +46,7 @@ class TagClusterResources(TagClusterOperations):
 
     def __check_name_in_tags(self, tags: list, resource_id: str):
         """
-        This method checks Name is present in the Tags or not, if not ot add Name tag
+        This method checks Name is present in the Tags or not, if not  add Name tag
         @param tags:
         @param resource_id:
         @return:
@@ -62,8 +62,9 @@ class TagClusterResources(TagClusterOperations):
                 cluster_name = tag['Key']
                 break
         if not found:
+            # add cg-Name if Name tag is empty in resource tags
             value = f'{cluster_name.split("/")[-1]}-{resource_id.split("-")[0]}-{resource_id[-self.SHORT_ID:]}'
-            tags.append({'Key': 'Name', 'Value': value})
+            tags.append({'Key': 'cg-Name', 'Value': value})
         return tags
 
     def __get_cluster_tags_by_instance_cluster(self, cluster_name: str):
