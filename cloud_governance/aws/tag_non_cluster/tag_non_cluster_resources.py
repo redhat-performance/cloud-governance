@@ -48,7 +48,7 @@ class TagNonClusterResources(NonClusterOperations):
                 search_tags.extend(self._fill_na_tags(user=username))
         if not self.__check_name_in_tags(tags):
             tag_name = f'{username}-{instance_id[-self.SHORT_RESOURCE_ID:]}' if username else f'{instance_id[0:1]}-{self.region}-{instance_id[-self.SHORT_RESOURCE_ID:]}'
-            search_tags.append(self._build_tag(key='Name', value=tag_name))
+            search_tags.append(self._build_tag(key='cg-Name', value=tag_name))
         search_tags.append(self._build_tag(key='LaunchTime', value=launch_time))
         search_tags.extend(self._append_input_tags())
         search_tags.extend(user_tags)
@@ -111,7 +111,7 @@ class TagNonClusterResources(NonClusterOperations):
                 search_tags.append(self._build_tag(key='LaunchTime', value=volume.get('CreateTime')))
             if not self.__check_name_in_tags(volume.get('Tags')):
                 tag_name = f'{username}-{volume_id[-self.SHORT_RESOURCE_ID:]}' if username else f'{volume_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{volume_id[-self.SHORT_RESOURCE_ID:]}'
-                search_tags.append({'Key': 'Name', 'Value': tag_name})
+                search_tags.append({'Key': 'cg-Name', 'Value': tag_name})
             volume_tags = self._get_tags_of_resources(tags=volume.get('Tags'), search_tags=search_tags)
             if volume_tags:
                 if self.dry_run == 'no':
@@ -161,7 +161,7 @@ class TagNonClusterResources(NonClusterOperations):
                 search_tags.extend(self._append_input_tags())
             if not self.__check_name_in_tags(snapshot.get('Tags')):
                 tag_name = f'{username}-{snapshot_id[-self.SHORT_RESOURCE_ID:]}' if username else f'{snapshot_id[:self.SHOT_SNAPSHOT_ID]}-{self.region}-{snapshot_id[-self.SHORT_RESOURCE_ID:]}'
-                search_tags.append({'Key': 'Name', 'Value': tag_name})
+                search_tags.append({'Key': 'cg-Name', 'Value': tag_name})
             search_tags.append(self._build_tag(key='LaunchTime', value=snapshot.get('StartTime')))
             snapshot_tags = self._get_tags_of_resources(tags=snapshot.get('Tags'), search_tags=search_tags)
             if snapshot_tags:
@@ -202,7 +202,7 @@ class TagNonClusterResources(NonClusterOperations):
                 search_tags.extend(self._fill_na_tags())
             if not self.__check_name_in_tags(image.get('Tags')):
                 tag_name = f'{username}-{image_id[-self.SHORT_RESOURCE_ID:]}' if username else f'{image_id[:self.SHORT_RESOURCE_NAME]}-{self.region}-{image_id[-self.SHORT_RESOURCE_ID:]}'
-                search_tags.append({'Key': 'Name', 'Value': tag_name})
+                search_tags.append({'Key': 'cg-Name', 'Value': tag_name})
             search_tags.append(self._build_tag(key='LaunchTime', value=start_time))
             image_tags = self._get_tags_of_resources(tags=image.get('Tags'), search_tags=search_tags)
             if image_tags:
