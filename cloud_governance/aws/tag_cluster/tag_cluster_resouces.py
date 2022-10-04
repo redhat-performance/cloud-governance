@@ -63,7 +63,7 @@ class TagClusterResources(TagClusterOperations):
                 break
         if not found:
             value = f'{cluster_name.split("/")[-1]}-{resource_id.split("-")[0]}-{resource_id[-self.SHORT_ID:]}'
-            tags.append({'Key': 'Name', 'Value': value})
+            tags.append({'Key': 'cg-Name', 'Value': value})
         return tags
 
     def __get_cluster_tags_by_instance_cluster(self, cluster_name: str):
