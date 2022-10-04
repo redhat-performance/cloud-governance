@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from datetime import timedelta, datetime
 
@@ -157,8 +158,9 @@ class CloudTrailOperations:
         @param resource_type:
         @return: if user not found it return empty string
         """
-        if self.__get_time_difference(start_time=start_time) <= self.SLEEP_SECONDS:
-            time.sleep(self.SLEEP_SECONDS)
+        delay_seconds = int(os.environ.get('SLEEP_SECONDS', self.SLEEP_SECONDS))
+        if self.__get_time_difference(start_time=start_time) <= delay_seconds:
+            time.sleep(delay_seconds)
         search_time = timedelta(seconds=self.SEARCH_SECONDS)
         end_time = start_time + search_time
         start_time = start_time - search_time

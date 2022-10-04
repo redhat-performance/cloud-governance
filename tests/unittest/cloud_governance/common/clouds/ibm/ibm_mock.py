@@ -74,7 +74,8 @@ def ibm_mock(method):
         """
         try:
             with patch.object(BaseClient, 'call', mock_call):
-                method(*args, **kwargs)
+                result = method(*args, **kwargs)
         except Exception as err:
             logger.info(err)
+        return result
     return method_wrapper
