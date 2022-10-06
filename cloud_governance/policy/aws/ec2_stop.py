@@ -63,7 +63,7 @@ class EC2Stop(NonClusterZombiePolicy):
                                               ])
         if self._dry_run == "no":
             for instance_id, tags in stopped_instance_tags.items():
-                if self._get_policy_value(tags=tags) != 'NOTDELETE':
+                if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                     tags.append({'Key': 'Policy', 'Value': 'backup'})
                     tag_specifications = [{'ResourceType': 'image', 'Tags': tags}]
                     if sign == ge:
@@ -93,6 +93,6 @@ class EC2Stop(NonClusterZombiePolicy):
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
             subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, instance_id=instance_id)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
         except Exception as err:
             logger.info(err)

@@ -89,7 +89,7 @@ class EC2Idle(NonClusterZombiePolicy):
                             ec2_types[instance_id] = resource.get('InstanceId')
         if self._dry_run == "no":
             for instance_id, tags in running_instance_tags.items():
-                if self._get_policy_value(tags=tags) != 'NOTDELETE':
+                if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
                     self.__trigger_mail(tags=tags, resource_id=instance_id, days=self.STOP_INSTANCE_IDLE_DAYS, ec2_type=ec2_types[instance_id], instance_id=instance_id)
@@ -153,6 +153,6 @@ class EC2Idle(NonClusterZombiePolicy):
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
             subject, body = self._mail_description.ec2_idle(name=ldap_data.get('displayName'), days=days, notification_days=self.INSTANCE_IDLE_MAIL_NOTIFICATION_DAYS, stop_days=self.STOP_INSTANCE_IDLE_DAYS, instance_name=instance_name, resource_id=resource_id, ec2_type=ec2_type)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, instance_id=instance_id)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
         except Exception as err:
             logger.info(err)

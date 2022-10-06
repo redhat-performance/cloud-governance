@@ -246,7 +246,7 @@ def main():
     es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
-    zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+    zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ebs_unattached', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
     zombie_non_cluster_polices_runner = None
     is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices
     if is_zombie_non_cluster_polices_runner:

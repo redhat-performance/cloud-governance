@@ -1,6 +1,7 @@
 import operator
 from operator import ge
 
+import boto3
 from botocore.exceptions import ClientError
 
 from cloud_governance.common.logger.init_logger import logger
@@ -8,8 +9,6 @@ from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies imp
 
 
 class EmptyBuckets(NonClusterZombiePolicy):
-
-    BUCKET_DAYS = 7
 
     def __init__(self):
         super().__init__()
@@ -19,45 +18,41 @@ class EmptyBuckets(NonClusterZombiePolicy):
         This method return all Empty buckets and delete if dry_run no
         @return:
         """
-        return self.__delete_empty_bucket(bucket_days=self.BUCKET_DAYS, sign=ge)
+        return self.__delete_empty_bucket()
 
-    def __delete_empty_bucket(self, bucket_days: int, sign: operator = ge):
+    def __delete_empty_bucket(self):
         """
-        This method delete the empty bucket morethan 30 days
-        @param bucket_days:
-        @param sign:
+        This method delete the empty bucket more than 7 days
         @return:
         """
-        zombie_buckets = {}
-        zombie_buckets_data = []
+        empty_buckets = []
         buckets = self._s3_client.list_buckets()['Buckets']
-        active_clusters = self._zombie_cluster.all_cluster_instance()
         for bucket in buckets:
-            age = self._calculate_days(create_date=bucket.get('CreationDate'))
-            if sign(age, bucket_days):
+            bucket_empty = False
+            empty_days = 0
+            bucket_name = bucket.get('Name')
+            try:
                 try:
-                    bucket_data = self._s3_client.list_objects_v2(Bucket=bucket.get('Name'))
-                    if not bucket_data.get('Contents'):
-                        try:
-                            bucket_tags = self._s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
-                            tags = bucket_tags.get('TagSet')
-                        except ClientError:
-                            tags = []
-                        if not self._check_live_cluster_tag(tags, active_clusters.values()):
-                            zombie_buckets[bucket.get('Name')] = tags
-                            zombie_buckets_data.append([bucket.get('Name'),
-                                                        str(bucket.get('CreationDate')),
-                                                        str(age),
-                                                        self._get_policy_value(tags=tags)
-                                                        ])
-                except Exception as err:
-                    logger.info(f'{err}, {bucket.get("Name")}')
-        if self._dry_run == 'no':
-            for zombie_bucket, tags in zombie_buckets.items():
-                if self._get_policy_value(tags=tags) != 'NOTDELETE':
-                    try:
-                        self._s3_client.delete_bucket(Bucket=zombie_bucket)
-                        logger.info(f'Bucket is deleted {zombie_bucket}')
-                    except Exception as err:
-                        logger.info(f'Exception raised: {err}: {zombie_bucket}')
-        return zombie_buckets_data
+                    bucket_tags = self._s3_client.get_bucket_tagging(Bucket=bucket_name)
+                    tags = bucket_tags.get('TagSet')
+                except ClientError:
+                    tags = []
+                bucket_data = self._s3_client.list_objects_v2(Bucket=bucket_name)
+                if not bucket_data.get('Contents'):
+                    if not self._check_live_cluster_tag(tags=tags):
+                        if not self._get_tag_name_from_tags(tags=tags, tag_name='Name'):
+                            tags.append({'Key': 'Name', 'Value': bucket_name})
+                        empty_days = self._get_resource_last_used_days(tags=tags)
+                        bucket_empty = True
+                        if not self._get_tag_name_from_tags(tags=tags, tag_name='User'):
+                            region = self._s3_client.get_bucket_location(Bucket=bucket_name)['LocationConstraint']
+                            self._cloudtrail.set_cloudtrail(region_name=region)
+                        empty_bucket = self._check_resource_and_delete(resource_name='S3 Bucket', resource_id='Name', resource_type='CreateBucket', resource=bucket, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
+                        if empty_bucket:
+                            empty_buckets.append([bucket.get('Name'), self._get_tag_name_from_tags(tags=tags, tag_name='User'), str(bucket.get('CreationDate')), str(empty_days), self._get_policy_value(tags=tags)])
+                else:
+                    empty_days = 0
+                self._update_resource_tags(resource_id=bucket_name, tags=tags, left_out_days=empty_days, resource_left_out=bucket_empty)
+            except Exception as err:
+                logger.info(f'{err}, {bucket.get("Name")}')
+        return empty_buckets

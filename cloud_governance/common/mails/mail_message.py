@@ -8,6 +8,7 @@ class MailMessage:
 
     def __init__(self):
         self.account = os.environ.get('account', '')
+        self.policy = os.environ.get('policy', '')
         self.region = os.environ.get('AWS_DEFAULT_REGION', '')
 
     def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str, resource_id: str, stopped_time: str, ec2_type: str):
@@ -79,6 +80,46 @@ Hi {name},
 Your AWS user:{user} in account:{os.environ.get('account')} cost was {user_usage}$ in the last week. 
 Please verify that you are using all the resources.
 Please verify that you are using all the resources in attached {user}_resource.json file.
+
+{self.RESTRICTION}
+
+Best Regards,
+Cloud-governance Team""".strip()
+        return subject, body
+
+    def resource_message(self, name: str, days: int, notification_days: int, delete_days: int, resource_name: str, resource_id: str, resource_type: str):
+        """
+        This method prepare mail message based on resource_type and return subject, body
+        @param name:
+        @param days:
+        @param notification_days:
+        @param delete_days:
+        @param resource_name:
+        @param resource_id:
+        @param resource_type:
+        @return:
+        """
+        resource_type = resource_type.capitalize()
+        reason = self.policy.split('_')[-1]
+        if 'empty' in self.policy:
+            reason = 'empty'
+        if 'zombie' in self.policy:
+            reason = 'Unused'
+        if days == notification_days:
+            subject = f'cloud-governance alert: {self.policy} is {reason} since {notification_days} days'
+            cause = f'This {resource_type} will be deleted if it is {reason} {delete_days} days'
+            content = f'If you want that cloud-governance will not delete it add Policy=Not_Delete/skip tag to your {resource_type}s.'
+        else:
+            subject = f'cloud-governance alert: Deleted {self.policy} is {reason} more than {delete_days} days'
+            cause = f'This {resource_type} will be deleted due to it was {reason} more than {delete_days} days.'
+            content = f'In future cloud-governance will not delete your {resource_type} add Policy=Not_Delete/skip tag to your {resource_type}s'
+        body = f"""
+Greetings {name},
+
+{resource_type}: {resource_name}: {resource_id} in {self.region} on AWS account: {self.account} is {reason} more than {days} days.
+{cause}
+{content}
+If you already added the Policy=Not_Delete/skip tag ignore this mail.
 
 {self.RESTRICTION}
 
