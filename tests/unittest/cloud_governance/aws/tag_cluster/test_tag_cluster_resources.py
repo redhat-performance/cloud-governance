@@ -1,5 +1,6 @@
 # TEST DRY RUN: mandatory_tags = None
 import json
+import os
 
 from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3
 import boto3
@@ -11,7 +12,7 @@ cluster_name = ''
 # cluster_name = 'ocs-test-jlhpd'
 # cluster_name = 'opc464-k7jml'
 
-
+os.environ['SLEEP_SECONDS'] = '0'
 # input tags
 mandatory_tags = {}
 # mandatory_tags = {

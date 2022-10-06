@@ -28,4 +28,4 @@ def test_tag_remove_virtual_machine():
     tag_vm.tag_update_virtual_machine(user_tags=tags, vm_tags=[], vm_id='', vm_name='')
     tag_vm._tag_operation = 'remove'
     remove_tags = ['test_tags:vm']
-    assert len(tag_vm.tag_remove_virtual_machine(user_tags=remove_tags, vm_tags=tags, vm_id='', vm_name='')) == 2
+    assert len(tag_vm.tag_remove_virtual_machine(user_tags=remove_tags, vm_tags=tags, vm_id='', vm_name='')) == 1
