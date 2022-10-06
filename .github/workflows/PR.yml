@@ -44,7 +44,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.REGION }}
     - name: Install terraform and terragrunt
-      if: success() || failure()
       run: |
         # Install Terrafrom
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
@@ -70,7 +69,6 @@ jobs:
         terragrunt apply -auto-approve 1> /dev/null
         echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_ENV"
     - name: 📃 Unittest and Integration tests with pytest
-      if: success() || failure()
       env:
         BUCKET: ${{ secrets.BUCKET }}
         REGION: ${{ secrets.REGION }}

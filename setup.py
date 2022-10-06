@@ -2,9 +2,12 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
+
 __version__ = '1.1.11'
 
+
 here = path.abspath(path.dirname(__file__))
+
 
 if path.isfile(path.join(here, 'README.md')):
     with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -22,8 +25,6 @@ setup(
     author_email='ebattat@redhat.com, athiruma@redhat.com',
     url='https://github.com/redhat-performance/cloud-governance',
     license="Apache License 2.0",
-    zip_safe=False,
-
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
@@ -33,6 +34,8 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
+
+    zip_safe=False,
 
     # Find all packages (__init__.py)
     packages=find_packages(include=['cloud_governance', 'cloud_governance.*']),
