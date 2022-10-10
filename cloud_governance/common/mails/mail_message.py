@@ -87,9 +87,10 @@ Best Regards,
 Cloud-governance Team""".strip()
         return subject, body
 
-    def resource_message(self, name: str, days: int, notification_days: int, delete_days: int, resource_name: str, resource_id: str, resource_type: str):
+    def resource_message(self, name: str, days: int, notification_days: int, delete_days: int, resource_name: str, resource_id: str, resource_type: str, resources: list = []):
         """
         This method prepare mail message based on resource_type and return subject, body
+        @param resources:
         @param name:
         @param days:
         @param notification_days:
@@ -113,6 +114,9 @@ Cloud-governance Team""".strip()
             subject = f'cloud-governance alert: Deleted {self.policy} is {reason} more than {delete_days} days'
             cause = f'This {resource_type} will be deleted due to it was {reason} more than {delete_days} days.'
             content = f'In future cloud-governance will not delete your {resource_type} add Policy=Not_Delete/skip tag to your {resource_type}s'
+        extra_data = ''
+        if resources:
+            extra_data = f'Cluster Undeleted Resources: {sorted(resources)}'
         body = f"""
 Greetings {name},
 
@@ -120,6 +124,8 @@ Greetings {name},
 {cause}
 {content}
 If you already added the Policy=Not_Delete/skip tag ignore this mail.
+
+{extra_data}
 
 {self.RESTRICTION}
 
