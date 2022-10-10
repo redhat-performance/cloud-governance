@@ -9,6 +9,7 @@ from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
@@ -16,7 +17,12 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 
 class NonClusterZombiePolicy:
 
+    DAYS_TO_DELETE_RESOURCE = 7
+    DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
+
     def __init__(self):
+        self._end_date = datetime.datetime.now()
+        self._start_date = self._end_date - datetime.timedelta(days=self.DAYS_TO_DELETE_RESOURCE)
         self._account = os.environ.get('account', '')
         self._dry_run = os.environ.get('dry_run', 'yes')
         self._region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
@@ -37,6 +43,7 @@ class NonClusterZombiePolicy:
         self._mail_description = MailMessage()
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
+        self._active_clusters = self._zombie_cluster.all_cluster_instance()
 
     def _literal_eval(self, data: any):
         tags = {}
@@ -44,7 +51,7 @@ class NonClusterZombiePolicy:
             tags = literal_eval(data)
         return tags
 
-    def _check_live_cluster_tag(self, tags: list, active_clusters: list):
+    def _check_live_cluster_tag(self, tags: list):
         """
         This method returns True if it is live cluster tag is active False not
         @param tags:
@@ -53,7 +60,7 @@ class NonClusterZombiePolicy:
         if tags:
             for tag in tags:
                 if tag.get('Key').startswith(self._cluster_prefix):
-                    return tag.get('Key') in active_clusters
+                    return tag.get('Key') in self._active_clusters.values()
         return False
 
     def _get_tag_name_from_tags(self, tags: list, tag_name: str = 'Name'):
@@ -67,8 +74,8 @@ class NonClusterZombiePolicy:
             for tag in tags:
                 if tag.get('Key').strip().lower() == tag_name.lower():
                     return tag.get('Value').strip()
-            return 'NA'
-        return 'NA'
+            return ''
+        return ''
 
     def _calculate_days(self, create_date: datetime):
         """
@@ -108,7 +115,7 @@ class NonClusterZombiePolicy:
                 upload_data.append(resource_data)
         return upload_data
 
-    def _get_resource_username(self, create_date: datetime, resource_id: str, resource_type: str):
+    def _get_resource_username(self, resource_id: str, resource_type: str, create_date: datetime = '', event_type: str = ''):
         """
         Get Username from the cloudtrail
         @param create_date:
@@ -116,7 +123,12 @@ class NonClusterZombiePolicy:
         @param resource_type:
         @return:
         """
-        return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date, resource_id=resource_id, resource_type=resource_type)
+        if event_type:
+            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date, resource_id=resource_id,
+                                                                         resource_type=resource_type, event_type=event_type)
+        else:
+            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date, resource_id=resource_id,
+                                                                         resource_type=resource_type)
 
     def _get_policy_value(self, tags: list):
         """
@@ -125,5 +137,134 @@ class NonClusterZombiePolicy:
         @return:
         """
         policy_value = self._get_tag_name_from_tags(tags=tags, tag_name='Policy').strip()
-        return policy_value.replace('_', '').replace('-', '').upper()
+        if policy_value:
+            return policy_value.replace('_', '').replace('-', '').upper()
+        return 'NA'
 
+    def _trigger_mail(self, tags: list, resource_id: str, days: int, resource_type: str):
+        """
+        This method send triggering mail
+        @param tags:
+        @param resource_id:
+        @return:
+        """
+        try:
+            special_user_mails = self._literal_eval(self._special_user_mails)
+            user, resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(
+                tags=tags, tag_name='Name')
+            if not resource_name:
+                resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
+            to = user if user not in special_user_mails else special_user_mails[user]
+            ldap_data = self._ldap.get_user_details(user_name=to)
+            cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+            name = to
+            if ldap_data:
+                name = ldap_data.get('displayName')
+            subject, body = self._mail_description.resource_message(name=name, days=days,
+                                                                    notification_days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
+                                                                    delete_days=self.DAYS_TO_DELETE_RESOURCE,
+                                                                    resource_name=resource_name, resource_id=resource_id,
+                                                                    resource_type=resource_type)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id)
+        except Exception as err:
+            logger.info(err)
+
+    def _update_tag_value(self, tags: list, tag_name: str, tag_value: str):
+        """
+        This method updates the tag value
+        @param tags:
+        @param tag_name:
+        @param tag_value:
+        @return:
+        """
+        found = False
+        if tags:
+            for tag in tags:
+                if tag.get('Key') == tag_name:
+                    tag['Value'] = str(tag_value)
+                    found = True
+            if not found:
+                tags.append({'Key': tag_name, 'Value': str(tag_value)})
+            return tags
+        return [{'Key': tag_name, 'Value': str(tag_value)}]
+
+    def _get_resource_last_used_days(self, tags: list):
+        """
+        This method get last used day from the tags
+        @param tags:
+        @return:
+        """
+        last_used_day = self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')
+        if not last_used_day:
+            last_used_day = 1
+        else:
+            last_used_day = int(last_used_day) + 1
+        return last_used_day
+
+    def __delete_resource_on_name(self, resource_id: str):
+        try:
+            if self._policy == 'empty_buckets':
+                self._s3_client.delete_bucket(Bucket=resource_id)
+            elif self._policy == 'empty_roles':
+                self._iam_client.delete_role(RoleName=resource_id)
+            elif self._policy == 'ebs_unattached':
+                self._ec2_client.delete_volume(VolumeId=resource_id)
+            elif self._policy == 'zombie_elastic_ips':
+                self._ec2_client.release_address(AllocationId=resource_id)
+            elif self._policy == 'zombie_nat_gateways':
+                self._ec2_client.delete_nat_gateway(NatGatewayId=resource_id)
+            elif self._policy == 'zombie_snapshots':
+                self._ec2_client.delete_snapshot(SnapshotId=resource_id)
+            logger.info(f'{self._policy} deleted: {resource_id}')
+        except Exception as err:
+            logger.info(f'Exception raised: {err}: {resource_id}')
+
+    def _check_resource_and_delete(self, resource_name: str, resource_id: str, resource_type: str, resource: dict, empty_days: int, days_to_delete_resource: int, tags: list = []):
+        """
+        This method check and delete resources
+        @param resource_name:
+        @param resource_id:
+        @param resource_type:
+        @param resource:
+        @param empty_days:
+        @param days_to_delete_resource:
+        @param tags:
+        @return:
+        """
+        resource_id = resource.get(resource_id)
+        if not tags:
+            tags = resource.get('Tags') if resource.get('Tags') else []
+        user = self._get_tag_name_from_tags(tag_name='User', tags=tags)
+        if not user:
+            user = self._get_resource_username(resource_id=resource_id, resource_type=resource_type, event_type='EventName')
+            if user:
+                tags.append({'Key': 'User', 'Value': user})
+        zombie_resource = {}
+        if empty_days >= self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
+            if empty_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL)
+            elif empty_days >= days_to_delete_resource:
+                if self._dry_run == 'no':
+                    if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days)
+                        self.__delete_resource_on_name(resource_id=resource_id)
+            zombie_resource = resource
+        return zombie_resource
+
+    def _update_resource_tags(self, resource_id: str, left_out_days: int, tags: list, resource_left_out: bool):
+        """
+        This method update the tags in aws
+        @return:
+        """
+        if left_out_days < 7 or self._dry_run == 'yes' or self._get_policy_value(tags=tags) in ('NOTDELETE', 'SKIP'):
+            if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay') or resource_left_out:
+                tags = self._update_tag_value(tags=tags, tag_name='LastUsedDay', tag_value=str(left_out_days))
+                try:
+                    if self._policy == 'empty_buckets':
+                        self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
+                    elif self._policy == 'empty_roles':
+                        self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
+                    elif self._policy in ('zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots'):
+                        self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
+                except Exception as err:
+                    logger.info(f'Exception raised: {err}: {resource_id}')

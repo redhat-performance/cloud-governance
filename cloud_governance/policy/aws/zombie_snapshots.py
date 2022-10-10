@@ -1,4 +1,3 @@
-from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
@@ -27,27 +26,35 @@ class ZombieSnapshots(NonClusterZombiePolicy):
         @return:
         """
         snapshots = self._ec2_operations.get_snapshots()
-        zombie_snapshots = {}
-        zombie_snapshots_data = []
+        zombie_snapshots = []
         image_ids = self._get_ami_ids()
         for snapshot in snapshots:
             if snapshot.get('Description'):
                 snapshot_images = self._get_image_ids_from_description(snapshot.get('Description'))
+                tags = snapshot.get('Tags')
                 found = False
                 for snapshot_image in snapshot_images:
                     if snapshot_image in image_ids:
                         found = True
+                snapshot_id = snapshot.get('SnapshotId')
                 if not found:
-                    zombie_snapshots[snapshot.get('SnapshotId')] = snapshot.get('Tags')
-                    zombie_snapshots_data.append([snapshot.get('SnapshotId'),
-                                                  self._get_tag_name_from_tags(tags=snapshot.get('Tags')),
-                                                  self._get_tag_name_from_tags(tags=snapshot.get('Tags'), tag_name='User'),
-                                                  str(snapshot.get('VolumeSize')),
-                                                  self._get_policy_value(tags=snapshot.get('Tags'))
-                                                  ])
-        if self._dry_run == "no":
-            for zombie_id, tags in zombie_snapshots.items():
-                if self._get_policy_value(tags=tags) != 'NOTDELETE':
-                    self._ec2_client.delete_snapshot(SnapshotId=zombie_id)
-                    logger.info(f'Snapshot is deleted {zombie_id}')
-        return zombie_snapshots_data
+                    unused_days = self._get_resource_last_used_days(tags=tags)
+                    zombie_snapshot = self._check_resource_and_delete(resource_name='Snapshot',
+                                                                      resource_id='SnapshotId',
+                                                                      resource_type='CreateSnapshot',
+                                                                      resource=snapshot,
+                                                                      empty_days=unused_days,
+                                                                      days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE,
+                                                                      tags=tags)
+                    if zombie_snapshot:
+                        zombie_snapshots.append([snapshot.get('SnapshotId'),
+                                                 self._get_tag_name_from_tags(tags=tags),
+                                                 self._get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                 f'{str(snapshot.get("VolumeSize"))}Gb',
+                                                 self._get_policy_value(tags=snapshot.get('Tags')), str(unused_days)
+                                                 ])
+                else:
+                    unused_days = 0
+                self._update_resource_tags(resource_id=snapshot_id, tags=tags, left_out_days=unused_days,
+                                           resource_left_out=not found)
+        return zombie_snapshots
