@@ -74,7 +74,8 @@ class Postfix:
                     data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper()}
                     if kwargs.get('resource_id'):
                         data['resource_id'] = kwargs['resource_id']
-                    self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+                    if self.__es_host:
+                        self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                 except smtplib.SMTPException as ex:
                     logger.info(f'Error while sending mail, {ex}')
                     return False
