@@ -12,27 +12,35 @@ class EmptyRoles(NonClusterZombiePolicy):
         This method return all empty roles, delete if dry_run no
         @return:
         """
-        zombie_roles_data = []
-        zombie_roles = {}
+        return self.__delete_empty_roles()
+
+    def __delete_empty_roles(self):
+        """
+        This method deletes the role after 7 days of empty
+        @return:
+        """
+        zombie_roles = []
         roles = self._iam_operations.get_roles()
-        active_clusters = self._zombie_cluster.all_cluster_instance()
         for role in roles:
+            role_name = role.get('RoleName')
             try:
-                role_attached_policies = self._iam_client.list_attached_role_policies(RoleName=role.get('RoleName'))
-                role_inline_policies = self._iam_client.list_role_policies(RoleName=role.get('RoleName'))
-                if not role_inline_policies.get('PolicyNames') and not role_attached_policies.get('AttachedPolicies'):
-                    get_role = self._iam_client.get_role(RoleName=role.get('RoleName'))['Role']
-                    if not self._check_live_cluster_tag(get_role.get('Tags'), active_clusters.values()):
-                        zombie_roles_data.append([role.get('RoleName'), self._get_policy_value(tags=get_role.get('Tags'))])
-                        zombie_roles[role.get('RoleName')] = get_role.get('Tags')
+                get_role = self._iam_client.get_role(RoleName=role.get('RoleName'))['Role']
+                tags = get_role.get('Tags')
+                if not self._check_live_cluster_tag(tags=tags):
+                    role_empty = False
+                    role_attached_policies = self._iam_client.list_attached_role_policies(RoleName=role_name)
+                    role_inline_policies = self._iam_client.list_role_policies(RoleName=role_name)
+                    if not role_inline_policies.get('PolicyNames') and not role_attached_policies.get('AttachedPolicies'):
+                        role_empty = True
+                        if not self._get_tag_name_from_tags(tags=tags, tag_name='Name'):
+                            tags.append({'Key': 'Name', 'Value': role_name})
+                        empty_days = self._get_resource_last_used_days(tags=tags)
+                        empty_role = self._check_resource_and_delete(resource_name='IAM Role', resource_id='RoleName', resource_type='CreateRole', resource=get_role, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
+                        if empty_role:
+                            zombie_roles.append([empty_role.get('RoleName'), self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_policy_value(tags=tags), empty_days])
+                    else:
+                        empty_days = 0
+                    self._update_resource_tags(resource_id=role_name, tags=tags, left_out_days=empty_days, resource_left_out=role_empty)
             except Exception as err:
-                logger.info(f'{err} {role.get("RoleName")}')
-        if self._dry_run == 'no':
-            for zombie_role, tags in zombie_roles.items():
-                if self._get_policy_value(tags=tags) != 'NOTDELETE':
-                    try:
-                        self._iam_client.delete_role(RoleName=zombie_role)
-                        logger.info(f'Role is deleted: {zombie_role}')
-                    except Exception as err:
-                        logger.info(f'Exception raised: {err}: {zombie_role}')
-        return zombie_roles_data
+                logger.info(f'Error occur:{role_name}, {err}')
+        return zombie_roles

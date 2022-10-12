@@ -49,7 +49,7 @@ class Postfix:
         msg["Cc"] = ",".join(cc)
         # msg.add_header("Reply-To", self.reply_to)
         # msg.add_header("User-Agent", self.reply_to)
-        if kwargs:
+        if kwargs.get('filename'):
             attachment = MIMEText(open(kwargs['filename']).read())
             attachment.add_header('Content-Disposition', 'attachment',
                                   filename=kwargs['filename'].split('/')[-1])
@@ -63,7 +63,7 @@ class Postfix:
                     logger.debug(email_string)
                     s.send_message(msg)
                     logger.info(f'Mail sent successfully to {to}@redhat.com')
-                    if kwargs:
+                    if kwargs.get('filename'):
                         file_name = kwargs['filename'].split('/')[-1]
                         date_key = datetime.datetime.now().strftime("%Y%m%d%H")
                         self.__s3_operations.upload_file(file_name_path=kwargs['filename'],
@@ -72,9 +72,10 @@ class Postfix:
                         s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
                         content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
                     data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper()}
-                    if kwargs.get('instance_id'):
-                        data['InstanceId'] = kwargs['instance_id']
-                    self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+                    if kwargs.get('resource_id'):
+                        data['resource_id'] = kwargs['resource_id']
+                    if self.__es_host:
+                        self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                 except smtplib.SMTPException as ex:
                     logger.info(f'Error while sending mail, {ex}')
                     return False

@@ -5,10 +5,13 @@ from datetime import timedelta, datetime
 
 import boto3
 
+from cloud_governance.common.logger.init_logger import logger
+
 
 class CloudTrailOperations:
     SEARCH_SECONDS = 10
     SLEEP_SECONDS = 120
+    LOOKBACK_DAYS = 30
 
     def __init__(self, region_name: str):
         self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
@@ -114,7 +117,23 @@ class CloudTrailOperations:
         except Exception as err:
             return [False, '']
 
-    def __get_user_by_resource_id(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str):
+    def __get_full_responses(self, **kwargs):
+        """
+        This method return all responses
+        @param kwargs:
+        @return:
+        """
+        responses = []
+        response = self.__cloudtrail.lookup_events(**kwargs)
+        responses.extend(response['Events'])
+        while response.get('NextToken'):
+            response = self.__cloudtrail.lookup_events(**kwargs, NextToken=response.get('NextToken'))
+            responses.extend(response['Events'])
+        if responses:
+            return responses
+        return []
+
+    def __get_user_by_resource_id(self, start_time: datetime, end_time: datetime, resource_id: str, resource_type: str, event_type: str):
         """
         This method find the username of the resource_id with given resource_type
         @param start_time:
@@ -124,10 +143,17 @@ class CloudTrailOperations:
         @return:
         """
         try:
-            response = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
-                'AttributeKey': 'ResourceType', 'AttributeValue': resource_type
-            }])
-            for event in response['Events']:
+            responses = self.__get_full_responses(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+                'AttributeKey': event_type, 'AttributeValue': resource_type}])
+            for event in responses:
+                if event.get('EventName') == resource_type:
+                    if event.get('Resources'):
+                        for resource in event.get('Resources'):
+                            if resource.get('ResourceName') == resource_id:
+                                username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
+                                if username:
+                                    return [username, assumed_event]
+                                return [event.get('Username'), event]
                 if event.get('Resources'):
                     for resource in event.get('Resources'):
                         if resource.get('ResourceType') == resource_type:
@@ -147,24 +173,29 @@ class CloudTrailOperations:
         @return:
         """
         current_time = datetime.now(start_time.tzinfo).replace(tzinfo=None)
-        seconds = (current_time - start_time.replace(tzinfo=None)).seconds
-        return seconds
+        diff = (current_time - start_time.replace(tzinfo=None))
+        return (diff.days * 24 * 60 * 60) + diff.seconds
 
-    def get_username_by_instance_id_and_time(self, start_time: datetime, resource_id: str, resource_type: str):
+    def get_username_by_instance_id_and_time(self, resource_id: str, resource_type: str, start_time: datetime = '', event_type: str = 'ResourceType'):
         """
         This method find Username in cloud trail events according to start_time and resource_id
+        @param event_type:
         @param start_time:
         @param resource_id:
         @param resource_type:
         @return: if user not found it return empty string
         """
-        delay_seconds = int(os.environ.get('SLEEP_SECONDS', self.SLEEP_SECONDS))
-        if self.__get_time_difference(start_time=start_time) <= delay_seconds:
-            time.sleep(delay_seconds)
-        search_time = timedelta(seconds=self.SEARCH_SECONDS)
-        end_time = start_time + search_time
-        start_time = start_time - search_time
-        username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type)
+        if start_time:
+            delay_seconds = int(os.environ.get('SLEEP_SECONDS', self.SLEEP_SECONDS))
+            if self.__get_time_difference(start_time=start_time) <= delay_seconds:
+                time.sleep(delay_seconds)
+            search_time = timedelta(seconds=self.SEARCH_SECONDS)
+            end_time = start_time + search_time
+            start_time = start_time - search_time
+        else:
+            start_time = datetime.now() - timedelta(days=self.LOOKBACK_DAYS)
+            end_time = datetime.now()
+        username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type, event_type)
         return self.__check_filter_username(username, event)
 
     def get_stop_time(self, resource_id: str, event_name: str):
@@ -196,6 +227,36 @@ class CloudTrailOperations:
         except:
             return ''
 
-    def set_cloudtrail(self):
-        self.__cloudtrail = boto3.client('cloudtrail', region_name='us-east-1')
+    def set_cloudtrail(self, region_name: str):
+        self.__cloudtrail = boto3.client('cloudtrail', region_name=region_name)
 
+    def get_last_time_accessed(self, resource_id: str, event_name: str, start_time: datetime, end_time: datetime, **kwargs):
+        """
+        This method return last accesses time
+        @param resource_id:
+        @param event_name:
+        @param start_time:
+        @param end_time:
+        @return:
+        """
+        try:
+            events = self.__cloudtrail.lookup_events(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+                'AttributeKey': 'ResourceName', 'AttributeValue': resource_id
+            }])['Events']
+            if events:
+                events = sorted(events, key=lambda event: event['EventTime'], reverse=True)
+                if events[0].get('EventName') == event_name:
+                    return events[0].get('EventTime')
+                if kwargs:
+                    if len(events) == 1:
+                        if events[0].get('EventName') == kwargs['optional_event_name'][0]:
+                            return events[0].get('EventTime')
+                    elif len(events) == 2:
+                        if events[0].get('EventName') in kwargs['optional_event_name'] and events[1].get('EventName') in kwargs['optional_event_name']:
+                            return events[0].get('EventTime')
+            else:
+                return start_time - timedelta(days=4)
+        except Exception as err:
+            logger.info(f'{err}')
+            return None
+        return None
