@@ -1,6 +1,8 @@
+import os
+
 import typeguard
 
-from cloud_governance.aws.zombie_cluster.zomibe_cluster_common_methods import ZombieClusterCommonMethods
+from cloud_governance.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
@@ -31,26 +33,26 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
                                      'zombie_cluster_role': zombie_cluster_resources.zombie_cluster_role,
                                      'zombie_cluster_user': zombie_cluster_resources.zombie_cluster_user,
                                      'zombie_cluster_s3_bucket': zombie_cluster_resources.zombie_cluster_s3_bucket}
-    ec2_zombie_resource_services = [#zombie_cluster_resources.zombie_cluster_ami,
-                                    # zombie_cluster_resources.zombie_cluster_volume,
-                                    # zombie_cluster_resources.zombie_cluster_load_balancer,
-                                    # zombie_cluster_resources.zombie_cluster_load_balancer_v2,
-                                    # zombie_cluster_resources.zombie_cluster_snapshot,
-                                    # zombie_cluster_resources.zombie_cluster_vpc_endpoint,
-                                    # zombie_cluster_resources.zombie_cluster_dhcp_option,
-                                    # zombie_cluster_resources.zombie_cluster_route_table,
+    ec2_zombie_resource_services = [zombie_cluster_resources.zombie_cluster_ami,
+                                    zombie_cluster_resources.zombie_cluster_volume,
+                                    zombie_cluster_resources.zombie_cluster_load_balancer,
+                                    zombie_cluster_resources.zombie_cluster_load_balancer_v2,
+                                    zombie_cluster_resources.zombie_cluster_snapshot,
+                                    zombie_cluster_resources.zombie_cluster_vpc_endpoint,
+                                    zombie_cluster_resources.zombie_cluster_dhcp_option,
+                                    zombie_cluster_resources.zombie_cluster_route_table,
                                     zombie_cluster_resources.zombie_cluster_security_group,
-                                    # zombie_cluster_resources.zombie_cluster_nat_gateway,
-                                    # zombie_cluster_resources.zombie_cluster_network_acl,
-                                    # zombie_cluster_resources.zombie_cluster_network_interface,
-                                    # zombie_cluster_resources.zombie_cluster_elastic_ip,
-                                    # zombie_cluster_resources.zombie_cluster_internet_gateway,
-                                    # zombie_cluster_resources.zombie_cluster_subnet,
-                                    #zombie_cluster_resources.zombie_cluster_vpc
-        ]
-    iam_zombie_resource_services = []#zombie_cluster_resources.zombie_cluster_role,
-                                    #zombie_cluster_resources.zombie_cluster_user]
-    s3_zombie_resource_services = []#[zombie_cluster_resources.zombie_cluster_s3_bucket]
+                                    zombie_cluster_resources.zombie_cluster_nat_gateway,
+                                    zombie_cluster_resources.zombie_cluster_network_acl,
+                                    zombie_cluster_resources.zombie_cluster_network_interface,
+                                    zombie_cluster_resources.zombie_cluster_elastic_ip,
+                                    zombie_cluster_resources.zombie_cluster_internet_gateway,
+                                    zombie_cluster_resources.zombie_cluster_subnet,
+                                    zombie_cluster_resources.zombie_cluster_vpc
+                                    ]
+    iam_zombie_resource_services = [zombie_cluster_resources.zombie_cluster_role,
+                                    zombie_cluster_resources.zombie_cluster_user]
+    s3_zombie_resource_services = [zombie_cluster_resources.zombie_cluster_s3_bucket]
     scan_func_resource_list = []
     delete_func_resource_list = []
     if resource:
@@ -85,7 +87,6 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
     if delete true it will delete the zombie resource
     :return: list of zombie resources
     """
-    zombie_cluster_common_methods = ZombieClusterCommonMethods(region=region)
     zombie_result = {}
     all_cluster_data = []
 
@@ -106,33 +107,24 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
         else:
             func_resource_list = __get_resource_list(region, delete, resource, cluster_tag, resource_name, service_type)
     logger.info(f'{action} {len(func_resource_list)} cluster zombies resources in region {region}:')
-    zombie_user_tag_list = zombie_cluster_resources.zombie_cluster_security_group(user_tag=True)
-    cluster_trigger_notify_data = {}
-    cluster_trigger_delete_data = {}
+    notify_data = {}
+    delete_data = {}
+    cluster_data = {}
+    zombie_cluster_common_methods = ZombieClusterCommonMethods(region=region)
     for func in func_resource_list:
-        resource_data, cluster_left_out_days = func(zombie_user_tag_list=zombie_user_tag_list)
+        resource_data, cluster_left_out_days = func()
         if resource_data:
-            for resource_id, cluster_tag in resource_data.items():
-                if cluster_tag in cluster_left_out_days:
-                    empty_days = int(zombie_cluster_common_methods._get_tag_name_from_tags(tags=cluster_left_out_days[cluster_tag], tag_name='EmptyDays'))
-                    if empty_days == zombie_cluster_common_methods.DAYS_TO_TRIGGER_RESOURCE_MAIL:
-                        if cluster_tag in cluster_trigger_notify_data:
-                            cluster_trigger_notify_data[cluster_tag].append(resource_id)
-                        else:
-                            cluster_trigger_notify_data[cluster_tag] = [resource_id]
-                    elif empty_days >= zombie_cluster_common_methods.DAYS_TO_DELETE_RESOURCE:
-                        if cluster_tag in cluster_trigger_notify_data:
-                            cluster_trigger_delete_data[cluster_tag].append(resource_id)
-                        else:
-                            cluster_trigger_delete_data[cluster_tag] = [resource_id]
+            notify_data, delete_data, cluster_data = zombie_cluster_common_methods.collect_notify_cluster_data(
+                resource_data=resource_data,
+                cluster_left_out_days=cluster_left_out_days,
+                notify_data=notify_data, delete_data=delete_data, cluster_data=cluster_data, func_name=func.__name__)
             resource_data_list = sorted(set(resource_data.values()))
             resource_data_list = [func.__name__.replace("zombie_cluster_", "") + ':' + item for item in
                                   resource_data_list]
             logger.info(f'key: {func.__name__}, count: {len(resource_data)}, data: {resource_data_list}')
             zombie_result[func.__name__] = {'count': len(resource_data), 'data': resource_data_list}
             all_cluster_data.extend(resource_data_list)
-    for trigger_notify, cluster_data in cluster_trigger_notify_data.items():
-        zombie_cluster_common_methods._update_resource_tags(tags=cluster_left_out_days[trigger_notify], tag_name='Name', tag_value=trigger_notify)
-        zombie_cluster_common_methods._trigger_mail(tags=cluster_left_out_days[trigger_notify], resource_id='Cluster', resource_type='LeftOut Cluster Resources', days=zombie_cluster_common_methods.DAYS_TO_TRIGGER_RESOURCE_MAIL, resources=cluster_data)
+    zombie_cluster_common_methods.send_mails_to_cluster_user(notify_data=notify_data, delete_data=delete_data,
+                                                             cluster_data=cluster_data)
     zombie_result['all_cluster_data'] = {'count': len(set(all_cluster_data)), 'data': set(sorted(all_cluster_data))}
     return zombie_result
