@@ -15,9 +15,9 @@ jobs:
       matrix:
         python-version: [ '3.8', '3.9' ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -96,9 +96,9 @@ jobs:
     needs: [ test ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: 🔨 Build and publish distribution 📦 to PyPI
@@ -116,9 +116,9 @@ jobs:
     needs: [ test, pypi_upload ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Validate upload to PyPI
@@ -162,9 +162,9 @@ jobs:
     needs: [ test, pypi_upload, pypi_validate ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: ⌛ Upload to 🐋 quay.io
@@ -183,9 +183,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ test, pypi_upload, pypi_validate, quay_upload ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: 🎁 Bump Version
@@ -213,7 +213,7 @@ jobs:
         policy: ['ec2_idle', 'ec2_run', 'ebs_unattached',  'ebs_in_use']
         # we don't run zombie_cluster_resource due to long run
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: ✔️ E2E tests using latest quay.io
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
@@ -225,7 +225,7 @@ jobs:
     needs: [ test, pypi_upload, pypi_validate, quay_upload, bump_version ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: run gitleaks
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
