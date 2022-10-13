@@ -46,7 +46,7 @@ def test_s3_zombie_bucket_exists():
                                                       cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
                                                       resource_name='zombie_cluster_s3_bucket')
 
-    assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()) >= 1
+    assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()[0]) >= 1
 
 
 def test_s3_zombie_bucket_delete():
