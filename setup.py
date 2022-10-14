@@ -32,6 +32,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
 
     zip_safe=False,
@@ -44,7 +45,7 @@ setup(
         'botocore==1.22.12',  # required by c7n 0.9.14
         'boto3==1.19.12',  # required by c7n 0.9.14
         'c7n==0.9.14',  # custodian
-        'elasticsearch==7.10.0',  # depend on elasticsearch server
+        'elasticsearch==7.11.0',  # depend on elasticsearch server
         'elasticsearch-dsl==7.4.0',
         'myst-parser==0.17.0',  # readthedocs
         'pandas',  # latest: aggregate ec2/ebs cluster data
