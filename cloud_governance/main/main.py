@@ -38,7 +38,7 @@ from cloud_governance.aws.zombie_non_cluster.zombie_non_cluster_polices import Z
 # os.environ['resource'] = 'zombie_cluster_nat_gateway'
 # os.environ['cluster_tag'] = ''
 # os.environ['cluster_tag'] = ''
-# os.environ['policy_output'] = 's3://redhat-cloud-governance/logs'
+# os.environ['policy_output'] = 's3://bucket_name/logs'
 # os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
 # os.environ['policy'] = 'ebs_unattached'
 # os.environ['resource_name'] = 'ocp-test'

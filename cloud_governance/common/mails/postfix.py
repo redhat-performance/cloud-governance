@@ -32,11 +32,23 @@ class Postfix:
         self.__es_port = os.environ.get('es_port', '')
         self.__account = os.environ.get('account', '')
         self.__policy_output = os.environ.get('policy_output', '')
+        self.bucket_name, self.key = self.get_bucketname()
         self.__es_index = 'cloud-governance-mail-messages'
         if self.__es_host:
             self.__es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
         if self.__policy_output:
             self.__s3_operations = S3Operations(region_name='us-east-1')
+
+    def get_bucketname(self):
+        bucket_name = ''
+        key = 'logs'
+        if 's3' in self.__policy_output.lower():
+            targets = self.__policy_output.split('/')
+            bucket_name = targets[2]
+            key = targets[3]
+        else:
+            bucket_name = self.__policy_output
+        return bucket_name, key
 
     def send_email_postfix(self, subject: str, to: str, cc: list, content: str, **kwargs):
         msg = MIMEMultipart('alternative')
@@ -67,7 +79,7 @@ class Postfix:
                         file_name = kwargs['filename'].split('/')[-1]
                         date_key = datetime.datetime.now().strftime("%Y%m%d%H")
                         self.__s3_operations.upload_file(file_name_path=kwargs['filename'],
-                                                         bucket=self.__policy_output, key=f'logs/{self.__policy}/{date_key}',
+                                                         bucket=self.bucket_name, key=f'{self.key}/{self.__policy}/{date_key}',
                                                          upload_file=file_name)
                         s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
                         content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
