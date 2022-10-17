@@ -81,25 +81,40 @@ class ZombieClusterCommonMethods:
             aws_tags = []
             resource_id = resource.get(resource_id_name)
             if aws_service == 'elbv1':
-                aws_tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id]).get('TagDescriptions')
-                if len(aws_tags) > 0:
-                    aws_tags = aws_tags[0].get(aws_tag)
+                try:
+                    aws_tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id]).get('TagDescriptions')
+                    if len(aws_tags) > 0:
+                        aws_tags = aws_tags[0].get(aws_tag)
+                except:
+                    return []
             elif aws_service == 'elbv2':
-                aws_tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id]).get('TagDescriptions')
-                if len(aws_tags) > 0:
-                    aws_tags = aws_tags[0].get(aws_tag)
+                try:
+                    aws_tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id]).get('TagDescriptions')
+                    if len(aws_tags) > 0:
+                        aws_tags = aws_tags[0].get(aws_tag)
+                except:
+                    return []
             elif aws_service == 'role' and resource_id in zombies:
-                role_data = self.iam_client.get_role(RoleName=resource_id)['Role']
-                if role_data.get(aws_tag):
-                    aws_tags = role_data.get(aws_tag)
+                try:
+                    role_data = self.iam_client.get_role(RoleName=resource_id)['Role']
+                    if role_data.get(aws_tag):
+                        aws_tags = role_data.get(aws_tag)
+                except:
+                    return []
             elif aws_service == 'user' and resource_id in zombies:
-                user_data = self.iam_client.get_user(UserName=resource_id)['User']
-                if user_data.get(aws_tag):
-                    aws_tags = user_data.get(aws_tag)
+                try:
+                    user_data = self.iam_client.get_user(UserName=resource_id)['User']
+                    if user_data.get(aws_tag):
+                        aws_tags = user_data.get(aws_tag)
+                except Exception as err:
+                    return []
             elif aws_service == 'bucket' and resource_id in zombies:
-                bucket_data = self.s3_client.get_bucket_tagging(Bucket=resource_id)
-                if bucket_data.get(aws_tag):
-                    aws_tags = bucket_data.get(aws_tag)
+                try:
+                    bucket_data = self.s3_client.get_bucket_tagging(Bucket=resource_id)
+                    if bucket_data.get(aws_tag):
+                        aws_tags = bucket_data.get(aws_tag)
+                except Exception as err:
+                    return []
             else:
                 if resource.get(aws_tag):
                     aws_tags = resource.get(aws_tag)
@@ -117,18 +132,21 @@ class ZombieClusterCommonMethods:
                     if resource_id in zombies:
                         tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(1))
                 if old_tags != tags:
-                    if aws_service == 'ec2':
-                        self.ec2_client.create_tags(Resources=[resource_id], Tags=tags)
-                    elif aws_service == 'elbv1':
-                        self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=tags)
-                    elif aws_service == 'elbv2':
-                        self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=tags)
-                    elif aws_service == 'role':
-                        self.iam_client.tag_role(RoleName=resource_id, Tags=tags)
-                    elif aws_service == 'user':
-                        self.iam_client.tag_user(UserName=resource_id, Tags=tags)
-                    elif aws_service == 'bucket':
-                        self.s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
+                    try:
+                        if aws_service == 'ec2':
+                            self.ec2_client.create_tags(Resources=[resource_id], Tags=tags)
+                        elif aws_service == 'elbv1':
+                            self.elb_client.add_tags(LoadBalancerNames=[resource_id], Tags=tags)
+                        elif aws_service == 'elbv2':
+                            self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=tags)
+                        elif aws_service == 'role':
+                            self.iam_client.tag_role(RoleName=resource_id, Tags=tags)
+                        elif aws_service == 'user':
+                            self.iam_client.tag_user(UserName=resource_id, Tags=tags)
+                        elif aws_service == 'bucket':
+                            self.s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
+                    except:
+                        return []
                 if resource_id in zombies:
                     resources_tags[resource_id] = tags
         return resources_tags
