@@ -190,39 +190,9 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
 
         except Exception as err:
             logger.exception(f'BadCredentialsException : {err}')
-    # custodian policy - check if its a custodian policy
-    elif any(policy == item for item in get_custodian_policies()):
-        # default is dry run - change it to custodian dry run format
-        if dry_run == 'yes':
-            dry_run = '--dryrun'
-        elif dry_run == 'no':
-            dry_run = ''
-        else:  # default dry run
-            dry_run = '--dryrun'
-        policy_output = os.environ.get('policy_output', '')
-        # policies_path working only inside the docker
-        # run from local - policies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'policy', f'{policy}.yml')
-        policies_path = os.path.join(os.path.dirname(__file__), 'policy', 'aws')
-        if os.path.isfile(f'{policies_path}/{policy}.yml'):
-            os.system(f'custodian run {dry_run} -s {policy_output} {policies_path}/{policy}.yml')
-        else:
-            logger.exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
-            raise Exception(f'Missing Policy name: "{policies_path}/{policy}.yml"')
-    else:  # local policy
-        # default is dry run - change it to custodian dry run format
-        if dry_run == 'yes':
-            dry_run = '--dryrun'
-        elif dry_run == 'no':
-            dry_run = ''
-        else:  # default dry run
-            dry_run = '--dryrun'
-        policy_output = os.environ.get('policy_output', '')
-        # run from local - policies_path = os.path.join(os.path.dirname(__file__), '../' ,f'{policy}.yml')
-        if os.path.isfile(policy):
-            os.system(f'custodian run {dry_run} -s {policy_output} {policy}')
-        else:
-            logger.exception(f'Missing Policy name: {policy}')
-            raise Exception(f'Missing Policy name: {policy}')
+    else:
+        logger.exception(f'Missing Policy name: {policy}')
+        raise Exception(f'Missing Policy name: {policy}')
 
 
 @logger_time_stamp
@@ -246,7 +216,7 @@ def main():
     es_doc_type = os.environ.get('es_doc_type', '')
     bucket = os.environ.get('bucket', '')
 
-    zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ebs_unattached', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+    zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ebs_in_use', 'ebs_unattached', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
     zombie_non_cluster_polices_runner = None
     is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices
     if is_zombie_non_cluster_polices_runner:

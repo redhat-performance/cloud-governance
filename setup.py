@@ -44,7 +44,6 @@ setup(
         'attrs==21.2.0',  # readthedocs
         'botocore==1.22.12',  # required by c7n 0.9.14
         'boto3==1.19.12',  # required by c7n 0.9.14
-        'c7n==0.9.14',  # custodian
         'elasticsearch==7.11.0',  # depend on elasticsearch server
         'elasticsearch-dsl==7.4.0',
         'myst-parser==0.17.0',  # readthedocs

@@ -3,7 +3,6 @@ typing==3.7.4.3
 typeguard==2.13.3
 botocore==1.22.12
 boto3==1.19.12
-c7n==0.9.14
 elasticsearch==7.11.0
 elasticsearch-dsl==7.4.0
 PyGitHub==1.55

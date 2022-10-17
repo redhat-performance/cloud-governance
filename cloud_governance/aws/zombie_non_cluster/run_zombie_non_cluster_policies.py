@@ -43,7 +43,10 @@ class NonClusterZombiePolicy:
         self._mail_description = MailMessage()
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
-        self._active_clusters = self._zombie_cluster.all_cluster_instance()
+        if self._policy in ('empty_roles', 'empty_buckets'):
+            self._active_clusters = self._zombie_cluster.all_cluster_instance()
+        else:
+            self._active_clusters = self._zombie_cluster._cluster_instance()
 
     def _literal_eval(self, data: any):
         tags = {}
