@@ -1,3 +1,4 @@
+from typeguard import typechecked
 
 from cloud_governance.common.clouds.ibm.account.ibm_account import IBMAccount
 
@@ -10,6 +11,7 @@ class ClassicOperations:
     def __init__(self):
         self._sl_client = IBMAccount().get_sl_client()
 
+    @typechecked
     def __filter_tag_names(self, tag_references: list):
         """
         This method filter tag names from the tagReferences
@@ -27,10 +29,11 @@ class ClassicOperations:
         this method list all hardwares ( bare-metal machines) in ibm classic infrastructure devices
         @return:
         """
-        hardware_mask = "mask[id, hostname]"
+        hardware_mask = "mask[id, hostname, fullyQualifiedDomainName]"
         hardware_ids = self._sl_client.call('Account', 'getHardware', mask=hardware_mask, iter=True)
         return hardware_ids
 
+    @typechecked
     def get_hardware_data(self, hardware_id: str):
         """
         This method return hardware_data from the hardware-id
@@ -42,6 +45,7 @@ class ClassicOperations:
         hardware_data = self._sl_client.call('SoftLayer_Hardware_Server', 'getObject', id=hardware_id, mask=mask)
         return hardware_data
 
+    @typechecked
     def get_hardware_tags(self, hardware_id: str):
         """
         This method returns tags of hardware ( bare-metal machines )
@@ -56,10 +60,11 @@ class ClassicOperations:
         this method list all hardwares ( bare-metal machines) in ibm classic infrastructure devices
         @return:
         """
-        vm_mask = "mask[id, hostname]"
+        vm_mask = "mask[id, hostname, fullyQualifiedDomainName]"
         vm_ids = self._sl_client.call('Account', 'getVirtualGuests', mask=vm_mask, iter=True)
         return vm_ids
 
+    @typechecked
     def get_virtual_machine_data(self, vm_id: str):
         """
         This method return virtual machine from the hardware-id
@@ -70,6 +75,7 @@ class ClassicOperations:
         vm_data = self._sl_client.call('SoftLayer_Virtual_Guest', 'getObject', id=vm_id, mask=mask)
         return vm_data
 
+    @typechecked
     def get_virtual_machine_tags(self, vm_id: str):
         """
         This method returns tags of hardware ( bare-metal machines )
