@@ -14,14 +14,14 @@ class MailMessage:
                  resource_id: str, stopped_time: str, ec2_type: str):
         subject = f'cloud-governance alert: ec2-stop'
         content = 'If you want that cloud-governance will not stop it add Policy=Not_Delete tag to your instance.'
-        message = f'Cloud-governance will stop it in the {delete_instance_days-days} days.'
+        message = f'This instance will be deleted in the {delete_instance_days-days} days.'
         if image_id != '':
-            content = f'You can find a image of the deleted image under AMI: {image_id}'
+            content = f'You can find a image of the deleted instance under AMI: {image_id}'
             message = f'This instance will be deleted due to it was stopped more than {delete_instance_days} days.'
         body = f"""
-Greetings {name},
+Hi {name},
 
-Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} on AWS account: {self.account} was stopped on {stopped_time}, it stopped more than {days} days.  
+Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} on  account: {self.account} was stopped on {stopped_time}, it stopped more than {days} days.  
 {message}
 {content}
 
@@ -41,9 +41,9 @@ Cloud-governance Team""".strip()
             cause = f'This instance will be stopped.'
             content = 'In future cloud-governance will not stop it add Policy=Not_Delete tag to your instance'
         body = f"""
-Greetings {name},
+Hi {name},
 
-Instance: {instance_name}: {resource_id} ( InstanceType:{ec2_type} ) in {self.region} on AWS account: {self.account} is idle more than {days} days.
+Instance: {instance_name}: {resource_id} ( InstanceType:{ec2_type} ) in {self.region} on account: {self.account} is idle more than {days} days.
 {cause}
 {content}
 If you already added the Policy=Not_Delete tag ignore this mail.
@@ -117,9 +117,9 @@ Cloud-governance Team""".strip()
         if resources:
             extra_data = f'Cluster Undeleted Resources: {sorted(resources)}'
         body = f"""
-Greetings {name},
+Hi {name},
 
-{resource_type}: {resource_name}: {resource_id} in {self.region} on AWS account: {self.account} is {reason} more than {days} days.
+{resource_type}: {resource_name}: {resource_id} in {self.region}  account: {self.account} is {reason} more than {days} days.
 {cause}
 {content}
 If you already added the Policy=Not_Delete/skip tag ignore this mail.
