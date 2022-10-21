@@ -11,7 +11,7 @@ from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import t
 from cloud_governance.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
 from cloud_governance.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
-from cloud_governance.ibm.ibm_operations.tag_resources import TagResources
+from cloud_governance.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.aws.zombie_cluster.validate_zombies import ValidateZombies
@@ -252,11 +252,11 @@ def main():
     if is_zombie_non_cluster_polices_runner:
         zombie_non_cluster_polices_runner = ZombieNonClusterPolicies()
 
-    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm']
+    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm', 'ibm_cost_report']
     tag_ibm_classic_infrastructure_runner = None
     is_tag_ibm_classic_infrastructure_runner = policy in tag_ibm_classic_infrastructure_policies
     if is_tag_ibm_classic_infrastructure_runner:
-        tag_ibm_classic_infrastructure_runner = TagResources()
+        tag_ibm_classic_infrastructure_runner = IBMPolicyRunner()
 
     cost_explorer_policies = ['cost_explorer', 'cost_over_usage']
     cost_explorer_policies_runner = None

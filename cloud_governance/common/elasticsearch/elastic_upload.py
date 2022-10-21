@@ -27,12 +27,15 @@ class ElasticUpload:
         @param es_index:
         @return:
         """
-        count = 0
-        for item in items:
-            self._elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item)
-            count += 1
-        if count > 0 and len(items) > 0:
-            logger.info(f'Data Uploaded to {es_index} successfully')
+        try:
+            count = 0
+            for item in items:
+                self._elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item)
+                count += 1
+            if count > 0 and len(items) > 0:
+                logger.info(f'Data Uploaded to {es_index} successfully')
+        except Exception as err:
+            logger.info(f'Error raised {err}')
 
     def _literal_eval(self, data: any):
         """
