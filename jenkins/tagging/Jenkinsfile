@@ -1,4 +1,7 @@
 pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
     agent {
         docker {
             label 'cloud-governance-worker'
