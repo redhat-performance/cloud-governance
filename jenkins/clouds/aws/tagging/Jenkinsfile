@@ -1,19 +1,21 @@
 pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
     agent {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm  --network host -u root -v /tmp/ibm-cost-invoice/:/var/lib/containers --privileged'
+            args  '--rm  --network host -u root -v /tmp/aws/tagging/:/var/lib/containers --privileged'
         }
     }
     environment {
-        ES_HOST = credentials('cloud-governance-es-host')
-        ES_PORT = credentials('cloud-governance-es-port')
-        IBM_API_USERNAME = credentials('cloud-governance-ibm-api-username')
-        IBM_API_KEY = credentials('cloud-governance-ibm-api-key')
-        IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
-        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
+        AWS_ACCESS_KEY_ID_DELETE_PSAP = credentials('cloud-governance-aws-access-key-id-delete-psap')
+        AWS_SECRET_ACCESS_KEY_DELETE_PSAP = credentials('cloud-governance-aws-secret-access-key-delete-psap')
+        AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }
@@ -30,7 +32,7 @@ pipeline {
         }
         stage('Run Tagging Cluster & Non-Cluster') {
             steps {
-                 sh 'python3 jenkins/ibm_cost_invoice/ibm_invoice_to_es.py'
+                 sh 'python3 jenkins/clouds/aws/tagging/tagging.py'
             }
         }
         stage('Finalize Cleanup') {

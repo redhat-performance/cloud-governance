@@ -16,7 +16,7 @@ class TagBareMetal(TaggingOperations):
         @param hardware_id:
         @return:
         """
-        hardware_data = self._classic_operations.get_hardware_data(hardware_id=hardware_id)
+        hardware_data = self._classic_operations.get_hardware_data(hardware_id=str(hardware_id))
         return hardware_data.get('billingItem').get('orderItem').get('order').get('userRecord').get('username'), f'{hardware_data.get("hostname")}.{hardware_data.get("domain")}'
 
     def tag_remove_hardware(self, user_tags: list, hardware_tags: list, hardware_id: str, hardware_name: str):
@@ -76,7 +76,7 @@ class TagBareMetal(TaggingOperations):
         @return:
         """
         username, hardware_name = self.get_hardware_username(hardware_id=hardware_id)
-        hardware_tags = self._classic_operations.get_hardware_tags(hardware_id=hardware_id)
+        hardware_tags = self._classic_operations.get_hardware_tags(hardware_id=str(hardware_id))
         user_tags = self._ibm_client.get_user_tags_from_gsheet(username=username)
         if self._tag_operation == 'remove':
             tags = self.tag_remove_hardware(user_tags, hardware_tags, hardware_id, hardware_name)

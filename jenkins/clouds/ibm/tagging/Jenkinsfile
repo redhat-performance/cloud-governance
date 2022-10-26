@@ -1,0 +1,54 @@
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '--rm  --network host -u root -v /tmp/ibm/tagging/:/var/lib/containers --privileged'
+        }
+    }
+    environment {
+        IBM_API_USERNAME = credentials('cloud-governance-ibm-api-username')
+        IBM_API_KEY = credentials('cloud-governance-ibm-api-key')
+        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Tagging Cluster & Non-Cluster') {
+            steps {
+                 sh 'python3 jenkins/clouds/ibm/tagging/tagging.py'
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}"
+            }
+          }
+    }
+}
