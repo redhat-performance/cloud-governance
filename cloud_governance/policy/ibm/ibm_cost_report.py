@@ -44,7 +44,7 @@ class IBMCostReport(ElasticUpload):
         collect_machines_data = {}
         for hardware in bare_metals:
             hardware_tags = self.collect_tags_from_machines(
-                tags=self.classic_operations.get_hardware_tags(hardware_id=hardware.get('id')))
+                tags=self.classic_operations.get_hardware_tags(hardware_id=str(hardware.get('id'))))
             hardware_tags['fqdn'] = hardware.get('fullyQualifiedDomainName').lower()
             collect_machines_data[hardware_tags['fqdn']] = hardware_tags
         return collect_machines_data
@@ -58,7 +58,7 @@ class IBMCostReport(ElasticUpload):
         collect_machines_data = {}
         for vm in vms:
             vm_tags = self.collect_tags_from_machines(
-                tags=self.classic_operations.get_virtual_machine_tags(vm_id=vm.get('id')))
+                tags=self.classic_operations.get_virtual_machine_tags(vm_id=str(vm.get('id'))))
             vm_tags['fqdn'] = vm.get('fullyQualifiedDomainName').lower()
             collect_machines_data[vm_tags['fqdn']] = vm_tags
         return collect_machines_data

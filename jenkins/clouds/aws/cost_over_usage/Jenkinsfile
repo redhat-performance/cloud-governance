@@ -1,46 +1,35 @@
 pipeline {
-    options {
-        disableConcurrentBuilds()
-    }
     agent {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm  --network host -u root -v /tmp/tagging/:/var/lib/containers --privileged'
+            args  '--rm --network host -u root -v /tmp/aws/cloud-governance-cost-over-usage/:/var/lib/containers --privileged'
         }
     }
     environment {
-        AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
-        AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
         AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
         AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
         BUCKET_PERF = credentials('cloud-governance-bucket-perf')
-        AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
-        AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
         AWS_ACCESS_KEY_ID_DELETE_PSAP = credentials('cloud-governance-aws-access-key-id-delete-psap')
         AWS_SECRET_ACCESS_KEY_DELETE_PSAP = credentials('cloud-governance-aws-secret-access-key-delete-psap')
         BUCKET_PSAP = credentials('cloud-governance-bucket-psap')
-        AWS_ACCESS_KEY_ID_RH_PERF = credentials('cloud-governance-aws-access-key-id-rh-perf')
-        AWS_SECRET_ACCESS_KEY_RH_PERF = credentials('cloud-governance-aws-secret-access-key-rh-perf')
-        BUCKET_RH_PERF = credentials('cloud-governance-bucket-rh-perf')
         AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
         AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
         BUCKET_PERF_SCALE = credentials('cloud-governance-bucket-perf_scale')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
-        IBM_API_USERNAME = credentials('cloud-governance-ibm-api-username')
-        IBM_API_KEY = credentials('cloud-governance-ibm-api-key')
-        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        IGNORE_MAILS = credentials('cloud-governance-ignore-mails')
+
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
-           steps {
-                 checkout scm
+          steps {
+            checkout scm
            }
         }
         stage('Initial Cleanup') {
@@ -48,9 +37,9 @@ pipeline {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Run Tagging Cluster & Non-Cluster') {
+        stage('Upload ElasticSearch') {
             steps {
-                 sh 'python3 jenkins/tagging/tagging.py'
+                sh 'python3 jenkins/clouds/aws/cost_over_usage/run_upload_es.py'
             }
         }
         stage('Finalize Cleanup') {
@@ -61,13 +50,18 @@ pipeline {
         }
     }
     post {
+       always {
+           deleteDir()
+       }
         failure {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}"
+            """,
+                subject: msg,
+                to: "${contact1}, ${contact2}"
             }
-          }
+        }
     }
 }

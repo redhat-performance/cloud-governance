@@ -15,7 +15,7 @@ class TagVM(TaggingOperations):
         @param vm_id:
         @return:
         """
-        vm_data = self._classic_operations.get_virtual_machine_data(vm_id=vm_id)
+        vm_data = self._classic_operations.get_virtual_machine_data(vm_id=str(vm_id))
         return vm_data.get('billingItem').get('orderItem').get('order').get('userRecord').get('username'), f'{vm_data.get("hostname")}.{vm_data.get("domain")}'
 
     def tag_update_virtual_machine(self, user_tags: list, vm_tags: list, vm_id: str, vm_name: str):
@@ -76,7 +76,7 @@ class TagVM(TaggingOperations):
         @return:
         """
         username, vm_name = self.get_virtual_machine_username(vm_id=vm_id)
-        vm_tags = self._classic_operations.get_virtual_machine_tags(vm_id=vm_id)
+        vm_tags = self._classic_operations.get_virtual_machine_tags(vm_id=str(vm_id))
         user_tags = self._ibm_client.get_user_tags_from_gsheet(username=username)
         if self._tag_operation == 'remove':
             tags = self.tag_remove_virtual_machine(user_tags=user_tags, vm_tags=vm_tags, vm_id=vm_id, vm_name=vm_name)
