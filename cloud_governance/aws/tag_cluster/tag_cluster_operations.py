@@ -7,6 +7,9 @@ from cloud_governance.common.clouds.aws.utils.utils import Utils
 
 
 class TagClusterOperations:
+    """
+    This class tags AWS resources
+    """
 
     def __init__(self, input_tags: dict,  cluster_name: str,  cluster_prefix: str, region: str, dry_run: str, cluster_only: bool):
         self.cluster_only = cluster_only

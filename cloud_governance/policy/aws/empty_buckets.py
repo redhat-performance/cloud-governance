@@ -9,6 +9,9 @@ from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies imp
 
 
 class EmptyBuckets(NonClusterZombiePolicy):
+    """
+    This class sends an alert mail for empty bucket to the user after 4 days and delete after 7 days.
+    """
 
     def __init__(self):
         super().__init__()

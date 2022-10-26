@@ -18,8 +18,8 @@ from cloud_governance.aws.zombie_cluster.delete_s3_resources import DeleteS3Reso
 
 class ZombieClusterResources(ZombieClusterCommonMethods):
     """
-    This class filter zombie cluster resourcesfrom cloud_governance.aws.zombie_cluster.ZombieClusterCommonResources import ZombieClusterCommonResources
-
+    This class filter and deletes zombie cluster resources, which are not deleted while cleanup the clusters,
+    alert user after 4 days of cluster deleted. and delete the resources after 7 days of cluster deleted.
     """
 
     def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2',

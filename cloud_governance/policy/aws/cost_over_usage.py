@@ -9,6 +9,10 @@ from cloud_governance.common.ldap.ldap_search import LdapSearch
 
 
 class CostOverUsage(ElasticUpload):
+    """
+    This class checks if the user data is exceeded maximum cost threshold send alert mail to the User by fetching
+     the last 7 days cost_explorer data from the ElasticSearch then aggregate the data.
+    """
 
     FETCH_DAYS = 7
     COST_USAGE_DOLLAR = 1000
