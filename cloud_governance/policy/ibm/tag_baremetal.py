@@ -5,8 +5,9 @@ from cloud_governance.ibm.tagging.tagging_operations import TaggingOperations
 
 class TagBareMetal(TaggingOperations):
     """
-    This method tag IBM bare-metal machines
+    This class tags IBM Bare metal machines
     """
+
     def __init__(self):
         super().__init__()
 

@@ -3,6 +3,10 @@ from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies imp
 
 
 class ZombieElasticIps(NonClusterZombiePolicy):
+    """
+    Fetched the Unused elastic_ips( based on network interface Id) and delete it after 7 days of unused,
+    alert user after 4 days of unused elastic_ip.
+    """
 
     def __init__(self):
         super().__init__()

@@ -11,6 +11,9 @@ from cloud_governance.common.logger.init_logger import logger
 
 
 class CostExplorer(ElasticUpload):
+    """
+    This class fetches the cost_explorer reports from the AWS based on the daily and upload to ElasticSearch.
+    """
 
     def __init__(self):
         super().__init__()

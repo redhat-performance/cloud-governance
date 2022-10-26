@@ -3,6 +3,10 @@ from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies imp
 
 
 class ZombieNatGateways(NonClusterZombiePolicy):
+    """
+    This class sends an alert mail for zombie Nat gateways ( based on vpc routes )
+    to the user after 4 days and delete after 7 days.
+    """
 
     def __init__(self):
         super().__init__()

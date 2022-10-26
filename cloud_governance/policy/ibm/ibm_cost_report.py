@@ -10,6 +10,9 @@ from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 
 
 class IBMCostReport(ElasticUpload):
+    """
+    This class fetched the invoice reports from the IBM based on the monthly and upload to ElasticSearch.
+    """
 
     def __init__(self):
         super().__init__()
