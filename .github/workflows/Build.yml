@@ -97,10 +97,10 @@ jobs:
           terragrunt apply -auto-approve 1> /dev/null
           echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_OUTPUT"
       - name: Cache the Terraform State File
-          uses: actions/cache@v3
-          with:
-            path: terraform/aws_instance
-            key: terraform-state-${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
+        uses: actions/cache@v3
+        with:
+          path: terraform/aws_instance
+          key: terraform-state-${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
 
   integration:
     name: integration
@@ -151,6 +151,7 @@ jobs:
         run: |
           pip install coveralls
           COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
+
   terraform_destroy:
     name: terraform_destroy
     needs: [ unittest, terraform_apply, integration ]
@@ -191,6 +192,7 @@ jobs:
           cd terraform/aws_instance
           # terraform destroy/
           terragrunt destroy -auto-approve 1> /dev/null
+
   pypi_upload:
     name: pypi_upload
     needs: [ unittest, terraform_apply, integration ]

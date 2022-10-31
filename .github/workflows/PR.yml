@@ -140,6 +140,7 @@ jobs:
           INSTANCE_ID: ${{ needs.terraform_apply.outputs.INSTANCE_ID }}
         run: |
           python -m pytest -v tests/integration
+
   terraform_destroy:
     name: Terraform Destroy
     needs: [unittest, terraform_apply, integration]
