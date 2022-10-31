@@ -27,7 +27,7 @@ def get_custodian_policies(type: str = None):
     @return: list of custodian policies name
     """
     custodian_policies = []
-    policies_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'cloud_governance', 'policy', 'aws')
+    policies_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), 'cloud_governance', 'policy', 'aws')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
             if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):

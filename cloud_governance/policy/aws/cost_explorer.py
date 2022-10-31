@@ -1,3 +1,4 @@
+import datetime
 import os
 from multiprocessing import Process
 
@@ -12,7 +13,8 @@ from cloud_governance.common.logger.init_logger import logger
 
 class CostExplorer(ElasticUpload):
     """
-    This class fetches the cost_explorer reports from the AWS based on the daily and upload to ElasticSearch.
+    This class fetches the cost_explorer report from the AWS based on two days ago data and upload to ElasticSearch.
+    fetching AWS cost explorer of two days ago because day ago cost calculation is not closed.
     """
 
     def __init__(self):
@@ -57,6 +59,7 @@ class CostExplorer(ElasticUpload):
                 upload_data = {tag: name, 'Cost': round(float(amount), 3)}
                 if user_resources and name in user_resources:
                     upload_data['Instances'] = user_resources[name]
+                upload_data['timestamp'] = datetime.datetime.utcnow() - datetime.timedelta(2)
                 data.append(upload_data)
         return data
 
