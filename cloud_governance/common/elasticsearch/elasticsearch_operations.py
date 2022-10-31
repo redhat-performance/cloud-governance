@@ -418,7 +418,8 @@ class ElasticSearchOperations:
                 data[key] = value
 
         # utcnow - solve timestamp issue
-        data['timestamp'] = datetime.utcnow()  # datetime.now()
+        if not data.get('timestamp'):
+            data['timestamp'] = datetime.utcnow()  # datetime.now()
 
         # Upload data to elastic search server
         try:

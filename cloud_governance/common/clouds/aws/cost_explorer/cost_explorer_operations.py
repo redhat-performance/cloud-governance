@@ -18,7 +18,7 @@ class CostExplorerOperations:
         @return:
         """
         if not start_date and not end_date:
-            end_date = datetime.now()
+            end_date = datetime.now() - timedelta(1)
             start_date = end_date - timedelta(1)
             start_date = str(start_date.strftime('%Y-%m-%d'))
             end_date = str(end_date.strftime('%Y-%m-%d'))
