@@ -116,7 +116,7 @@ class ZombieClusterCommonMethods:
                 except Exception as err:
                     return []
             else:
-                if resource.get(aws_tag):
+                if resource.get(aws_tag) and resource_id in zombies:
                     aws_tags = resource.get(aws_tag)
             if aws_tags:
                 old_tags = deepcopy(aws_tags)
