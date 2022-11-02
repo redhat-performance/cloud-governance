@@ -25,26 +25,6 @@ class EC2Idle(NonClusterZombiePolicy):
         super().__init__()
         self._cloudwatch = CloudWatchOperations(region=self._region)
 
-    def __organise_instance_data(self, instances_data: list):
-        """
-        This method convert all datetime into string
-        @param instances_data:
-        @return:
-        """
-        organize_data = []
-        for instance in instances_data:
-            instance['LaunchTime'] = instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-            for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
-                instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-            for index, network_interface in enumerate(instance['NetworkInterfaces']):
-                instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = network_interface['Attachment']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-            if instance.get('UsageOperationUpdateTime'):
-                instance['UsageOperationUpdateTime'] = instance['UsageOperationUpdateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-            for index, metric in enumerate(instance['metrics']):
-                instance['metrics'][index]['Timestamps'] = [date.strftime("%Y-%m-%dT%H:%M:%S+00:00") for date in metric['Timestamps']]
-            organize_data.append(instance)
-        return organize_data
-
     def run(self):
         """
         This method list all idle instances and stop if it is idle since 4 days
@@ -93,7 +73,7 @@ class EC2Idle(NonClusterZombiePolicy):
                     self._ec2_client.stop_instances(InstanceIds=[instance_id])
                     logger.info(f'Stopped the instance: {instance_id}')
                     self.__trigger_mail(tags=tags, resource_id=instance_id, days=self.STOP_INSTANCE_IDLE_DAYS, ec2_type=ec2_types[instance_id], instance_id=instance_id)
-        return self.__organise_instance_data(list(running_idle_instances.values()))
+        return self._organise_instance_data(list(running_idle_instances.values()))
 
     def __get_metrics_average(self, metric_list: list, metric_period: int):
         """

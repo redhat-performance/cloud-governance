@@ -16,6 +16,7 @@ def test_ec2_idle_cluster():
     This method test to skip cluster
     @return:
     """
+    os.environ['policy'] = 'ec2_idle'
     ec2_client = boto3.client('ec2', region_name=os.environ.get('AWS_DEFAULT_REGION'))
     default_ami_id = 'ami-03cf127a'
     tags = [{'Key': 'kubernetes.io/cluster/cloudgovernanceunittest', 'Value': 'owned'}, {'Key': 'User', 'Value': 'cloud-governance'}]
@@ -33,6 +34,7 @@ def test_ec2_idle():
     This method check the instance is deleted or not
     @return:
     """
+    os.environ['policy'] = 'ec2_idle'
     expected_result = 'stopped'
     os.environ['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name=os.environ.get('AWS_DEFAULT_REGION'))

@@ -271,3 +271,32 @@ class NonClusterZombiePolicy:
                         self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
                 except Exception as err:
                     logger.info(f'Exception raised: {err}: {resource_id}')
+
+    def _organise_instance_data(self, resources: list):
+        """
+        This method convert all datetime into string
+        @param resources:
+        @return:
+        """
+        organize_data = []
+        if 'ec2' in self._policy:
+            for instance in resources:
+                instance['LaunchTime'] = instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
+                    instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                for index, network_interface in enumerate(instance['NetworkInterfaces']):
+                    instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = network_interface['Attachment']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                if instance.get('UsageOperationUpdateTime'):
+                    instance['UsageOperationUpdateTime'] = instance['UsageOperationUpdateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                if instance.get('metrics'):
+                    for index, metric in enumerate(instance['metrics']):
+                        instance['metrics'][index]['Timestamps'] = [date.strftime("%Y-%m-%dT%H:%M:%S+00:00") for date in metric['Timestamps']]
+                organize_data.append(instance)
+        else:
+            for volume in resources:
+                if volume.get('Attachments'):
+                    for attachment in volume.get('Attachments'):
+                        attachment['AttachTime'] = attachment['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                volume['CreateTime'] = volume['CreateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                organize_data.append(volume)
+        return organize_data

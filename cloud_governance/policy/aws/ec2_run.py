@@ -19,4 +19,4 @@ class EC2Run(NonClusterZombiePolicy):
             for resource in instance['Instances']:
                 if resource.get('State').get('Name') == 'running':
                     running_instances.append(resource)
-        return running_instances
+        return self._organise_instance_data(running_instances)
