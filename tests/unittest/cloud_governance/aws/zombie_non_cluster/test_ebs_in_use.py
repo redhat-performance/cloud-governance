@@ -1,8 +1,9 @@
 import os
 
 import boto3
-from moto import mock_ec2
+from moto import mock_ec2, mock_s3
 
+from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.aws.ebs_in_use import EbsInUse
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
@@ -14,6 +15,7 @@ def test_ebs_in_use():
     This method test in-use ebs volumes
     @return:
     """
+    os.environ['policy'] = 'ebs_in_use'
     region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     ec2_client = boto3.client('ec2', region_name=region)
     volume_id = ec2_client.create_volume(Size=10, AvailabilityZone='us-east-1a')['VolumeId']
@@ -22,3 +24,23 @@ def test_ebs_in_use():
     ec2_client.attach_volume(InstanceId=instance_id, VolumeId=volume_id, Device='/dev/sda1')
     ebs_in_use = EbsInUse()
     assert 2 == len(ebs_in_use.run())
+
+
+@mock_s3
+@mock_ec2
+def test_ebs_in_use_s3_upload():
+    """
+    This method test the data is upload t s3 or not
+    @return:
+    """
+    os.environ['policy'] = 'ebs_in_user'
+    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    ec2_client = boto3.client('ec2', region_name=region)
+    default_ami_id = 'ami-03cf127a'
+    ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)
+    s3_client = boto3.client('s3', region_name='us-east-1')
+    s3_client.create_bucket(Bucket='test-upload-data', CreateBucketConfiguration={'LocationConstraint': 'us-east-2'})
+    policy_output = 's3://test-upload-data/test'
+    s3operations = S3Operations(region_name='us-east-1')
+    ebs_in_use = EbsInUse()
+    assert s3operations.save_results_to_s3(policy='ec2_run', policy_output=policy_output, policy_result=ebs_in_use.run()) is None
