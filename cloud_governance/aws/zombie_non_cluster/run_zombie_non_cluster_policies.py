@@ -18,6 +18,7 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 class NonClusterZombiePolicy:
 
     DAYS_TO_DELETE_RESOURCE = 7
+    DAYS_TO_NOTIFY_ADMINS = 6
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
 
     def __init__(self):
@@ -43,10 +44,7 @@ class NonClusterZombiePolicy:
         self._mail_description = MailMessage()
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
-        if self._policy in ('empty_roles', 'empty_buckets'):
-            self._active_clusters = self._zombie_cluster.all_cluster_instance()
-        else:
-            self._active_clusters = self._zombie_cluster._cluster_instance()
+        self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
 
     def _literal_eval(self, data: any):
         tags = {}
@@ -54,7 +52,7 @@ class NonClusterZombiePolicy:
             tags = literal_eval(data)
         return tags
 
-    def _check_live_cluster_tag(self, tags: list):
+    def _check_cluster_tag(self, tags: list):
         """
         This method returns True if it is live cluster tag is active False not
         @param tags:
@@ -63,7 +61,7 @@ class NonClusterZombiePolicy:
         if tags:
             for tag in tags:
                 if tag.get('Key').startswith(self._cluster_prefix):
-                    return tag.get('Key') in self._active_clusters.values()
+                    return True
         return False
 
     def _get_tag_name_from_tags(self, tags: list, tag_name: str = 'Name'):
@@ -144,7 +142,7 @@ class NonClusterZombiePolicy:
             return policy_value.replace('_', '').replace('-', '').upper()
         return 'NA'
 
-    def _trigger_mail(self, tags: list, resource_id: str, days: int, resource_type: str):
+    def _trigger_mail(self, tags: list, resource_id: str, days: int, resource_type: str, **kwargs):
         """
         This method send triggering mail
         @param tags:
@@ -167,8 +165,12 @@ class NonClusterZombiePolicy:
                                                                     notification_days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
                                                                     delete_days=self.DAYS_TO_DELETE_RESOURCE,
                                                                     resource_name=resource_name, resource_id=resource_id,
-                                                                    resource_type=resource_type)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id)
+                                                                    resource_type=resource_type, msgadmins=self.DAYS_TO_NOTIFY_ADMINS)
+            if not kwargs.get('admins'):
+                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id)
+            else:
+                kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
+                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id)
         except Exception as err:
             logger.info(err)
 
@@ -246,6 +248,8 @@ class NonClusterZombiePolicy:
         if empty_days >= self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
             if empty_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
                 self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL)
+            elif empty_days == self.DAYS_TO_NOTIFY_ADMINS:
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins)
             elif empty_days >= days_to_delete_resource:
                 if self._dry_run == 'no':
                     if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):

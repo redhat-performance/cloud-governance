@@ -21,7 +21,7 @@ class ZombieElasticIps(NonClusterZombiePolicy):
         for address in addresses:
             ip_no_used = False
             tags = address.get('Tags')
-            if not self._check_live_cluster_tag(tags=tags):
+            if not self._check_cluster_tag(tags=tags):
                 if not address.get('NetworkInterfaceId'):
                     ip_no_used = True
                     unused_days = self._get_resource_last_used_days(tags=tags)

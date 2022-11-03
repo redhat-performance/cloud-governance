@@ -29,7 +29,7 @@ class EmptyRoles(NonClusterZombiePolicy):
             try:
                 get_role = self._iam_client.get_role(RoleName=role.get('RoleName'))['Role']
                 tags = get_role.get('Tags')
-                if not self._check_live_cluster_tag(tags=tags):
+                if not self._check_cluster_tag(tags=tags):
                     role_empty = False
                     role_attached_policies = self._iam_client.list_attached_role_policies(RoleName=role_name)
                     role_inline_policies = self._iam_client.list_role_policies(RoleName=role_name)

@@ -1,4 +1,4 @@
-boto3==1.19.12
+boto3==1.26.1
 elasticsearch==7.11.0
 elasticsearch-dsl==7.4.0
 moto==2.3.2

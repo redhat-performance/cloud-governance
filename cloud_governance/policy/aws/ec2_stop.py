@@ -17,6 +17,7 @@ class EC2Stop(NonClusterZombiePolicy):
     FIRST_MAIL_NOTIFICATION_INSTANCE_DAYS = 20
     SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS = 25
     DELETE_INSTANCE_DAYS = 30
+    DAYS_TO_NOTIFY_ADMINS = 26
 
     def __init__(self):
         super().__init__()
@@ -47,12 +48,15 @@ class EC2Stop(NonClusterZombiePolicy):
                 if not stopped_time:
                     stopped_time = datetime.datetime.now()
                 days = self._calculate_days(create_date=stopped_time)
+                user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                 if days in (instance_days, self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS):
-                    user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                     if user:
                         self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id)
                     else:
                         logger.info('User is missing')
+                if sign(days, self.DAYS_TO_NOTIFY_ADMINS):
+                    self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id,
+                                        days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, admins=self._admins)
                 if sign(days, instance_days):
                     if days >= delete_instance_days:
                         stopped_instance_tags[instance_id] = resource.get('Tags')
@@ -77,7 +81,7 @@ class EC2Stop(NonClusterZombiePolicy):
                         logger.info(err)
         return stopped_instances
 
-    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '', ec2_type: str = '', instance_id: str = ''):
+    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '', ec2_type: str = '', instance_id: str = '', **kwargs):
         """
         This method send triggering mail
         @param tags:
@@ -93,6 +97,10 @@ class EC2Stop(NonClusterZombiePolicy):
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
             subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
+            if not kwargs.get('admins'):
+                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
+            else:
+                kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
+                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=instance_id)
         except Exception as err:
             logger.info(err)
