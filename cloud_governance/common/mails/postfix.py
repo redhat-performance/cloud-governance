@@ -50,14 +50,17 @@ class Postfix:
             bucket_name = self.__policy_output
         return bucket_name, key
 
-    def send_email_postfix(self, subject: str, to: str, cc: list, content: str, **kwargs):
+    def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
         msg = MIMEMultipart('alternative')
         msg["Subject"] = subject
         msg["From"] = "%s <%s>" % (
             'cloud-governance',
             "@".join(["noreply-cloud-governance", 'redhat.com']),
         )
-        msg["To"] = "@".join([to, 'redhat.com'])
+        if isinstance(to, str):
+            msg["To"] = "@".join([to, 'redhat.com'])
+        elif isinstance(to, list):
+            msg["To"] = ", ".join(to)
         msg["Cc"] = ",".join(cc)
         # msg.add_header("Reply-To", self.reply_to)
         # msg.add_header("User-Agent", self.reply_to)
@@ -74,7 +77,10 @@ class Postfix:
                 try:
                     logger.debug(email_string)
                     s.send_message(msg)
-                    logger.info(f'Mail sent successfully to {to}@redhat.com')
+                    if isinstance(to, str):
+                        logger.info(f'Mail sent successfully to {to}@redhat.com')
+                    elif isinstance(to, list):
+                        logger.info(f'Mail sent successfully to {", ".join(to)}@redhat.com')
                     if kwargs.get('filename'):
                         file_name = kwargs['filename'].split('/')[-1]
                         date_key = datetime.datetime.now().strftime("%Y%m%d%H")

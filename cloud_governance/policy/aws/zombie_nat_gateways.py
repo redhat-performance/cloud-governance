@@ -31,7 +31,7 @@ class ZombieNatGateways(NonClusterZombiePolicy):
             nat_gateway_id = nat_gateway.get('NatGatewayId')
             tags = nat_gateway.get('Tags')
             gateway_unused = False
-            if not self._check_live_cluster_tag(tags=tags):
+            if not self._check_cluster_tag(tags=tags):
                 if nat_gateway.get('State') == 'available':
                     if not self.__check_nat_gateway_in_routes(nat_gateway_id=nat_gateway_id):
                         gateway_unused = True

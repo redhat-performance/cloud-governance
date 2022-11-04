@@ -1,6 +1,4 @@
-import datetime
 
-from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
@@ -28,7 +26,7 @@ class EbsUnattached(NonClusterZombiePolicy):
         volumes = self._ec2_client.describe_volumes(Filters=[{'Name': 'status', 'Values': ['available']}])['Volumes']
         unattached_volumes_data = []
         for volume in volumes:
-            if not self._check_live_cluster_tag(tags=volume.get('Tags')):
+            if not self._check_cluster_tag(tags=volume.get('Tags')):
                 volume_id = volume.get('VolumeId')
                 launch_days = self._calculate_days(create_date=volume.get('CreateTime'))
                 if launch_days >= self.DAYS_TO_DELETE_RESOURCE:

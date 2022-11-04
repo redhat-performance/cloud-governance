@@ -42,7 +42,7 @@ class EmptyBuckets(NonClusterZombiePolicy):
                     tags = []
                 bucket_data = self._s3_client.list_objects_v2(Bucket=bucket_name)
                 if not bucket_data.get('Contents'):
-                    if not self._check_live_cluster_tag(tags=tags):
+                    if not self._check_cluster_tag(tags=tags):
                         if not self._get_tag_name_from_tags(tags=tags, tag_name='Name'):
                             tags.append({'Key': 'Name', 'Value': bucket_name})
                         empty_days = self._get_resource_last_used_days(tags=tags)
