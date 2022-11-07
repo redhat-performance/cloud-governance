@@ -184,9 +184,10 @@ class ZombieClusterCommonMethods:
             cluster_delete_days = int(cluster_delete_days) + 1
         return cluster_delete_days
 
-    def trigger_mail(self, tags: list, resource_id: str, days: int, resources: list):
+    def trigger_mail(self, tags: list, resource_id: str, days: int, resources: list, message_type: str):
         """
         This method send triggering mail
+        @param message_type:
         @param resources:
         @param days:
         @param tags:
@@ -211,7 +212,7 @@ class ZombieClusterCommonMethods:
             subject, body = self._mail_description.zombie_cluster_mail_message(name=name, days=days,
                                                                                notification_days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
                                                                                resource_name=resource_name, delete_days=self.DAYS_TO_DELETE_RESOURCE)
-            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, filename=file_name)
+            self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, filename=file_name, message_type=message_type)
         except Exception as err:
             logger.info(err)
 
@@ -260,11 +261,11 @@ class ZombieClusterCommonMethods:
             self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
             self.trigger_mail(tags=cluster_data[cluster_tag], resource_id='Cluster',
                               days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
-                              resources=resource_ids)
+                              resources=resource_ids, message_type='notification')
         for cluster_tag, resource_ids in delete_data.items():
             self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
             self.trigger_mail(tags=cluster_data[cluster_tag], resource_id='Cluster',
-                              days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids)
+                              days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids, message_type='delete')
 
     def _check_zombie_cluster_deleted_days(self, resources: dict, cluster_left_out_days: dict, zombie: str, cluster_tag: str):
         """

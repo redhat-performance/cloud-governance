@@ -245,6 +245,8 @@ class CloudTrailOperations:
             }])['Events']
             if events:
                 events = sorted(events, key=lambda event: event['EventTime'], reverse=True)
+                while events[0].get('EventName') in ('CreateTags', 'DeleteTags'):
+                    events.pop(0)
                 if events[0].get('EventName') == event_name:
                     return events[0].get('EventTime')
                 if kwargs:

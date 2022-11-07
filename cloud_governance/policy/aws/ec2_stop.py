@@ -51,12 +51,12 @@ class EC2Stop(NonClusterZombiePolicy):
                 user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
                 if days in (instance_days, self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS):
                     if user:
-                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id)
+                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, message_type='notification')
                     else:
                         logger.info('User is missing')
-                if sign(days, self.DAYS_TO_NOTIFY_ADMINS):
+                if days == self.DAYS_TO_NOTIFY_ADMINS:
                     self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id,
-                                        days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, admins=self._admins)
+                                        days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, admins=self._admins, message_type='notify-admin')
                 if sign(days, instance_days):
                     if days >= delete_instance_days:
                         stopped_instance_tags[instance_id] = resource.get('Tags')
@@ -74,7 +74,7 @@ class EC2Stop(NonClusterZombiePolicy):
                         tag_specifications.append({'ResourceType': 'snapshot', 'Tags': tags})
                     try:
                         ami_id = self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)['ImageId']
-                        self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id, ec2_type=ec2_types[instance_id], instance_id=instance_id)
+                        self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id, ec2_type=ec2_types[instance_id], instance_id=instance_id, message_type='delete')
                         self._ec2_client.terminate_instances(InstanceIds=[instance_id])
                         logger.info(f'Deleted the instance: {instance_id}')
                     except Exception as err:
@@ -101,6 +101,6 @@ class EC2Stop(NonClusterZombiePolicy):
                 self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
             else:
                 kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
-                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=instance_id)
+                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=instance_id, message_type=kwargs.get('message_type'))
         except Exception as err:
             logger.info(err)
