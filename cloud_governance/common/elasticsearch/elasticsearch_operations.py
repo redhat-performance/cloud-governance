@@ -456,4 +456,5 @@ class ElasticSearchOperations:
         @param es_index: index_name
         @return:
         """
-        return self.__es.indices.delete(index=es_index)
+        if self.__es.indices.exists(index=es_index):
+            return self.__es.indices.delete(index=es_index)
