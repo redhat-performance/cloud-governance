@@ -2,7 +2,7 @@ import os
 
 
 class MailMessage:
-    RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the coreos slack channel -  #perf-dept-public-clouds.'
+    RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the CoreOS slack channel -  #perf-dept-public-clouds.'
 
     def __init__(self):
         self.account = os.environ.get('account', '')
@@ -123,7 +123,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Hi {name},
 
-<b>{resource_type}</b>: {resource_name}: {resource_id} in {self.region} region in account: {self.account} has been in {reason} state for more than {days} days.
+{resource_type.upper()}: {resource_name}: {resource_id} in {self.region} region in account: {self.account} has been in {reason} state for more than {days} days.
 {cause}
 {content}
 If you already added the tag, please ignore this mail.
@@ -162,4 +162,31 @@ You can find your {self.policy}s in the attached file: {resource_name.replace('/
 
 Best Regards,
 Cloud-governance Team""".strip()
+        return subject, body
+
+    def monthly_html_mail_message(self, data: str):
+        """
+        This method returns the description of the monthly resources
+        @return:
+        """
+        subject = 'Cloud-Governance Monthly Report'
+        body = f"""
+<div class="greeting">
+    <p>Hi All,</p>
+</div>
+
+<div class="body">
+    <p>You can find below <a href="https://github.com/redhat-performance/cloud-governance" style="text-decoration:none;">cloud-governance</a> summary monthly report:</p>
+    {data}
+    <p>For more details open Cloud-Governance <a href="http://grafana.intlab.perf-infra.lab.eng.rdu2.redhat.com/" style="text-decoration:none;" target="_blank">Grafana</a>. [ user/password: cloud_governance ]</p>
+    <p>Do not reply to this email, in case of any further questions. Please reach out to us in the <span style="color:blue;"><b>CoreOS</b></span> slack channel -  <span style="color:red">#perf-dept-public-clouds.<span>'</p>
+</div>
+<div style="color:gray" class="footer">
+    <address>
+        --<br/>
+        Best Regards,<br/>
+        Cloud-governance Team<br/>
+    </address>
+</div>
+""".strip()
         return subject, body
