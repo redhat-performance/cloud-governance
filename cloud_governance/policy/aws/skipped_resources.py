@@ -90,11 +90,14 @@ class SkippedResources(NonClusterZombiePolicy):
                         volume_cost = 0
                         if resource_name == 'Instance':
                             volume_cost = self.get_instance_volume_size(resource=resource)
+                            resource_name = resource.get('InstanceType')
                         else:
                             if resource_name == 'Volume':
                                 volume_cost = self.get_ebs_cost(volume_id=resource.get(resource_id))
+                                resource_name = resource.get('VolumeType')
                         if volume_cost:
                             resource_data['Cost'] = volume_cost
+                        resource_data['ResourceName'] = resource_name
                         not_delete_resources.append(resource_data)
 
         return not_delete_resources
