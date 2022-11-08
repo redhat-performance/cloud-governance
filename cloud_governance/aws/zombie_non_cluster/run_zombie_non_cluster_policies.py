@@ -8,6 +8,7 @@ from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import 
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -45,6 +46,7 @@ class NonClusterZombiePolicy:
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
+        self._es_upload = ElasticUpload()
 
     def _literal_eval(self, data: any):
         tags = {}
@@ -167,10 +169,10 @@ class NonClusterZombiePolicy:
                                                                     resource_name=resource_name, resource_id=resource_id,
                                                                     resource_type=resource_type, msgadmins=self.DAYS_TO_NOTIFY_ADMINS)
             if not kwargs.get('admins'):
-                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id)
+                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, message_type=kwargs.get('message_type'))
             else:
                 kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
-                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id)
+                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id, message_type=kwargs.get('message_type'))
         except Exception as err:
             logger.info(err)
 
@@ -247,13 +249,13 @@ class NonClusterZombiePolicy:
         zombie_resource = {}
         if empty_days >= self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
             if empty_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL)
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL, message_type='notification')
             elif empty_days == self.DAYS_TO_NOTIFY_ADMINS:
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins)
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins, message_type='notify_admin')
             elif empty_days >= days_to_delete_resource:
                 if self._dry_run == 'no':
                     if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days)
+                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, message_type='delete')
                         self.__delete_resource_on_name(resource_id=resource_id)
             zombie_resource = resource
         return zombie_resource

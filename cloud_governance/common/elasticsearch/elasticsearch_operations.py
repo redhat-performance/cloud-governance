@@ -1,4 +1,3 @@
-
 import json
 import os
 import boto3
@@ -31,7 +30,8 @@ class ElasticSearchOperations:
     MAX_SEARCH_RESULTS = 1000
     MIN_SEARCH_RESULTS = 100
 
-    def __init__(self, es_host: str, es_port: str,  region: str = '', bucket: str = '', logs_bucket_key: str = '', timeout: int = 2000):
+    def __init__(self, es_host: str, es_port: str, region: str = '', bucket: str = '', logs_bucket_key: str = '',
+                 timeout: int = 2000):
         self.__es_host = es_host
         self.__es_port = es_port
         self.__region = region
@@ -65,9 +65,9 @@ class ElasticSearchOperations:
             if self.__get_s3_latest_policy_file(policy=policy):
                 latest_policy_path = self.__get_s3_latest_policy_file(policy=policy)
                 self.__s3_operation.download_file(bucket=self.__bucket,
-                                           key=str(latest_policy_path),
-                                           download_file=file_name + '.gz',
-                                           file_name_path=local_file)
+                                                  key=str(latest_policy_path),
+                                                  download_file=file_name + '.gz',
+                                                  file_name_path=local_file)
                 # gzip
                 os.system(f"gzip -d {local_file}")
                 with open(os.path.join(temp_local_directory, file_name)) as f:
@@ -153,8 +153,11 @@ class ElasticSearchOperations:
                     cluster_cost_results.append(f'non cluster | {round(cost, 3)} ')
                     data['non cluster'] = {'name': f'{resource} (non cluster)', 'cost': round(cost, 3)}
                 else:
-                    cluster_cost_results.append(f" cluster_{num} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} | {name.strip()} ")
-                    data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3), 'user': clusters_user.get(name.strip()), 'launch_time': clusters_launch_time.get(name.strip())}
+                    cluster_cost_results.append(
+                        f" cluster_{num} | {round(cost, 3)} | {clusters_user.get(name.strip())} | {clusters_launch_time.get(name.strip())} | {name.strip()} ")
+                    data[f'cluster_{num}'] = {'name': name.strip(), 'cost': round(cost, 3),
+                                              'user': clusters_user.get(name.strip()),
+                                              'launch_time': clusters_launch_time.get(name.strip())}
                     num += 1
         return cluster_cost_results
 
@@ -186,39 +189,8 @@ class ElasticSearchOperations:
                 num += 1
         return user_cost_results
 
-    def __get_resource_cost(self, resource: str, item_data: dict):
-        """
-        This method calculate ec2 cost from launch time or ebs per month in $
-        @return:cluster_cost_results
-        """
-        if resource == 'ec2' and item_data['State']['Name'] == 'running':
-            # Get current price for a given 'running' instance, region and os
-            ec2_type_cost = '0'
-            try:
-                ec2_type_cost = self.__aws_price.get_price(self.__aws_price.get_region_name('us-east-1'),
-                                                            item_data['InstanceType'], 'Linux')
-            except:
-                return 'NA'
-            ec2_lanuch_time = item_data['LaunchTime']
-            d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
-            d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
-            diff = d2 - d1
-            diff_in_hours = diff.total_seconds() / 3600
-            ec2_cost = round(float(ec2_type_cost) * diff_in_hours, 3)
-            return round(ec2_cost, 3)
-        elif resource == 'ec2' and item_data['State']['Name'] != 'running':
-            return '0'
-        elif resource == 'ebs':
-            ebs_monthly_cost = '0'
-            if item_data['VolumeType'] == 'gp2':
-                ebs_monthly_cost = 0.1 * item_data['Size']
-            elif item_data['VolumeType'] == 'io1':
-                ebs_monthly_cost = 0.125 * item_data['Size']
-            else:
-                ebs_monthly_cost = 0.1 * item_data['Size']
-            return round(ebs_monthly_cost, 3)
-
-    def upload_last_policy_to_elasticsearch(self, policy: str, index: str, doc_type: str, s3_json_file: str, es_add_items: dict = None):
+    def upload_last_policy_to_elasticsearch(self, policy: str, index: str, doc_type: str, s3_json_file: str,
+                                            es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
         :param policy:
@@ -264,14 +236,15 @@ class ElasticSearchOperations:
                         resource = 'ec2'
                         lt_datetime = datetime.strptime(item['LaunchTime'], '%Y-%m-%dT%H:%M:%S+00:00')
                         user = self.__get_user_from_trail_events(lt_datetime)
-                        ec2_cost = self.__get_resource_cost(resource=resource, item_data=item)
+                        ec2_cost = self.__aws_price.get_ec2_price(resource=resource, item_data=item)
                         launch_time_format = item['LaunchTime'][:-15].replace('T', ' ')
                         if cluster_owned:
                             clusters_launch_time_dict[cluster_owned] = launch_time_format
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{item['InstanceId']} | {user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {cluster_owned} ")
+                        data_dict['resources_list'].append(
+                            f"{item['InstanceId']} | {user} | {ec2_cost} | {item['State']['Name']} | {item['InstanceType']}  | {launch_time_format} | {ec2_ebs_name} | {cluster_owned} ")
 
                     # ebs - MUST: every fix, change also cluster title
                     # title: volume id | user | cost($/month) | state | volume type | create time | size(gb) | name |  cluster owned
@@ -279,14 +252,15 @@ class ElasticSearchOperations:
                         resource = 'ebs'
                         lt_datetime = datetime.strptime(item['CreateTime'], '%Y-%m-%dT%H:%M:%S.%f+00:00')
                         user = self.__get_user_from_trail_events(lt_datetime)
-                        ebs_monthly_cost = self.__get_resource_cost(resource=resource, item_data=item)
+                        ebs_monthly_cost = self.__aws_price.get_ec2_price(resource=resource, item_data=item)
                         create_time_format = item['CreateTime'][:-22].replace('T', ' ')
                         if cluster_owned:
                             clusters_launch_time_dict[cluster_owned] = launch_time_format
                             if not cluster_user.get(cluster_owned):
                                 cluster_user = self.__get_cluster_user(clusters=clusters_launch_time_dict)
                             user = cluster_user.get(cluster_owned)
-                        data_dict['resources_list'].append(f"{item['VolumeId']} | {user} | {ebs_monthly_cost} | {item['State']} | {item['VolumeType']} | {create_time_format} | {item['Size']} | {ec2_ebs_name} |  {cluster_owned} ")
+                        data_dict['resources_list'].append(
+                            f"{item['VolumeId']} | {user} | {ebs_monthly_cost} | {item['State']} | {item['VolumeType']} | {create_time_format} | {item['Size']} | {ec2_ebs_name} |  {cluster_owned} ")
                     # gitleaks
                     if item.get('leakURL'):
                         gitleaks_leakurl = item.get('leakURL')
@@ -295,7 +269,8 @@ class ElasticSearchOperations:
 
                 # get cluster cost data only for ec2 and ebs
                 if resource:
-                    cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource, clusters_launch_time=clusters_launch_time_dict)
+                    cluster_cost_results = self.__get_cluster_cost(data=data_dict, resource=resource,
+                                                                   clusters_launch_time=clusters_launch_time_dict)
                     data_dict['cluster_cost_data'] = cluster_cost_results
                     user_cost_results = self.__get_user_cost(data=data_dict)
                     data_dict['user_cost_data'] = user_cost_results
@@ -343,7 +318,7 @@ class ElasticSearchOperations:
         self.__es.indices.refresh(index=index)
         # timestamp name in Elasticsearch is different
         search = Search(using=self.__es, index=index).filter('range', timestamp={
-                'gte': f'now-{self.ES_FETCH_MIN_TIME}m', 'lt': 'now'})
+            'gte': f'now-{self.ES_FETCH_MIN_TIME}m', 'lt': 'now'})
         # reduce the search result
         if fast_check:
             search = search[0:self.MIN_SEARCH_RESULTS]
@@ -375,7 +350,8 @@ class ElasticSearchOperations:
 
     @typechecked()
     @logger_time_stamp
-    def verify_elasticsearch_data_uploaded(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False):
+    def verify_elasticsearch_data_uploaded(self, index: str, uuid: str = '', workload: str = '',
+                                           fast_check: bool = False):
         """
         The method wait till data upload to elastic search and wait if there is new data, search in last 15 minutes
         :param index:
@@ -389,7 +365,8 @@ class ElasticSearchOperations:
         # waiting for any hits
         while current_wait_time <= self.__timeout:
             # waiting for new hits
-            new_hits = self.__elasticsearch_get_index_hits(index=index, uuid=uuid, workload=workload, fast_check=fast_check)
+            new_hits = self.__elasticsearch_get_index_hits(index=index, uuid=uuid, workload=workload,
+                                                           fast_check=fast_check)
             if current_hits < new_hits:
                 logger.info(f'Data with index: {index} and uuid={uuid} was uploaded to ElasticSearch successfully')
                 return self.__elasticsearch_get_index_hits(index=index, uuid=uuid, workload=workload, id=True,
@@ -457,6 +434,12 @@ class ElasticSearchOperations:
     @typechecked()
     @logger_time_stamp
     def get_index_hits(self, days: int, index: str):
+        """
+        This method return the last days data from elastic search
+        @param days:
+        @param index:
+        @return:
+        """
         search = Search(using=self.__es, index=index).filter('range', timestamp={'gte': f'now-{days}d', 'lt': 'now'})
         search = search[0:self.MAX_SEARCH_RESULTS]
         search_response = search.execute()
@@ -464,3 +447,13 @@ class ElasticSearchOperations:
         for row in search_response:
             df = pd.concat([df, pd.DataFrame([row.to_dict()])], ignore_index=True).fillna({})
         return df.to_dict('records')
+
+    @typechecked()
+    @logger_time_stamp
+    def clear_data_in_es(self, es_index: str):
+        """
+        This method clears index data in elastic search
+        @param es_index: index_name
+        @return:
+        """
+        return self.__es.indices.delete(index=es_index)

@@ -89,7 +89,7 @@ class Postfix:
                                                          upload_file=file_name)
                         s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
                         content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
-                    data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper()}
+                    data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper(), 'MessageType': kwargs.get('message_type')}
                     if kwargs.get('resource_id'):
                         data['resource_id'] = kwargs['resource_id']
                     if self.__es_host:
