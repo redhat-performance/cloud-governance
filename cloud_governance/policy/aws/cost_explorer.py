@@ -100,7 +100,7 @@ class CostExplorer(ElasticUpload):
                 if self._es_index == 'cloud-governance-cost-explorer-global':
                     if 'Budget' not in value:
                         value['Budget'] = self.account
-                self._elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
+                self.elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
         logger.info(f'Data uploaded to {index}')
 
     def upload_tags_cost_to_elastic_search(self):

@@ -105,6 +105,19 @@ jobs:
       max-parallel: 1
       matrix:
         python-version: [ '3.8', '3.9', '3.10' ]
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          # <port on host>:<port on container>
+          - 9200:9200
     steps:
       - uses: actions/checkout@v3
         with:
@@ -137,6 +150,8 @@ jobs:
         env:
           BUCKET: ${{ secrets.BUCKET }}
           REGION: ${{ secrets.REGION }}
+          ELASTICSEARCH: 'localhost'
+          ELASTICSEARCH_PORT: '9200'
           INSTANCE_ID: ${{ needs.terraform_apply.outputs.INSTANCE_ID }}
         run: |
           python -m pytest -v tests/integration
