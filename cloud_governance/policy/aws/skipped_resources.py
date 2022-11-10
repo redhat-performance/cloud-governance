@@ -1,3 +1,5 @@
+import datetime
+
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 from cloud_governance.common.clouds.aws.price.price import AWSPrice
 
@@ -109,5 +111,9 @@ class SkippedResources(NonClusterZombiePolicy):
         """
         resources_data = self.get_not_delete_resources()
         if self._es_upload.es_host:
-            self._es_upload.es_upload_data(items=resources_data, clear_index_before_delete=True, es_index=self.es_index)
+            start_datetime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            end_datetime = start_datetime - datetime.timedelta(1)
+            # deleting past data to show fresh report
+            self._es_upload.elastic_search_operations.delete_data_in_between_in_es(es_index=self.es_index, start_datetime=start_datetime, end_datetime=end_datetime)
+            self._es_upload.es_upload_data(items=resources_data, es_index=self.es_index)
         return resources_data

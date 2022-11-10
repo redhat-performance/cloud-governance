@@ -83,7 +83,7 @@ class CostOverUsage(ElasticUpload):
         """
         users = []
         cc = []
-        user_data = self._elastic_search_operations.get_index_hits(days=days, index=self._es_index)
+        user_data = self.elastic_search_operations.get_index_hits(days=days, index=self._es_index)
         user_data = self.aggregate_user_sum(user_data)
         for user_usage in user_data:
             user = user_usage['User']

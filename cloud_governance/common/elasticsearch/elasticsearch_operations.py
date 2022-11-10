@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from time import strftime
 import time
 import pandas as pd
+from elasticsearch.helpers import scan
 
 from elasticsearch_dsl import Search
 from elasticsearch import Elasticsearch
@@ -450,9 +451,65 @@ class ElasticSearchOperations:
 
     @typechecked()
     @logger_time_stamp
-    def clear_data_in_es(self, es_index: str):
+    def get_query_data_between_range(self, start_datetime: datetime, end_datetime: datetime):
         """
-        This method clears index data in elastic search
+        This method returns the query to fetch the data in between ranges
+        @return:
+        """
+        query = {
+            "query": {
+                "bool": {
+                    "filter": {
+                        "range": {
+                            "timestamp": {
+                                "format": "yyyy-MM-dd HH:mm:ss"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        query['query']['bool']['filter']['range']['timestamp']['lte'] = str(end_datetime.replace(microsecond=0))
+        query['query']['bool']['filter']['range']['timestamp']['gte'] = str(start_datetime.replace(microsecond=0))
+        return query
+
+    @typechecked()
+    @logger_time_stamp
+    def fetch_data_between_range(self, es_index: str, start_datetime: datetime, end_datetime: datetime):
+        """
+        This method fetches the data in between range
+        @param es_index:
+        @param start_datetime:
+        @param end_datetime:
+        @return:
+        """
+        if self.__es.indices.exists(index=es_index):
+            query_body = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
+            data = self.__es.search(index=es_index, body=query_body, doc_type='_doc').get('hits')
+            if data:
+                return data['hits']
+        return []
+
+    @typechecked()
+    @logger_time_stamp
+    def delete_data_in_between_in_es(self, es_index: str, start_datetime: datetime, end_datetime: datetime):
+        """
+        This method deletes the data in between two ranges
+        @param es_index:
+        @param start_datetime:
+        @param end_datetime:
+        @return:
+        """
+        if self.__es.indices.exists(index=es_index):
+            query_body = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
+            logger.info(f'Clearing data from {start_datetime} to  {end_datetime} ')
+            return self.__es.delete_by_query(index=es_index, body=query_body)
+
+    @typechecked()
+    @logger_time_stamp
+    def delete_data_in_es(self, es_index: str):
+        """
+        This method delete the data in the index
         @param es_index: index_name
         @return:
         """
