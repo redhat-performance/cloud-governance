@@ -259,12 +259,12 @@ class ZombieClusterCommonMethods:
         """
         for cluster_tag, resource_ids in notify_data.items():
             self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
-            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id='Cluster',
+            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
                               days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
                               resources=resource_ids, message_type='notification')
         for cluster_tag, resource_ids in delete_data.items():
             self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
-            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id='Cluster',
+            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
                               days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids, message_type='delete')
 
     def _check_zombie_cluster_deleted_days(self, resources: dict, cluster_left_out_days: dict, zombie: str, cluster_tag: str):

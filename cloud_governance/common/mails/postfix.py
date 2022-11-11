@@ -69,7 +69,10 @@ class Postfix:
             attachment.add_header('Content-Disposition', 'attachment',
                                   filename=kwargs['filename'].split('/')[-1])
             msg.attach(attachment)
-        msg.attach(MIMEText(content))
+        if kwargs.get('mime_type'):
+            msg.attach(MIMEText(content, kwargs.get('mime_type')))
+        else:
+            msg.attach(MIMEText(content))
         email_string = msg.as_string()
         email_host = 'localhost'
         try:

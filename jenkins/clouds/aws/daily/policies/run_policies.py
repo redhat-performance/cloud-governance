@@ -37,7 +37,7 @@ def get_policies(type: str = None):
     @return: list of policies name
     """
     policies = []
-    policies_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), 'cloud_governance', 'policy', 'aws')
+    policies_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'cloud_governance', 'policy', 'aws')
     for (dirpath, dirnames, filenames) in os.walk(policies_path):
         for filename in filenames:
             if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
@@ -53,6 +53,7 @@ regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1', '
 policies = get_policies()
 policies.remove('cost_explorer')
 policies.remove('cost_over_usage')
+policies.remove('monthly_report')
 
 for region in regions:
     for policy in policies:
