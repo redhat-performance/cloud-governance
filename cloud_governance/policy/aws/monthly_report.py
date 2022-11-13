@@ -16,12 +16,31 @@ class MonthlyReport:
         self._es_index = 'cloud-governance-mail-messages'
         self._es_host = os.environ.get('es_host', '')
         self._es_port = os.environ.get('es_port', '')
-        self._to_mail = os.environ.get('to_mail', '')
+        self._to_mail = literal_eval(os.environ.get('to_mail', '[]'))
         self._to_cc = literal_eval(os.environ.get('cc_mail', '[]'))
         if self._es_host:
             self._elastic_operations = ElasticSearchOperations(es_host=self._es_host, es_port=self._es_port)
         self._postfix_mail = Postfix()
         self._mail_message = MailMessage()
+
+    def policy_description(self, policy_name: str):
+        """
+        This method return the policy description
+        @param policy_name:
+        @return:
+        """
+        policy_descriptions = {
+            'ec2_stop': 'Delete the stopped instances that are stopped for more than 30 days ',
+            'ec2_idle': 'stops the idle instances in the last 7 days.  ( CPU < 5%, Network < 5k )',
+            'ebs_unattached': 'Delete  unattached EBS volumes, where the unused days are calculated by the last DeattachedTime',
+            'zombie_elastic_ips': 'Delete all the elastic_ips that are unused',
+            'zombie_nat_gateways': ' Delete all unused nat gateways',
+            'zombie_snapshots': 'Delete all the snapshots which the AMI does not use',
+            'empty_buckets': 'Delete the empty buckets which don’t have any content.',
+            'empty_roles': 'Delete the empty role which does\'t have any policies',
+            'zombie_cluster_resource': 'Delete up the cluster resources which are not deleted while cleaning the cluster'
+        }
+        return policy_descriptions.get(policy_name)
 
     def get_monthly_report_data(self):
         """
@@ -30,7 +49,7 @@ class MonthlyReport:
         """
         if self._es_host:
             mail_messages = self._elastic_operations.get_index_hits(days=self.REPORT_DAYS, index=self._es_index)
-            mail_messages_df = pd.DataFrame(mail_messages).drop(['To', 'Cc', 'Message'], axis=1).fillna('NAN')
+            mail_messages_df = pd.DataFrame(mail_messages).drop(['To', 'Cc', 'Message'], axis=1).dropna()
             mail_messages_df = mail_messages_df[~mail_messages_df.MessageType.str.contains('notify_admin')].reset_index(drop=True)
             mail_messages_df = mail_messages_df[~mail_messages_df.MessageType.str.contains('monthly_report')].reset_index(drop=True)
             mail_messages_df_group = mail_messages_df.groupby(['Policy', 'Account']).agg({'MessageType': list}).reset_index()
@@ -51,7 +70,7 @@ class MonthlyReport:
             if account_name:
                 prepare_data[account_name].append({
                     "Policy": data['Policy'],
-                    "Alert": len(data['MessageType'])
+                    "Alerts": len(data['MessageType'])
                 })
         content = self.prepare_html_table_message(prepare_data)
         if content:
@@ -75,14 +94,17 @@ class MonthlyReport:
         @return:
         """
         start_row, end_row = '<tr>', '</tr>'
-        start_col, end_col = f'<td align="center" style="border:1px solid black;font-weight:bold;">', '</b></td>'
-        start_head, end_head = f'<th align="center" style="border:1px solid black;color:white;background:gray;padding:2px;font-size:12px;">', '</th>'
+        start_col, end_col = f'<td align="left" style="border:1px solid black;font-weight:bold;">', '</b></td>'
+        start_head, end_head = f'<th align="left" style="border:1px solid black;color:white;background:gray;padding:2px;font-size:12px;">', '</th>'
+        table_keys = ['Policy', 'Description', 'Alerts']
         html_table = [f"""
-                    <table style="border-collapse:collapse;width: 50%">
+                    <table style="border-collapse:collapse;width: auto">
+                        <caption style="caption-side:bottom;text-align: left;"><span style="color:red"><b>Note:</b></span> All policies follow 4 days alert 7 days delete</caption>
                         {start_row}
                             {start_head}Account{end_head}
                             {start_head}Policy{end_head}
-                            {start_head}Alert{end_head}
+                            {start_head}Description{end_head}
+                            {start_head}Alerts{end_head}
                         {end_row}
                       """.strip()]
         for data_key, data_values in data.items():
@@ -92,11 +114,13 @@ class MonthlyReport:
                 data_key = 'Openshift-PerfScale'
             html_row += f'{self.row_span(row_span)}{data_key}{end_col}'
             for data_items in data_values:
-                for key, value in data_items.items():
-                    if key == "Alert":
-                        html_row += f'{start_col[:-2]}color:green;"> {str(value)} {end_col}'
+                data_items['Description'] = self.policy_description(policy_name=data_items.get('Policy'))
+                print(data_items)
+                for table_key in table_keys:
+                    if table_key == "Alerts":
+                        html_row += f'{start_col[:-2]}color:green;"> {str(data_items.get(table_key))} {end_col}'
                     else:
-                        html_row += f'{start_col} {str(value)} {end_col}'
+                        html_row += f'{start_col} {str(data_items.get(table_key))} {end_col}'
                 html_row += end_row
                 html_table.append(html_row)
                 html_row = start_row
