@@ -179,7 +179,7 @@ Cloud-governance Team""".strip()
     <p>You can find below <a href="https://github.com/redhat-performance/cloud-governance" style="text-decoration:none;">cloud-governance</a> summary monthly report:</p>
     {data}
     <p>For more details open Cloud-Governance <a href="http://grafana.intlab.perf-infra.lab.eng.rdu2.redhat.com/" style="text-decoration:none;" target="_blank">Grafana</a>. [ user/password: cloud_governance ]</p>
-    <p>Do not reply to this email, in case of any further questions. Please reach out to us in the <span style="color:blue;"><b>CoreOS</b></span> slack channel -  <span style="color:red">#perf-dept-public-clouds.<span>'</p>
+    <p>Do not reply to this email, in case of any further questions. Please reach out to us in the slack channel -  <span style="color:red">#perf-dept-public-clouds.<span>'</p>
 </div>
 <div style="color:gray" class="footer">
     <address>
