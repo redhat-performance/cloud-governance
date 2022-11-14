@@ -172,3 +172,13 @@ def test_folder_delete():
         s3operations.delete_folder(bucket='ais-server', key='test-data')
         assert not s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_files_list[0])
         assert not s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_files_list[1])
+
+
+def test_get_s3_latest_policy_file():
+    s3_operations = S3Operations(region_name='us-east-1', bucket='redhat-cloud-governance', logs_bucket_key='logs')
+    assert s3_operations._S3Operations__get_s3_latest_policy_file(policy='ec2-idle')
+
+
+def test_get_last_s3_policy_content():
+    s3_operations = S3Operations(region_name='us-east-1', bucket='redhat-cloud-governance', logs_bucket_key='logs')
+    assert s3_operations.get_last_s3_policy_content(policy='ec2-idle', file_name='resources.json')
