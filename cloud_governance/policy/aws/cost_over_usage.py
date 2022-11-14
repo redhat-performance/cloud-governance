@@ -8,7 +8,7 @@ from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 
 
-class CostOverUsage(ElasticUpload):
+class CostOverUsage:
     """
     This class checks if the user data is exceeded maximum cost threshold send alert mail to the User by fetching
      the last 7 days cost_explorer data from the ElasticSearch then aggregate the data.
@@ -22,6 +22,7 @@ class CostOverUsage(ElasticUpload):
         self.__ignore_mails = os.environ.get('IGNORE_MAILS', '')
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
         self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
+        self._elastic_upload = ElasticUpload()
 
     def get_user_used_instances(self, user_used_list: list):
         """
@@ -83,15 +84,15 @@ class CostOverUsage(ElasticUpload):
         """
         users = []
         cc = []
-        user_data = self.elastic_search_operations.get_index_hits(days=days, index=self._es_index)
+        user_data = self._elastic_upload.elastic_search_operations.get_index_hits(days=days, index=self._elastic_upload.es_index)
         user_data = self.aggregate_user_sum(user_data)
         for user_usage in user_data:
             user = user_usage['User']
             if user_usage['Cost'] > cost_usage:
                 used_instances = self.get_user_used_instances(user_used_list=user_usage['Instances'])
-                ignore_user_mails = self._literal_eval(self.__ignore_mails)
+                ignore_user_mails = self._elastic_upload.literal_eval(self.__ignore_mails)
                 if user not in ignore_user_mails:
-                    special_user_mails = self._literal_eval(self._special_user_mails)
+                    special_user_mails = self._elastic_upload.literal_eval(self._elastic_upload.special_user_mails)
                     to = user if user not in special_user_mails else special_user_mails[user]
                     ldap_data = self.__ldap.get_user_details(user_name=to)
                     name = to
@@ -101,8 +102,8 @@ class CostOverUsage(ElasticUpload):
                     if ldap_data:
                         cc.append(f'{ldap_data.get("managerId")}@redhat.com')
                         name = ldap_data.get('displayName')
-                    subject, body = self._mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=name, usage_cost=self.COST_USAGE_DOLLAR)
-                    self._postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc, filename=file_name)
+                    subject, body = self._elastic_upload.mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=name, usage_cost=self.COST_USAGE_DOLLAR)
+                    self._elastic_upload.postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc, filename=file_name)
                     users.append(to)
         return users
 

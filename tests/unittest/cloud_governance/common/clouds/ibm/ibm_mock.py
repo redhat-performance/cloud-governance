@@ -72,6 +72,7 @@ def ibm_mock(method):
         @param kwargs:
         @return:
         """
+        result = ''
         try:
             with patch.object(BaseClient, 'call', mock_call):
                 result = method(*args, **kwargs)

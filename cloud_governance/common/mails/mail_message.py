@@ -190,3 +190,33 @@ Cloud-governance Team""".strip()
 </div>
 """.strip()
         return subject, body
+
+    def ibm_cost_over_usage(self, data: str, month: int, year: int):
+        """
+        This method returns the mail message of cost over usage
+        @return:
+        """
+        subject = 'Cloud-Governance IBM Cost Over Usage'
+        body = f"""
+        <div class="greeting">
+            <p>Hi,</p>
+        </div>
+        
+        <div class="body">
+            <p>This following services were over limit</p>
+            {data}
+            <p>For more details open IBM Billing <a href="https://cloud.ibm.com/billing/usage?month={year}-{month}/" style="text-decoration:none;" target="_blank">Console</a>.</p>
+            <p>Do not reply to this email, in case of any further questions. Please reach out to us in the slack channel -  <span style="color:red">#perf-dept-public-clouds.<span>'</p>
+        </div>
+        <div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/IBM_Cloud_logo.png"/>
+        </div>
+        <div style="color:gray" class="footer">
+            <address>
+                --<br/>
+                Best Regards,<br/>
+                Cloud-governance Team<br/>
+            </address>
+        </div>
+        """.strip()
+        return subject, body
