@@ -2,6 +2,7 @@ import datetime
 import gzip
 import json
 import os
+import tempfile
 import boto3
 import typeguard
 from botocore.exceptions import ClientError
@@ -14,7 +15,8 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 class S3Operations:
     """ This class is responsible for S3 operations """
 
-    def __init__(self, region_name,  report_file_name: str = "zombie_report.json", resource_file_name: str = "resources.json.gz"):
+    def __init__(self, region_name, report_file_name: str = "zombie_report.json",
+                 resource_file_name: str = "resources.json.gz", bucket: str = '', logs_bucket_key: str = ''):
         #  @Todo ask AWS support regarding about this issue
         if region_name == 'eu-south-1':
             self.__s3_client = boto3.client('s3', region_name='us-east-1')
@@ -25,6 +27,8 @@ class S3Operations:
         self.__resource_file_name = resource_file_name
         self.__report_file_full_path = os.path.join(os.path.dirname(__file__), self.__report_file_name)
         self.__resources_file_full_path = os.path.join(os.path.dirname(__file__), self.__resource_file_name)
+        if bucket and logs_bucket_key:
+            self.__bucket, self.__logs_bucket_key = bucket, logs_bucket_key
 
     @logger_time_stamp
     @typeguard.typechecked
@@ -287,3 +291,31 @@ class S3Operations:
             if bucket['Name'] == bucket_name:
                 return True
         return False
+
+    def __get_s3_latest_policy_file(self, policy: str):
+        """
+        This method return latest policy logs
+        @param policy:
+        @return:
+        """
+        return self.get_last_objects(bucket=self.__bucket,
+                                     logs_bucket_key=f'{self.__logs_bucket_key}/{self.__region}',
+                                     policy=policy)
+
+    def get_last_s3_policy_content(self, policy: str, file_name: str):
+        """
+        This method return last policy content
+        @return:
+        """
+        with tempfile.TemporaryDirectory() as temp_local_directory:
+            local_file = temp_local_directory + '/' + file_name + '.gz'
+            if self.__get_s3_latest_policy_file(policy=policy):
+                latest_policy_path = self.__get_s3_latest_policy_file(policy=policy)
+                self.download_file(bucket=self.__bucket,
+                                   key=str(latest_policy_path),
+                                   download_file=file_name + '.gz',
+                                   file_name_path=local_file)
+                # gzip
+                os.system(f"gzip -d {local_file}")
+                with open(os.path.join(temp_local_directory, file_name)) as f:
+                    return f.read()

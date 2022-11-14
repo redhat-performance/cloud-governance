@@ -2,7 +2,7 @@ import os
 
 
 class MailMessage:
-    RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the CoreOS slack channel -  #perf-dept-public-clouds.'
+    RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the CoreOS slack channel - #perf-dept-public-clouds.'
 
     def __init__(self):
         self.account = os.environ.get('account', '')
@@ -22,7 +22,7 @@ class MailMessage:
         body = f"""
 Hi {name},
 
-Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} region in account: {self.account} was stopped on {stopped_time}, it stopped state more than {days} days.  
+Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} region in account: {self.account} was stopped on {stopped_time}, it stopped state more than {days} days.
 {message}
 {content}
 
@@ -34,7 +34,7 @@ Cloud-governance Team""".strip()
 
     def ec2_idle(self, name: str, days: int, notification_days: int, stop_days: int, instance_name: str,
                  resource_id: str, ec2_type: str):
-        subject = f'cloud-governance alert:  ec2-idle'
+        subject = f'cloud-governance alert: ec2-idle'
         if days == notification_days:
             cause = f'This instance will be stopped in {stop_days-days} days if no further action is taken'
             content = 'If you do not want it to be deleted, please "Policy=Not_Delete" or "Policy=ski"p tag to this instance.'
@@ -106,13 +106,13 @@ Cloud-governance Team""".strip()
         if 'empty' in self.policy:
             reason = 'empty'
         if 'zombie' in self.policy:
-            reason = 'Unused'
+            reason = 'unused'
         subject = f'cloud-governance alert: {self.policy}'
         if days == notification_days:
-            cause = f'This {resource_type} will be deleted in  {delete_days-days} days if no further action is taken'
+            cause = f'This {resource_type} will be deleted in {delete_days-days} days if no further action is taken'
             content = f'If you do not want to be deleted, please add "Policy=Not_Delete" or "Policy=skip" tag to this {resource_type}.'
         elif kwargs.get('msgadmins'):
-            cause = f'This {resource_type} will be deleted in  {delete_days - kwargs.get("msgadmins")} days if no further action is taken'
+            cause = f'This {resource_type} will be deleted in {delete_days - kwargs.get("msgadmins")} days if no further action is taken'
             content = f'If you do not want to be deleted, please add "Policy=Not_Delete" or "Policy=skip" tag to this {resource_type}.'
         else:
             cause = f'This {resource_type} will be deleted due to it was {reason} more than {delete_days} days.'
@@ -123,7 +123,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Hi {name},
 
-{resource_type.upper()}: {resource_name}: {resource_id} in {self.region} region in account: {self.account} has been in {reason} state for more than {days} days.
+{resource_type.upper()}: {resource_name}: {resource_id} in {self.region} region in account: {self.account} has been in {reason} for more than {days} days.
 {cause}
 {content}
 If you already added the tag, please ignore this mail.
@@ -148,7 +148,7 @@ Cloud-governance Team""".strip()
         """
         subject = f'Cloud-governance policy alert: {self.policy}'
         if days == notification_days:
-            cause = f'Cloud-governance will delete those {self.policy}s in the  {delete_days-days} days.'
+            cause = f'Cloud-governance will delete those {self.policy}s in the {delete_days-days} days.'
         else:
             cause = f'Those {self.policy}s will be deleted.'
         body = f"""
@@ -179,7 +179,7 @@ Cloud-governance Team""".strip()
     <p>You can find below <a href="https://github.com/redhat-performance/cloud-governance" style="text-decoration:none;">cloud-governance</a> summary monthly report:</p>
     {data}
     <p>For more details open Cloud-Governance <a href="http://grafana.intlab.perf-infra.lab.eng.rdu2.redhat.com/" style="text-decoration:none;" target="_blank">Grafana</a>. [ user/password: cloud_governance ]</p>
-    <p>Do not reply to this email, in case of any further questions. Please reach out to us in the slack channel -  <span style="color:red">#perf-dept-public-clouds.<span>'</p>
+    <p>Do not reply to this email, in case of any further questions. Please reach out to us in the slack channel - <span style="color:red">#perf-dept-public-clouds.<span>'</p>
 </div>
 <div style="color:gray" class="footer">
     <address>
