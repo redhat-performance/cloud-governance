@@ -2,6 +2,7 @@ import importlib
 import inspect
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.ibm.ibm_operations.ibm_operations import IBMOperations
 
 
@@ -13,6 +14,7 @@ class IBMPolicyRunner(IBMOperations):
     def __init__(self):
         super().__init__()
 
+    @logger_time_stamp
     def run(self):
         """
         This method run the ibm policies
