@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class GoogleDriveOperations:
@@ -15,11 +16,14 @@ class GoogleDriveOperations:
     1. download_spreadsheet
     """
 
+    RETRIES = 3
+
     def __init__(self):
         if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
             self.__creds, _ = google.auth.default()
-            self.__service = build('sheets', 'v4', credentials=self.__creds)
+            self.__service = build('sheets', 'v4', credentials=self.__creds, num_retries=self.RETRIES)
 
+    @logger_time_stamp
     def download_spreadsheet(self, spreadsheet_id: str, sheet_name: str, file_path: str):
         """
         This method download spreadsheet from the Google Drive

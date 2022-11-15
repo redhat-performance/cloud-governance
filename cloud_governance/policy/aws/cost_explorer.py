@@ -27,7 +27,8 @@ class CostExplorer:
         self.cost_tags = literal_eval(os.environ.get('cost_explorer_tags', '{}'))
         self.file_name = os.environ.get('file_name', '')
         self.__cost_explorer = CostExplorerOperations()
-        self._ec2_operations = EC2Operations()
+        self.region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        self._ec2_operations = EC2Operations(region=self.region)
         self._elastic_upload = ElasticUpload()
 
     def get_user_resources(self):

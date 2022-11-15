@@ -3,7 +3,6 @@ import os
 import SoftLayer
 import pandas as pd
 from ibm_platform_services import UsageReportsV4
-from requests import ReadTimeout
 from retry import retry
 from typeguard import typechecked
 
@@ -31,7 +30,7 @@ class IBMAccount:
         self.__API_KEY = os.environ.get('IBM_API_KEY', '')
         try:
             if self.__API_KEY and self.__API_USERNAME:
-                self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY)
+                self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY, timeout=self.DELAY)
             if os.environ.get('USAGE_REPORTS_APIKEY'):
                 self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
@@ -96,7 +95,9 @@ class IBMAccount:
             tags['Manager'] = ldap_data['managerName']
         return self.__organise_user_tags(tags)
 
+    @retry(exceptions=Exception, tries=RETRIES, delay=DELAY)
     @typechecked
+    @logger_time_stamp
     def get_monthly_invoices(self, month: int, year: int):
         _filter = {
             'invoices': {
@@ -119,6 +120,8 @@ class IBMAccount:
                 invoice_data[invoice.get('id')] = invoice_items
         return invoice_data
 
+    @retry(exceptions=Exception, tries=RETRIES, delay=DELAY)
+    @logger_time_stamp
     def get_users(self):
         """
         This method returns all the users of the ibm cloud
@@ -132,6 +135,7 @@ class IBMAccount:
             return []
 
     @typechecked
+    @logger_time_stamp
     def get_invoice_data(self, month: int, year: int):
         """
         This method return invoice data
@@ -176,7 +180,6 @@ class IBMAccount:
                 co += value
         return combine_invoice_data, users
 
-    @retry(exceptions=ReadTimeout, tries=RETRIES, delay=DELAY)
     @logger_time_stamp
     def get_daily_usage(self, month: int, year: int):
         """

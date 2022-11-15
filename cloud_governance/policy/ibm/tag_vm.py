@@ -1,4 +1,5 @@
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.ibm.tagging.tagging_operations import TaggingOperations
 
 
@@ -85,6 +86,7 @@ class TagVM(TaggingOperations):
             tags = self.tag_update_virtual_machine(user_tags=user_tags, vm_tags=vm_tags, vm_id=vm_id, vm_name=vm_name)
         return tags
 
+    @logger_time_stamp
     def run(self, vm_id: str = ''):
         """
         This method tag vm ( virtual machines ) from the user tags from the gsheet
@@ -96,5 +98,7 @@ class TagVM(TaggingOperations):
         else:
             vm_ids = self._classic_operations.get_virtual_machine_ids()
             for vm_id in vm_ids:
-                response.append({vm_id.get('hostname'): self.tag_virtual_machine(vm_id=vm_id.get('id'))})
+                response_data = self.tag_virtual_machine(vm_id=vm_id.get('id'))
+                if response_data:
+                    response.append({vm_id.get('hostname'): response_data})
         return response
