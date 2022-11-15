@@ -60,6 +60,7 @@ setup(
         'python-ldap==3.4.2',   # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'retry==0.9.2',
+        'ibm_platform_services==0.27.0'  # IBM Usage reports
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
