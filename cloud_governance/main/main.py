@@ -225,7 +225,7 @@ def main():
     if is_zombie_non_cluster_polices_runner:
         zombie_non_cluster_polices_runner = ZombieNonClusterPolicies()
 
-    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm', 'ibm_cost_report']
+    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm', 'ibm_cost_report', 'ibm_cost_over_usage']
     tag_ibm_classic_infrastructure_runner = None
     is_tag_ibm_classic_infrastructure_runner = policy in tag_ibm_classic_infrastructure_policies
     if is_tag_ibm_classic_infrastructure_runner:

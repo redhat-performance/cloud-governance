@@ -59,6 +59,7 @@ setup(
         'google-auth-oauthlib==0.5.2',  # google drive
         'python-ldap==3.4.2',   # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'SoftLayer==6.0.0',  # IBM SoftLayer
+        'retry==0.9.2',
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

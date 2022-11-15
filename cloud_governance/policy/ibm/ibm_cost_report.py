@@ -9,7 +9,7 @@ from cloud_governance.common.clouds.ibm.classic.classic_operations import Classi
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 
 
-class IBMCostReport(ElasticUpload):
+class IBMCostReport:
     """
     This class fetched the invoice reports from the IBM based on the monthly and upload to ElasticSearch.
     """
@@ -21,6 +21,7 @@ class IBMCostReport(ElasticUpload):
         self.month = os.environ.get('month', '')
         self.year = os.environ.get('year', '')
         self.owned_tags = ['owner', 'budget', 'environment', 'manager', 'user', 'project', 'fqdn']
+        self._elastic_upload = ElasticUpload()
 
     @typechecked
     def collect_tags_from_machines(self, tags: list):
@@ -118,7 +119,7 @@ class IBMCostReport(ElasticUpload):
                     cost_list_items.append({
                         tag_name.capitalize(): data[tag_name],
                         'Cost': data['cost'],
-                        'Budget': self.account
+                        'Budget': self._elastic_upload.account
                     })
-            self.es_upload_data(items=cost_list_items, es_index=f'{self._es_index}-{tag_name.lower()}')
+            self._elastic_upload.es_upload_data(items=cost_list_items, es_index=f'{self._elastic_upload.es_index}-{tag_name.lower()}')
         return True

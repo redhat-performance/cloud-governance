@@ -2,28 +2,42 @@ import os
 
 import SoftLayer
 import pandas as pd
+from ibm_platform_services import UsageReportsV4
+from requests import ReadTimeout
+from retry import retry
 from typeguard import typechecked
 
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
 class IBMAccount:
     """
     This class contains IBM softlayer client and methods
+    For Usage reports need to export
+    export USAGE_REPORTS_URL=<SERVICE_URL>
+    export USAGE_REPORTS_AUTHTYPE=iam
+    export USAGE_REPORTS_APIKEY=<API_KEY>
     """
 
     START_DATE = 1
     END_DATE = 16
+    RETRIES = 3
+    DELAY = 30
 
     def __init__(self):
         self.__API_USERNAME = os.environ.get('IBM_API_USERNAME', '')
         self.__API_KEY = os.environ.get('IBM_API_KEY', '')
         try:
-            self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY)
+            if self.__API_KEY and self.__API_USERNAME:
+                self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY)
+            if os.environ.get('USAGE_REPORTS_APIKEY'):
+                self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
             raise err
         self.__account = os.environ.get('account', '')
+        self.__account_id = os.environ.get('IBM_ACCOUNT_ID', '')
         self.__gsheet_id = os.environ.get('SPREADSHEET_ID', '')
         self.__gsheet_client = GoogleDriveOperations()
         self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
@@ -161,3 +175,16 @@ class IBMAccount:
                     }
                 co += value
         return combine_invoice_data, users
+
+    @retry(exceptions=ReadTimeout, tries=RETRIES, delay=DELAY)
+    @logger_time_stamp
+    def get_daily_usage(self, month: int, year: int):
+        """
+        This method get IBM monthly usage
+        @param month:
+        @param year:
+        @return:
+        """
+        billing_month = str(year) + '-' + str(month)  # yyyy-mm
+        account_summary = self.__service_client.get_account_summary(account_id=self.__account_id, billingmonth=billing_month, timeout=self.DELAY).get_result()
+        return account_summary

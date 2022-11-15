@@ -12,11 +12,11 @@ class ElasticUpload:
     def __init__(self):
         self.es_host = os.environ.get('es_host', '')
         self.__es_port = os.environ.get('es_port', '')
-        self._es_index = os.environ.get('es_index', '')
+        self.es_index = os.environ.get('es_index', '')
         self.account = os.environ.get('account', '').upper()
-        self._special_user_mails = os.environ.get('special_user_mails', '{}')
-        self._postfix_mail = Postfix()
-        self._mail_message = MailMessage()
+        self.special_user_mails = os.environ.get('special_user_mails', '{}')
+        self.postfix_mail = Postfix()
+        self.mail_message = MailMessage()
         if self.es_host:
             self.elastic_search_operations = ElasticSearchOperations(es_host=self.es_host, es_port=self.__es_port)
 
@@ -29,7 +29,7 @@ class ElasticUpload:
         """
         try:
             if not es_index:
-                es_index = self._es_index
+                es_index = self.es_index
             count = 0
             for item in items:
                 if not item.get('Account'):
@@ -41,7 +41,7 @@ class ElasticUpload:
         except Exception as err:
             logger.info(f'Error raised {err}')
 
-    def _literal_eval(self, data: any):
+    def literal_eval(self, data: any):
         """
         This method convert string object into its original datatype
         ex: "{'Project': 'Cloud-Governance'}" --> {'Project': 'Cloud-Governance'}
