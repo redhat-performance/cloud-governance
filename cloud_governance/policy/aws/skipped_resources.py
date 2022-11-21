@@ -92,14 +92,14 @@ class SkippedResources(NonClusterZombiePolicy):
                         volume_cost = 0
                         if resource_name == 'Instance':
                             volume_cost = self.get_instance_volume_size(resource=resource)
-                            resource_name = resource.get('InstanceType')
+                            resource_type = resource.get('InstanceType')
                         else:
                             if resource_name == 'Volume':
                                 volume_cost = self.get_ebs_cost(volume_id=resource.get(resource_id))
-                                resource_name = resource.get('VolumeType')
+                                resource_type = resource.get('VolumeType')
                         if volume_cost:
                             resource_data['Cost'] = volume_cost
-                        resource_data['ResourceName'] = resource_name
+                        resource_data['ResourceName'] = resource_type
                         not_delete_resources.append(resource_data)
 
         return not_delete_resources
@@ -111,8 +111,8 @@ class SkippedResources(NonClusterZombiePolicy):
         """
         resources_data = self.get_not_delete_resources()
         if self._es_upload.es_host:
-            start_datetime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            end_datetime = start_datetime - datetime.timedelta(1)
+            end_datetime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            start_datetime = end_datetime - datetime.timedelta(1)
             # deleting past data to show fresh report
             self._es_upload.elastic_search_operations.delete_data_in_between_in_es(es_index=self.es_index, start_datetime=start_datetime, end_datetime=end_datetime)
             self._es_upload.es_upload_data(items=resources_data, es_index=self.es_index)

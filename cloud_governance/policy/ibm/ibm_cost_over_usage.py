@@ -50,7 +50,7 @@ class IBMCostOverUsage:
         cost_over_usage_resources = []
         for resource in usage_resources:
             if resource.get('Name').lower() not in self.EXCLUDE_RESOURCES:
-                if resource.get('Cost') > self.__maximum_threshold:
+                if resource.get('Cost') > int(self.__maximum_threshold):
                     cost_over_usage_resources.append(resource)
         if cost_over_usage_resources:
             subject, body = self.__mail_message.ibm_cost_over_usage(data=self.format_into_html_data(resources=cost_over_usage_resources), month=month, year=year)

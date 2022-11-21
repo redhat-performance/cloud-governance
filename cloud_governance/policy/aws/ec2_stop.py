@@ -98,7 +98,7 @@ class EC2Stop(NonClusterZombiePolicy):
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
             subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type)
             if not kwargs.get('admins'):
-                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id)
+                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=instance_id, message_type=kwargs.get('message_type'))
             else:
                 kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
                 self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=instance_id, message_type=kwargs.get('message_type'))
