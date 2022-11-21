@@ -210,15 +210,15 @@ class NonClusterZombiePolicy:
 
     def __delete_resource_on_name(self, resource_id: str):
         try:
-            if self._policy == 'empty_buckets':
+            if self._policy == 's3_inactive':
                 self._s3_client.delete_bucket(Bucket=resource_id)
             elif self._policy == 'empty_roles':
                 self._iam_client.delete_role(RoleName=resource_id)
             elif self._policy == 'ebs_unattached':
                 self._ec2_client.delete_volume(VolumeId=resource_id)
-            elif self._policy == 'zombie_elastic_ips':
+            elif self._policy == 'ip_unattached':
                 self._ec2_client.release_address(AllocationId=resource_id)
-            elif self._policy == 'zombie_nat_gateways':
+            elif self._policy == 'nat_gateway_unused':
                 self._ec2_client.delete_nat_gateway(NatGatewayId=resource_id)
             elif self._policy == 'zombie_snapshots':
                 self._ec2_client.delete_snapshot(SnapshotId=resource_id)
@@ -269,11 +269,11 @@ class NonClusterZombiePolicy:
             if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay') or resource_left_out:
                 tags = self._update_tag_value(tags=tags, tag_name='LastUsedDay', tag_value=str(left_out_days))
                 try:
-                    if self._policy == 'empty_buckets':
+                    if self._policy == 's3_inactive':
                         self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
                     elif self._policy == 'empty_roles':
                         self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
-                    elif self._policy in ('zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots'):
+                    elif self._policy in ('ip_unattached', 'nat_gateway_unused', 'zombie_snapshots'):
                         self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
                 except Exception as err:
                     logger.info(f'Exception raised: {err}: {resource_id}')

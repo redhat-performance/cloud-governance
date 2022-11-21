@@ -2,7 +2,7 @@
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
-class ZombieElasticIps(NonClusterZombiePolicy):
+class IpUnattached(NonClusterZombiePolicy):
     """
     Fetched the Unused elastic_ips( based on network interface Id) and delete it after 7 days of unused,
     alert user after 4 days of unused elastic_ip.

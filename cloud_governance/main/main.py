@@ -217,8 +217,8 @@ def main():
     bucket = os.environ.get('bucket', '')
 
     zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ec2_run',
-                                  'ebs_in_use', 'ebs_unattached', 'empty_buckets',
-                                  'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways',
+                                  'ebs_in_use', 'ebs_unattached', 's3_inactive',
+                                  'empty_roles', 'ip_unattached', 'nat_gateway_unused',
                                   'zombie_snapshots', 'skipped_resources', 'monthly_report']
     zombie_non_cluster_polices_runner = None
     is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices

@@ -2,7 +2,7 @@
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
-class ZombieNatGateways(NonClusterZombiePolicy):
+class NatGatewayUnused(NonClusterZombiePolicy):
     """
     This class sends an alert mail for zombie Nat gateways ( based on vpc routes )
     to the user after 4 days and delete after 7 days.
@@ -26,7 +26,7 @@ class ZombieNatGateways(NonClusterZombiePolicy):
         @return:
         """
         nat_gateways = self._ec2_operations.get_nat_gateways()
-        zombie_nat_gateways_data = []
+        nat_gateway_unused_data = []
         for nat_gateway in nat_gateways:
             nat_gateway_id = nat_gateway.get('NatGatewayId')
             tags = nat_gateway.get('Tags')
@@ -43,9 +43,8 @@ class ZombieNatGateways(NonClusterZombiePolicy):
                                                                              empty_days=unused_days,
                                                                              days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
                         if zombie_nat_gateway:
-                            zombie_nat_gateways_data.append([nat_gateway_id, self._get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                                             zombie_nat_gateway.get('VpcId'), self._get_policy_value(tags=tags), unused_days])
+                            nat_gateway_unused_data.append([nat_gateway_id, self._get_tag_name_from_tags(tags=tags, tag_name='User'), zombie_nat_gateway.get('VpcId'), self._get_policy_value(tags=tags), unused_days])
                     else:
                         unused_days = 0
                     self._update_resource_tags(resource_id=nat_gateway_id, tags=tags, left_out_days=unused_days, resource_left_out=gateway_unused)
-        return zombie_nat_gateways_data
+        return nat_gateway_unused_data

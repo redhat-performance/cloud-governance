@@ -35,9 +35,9 @@ def test_empty_roles():
     os.environ['policy'] = 'empty_roles'
     iam_client = boto3.client('iam')
     iam_client.create_role(AssumeRolePolicyDocument=AssumeRolePolicyDocument, RoleName='CloudGovernanceTestEmptyRole')
-    zombie_elastic_ips = NonClusterZombiePolicy()
-    zombie_elastic_ips.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
-    zombie_elastic_ips._check_resource_and_delete(resource_name='IAM Role',
+    empty_roles = NonClusterZombiePolicy()
+    empty_roles.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
+    empty_roles._check_resource_and_delete(resource_name='IAM Role',
                                                   resource_id='RoleName',
                                                   resource_type='CreateRole',
                                                   resource=iam_client.list_roles()['Roles'][0],
@@ -62,9 +62,9 @@ def test_empty_roles_not_delete():
     ]
     iam_client = boto3.client('iam')
     iam_client.create_role(AssumeRolePolicyDocument=AssumeRolePolicyDocument, RoleName='CloudGovernanceTestEmptyRole', Tags=tags)
-    zombie_elastic_ips = NonClusterZombiePolicy()
-    zombie_elastic_ips.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
-    zombie_elastic_ips._check_resource_and_delete(resource_name='IAM Role',
+    empty_roles = NonClusterZombiePolicy()
+    empty_roles.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
+    empty_roles._check_resource_and_delete(resource_name='IAM Role',
                                                   resource_id='RoleName',
                                                   resource_type='CreateRole',
                                                   resource=iam_client.list_roles()['Roles'][0],

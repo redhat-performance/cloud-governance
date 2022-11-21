@@ -2089,7 +2089,7 @@
               "alias": "",
               "bucketAggs": [
                 {
-                  "field": "empty_buckets.keyword",
+                  "field": "s3_inactive.keyword",
                   "id": "2",
                   "settings": {
                     "min_doc_count": "1",
@@ -2138,7 +2138,7 @@
                 "indexByName": {},
                 "renameByName": {
                   "account.keyword": "Account",
-                  "empty_buckets.keyword": "BucketName | CreateDate | Age | Policy"
+                  "s3_inactive.keyword": "BucketName | CreateDate | Age | Policy"
                 }
               }
             },
@@ -2371,7 +2371,7 @@
               "alias": "",
               "bucketAggs": [
                 {
-                  "field": "zombie_nat_gateways.keyword",
+                  "field": "nat_gateway_unused.keyword",
                   "id": "2",
                   "settings": {
                     "min_doc_count": "1",
@@ -2432,7 +2432,7 @@
                 "renameByName": {
                   "account.keyword": "Account",
                   "region.keyword": "Region",
-                  "zombie_nat_gateways.keyword": "NatGatewayId | user | VpcId | Policy"
+                  "nat_gateway_unused.keyword": "NatGatewayId | user | VpcId | Policy"
                 }
               }
             },
@@ -2483,7 +2483,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "zombie_elastic_ips.keyword"
+                  "options": "ip_unattached.keyword"
                 },
                 "properties": [
                   {
@@ -2542,7 +2542,7 @@
               "alias": "",
               "bucketAggs": [
                 {
-                  "field": "zombie_elastic_ips.keyword",
+                  "field": "ip_unattached.keyword",
                   "id": "2",
                   "settings": {
                     "min_doc_count": "1",
@@ -2614,7 +2614,7 @@
                 "renameByName": {
                   "account.keyword": "Account",
                   "region.keyword": "Region",
-                  "zombie_elastic_ips.keyword": "AllocationId | Name | PublicIp | Policy"
+                  "ip_unattached.keyword": "AllocationId | Name | PublicIp | Policy"
                 }
               }
             }

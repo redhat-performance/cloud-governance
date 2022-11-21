@@ -24,8 +24,9 @@ def test_zombie_snapshots():
     ec2_client = boto3.client('ec2', region_name=region)
     default_ami_id = 'ami-03cf127a'
     instance_id = \
-    ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][0][
-        'InstanceId']
+        ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][
+            0][
+            'InstanceId']
     snapshots = ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
     images = ec2_client.describe_images()['Images']
     for image in images:
@@ -40,14 +41,15 @@ def test_zombie_snapshots():
     ec2_client.create_tags(Resources=[snapshot_id], Tags=tags)
     ec2_client.deregister_image(ImageId=imageid)
     ec2_client.terminate_instances(InstanceIds=[instance_id])
-    zombie_elastic_ips = NonClusterZombiePolicy()
-    zombie_elastic_ips.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
-    zombie_elastic_ips._check_resource_and_delete(resource_name='Snapshot',
-                                                  resource_id='SnapshotId',
-                                                  resource_type='CreateSnapshot',
-                                                  resource=ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots'][0],
-                                                  empty_days=0,
-                                                  days_to_delete_resource=0)
+    zombie_snapshot = NonClusterZombiePolicy()
+    zombie_snapshot.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
+    zombie_snapshot._check_resource_and_delete(resource_name='Snapshot',
+                                               resource_id='SnapshotId',
+                                               resource_type='CreateSnapshot',
+                                               resource=ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots'][
+                                                   0],
+                                               empty_days=0,
+                                               days_to_delete_resource=0)
     assert len(ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']) == 0
 
 
@@ -67,8 +69,9 @@ def test_zombie_snapshots_not_delete():
     ec2_client = boto3.client('ec2', region_name=region)
     default_ami_id = 'ami-03cf127a'
     instance_id = \
-    ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][0][
-        'InstanceId']
+        ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][
+            0][
+            'InstanceId']
     snapshots = ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
     images = ec2_client.describe_images()['Images']
     for image in images:
@@ -83,13 +86,13 @@ def test_zombie_snapshots_not_delete():
     ec2_client.create_tags(Resources=[snapshot_id], Tags=tags)
     ec2_client.deregister_image(ImageId=imageid)
     ec2_client.terminate_instances(InstanceIds=[instance_id])
-    zombie_elastic_ips = NonClusterZombiePolicy()
-    zombie_elastic_ips.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
-    zombie_elastic_ips._check_resource_and_delete(resource_name='Snapshot',
-                                                  resource_id='SnapshotId',
-                                                  resource_type='CreateSnapshot',
-                                                  resource=
-                                                  ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots'][0],
-                                                  empty_days=0,
-                                                  days_to_delete_resource=0)
+    zombie_snapshot = NonClusterZombiePolicy()
+    zombie_snapshot.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
+    zombie_snapshot._check_resource_and_delete(resource_name='Snapshot',
+                                               resource_id='SnapshotId',
+                                               resource_type='CreateSnapshot',
+                                               resource=
+                                               ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots'][0],
+                                               empty_days=0,
+                                               days_to_delete_resource=0)
     assert len(ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']) == 1

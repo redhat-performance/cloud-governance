@@ -1,14 +1,11 @@
-import operator
-from operator import ge
 
-import boto3
 from botocore.exceptions import ClientError
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 
-class EmptyBuckets(NonClusterZombiePolicy):
+class S3Inactive(NonClusterZombiePolicy):
     """
     This class sends an alert mail for empty bucket to the user after 4 days and delete after 7 days.
     """
@@ -21,9 +18,9 @@ class EmptyBuckets(NonClusterZombiePolicy):
         This method return all Empty buckets and delete if dry_run no
         @return:
         """
-        return self.__delete_empty_bucket()
+        return self.__delete_s3_inactive()
 
-    def __delete_empty_bucket(self):
+    def __delete_s3_inactive(self):
         """
         This method delete the empty bucket more than 7 days
         @return:
