@@ -23,14 +23,19 @@ This tool support the following policies:
 
 * Real time Openshift Cluster cost, User cost
 * [ec2_idle](cloud_governance/policy/aws/ec2_idle.py): idle ec2 in last 2 days, cpu < 2% & network < 5mb [ec2_idle](cloud_governance/policy/aws/ec2_idle.py)
-* [ec2_run](cloud_governance/policy/aws/ec2_run.yml): running ec2 [ec2_run](cloud_governance/policy/aws/ec2_run.yml)
-* [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.yml): volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.yml)
-* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.yml): in use volumes [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.yml)
+* [ec2_run](cloud_governance/policy/aws/ec2_run.py): running ec2 [ec2_run](cloud_governance/policy/aws/ec2_run.py)
+* [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py)
+* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py)
 * [tag_resources](cloud_governance/aws/tag_cluster): Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
 * [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Delete cluster's zombie resources
 * [tag_non_cluster](cloud_governance/aws/tag_non_cluster): tag ec2 resources (instance, volume, ami, snapshot) by instance name
 * [tag_iam_user](cloud_governance/aws/tag_user): update the user tags from the csv file
 * [cost_explorer](cloud_governance/policy/aws/cost_explorer.py): Get data from cost explorer and upload to ElasticSearch
+* [ip_unattached](cloud_governance/policy/aws/ip_unattached.py): Get the unattached IP and delete it after 7 days.
+* [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Get the inactive/empty buckets and delete them after 7 days.
+* [empty_roles](cloud_governance/policy/aws/empty_roles.py): Get empty roles and delete it after 7 days.
+* [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Get the zombie snapshots and delete it after 7 days.
+* [nat_gateway_unused](cloud_governance/policy/aws/nat_gateway_unused.py): Get the unused nat gateways and deletes it after 7 days.
 * gitleaks: scan Github repository git leak (security scan)  
 * [cost_over_usage](cloud_governance/policy/aws/cost_over_usage.py): send mail to aws user if over usage cost
 
@@ -132,7 +137,7 @@ sudo podman run --rm --name cloud-governance -e policy="ec2_idle" -e AWS_ACCESS_
 # policy=ec2_run
 sudo podman run --rm --name cloud-governance -e policy="ec2_run" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"
 
-# select policy ['ec2_stop', 'empty_buckets', 'empty_roles', 'zombie_elastic_ips', 'zombie_nat_gateways', 'zombie_snapshots']
+# select policy ['ec2_stop', 's3_inactive', 'empty_roles', 'ip_unattached', 'nat_gateway_unused', 'zombie_snapshots']
 sudo podman run --rm --name cloud-governance -e policy="policy" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes"  -e log_level="INFO" "quay.io/ebattat/cloud-governance"
 
 # policy=ebs_unattached
