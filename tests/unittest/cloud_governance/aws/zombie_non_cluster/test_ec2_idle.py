@@ -65,6 +65,6 @@ def test_ec2_idle_not_delete():
                              TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}])
 
     ec2_idle = EC2Idle()
-    actual_result = ec2_idle._EC2Idle__stop_idle_instances(instance_launch_days=-1)
-    assert expected_result == len(actual_result)
+    ec2_idle._EC2Idle__stop_idle_instances(instance_launch_days=-1)
+    assert expected_result == len(ec2_client.describe_instances()['Reservations'][0]['Instances'])
 

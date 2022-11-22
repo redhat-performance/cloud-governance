@@ -28,23 +28,24 @@ class NatGatewayUnused(NonClusterZombiePolicy):
         nat_gateways = self._ec2_operations.get_nat_gateways()
         nat_gateway_unused_data = []
         for nat_gateway in nat_gateways:
-            nat_gateway_id = nat_gateway.get('NatGatewayId')
-            tags = nat_gateway.get('Tags')
-            gateway_unused = False
-            if not self._check_cluster_tag(tags=tags):
-                if nat_gateway.get('State') == 'available':
-                    if not self.__check_nat_gateway_in_routes(nat_gateway_id=nat_gateway_id):
-                        gateway_unused = True
-                        unused_days = self._get_resource_last_used_days(tags=tags)
-                        zombie_nat_gateway = self._check_resource_and_delete(resource_name='NatGateway',
-                                                                             resource_id='NatGatewayId',
-                                                                             resource_type='CreateNatGateway',
-                                                                             resource=nat_gateway,
-                                                                             empty_days=unused_days,
-                                                                             days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
-                        if zombie_nat_gateway:
-                            nat_gateway_unused_data.append([nat_gateway_id, self._get_tag_name_from_tags(tags=tags, tag_name='User'), zombie_nat_gateway.get('VpcId'), self._get_policy_value(tags=tags), unused_days])
-                    else:
-                        unused_days = 0
-                    self._update_resource_tags(resource_id=nat_gateway_id, tags=tags, left_out_days=unused_days, resource_left_out=gateway_unused)
+            if self._get_policy_value(tags=nat_gateway.get('Tags', [])) not in ('NOTDELETE', 'SKIP'):
+                nat_gateway_id = nat_gateway.get('NatGatewayId')
+                tags = nat_gateway.get('Tags')
+                gateway_unused = False
+                if not self._check_cluster_tag(tags=tags):
+                    if nat_gateway.get('State') == 'available':
+                        if not self.__check_nat_gateway_in_routes(nat_gateway_id=nat_gateway_id):
+                            gateway_unused = True
+                            unused_days = self._get_resource_last_used_days(tags=tags)
+                            zombie_nat_gateway = self._check_resource_and_delete(resource_name='NatGateway',
+                                                                                 resource_id='NatGatewayId',
+                                                                                 resource_type='CreateNatGateway',
+                                                                                 resource=nat_gateway,
+                                                                                 empty_days=unused_days,
+                                                                                 days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
+                            if zombie_nat_gateway:
+                                nat_gateway_unused_data.append([nat_gateway_id, self._get_tag_name_from_tags(tags=tags, tag_name='User'), zombie_nat_gateway.get('VpcId'), self._get_policy_value(tags=tags), unused_days])
+                        else:
+                            unused_days = 0
+                        self._update_resource_tags(resource_id=nat_gateway_id, tags=tags, left_out_days=unused_days, resource_left_out=gateway_unused)
         return nat_gateway_unused_data
