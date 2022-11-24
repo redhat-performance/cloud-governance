@@ -4,13 +4,13 @@ import typeguard
 
 from cloud_governance.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
 
 @typeguard.typechecked
 def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '',
                         resource_name: str = '', service_type: str = ' '):
-    global zombie_cluster_resources
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete,
                                                       region=region, cluster_tag=cluster_tag,
                                                       resource_name=resource_name)
@@ -79,6 +79,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
 
 
 @typeguard.typechecked
+@logger_time_stamp
 def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', resource: str = '', cluster_tag: str = '',
                             resource_name: str = '', service_type: str = ''):
     """

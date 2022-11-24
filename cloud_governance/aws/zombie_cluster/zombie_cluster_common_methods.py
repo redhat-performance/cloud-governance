@@ -7,6 +7,7 @@ import boto3
 
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 
@@ -184,6 +185,7 @@ class ZombieClusterCommonMethods:
             cluster_delete_days = int(cluster_delete_days) + 1
         return cluster_delete_days
 
+    @logger_time_stamp
     def trigger_mail(self, tags: list, resource_id: str, days: int, resources: list, message_type: str):
         """
         This method send triggering mail
@@ -249,6 +251,7 @@ class ZombieClusterCommonMethods:
                     delete_data.setdefault(cluster_tag, []).append({func_name: delete_tag_data[cluster_tag]})
         return notify_data, delete_data, cluster_data
 
+    @logger_time_stamp
     def send_mails_to_cluster_user(self, notify_data: dict, delete_data: dict, cluster_data: dict):
         """
         This method send mail to the user to notify cluster status
@@ -267,6 +270,7 @@ class ZombieClusterCommonMethods:
             self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
                               days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids, message_type='delete')
 
+    @logger_time_stamp
     def _check_zombie_cluster_deleted_days(self, resources: dict, cluster_left_out_days: dict, zombie: str, cluster_tag: str):
         """
         This method check the cluster delete days and return the clusters

@@ -11,6 +11,9 @@ class MailMessage:
 
     def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str,
                  resource_id: str, stopped_time: str, ec2_type: str, **kwargs):
+        extra_purse = ''
+        if kwargs.get("extra_purse"):
+            extra_purse = f', Cost {round(kwargs.get("extra_purse"), 3)} $ '
         subject = f'cloud-governance alert: ec2-stop'
         content = 'If you do not want it to be deleted, please add "Policy=Not_Delete" or "Policy=skip" tag to this instance.'
         message = f'This instance will be deleted in the {delete_instance_days-days} days if no further action is taken.'
@@ -22,7 +25,7 @@ class MailMessage:
         body = f"""
 Hi {name},
 
-Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type} ) in {self.region} region in account: {self.account} was stopped on {stopped_time}, it stopped state more than {days} days.
+Instance: {instance_name}: {resource_id}( InstanceType:{ec2_type}{extra_purse}) in {self.region} region in account: {self.account} was stopped on {stopped_time}, it stopped state more than {days} days.
 {message}
 {content}
 
@@ -33,7 +36,10 @@ Cloud-governance Team""".strip()
         return subject, body
 
     def ec2_idle(self, name: str, days: int, notification_days: int, stop_days: int, instance_name: str,
-                 resource_id: str, ec2_type: str):
+                 resource_id: str, ec2_type: str, **kwargs):
+        extra_purse = ''
+        if kwargs.get('extra_purse'):
+            extra_purse = f', Cost {round(kwargs.get("extra_purse"), 3)} $ '
         subject = f'cloud-governance alert: ec2-idle'
         if days == notification_days:
             cause = f'This instance will be stopped in {stop_days-days} days if no further action is taken'
@@ -44,7 +50,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Hi {name},
 
-Instance: {instance_name}: {resource_id} ( InstanceType:{ec2_type} ) in {self.region} on account: {self.account} is idle more than {days} days.
+Instance: {instance_name}: {resource_id} ( InstanceType:{ec2_type}{extra_purse}) in {self.region} on account: {self.account} is idle more than {days} days.
 {cause}
 {content}
 If you already added the tag, please ignore this mail.
@@ -103,6 +109,9 @@ Cloud-governance Team""".strip()
         """
         resource_type = resource_type.capitalize()
         reason = self.policy.split('_')[-1]
+        extra_purse = ''
+        if kwargs.get('extra_purse'):
+            extra_purse = f'(Cost {round(kwargs.get("extra_purse"), 3)} $)'
         if 'empty' in self.policy:
             reason = 'empty'
         if 'zombie' in self.policy:
@@ -117,18 +126,13 @@ Cloud-governance Team""".strip()
         else:
             cause = f'This {resource_type} will be deleted due to it was {reason} more than {delete_days} days.'
             content = f'In future cloud-governance will not delete your {resource_type} add "Policy=Not_Delete" or "Policy=skip" tag to your {resource_type}s'
-        extra_data = ''
-        if resources:
-            extra_data = f'Cluster Undeleted Resources: {sorted(resources)}'
         body = f"""
 Hi {name},
 
-{resource_type.upper()}: {resource_name}: {resource_id} in {self.region} region in account: {self.account} has been in {reason} for more than {days} days.
+{resource_type.upper()}: {resource_name}: {resource_id} {extra_purse} in {self.region} region in account: {self.account} has been in {reason} for more than {days} days.
 {cause}
 {content}
 If you already added the tag, please ignore this mail.
-
-{extra_data}
 
 {self.RESTRICTION}
 

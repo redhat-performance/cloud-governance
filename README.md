@@ -22,10 +22,10 @@ This tool support the following policies:
 [AWS Polices](cloud_governance/policy/aws)
 
 * Real time Openshift Cluster cost, User cost
-* [ec2_idle](cloud_governance/policy/aws/ec2_idle.py): idle ec2 in last 2 days, cpu < 2% & network < 5mb [ec2_idle](cloud_governance/policy/aws/ec2_idle.py)
-* [ec2_run](cloud_governance/policy/aws/ec2_run.py): running ec2 [ec2_run](cloud_governance/policy/aws/ec2_run.py)
-* [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py)
-* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py)
+* [ec2_idle](cloud_governance/policy/aws/ec2_idle.py): idle ec2 in last 4 days, cpu < 2% & network < 5mb.
+* [ec2_run](cloud_governance/policy/aws/ec2_run.py): running ec2.
+* [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status.
+* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes.
 * [tag_resources](cloud_governance/aws/tag_cluster): Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
 * [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Delete cluster's zombie resources
 * [tag_non_cluster](cloud_governance/aws/tag_non_cluster): tag ec2 resources (instance, volume, ami, snapshot) by instance name

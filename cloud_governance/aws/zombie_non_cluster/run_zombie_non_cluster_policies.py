@@ -7,6 +7,7 @@ import boto3
 from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.ldap.ldap_search import LdapSearch
@@ -21,6 +22,7 @@ class NonClusterZombiePolicy:
     DAYS_TO_DELETE_RESOURCE = 7
     DAYS_TO_NOTIFY_ADMINS = 6
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
+    DAILY_HOURS = 24
 
     def __init__(self):
         self._end_date = datetime.datetime.now()
@@ -47,6 +49,7 @@ class NonClusterZombiePolicy:
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
         self._es_upload = ElasticUpload()
+        self.resource_pricing = ResourcesPricing()
 
     def _literal_eval(self, data: any):
         tags = {}
@@ -167,12 +170,12 @@ class NonClusterZombiePolicy:
                                                                     notification_days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
                                                                     delete_days=self.DAYS_TO_DELETE_RESOURCE,
                                                                     resource_name=resource_name, resource_id=resource_id,
-                                                                    resource_type=resource_type, msgadmins=self.DAYS_TO_NOTIFY_ADMINS)
+                                                                    resource_type=resource_type, msgadmins=self.DAYS_TO_NOTIFY_ADMINS, extra_purse=kwargs.get('extra_purse'))
             if not kwargs.get('admins'):
-                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, message_type=kwargs.get('message_type'))
+                self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
             else:
                 kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
-                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id, message_type=kwargs.get('message_type'))
+                self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
         except Exception as err:
             logger.info(err)
 
@@ -226,7 +229,7 @@ class NonClusterZombiePolicy:
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
 
-    def _check_resource_and_delete(self, resource_name: str, resource_id: str, resource_type: str, resource: dict, empty_days: int, days_to_delete_resource: int, tags: list = []):
+    def _check_resource_and_delete(self, resource_name: str, resource_id: str, resource_type: str, resource: dict, empty_days: int, days_to_delete_resource: int, tags: list = [], **kwargs):
         """
         This method check and delete resources
         @param resource_name:
@@ -249,13 +252,14 @@ class NonClusterZombiePolicy:
         zombie_resource = {}
         if empty_days >= self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
             if empty_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL, message_type='notification')
+                kwargs['delta_cost'] = kwargs.get('extra_purse')
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL, message_type='notification', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
             elif empty_days == self.DAYS_TO_NOTIFY_ADMINS:
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins, message_type='notify_admin')
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins, message_type='notify_admin', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
             elif empty_days >= days_to_delete_resource:
                 if self._dry_run == 'no':
                     if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, message_type='delete')
+                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, message_type='delete', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
                         self.__delete_resource_on_name(resource_id=resource_id)
             zombie_resource = resource
         return zombie_resource
@@ -306,3 +310,17 @@ class NonClusterZombiePolicy:
                 volume['CreateTime'] = volume['CreateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
                 organize_data.append(volume)
         return organize_data
+
+    def get_ebs_cost(self, resource: any, resource_type: str, resource_hours: int):
+        ebs_cost = 0
+        if resource_type == 'ec2':
+            volume_ids = []
+            for block_device in resource:
+                volume_ids.append(block_device.get('Ebs').get('VolumeId'))
+            volumes = self._ec2_client.describe_volumes(VolumeIds=volume_ids)['Volumes']
+            for volume in volumes:
+                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=volume.get('Size'), volume_type=volume.get('VolumeType'), hours=resource_hours)
+        else:
+            if resource_type == 'ebs':
+                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=resource.get('Size'), volume_type=resource.get('VolumeType'), hours=resource_hours)
+        return round(ebs_cost, 3)
