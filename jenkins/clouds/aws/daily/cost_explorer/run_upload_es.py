@@ -40,3 +40,20 @@ os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-dept" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index_global}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="psap" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index_global}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-scale" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index_global}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
+
+input_vars_to_container = [{'account': 'perf-dept', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF,
+                            'AWS_SECRET_ACCESS_KEY_DELETE_PERF': AWS_SECRET_ACCESS_KEY_DELETE_PERF},
+                           {'account': 'perf-scale', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE,
+                            'AWS_SECRET_ACCESS_KEY_DELETE_PERF': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE},
+                           {'account': 'psap', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
+                            'AWS_SECRET_ACCESS_KEY_DELETE_PERF': AWS_SECRET_ACCESS_KEY_DELETE_PSAP}]
+common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-global-cost-forecasting',
+                     'cost_explorer_tags': cost_tags, 'cost_metric': cost_metric,
+                     'log_level': 'INFO'}
+combine_vars = lambda item: f'{item[0]}="{item[1]}"'
+envs = list(map(combine_vars, common_input_vars.items()))
+for input_vars in input_vars_to_container:
+    envs.extend(list(map(combine_vars, input_vars.items())))
+    for granularity in ['DAILY', 'MONTHLY']:
+        os.system(f"""podman run -rm --name cloud-governance -net="host" -e policy="cost_forecasting" -e AWS_DEFAULT_REGION="us-east-1" -e {' -e '.join(envs)} -e granularity="{granularity}"  quay.io/ebattat/cloud-governance:latest""")

@@ -219,7 +219,7 @@ def main():
     zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ec2_run',
                                   'ebs_in_use', 'ebs_unattached', 's3_inactive',
                                   'empty_roles', 'ip_unattached', 'nat_gateway_unused',
-                                  'zombie_snapshots', 'skipped_resources', 'monthly_report']
+                                  'zombie_snapshots', 'skipped_resources', 'monthly_report', 'cost_forecasting']
     zombie_non_cluster_polices_runner = None
     is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices
     if is_zombie_non_cluster_polices_runner:

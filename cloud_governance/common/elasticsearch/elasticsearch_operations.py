@@ -109,7 +109,7 @@ class ElasticSearchOperations:
         raise ElasticSearchDataNotUploaded
 
     @typechecked()
-    def upload_to_elasticsearch(self, index: str, data: dict, doc_type: str = '_doc', es_add_items: dict = None):
+    def upload_to_elasticsearch(self, index: str, data: dict, doc_type: str = '_doc', es_add_items: dict = None, **kwargs):
         """
         This method is upload json data into elasticsearch
         :param index: index name to be stored in elasticsearch
@@ -133,10 +133,10 @@ class ElasticSearchOperations:
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
-                self.__es.index(index=index, doc_type=doc_type, body=data)
+                self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
             else:  # JSON Array
                 for record in data:
-                    self.__es.index(index=index, doc_type=doc_type, body=record)
+                    self.__es.index(index=index, doc_type=doc_type, body=record, **kwargs)
             return True
         except Exception as err:
             raise err
