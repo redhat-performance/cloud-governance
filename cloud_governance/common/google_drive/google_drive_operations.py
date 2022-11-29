@@ -7,6 +7,7 @@ from googleapiclient.errors import HttpError
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class GoogleDriveOperations:
@@ -19,7 +20,8 @@ class GoogleDriveOperations:
     RETRIES = 3
 
     def __init__(self):
-        if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        if self.__environment_variables_dict.get('GOOGLE_APPLICATION_CREDENTIALS'):
             self.__creds, _ = google.auth.default()
             self.__service = build('sheets', 'v4', credentials=self.__creds, num_retries=self.RETRIES)
 

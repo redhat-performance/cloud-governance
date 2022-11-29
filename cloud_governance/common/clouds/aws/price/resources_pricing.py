@@ -1,7 +1,6 @@
-import os
-
 
 from cloud_governance.common.clouds.aws.price.price import AWSPrice
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class ResourcesPricing:
@@ -13,8 +12,9 @@ class ResourcesPricing:
     IP_HOURLY_COST = 0.005
 
     def __init__(self):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._aws_pricing = AWSPrice()
-        self.region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
 
     def ec2_instance_type_cost(self, instance_type: str, hours: float):
         """

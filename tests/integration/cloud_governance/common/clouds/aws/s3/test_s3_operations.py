@@ -1,8 +1,9 @@
 
 import tempfile
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
-from tests.integration.cloud_governance.test_environment_variables import *
+from tests.integration.test_environment_variables import test_environment_variable
 from uuid import uuid4
+import os
 
 BUCKET = test_environment_variable.get("BUCKET", '')
 REGION = test_environment_variable.get("REGION", '')

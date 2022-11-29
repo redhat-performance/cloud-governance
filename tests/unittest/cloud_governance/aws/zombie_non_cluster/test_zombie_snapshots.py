@@ -42,6 +42,8 @@ def test_zombie_snapshots():
     ec2_client.deregister_image(ImageId=imageid)
     ec2_client.terminate_instances(InstanceIds=[instance_id])
     zombie_snapshot = NonClusterZombiePolicy()
+    zombie_snapshot.set_dryrun(value='no')
+    zombie_snapshot.set_policy(value='zombie_snapshots')
     zombie_snapshot.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     zombie_snapshot._check_resource_and_delete(resource_name='Snapshot',
                                                resource_id='SnapshotId',
@@ -87,6 +89,8 @@ def test_zombie_snapshots_not_delete():
     ec2_client.deregister_image(ImageId=imageid)
     ec2_client.terminate_instances(InstanceIds=[instance_id])
     zombie_snapshot = NonClusterZombiePolicy()
+    zombie_snapshot.set_dryrun(value='no')
+    zombie_snapshot.set_policy(value='zombie_snapshots')
     zombie_snapshot.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     zombie_snapshot._check_resource_and_delete(resource_name='Snapshot',
                                                resource_id='SnapshotId',

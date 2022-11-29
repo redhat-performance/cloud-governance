@@ -1,11 +1,11 @@
 import datetime
-import os
 from ast import literal_eval
 
 from cloud_governance.common.clouds.ibm.account.ibm_account import IBMAccount
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class IBMCostOverUsage:
@@ -18,12 +18,15 @@ class IBMCostOverUsage:
 
     def __init__(self):
         super().__init__()
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__ibm_account = IBMAccount()
         self.__mail_message = MailMessage()
         self.__mail = Postfix()
-        self.__maximum_threshold = os.environ.get('MAXIMUM_THRESHOLD', self.MAXIMUM_THRESHOLD)
-        self._to_mail = literal_eval(os.environ.get('to_mail', '[]'))
-        self._cc_mail = literal_eval(os.environ.get('cc_mail', '[]'))
+        self.__maximum_threshold = self.__environment_variables_dict.get('MAXIMUM_THRESHOLD', '')
+        if self.__maximum_threshold:
+            self.__maximum_threshold = self.MAXIMUM_THRESHOLD
+        self._to_mail = literal_eval(self.__environment_variables_dict.get('to_mail', '[]'))
+        self._cc_mail = literal_eval(self.__environment_variables_dict.get('cc_mail', '[]'))
 
     def get_current_usage(self, month: int, year: int):
         """

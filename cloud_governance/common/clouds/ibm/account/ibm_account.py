@@ -9,6 +9,7 @@ from typeguard import typechecked
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class IBMAccount:
@@ -26,20 +27,21 @@ class IBMAccount:
     DELAY = 30
 
     def __init__(self):
-        self.__API_USERNAME = os.environ.get('IBM_API_USERNAME', '')
-        self.__API_KEY = os.environ.get('IBM_API_KEY', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.__API_USERNAME = self.__environment_variables_dict.get('IBM_API_USERNAME', '')
+        self.__API_KEY = self.__environment_variables_dict.get('IBM_API_KEY', '')
         try:
             if self.__API_KEY and self.__API_USERNAME:
                 self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY, timeout=self.DELAY)
-            if os.environ.get('USAGE_REPORTS_APIKEY'):
+            if self.__environment_variables_dict.get('USAGE_REPORTS_APIKEY'):
                 self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
             raise err
-        self.__account = os.environ.get('account', '')
-        self.__account_id = os.environ.get('IBM_ACCOUNT_ID', '')
-        self.__gsheet_id = os.environ.get('SPREADSHEET_ID', '')
+        self.__account = self.__environment_variables_dict.get('account', '')
+        self.__account_id = self.__environment_variables_dict.get('IBM_ACCOUNT_ID', '')
+        self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
         self.__gsheet_client = GoogleDriveOperations()
-        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
 
     def get_sl_client(self):

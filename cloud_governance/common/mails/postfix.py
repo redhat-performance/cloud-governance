@@ -1,5 +1,4 @@
 import datetime
-import os
 import smtplib
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
@@ -11,6 +10,7 @@ from cloud_governance.common.logger.init_logger import logger
 
 # https://github.com/redhat-performance/quads/blob/master/quads/tools/postman.py
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class Postfix:
@@ -27,12 +27,13 @@ class Postfix:
     """
 
     def __init__(self):
-        self.reply_to = os.environ.get('REPLY_TO', 'dev-null@redhat.com')
-        self.__es_host = os.environ.get('es_host', '')
-        self.__policy = os.environ.get('policy', '')
-        self.__es_port = os.environ.get('es_port', '')
-        self.__account = os.environ.get('account', '')
-        self.__policy_output = os.environ.get('policy_output', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.reply_to = self.__environment_variables_dict.get('REPLY_TO', 'dev-null@redhat.com')
+        self.__es_host = self.__environment_variables_dict.get('es_host', '')
+        self.__policy = self.__environment_variables_dict.get('policy', '')
+        self.__es_port = self.__environment_variables_dict.get('es_port', '')
+        self.__account = self.__environment_variables_dict.get('account', '')
+        self.__policy_output = self.__environment_variables_dict.get('policy_output', '')
         self.bucket_name, self.key = self.get_bucket_name()
         self.__es_index = 'cloud-governance-mail-messages'
         if self.__es_host:

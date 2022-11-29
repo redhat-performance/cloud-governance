@@ -6,7 +6,7 @@ from moto import mock_ec2, mock_s3
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.aws.ebs_in_use import EbsInUse
 
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 
 
 @mock_ec2
@@ -23,6 +23,7 @@ def test_ebs_in_use():
     instance_id = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][0]['InstanceId']
     ec2_client.attach_volume(InstanceId=instance_id, VolumeId=volume_id, Device='/dev/sda1')
     ebs_in_use = EbsInUse()
+    ebs_in_use.set_policy('ebs_in_use')
     assert 2 == len(ebs_in_use.run())
 
 

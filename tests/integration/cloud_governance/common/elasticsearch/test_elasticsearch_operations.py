@@ -5,7 +5,7 @@ from uuid import uuid4
 
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
-from tests.integration.cloud_governance.test_environment_variables import *
+from tests.integration.test_environment_variables import test_environment_variable
 
 es = ElasticSearchOperations(es_host=test_environment_variable.get('elasticsearch', ''),
                              es_port=test_environment_variable.get('elasticsearch_port', ''))

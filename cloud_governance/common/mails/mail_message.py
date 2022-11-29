@@ -1,13 +1,15 @@
-import os
+
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class MailMessage:
     RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the CoreOS slack channel - #perf-dept-public-clouds.'
 
     def __init__(self):
-        self.account = os.environ.get('account', '')
-        self.policy = os.environ.get('policy', '')
-        self.region = os.environ.get('AWS_DEFAULT_REGION', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.account = self.__environment_variables_dict.get('account', '')
+        self.policy = self.__environment_variables_dict.get('policy', '')
+        self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', '')
 
     def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str,
                  resource_id: str, stopped_time: str, ec2_type: str, **kwargs):
@@ -66,7 +68,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Hi {name},
 
-{os.environ.get('account')} IAM User: {user} has missing tags 
+{self.__environment_variables_dict.get('account')} IAM User: {user} has missing tags 
 Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{spreadsheet_id}.
 If you already filled the tags, please ignore the mail.
 
@@ -84,7 +86,7 @@ Cloud-governance Team""".strip()
         subject = f'cloud-governance alert: last week cost over usage {usage_cost}$ per user'
         body = f"""
 Hi {name},
-Your AWS user:{user} in account:{os.environ.get('account')} cost was {user_usage}$ in the last week. 
+Your AWS user:{user} in account:{self.__environment_variables_dict.get('account')} cost was {user_usage}$ in the last week. 
 Please verify that you are using all the resources.
 Please verify that you are using all the resources in attached {user}_resource.json file.
 

@@ -1,4 +1,3 @@
-import os
 import datetime
 from ast import literal_eval
 
@@ -14,6 +13,7 @@ from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
 
@@ -25,13 +25,14 @@ class NonClusterZombiePolicy:
     DAILY_HOURS = 24
 
     def __init__(self):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._end_date = datetime.datetime.now()
         self._start_date = self._end_date - datetime.timedelta(days=self.DAYS_TO_DELETE_RESOURCE)
-        self._account = os.environ.get('account', '')
-        self._dry_run = os.environ.get('dry_run', 'yes')
-        self._region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
-        self._policy = os.environ.get('policy', '')
-        self._policy_output = os.environ.get('policy_output', '')
+        self._account = self.__environment_variables_dict.get('account', '')
+        self._dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
+        self._region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
+        self._policy = self.__environment_variables_dict.get('policy', '')
+        self._policy_output = self.__environment_variables_dict.get('policy_output', '')
         self._ec2_client = boto3.client('ec2', region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
         self._s3_client = boto3.client('s3')
@@ -41,15 +42,24 @@ class NonClusterZombiePolicy:
         self._zombie_cluster = ZombieClusterResources(cluster_prefix=self._cluster_prefix)
         self._s3operations = S3Operations(region_name=self._region)
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
-        self._special_user_mails = os.environ.get('special_user_mails', '{}')
-        self._account_admin = os.environ.get('account_admin', '')
+        self._special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
+        self._account_admin = self.__environment_variables_dict.get('account_admin', '')
         self._mail = Postfix()
         self._mail_description = MailMessage()
-        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
         self._es_upload = ElasticUpload()
         self.resource_pricing = ResourcesPricing()
+
+    def set_dryrun(self, value: str):
+        self._dry_run = value
+
+    def set_policy(self, value: str):
+        self._policy = value
+
+    def set_region(self, value: str):
+        self._region = value
 
     def _literal_eval(self, data: any):
         tags = {}

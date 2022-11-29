@@ -5,6 +5,7 @@ import typeguard
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class EC2Operations:
@@ -16,6 +17,7 @@ class EC2Operations:
         """
         Initializing the AWS resources
         """
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.elb1_client = boto3.client('elb', region_name=region)
         self.elbv2_client = boto3.client('elbv2', region_name=region)
         self.ec2_client = boto3.client('ec2', region_name=region)
@@ -493,7 +495,7 @@ class EC2Operations:
                              'InstanceType': instance.get('InstanceType'),
                              'LaunchTime': instance.get('LaunchTime').strftime('%Y/%m/%d %H:%M:%S'),
                              'Region': region.get('RegionName'),
-                             'Account': os.environ.get('account', '').upper(),
+                             'Account': self.__environment_variables_dict.get('account', '').upper(),
                              'State': instance.get('State')['Name']
                              }
                 user = self.get_tag(name='User', tags=instance.get('Tags'))

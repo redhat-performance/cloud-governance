@@ -1,4 +1,3 @@
-import os
 from ast import literal_eval
 
 import pandas as pd
@@ -7,17 +6,19 @@ from cloud_governance.common.elasticsearch.elasticsearch_operations import Elast
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class MonthlyReport:
     REPORT_DAYS = 30
 
     def __init__(self):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._es_index = 'cloud-governance-mail-messages'
-        self._es_host = os.environ.get('es_host', '')
-        self._es_port = os.environ.get('es_port', '')
-        self._to_mail = literal_eval(os.environ.get('to_mail', '[]'))
-        self._to_cc = literal_eval(os.environ.get('cc_mail', '[]'))
+        self._es_host = self.__environment_variables_dict.get('es_host', '')
+        self._es_port = self.__environment_variables_dict.get('es_port', '')
+        self._to_mail = literal_eval(self.__environment_variables_dict.get('to_mail', '[]'))
+        self._to_cc = literal_eval(self.__environment_variables_dict.get('cc_mail', '[]'))
         if self._es_host:
             self._elastic_operations = ElasticSearchOperations(es_host=self._es_host, es_port=self._es_port)
         self._postfix_mail = Postfix()

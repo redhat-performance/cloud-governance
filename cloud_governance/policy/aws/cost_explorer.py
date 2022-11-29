@@ -1,15 +1,12 @@
 import datetime
-import os
 from ast import literal_eval
 from multiprocessing import Process
-
-import numpy as np
-import pandas as pd
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class CostExplorer:
@@ -20,14 +17,15 @@ class CostExplorer:
 
     def __init__(self):
         super().__init__()
-        self.start_date = os.environ.get('start_date', '')  # yyyy-mm-dd
-        self.end_date = os.environ.get('end_date', '')  # yyyy-mm-dd
-        self.granularity = os.environ.get('granularity', 'DAILY')
-        self.cost_metric = os.environ.get('cost_metric', 'UnblendedCost')
-        self.cost_tags = literal_eval(os.environ.get('cost_explorer_tags', '{}'))
-        self.file_name = os.environ.get('file_name', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.start_date = self.__environment_variables_dict.get('start_date', '')  # yyyy-mm-dd
+        self.end_date = self.__environment_variables_dict.get('end_date', '')  # yyyy-mm-dd
+        self.granularity = self.__environment_variables_dict.get('granularity', 'DAILY')
+        self.cost_metric = self.__environment_variables_dict.get('cost_metric', 'UnblendedCost')
+        self.cost_tags = literal_eval(self.__environment_variables_dict.get('cost_explorer_tags', '{}'))
+        self.file_name = self.__environment_variables_dict.get('file_name', '')
         self.__cost_explorer = CostExplorerOperations()
-        self.region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
         self._ec2_operations = EC2Operations(region=self.region)
         self._elastic_upload = ElasticUpload()
 

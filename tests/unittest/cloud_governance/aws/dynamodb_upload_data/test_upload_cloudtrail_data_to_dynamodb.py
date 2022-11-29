@@ -32,6 +32,8 @@ def test_upload_data_ec2_stop():
     instance_id = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1, TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}])['Instances'][0].get('InstanceId')
     ec2_client.stop_instances(InstanceIds=[instance_id])
     dynamo_db = UploadDataToDynamoDb()
+    dynamo_db.set_region(value='us-east-1')
+    dynamo_db.set_table_name(value='test_table')
     event_id = str(uuid.uuid1())
     mock_log_data = [{
         'EventId': event_id,
@@ -76,6 +78,8 @@ def test_upload_data_tag_non_cluster_resource():
         'Resources': [{'ResourceType': 'AWS::EC2::Instance', 'ResourceName': instance_id}]
     }]
     dynamo_db = UploadDataToDynamoDb()
+    dynamo_db.set_region(value='us-east-1')
+    dynamo_db.set_table_name(value='test_table')
     dynamo_db._create_table_not_exists(primary_key='EventId')
     dynamo_db._upload_to_dynamo_db_table(data=mock_log_data)
     assert len(tag_resources.non_cluster_update_ec2()) == 1
@@ -88,6 +92,8 @@ def test_upload_data():
     @return:
     """
     dynamo_db = UploadDataToDynamoDb()
+    dynamo_db.set_region(value='us-east-1')
+    dynamo_db.set_table_name(value='test_table')
     dynamo_db._create_table_not_exists(primary_key='Id')
     mock_log_data = [{
         'Id': '1',

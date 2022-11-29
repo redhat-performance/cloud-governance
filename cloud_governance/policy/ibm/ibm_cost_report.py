@@ -1,5 +1,4 @@
 import datetime
-import os
 
 import pandas
 from typeguard import typechecked
@@ -7,6 +6,7 @@ from typeguard import typechecked
 from cloud_governance.common.clouds.ibm.account.ibm_account import IBMAccount
 from cloud_governance.common.clouds.ibm.classic.classic_operations import ClassicOperations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class IBMCostReport:
@@ -16,10 +16,11 @@ class IBMCostReport:
 
     def __init__(self):
         super().__init__()
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.ibm_account = IBMAccount()
         self.classic_operations = ClassicOperations()
-        self.month = os.environ.get('month', '')
-        self.year = os.environ.get('year', '')
+        self.month = self.__environment_variables_dict.get('month', '')
+        self.year = self.__environment_variables_dict.get('year', '')
         self.owned_tags = ['owner', 'budget', 'environment', 'manager', 'user', 'project', 'fqdn']
         self._elastic_upload = ElasticUpload()
 
