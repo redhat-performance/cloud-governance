@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
+
 
 class EnvironmentVariables:
     """
@@ -31,8 +33,8 @@ class EnvironmentVariables:
         ##################################################################################################
         # dynamic parameters - configure for local run
         # parameters for running policies
-
-        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper()
+        self.iam_operations = IAMOperations()
+        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', self.iam_operations.get_account_alias_cloud_name()[0]).upper()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION',
                                                                                               'us-east-2')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
@@ -43,7 +45,7 @@ class EnvironmentVariables:
                                                                         'nat_gateway_unused',
                                                                         'zombie_snapshots', 'skipped_resources',
                                                                         'monthly_report']
-        self._environment_variables_dict['aws_cost_policies'] = ['cost_explorer', 'cost_over_usage']
+        self._environment_variables_dict['aws_cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
 
