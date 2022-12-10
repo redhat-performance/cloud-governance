@@ -91,6 +91,9 @@ jobs:
           ROLE_NAME: ${{ secrets.ROLE_NAME }}
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
           TAG_NAME: ${{ secrets.TAG_NAME }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           cd terraform/aws_instance
           # terrafrom apply

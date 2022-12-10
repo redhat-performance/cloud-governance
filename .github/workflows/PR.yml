@@ -153,6 +153,9 @@ jobs:
           ELASTICSEARCH: 'localhost'
           ELASTICSEARCH_PORT: '9200'
           INSTANCE_ID: ${{ needs.terraform_apply.outputs.INSTANCE_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           python -m pytest -v tests/integration
 

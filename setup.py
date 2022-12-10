@@ -61,6 +61,9 @@ setup(
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'retry==0.9.2',
         'ibm_platform_services==0.27.0'  # IBM Usage reports
+        'azure-identity==1.12.0'  # azure identity
+        'azure-mgmt-costmanagement==3.0.0'  # azure cost management
+        'azure-mgmt-subscription==3.1.1'  # azure subscriptions
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
