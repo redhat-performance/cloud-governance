@@ -21,6 +21,8 @@ def test_nat_gateway_unused():
     subnet_id = ec2_client.describe_subnets()['Subnets'][0].get('SubnetId')
     ec2_client.create_nat_gateway(SubnetId=subnet_id)
     nat_gateway_unused = NonClusterZombiePolicy()
+    nat_gateway_unused.set_dryrun(value='no')
+    nat_gateway_unused.set_policy(value='nat_gateway_unused')
     nat_gateway_unused.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     nat_gateway_unused._check_resource_and_delete(resource_name='Nat Gateway',
                                                   resource_id='NatGatewayId',
@@ -48,6 +50,8 @@ def test_nat_gateway_unused_not_delete():
     subnet_id = ec2_client.describe_subnets()['Subnets'][0].get('SubnetId')
     ec2_client.create_nat_gateway(SubnetId=subnet_id, TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}])
     nat_gateway_unused = NonClusterZombiePolicy()
+    nat_gateway_unused.set_dryrun(value='no')
+    nat_gateway_unused.set_policy(value='nat_gateway_unused')
     nat_gateway_unused.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     nat_gateway_unused._check_resource_and_delete(resource_name='Nat Gateway',
                                                   resource_id='NatGatewayId',

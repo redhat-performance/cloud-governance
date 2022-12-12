@@ -1,8 +1,8 @@
-import os
 from ast import literal_eval
 
 from cloud_governance.common.clouds.ibm.account.ibm_account import IBMAccount
 from cloud_governance.common.clouds.ibm.classic.classic_operations import ClassicOperations
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class TaggingOperations:
@@ -11,13 +11,14 @@ class TaggingOperations:
     """
 
     def __init__(self):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._ibm_client = IBMAccount()
         self._sl_client = self._ibm_client.get_sl_client()
         self._classic_operations = ClassicOperations()
-        self._dry_run = os.environ.get('dry_run', 'yes')
-        self._tag_operation = os.environ.get('tag_operation', 'read')
-        self._tag_remove_name = os.environ.get('tag_remove_name', '')
-        self._tag_custom = self.__get_literal_eval(os.environ.get('tag_custom', '[]'))
+        self._dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
+        self._tag_operation = self.__environment_variables_dict.get('tag_operation', 'read')
+        self._tag_remove_name = self.__environment_variables_dict.get('tag_remove_name', '')
+        self._tag_custom = self.__get_literal_eval(self.__environment_variables_dict.get('tag_custom', '[]'))
 
     def __get_literal_eval(self, env_input: any):
         return literal_eval(env_input)

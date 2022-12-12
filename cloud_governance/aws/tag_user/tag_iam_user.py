@@ -1,5 +1,4 @@
 import csv
-import os
 import re
 from ast import literal_eval
 
@@ -13,6 +12,7 @@ from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class TagUser:
@@ -21,19 +21,19 @@ class TagUser:
     """
 
     def __init__(self, file_name: str):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.iam_client = boto3.client('iam')
         self.get_detail_resource_list = Utils().get_details_resource_list
         self.IAMOperations = IAMOperations()
         self.file_name = file_name
-        self.__SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID', '')
-        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self.__SPREADSHEET_ID = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
+        self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
-        self._special_user_mails = self.__literal_eval(os.environ.get('special_user_mails', '{}'))
+        self._special_user_mails = self.__literal_eval(self.__environment_variables_dict.get('special_user_mails', '{}'))
         if self.__SPREADSHEET_ID:
             self.__google_drive_operations = GoogleDriveOperations()
-            self.__sheet_name = os.environ.get('account', '')
+            self.__sheet_name = self.__environment_variables_dict.get('account', '')
             self.__mail = Postfix()
-
 
     def __literal_eval(self, data: any):
         if data:
@@ -245,7 +245,7 @@ class TagUser:
         """
         to = user if user not in self._special_user_mails else self._special_user_mails[user]
         ldap_data = self.__ldap.get_user_details(user_name=to)
-        cc = [os.environ.get("account_admin", '')]
+        cc = [self.__environment_variables_dict.get("account_admin", '')]
         name = to
         if ldap_data:
             cc.append(f'{ldap_data.get("managerId")}@redhat.com')

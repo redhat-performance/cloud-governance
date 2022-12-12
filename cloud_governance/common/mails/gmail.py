@@ -1,7 +1,7 @@
-import os
 import smtplib
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class Gmail:
@@ -15,8 +15,9 @@ class Gmail:
     SMTP_PORT = 465
 
     def __init__(self):
-        self.sender_mail = os.environ.get('SENDER_MAIL', '')
-        self.sender_password = os.environ.get('SENDER_PASSWORD', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.sender_mail = self.__environment_variables_dict.get('SENDER_MAIL', '')
+        self.sender_password = self.__environment_variables_dict.get('SENDER_PASSWORD', '')
 
     def send_mail(self, receivers_list: list, subject: str, body: str, cc: list):
         """

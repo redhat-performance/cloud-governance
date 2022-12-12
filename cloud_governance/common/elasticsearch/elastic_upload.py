@@ -1,20 +1,21 @@
-import os
 from ast import literal_eval
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class ElasticUpload:
 
     def __init__(self):
-        self.es_host = os.environ.get('es_host', '')
-        self.__es_port = os.environ.get('es_port', '')
-        self.es_index = os.environ.get('es_index', '')
-        self.account = os.environ.get('account', '').upper()
-        self.special_user_mails = os.environ.get('special_user_mails', '{}')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.es_host = self.__environment_variables_dict.get('es_host', '')
+        self.__es_port = self.__environment_variables_dict.get('es_port', '')
+        self.es_index = self.__environment_variables_dict.get('es_index', '')
+        self.account = self.__environment_variables_dict.get('account', '').upper()
+        self.special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
         self.postfix_mail = Postfix()
         self.mail_message = MailMessage()
         if self.es_host:

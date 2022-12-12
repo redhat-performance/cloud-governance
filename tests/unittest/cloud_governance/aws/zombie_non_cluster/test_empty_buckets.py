@@ -21,6 +21,8 @@ def test_s3_inactive():
     s3_client.create_bucket(Bucket='cloud-governance-test-s3-empty-delete',
                             CreateBucketConfiguration={'LocationConstraint': 'us-east-2'})
     s3_inactive = NonClusterZombiePolicy()
+    s3_inactive.set_dryrun(value='no')
+    s3_inactive.set_policy(value='s3_inactive')
     s3_inactive.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     s3_inactive._check_resource_and_delete(resource_name='S3 Bucket',
                                            resource_id='Name',
@@ -50,6 +52,8 @@ def test_s3_inactive_not_delete():
                             CreateBucketConfiguration={'LocationConstraint': 'us-east-2'})
     s3_client.put_bucket_tagging(Bucket='cloud-governance-test-s3-empty-delete', Tagging={'TagSet': tags})
     s3_inactive = NonClusterZombiePolicy()
+    s3_inactive.set_dryrun(value='no')
+    s3_inactive.set_policy(value='s3_inactive')
     s3_inactive.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     s3_inactive._check_resource_and_delete(resource_name='S3 Bucket',
                                            resource_id='Name',

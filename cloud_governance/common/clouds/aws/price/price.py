@@ -1,4 +1,4 @@
-import os
+
 from datetime import datetime
 from time import strftime
 
@@ -7,6 +7,8 @@ import json
 from pkg_resources import resource_filename
 
 # Search product filter
+from cloud_governance.main.environment_variables import environment_variables
+
 FLT = '[{{"Field": "tenancy", "Value": "shared", "Type": "TERM_MATCH"}},' \
       '{{"Field": "operatingSystem", "Value": "{o}", "Type": "TERM_MATCH"}},' \
       '{{"Field": "preInstalledSw", "Value": "NA", "Type": "TERM_MATCH"}},' \
@@ -25,8 +27,9 @@ class AWSPrice:
 
     def __init__(self):
         # Use AWS Pricing API at US-East-1
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__client = boto3.client('pricing', region_name='us-east-1')
-        self.region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
 
     # Get current AWS price for an on-demand instance
     def get_price(self, **kwargs):

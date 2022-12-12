@@ -19,6 +19,8 @@ def test_ip_unattached():
     ec2_client = boto3.client('ec2', region_name=os.environ.get('AWS_DEFAULT_REGION'))
     ec2_client.allocate_address(Domain='vpc')
     ip_unattached = NonClusterZombiePolicy()
+    ip_unattached.set_dryrun(value='no')
+    ip_unattached.set_policy(value='ip_unattached')
     ip_unattached.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     ip_unattached._check_resource_and_delete(resource_name='ElasticIp',
                                              resource_id='AllocationId',
@@ -45,6 +47,8 @@ def test_ip_unattached_not_delete():
     ec2_client = boto3.client('ec2', region_name=os.environ.get('AWS_DEFAULT_REGION'))
     ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])
     ip_unattached = NonClusterZombiePolicy()
+    ip_unattached.set_dryrun(value='no')
+    ip_unattached.set_policy(value='ip_unattached')
     ip_unattached.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     ip_unattached._check_resource_and_delete(resource_name='ElasticIp',
                                              resource_id='AllocationId',

@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 
 import boto3
@@ -6,6 +5,7 @@ import boto3
 from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.clouds.aws.dynamodb.dynamodb_operations import DynamoDbOperations
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class UploadDataToDynamoDb:
@@ -14,13 +14,20 @@ class UploadDataToDynamoDb:
     """
 
     def __init__(self):
-        self._region = os.environ.get('AWS_DEFAULT_REGION', 'ap-northeast-1')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self._region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', '')
         self._db_client = boto3.client('dynamodb', region_name=self._region)
         self._db_operations = DynamoDbOperations(region_name=self._region)
-        self._table_name = os.environ.get('TABLE_NAME', 'test_data')
+        self._table_name = self.__environment_variables_dict.get('TABLE_NAME', '')
         self._end_time = datetime.now() - timedelta(days=0)
         self._start_time = self._end_time - timedelta(days=1)
         self._cloudtrail_operations = CloudTrailOperations(region_name=self._region)
+
+    def set_region(self, value: str):
+        self._region = value
+
+    def set_table_name(self, value: str):
+        self._table_name = value
 
     def __convert_datatime_to_timestamp_in_data(self, data: list):
         """

@@ -10,6 +10,7 @@ from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class ZombieClusterCommonMethods:
@@ -17,9 +18,10 @@ class ZombieClusterCommonMethods:
     DAYS_TO_DELETE_RESOURCE = 7
 
     def __init__(self, region: str):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.region = region
-        self.dry_run = os.environ.get('dry_run', 'yes')
-        self.policy = os.environ.get('policy', '')
+        self.dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
+        self.policy = self.__environment_variables_dict.get('policy', '')
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.ec2_resource = boto3.resource('ec2', region_name=region)
         self.elb_client = boto3.client('elb', region_name=region)
@@ -27,9 +29,9 @@ class ZombieClusterCommonMethods:
         self.iam_client = boto3.client('iam', region_name=region)
         self.s3_client = boto3.client('s3')
         self.s3_resource = boto3.resource('s3')
-        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
-        self._special_user_mails = os.environ.get('special_user_mails', '{}')
-        self._account_admin = os.environ.get('account_admin', '')
+        self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
+        self._special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
+        self._account_admin = self.__environment_variables_dict.get('account_admin', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._mail = Postfix()
         self._mail_description = MailMessage()

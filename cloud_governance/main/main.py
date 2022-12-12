@@ -1,4 +1,3 @@
-
 import os
 import typeguard
 from ast import literal_eval  # str to dict
@@ -6,59 +5,23 @@ import boto3  # regions
 
 from cloud_governance.aws.cost_expenditure.cost_report_policies import CostReportPolicies
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, remove_cluster_resources_tags
-from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, remove_tag_non_cluster_resource, tag_na_resources
+from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
+    remove_cluster_resources_tags
+from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
+    remove_tag_non_cluster_resource, tag_na_resources
 from cloud_governance.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
 from cloud_governance.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
 from cloud_governance.gitleaks.gitleaks import GitLeaks
 from cloud_governance.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.aws.zombie_cluster.validate_zombies import ValidateZombies
 from cloud_governance.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
 
-# env tests
-# os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
-# os.environ['AWS_DEFAULT_REGION'] = 'all'
-# os.environ['policy'] = 'zombie_cluster_resource'
-# os.environ['validate_type'] = 'tags'
-# os.environ['user_tags'] = "['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"
-# os.environ['cost_metric'] = ''
-# os.environ['start_date'] = ''
-# os.environ['end_date'] = ''
-# os.environ['granularity'] = ''
-# os.environ['policy'] = 'ec2_untag'
-# os.environ['policy'] = 'zombie_cluster_resource'
-# os.environ['dry_run'] = 'yes'
-# os.environ['tag_operation'] = 'read'
-# os.environ['service_type'] = 'ec2_zombie_resource_service'
-# os.environ['service_type'] = 'iam_zombie_resource_service'
-# os.environ['service_type'] = 's3_zombie_resource_service'
-# os.environ['resource'] = 'zombie_cluster_elastic_ip'
-# os.environ['resource'] = 'zombie_cluster_nat_gateway'
-# os.environ['cluster_tag'] = ''
-# os.environ['cluster_tag'] = ''
-# os.environ['policy_output'] = 's3://bucket_name/logs'
-# os.environ['policy_output'] = os.path.dirname(os.path.realpath(__file__))
-# os.environ['policy'] = 'ebs_unattached'
-# os.environ['resource_name'] = 'ocp-test'
-# os.environ['user_tag_operation'] = 'read'
-# os.environ['remove_tags'] = "['Manager', 'Project','Environment', 'Owner', 'Budget']"
-# os.environ['username'] = 'athiruma'
-# os.environ['cost_explorer_tags'] = "['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']"
-# os.environ['file_name'] = 'tag_user.csv'
-# os.environ['file_path'] = ''
-# os.environ['mandatory_tags'] = "{'Budget': 'PERF-DEPT'}"
-# os.environ['mandatory_tags'] = ''
-# os.environ['policy'] = 'gitleaks'
-# os.environ['git_access_token'] = ''
-# os.environ['git_repo'] = 'https://github.com/redhat-performance'
-# os.environ['several_repos'] = 'yes'
-# os.environ['git_repo'] = 'https://github.com/redhat-performance/pulpperf'
-# os.environ['git_repo'] = 'https://github.com/gitleakstest/gronit'
-# os.environ['upload_data_elk'] = 'upload_data_elk'
 
-log_level = os.environ.get('log_level', 'INFO').upper()
+environment_variables_dict = environment_variables.environment_variables_dict
+log_level = environment_variables_dict.get('log_level', 'INFO').upper()
 logger.setLevel(level=log_level)
 
 
@@ -91,57 +54,64 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
     """
     # policy Tag Cluster
     if policy == 'tag_resources':
-        cluster_name = os.environ.get('resource_name', '')
-        mandatory_tags = os.environ.get('mandatory_tags', {})
-        tag_operation = os.environ.get('tag_operation', '')
+        cluster_name = environment_variables_dict.get('resource_name',
+                                                      '')  # environment_variables_dict.get('resource_name', '')
+        mandatory_tags = environment_variables_dict.get('mandatory_tags', {})
+        tag_operation = environment_variables_dict.get('tag_operation', '')
         if mandatory_tags:
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         if tag_operation == 'delete':
             remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags)
         else:
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region,
+                                 tag_operation=tag_operation)
     elif policy == 'validate_iam_user_tags':
-        es_host = os.environ.get('es_host', '')
-        es_port = os.environ.get('es_port', '')
-        es_index = os.environ.get('es_index', '')
-        validate_type = os.environ.get('validate_type', '')
-        user_tags = os.environ.get('user_tags', {})
+        es_host = environment_variables_dict.get('es_host', '')
+        es_port = environment_variables_dict.get('es_port', '')
+        es_index = environment_variables_dict.get('es_index', '')
+        validate_type = environment_variables_dict.get('validate_type', '')
+        user_tags = environment_variables_dict.get('user_tags', {})
         if user_tags:
             user_tags = literal_eval(user_tags)
-        run_validate_iam_user_tags(es_host=es_host, es_port=es_port, es_index=es_index, validate_type=validate_type, user_tags=user_tags)
+        run_validate_iam_user_tags(es_host=es_host, es_port=es_port, es_index=es_index, validate_type=validate_type,
+                                   user_tags=user_tags)
     elif policy == 'validate_cluster':
-        file_path = os.environ.get('file_path', '')
-        file_name = os.environ.get('file_name', '')
-        file_path = file_path+file_name
+        file_path = environment_variables_dict.get('file_path', '')
+        file_name = environment_variables_dict.get('file_name', '')
+        file_path = file_path + file_name
         validate_zombies = ValidateZombies(file_path=file_path, region=region)
         validate_zombies.read_csv()
     elif policy == 'tag_cluster':
-        cluster_name = os.environ.get('resource_name', '')
-        mandatory_tags = os.environ.get('mandatory_tags', {})
-        tag_operation = os.environ.get('tag_operation', '')
+        cluster_name = environment_variables_dict.get('resource_name', '')
+        mandatory_tags = environment_variables_dict.get('mandatory_tags', {})
+        tag_operation = environment_variables_dict.get('tag_operation', '')
         if mandatory_tags:
             mandatory_tags = literal_eval(mandatory_tags)  # str to dict
         if tag_operation == 'delete':
-            remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags, cluster_only=True)
+            remove_cluster_resources_tags(region=region, cluster_name=cluster_name, input_tags=mandatory_tags,
+                                          cluster_only=True)
         else:
-            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation, cluster_only=True )
+            tag_cluster_resource(cluster_name=cluster_name, mandatory_tags=mandatory_tags, region=region,
+                                 tag_operation=tag_operation, cluster_only=True)
     elif policy == 'tag_iam_user':
-        user_tag_operation = os.environ.get('user_tag_operation', '')
-        file_name = os.environ.get('file_name', '')
-        username = os.environ.get('username', '')
-        remove_keys = os.environ.get('remove_tags', '')
+        user_tag_operation = environment_variables_dict.get('user_tag_operation', '')
+        file_name = environment_variables_dict.get('file_name', '')
+        username = environment_variables_dict.get('username', '')
+        remove_keys = environment_variables_dict.get('remove_tags', '')
         if remove_keys:
             remove_keys = literal_eval(remove_keys)
-        tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys, username=username)
+        tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys,
+                     username=username)
     elif policy == 'zombie_cluster_resource':
-        policy_output = os.environ.get('policy_output', '')
-        resource = os.environ.get('resource', '')
-        resource_name = os.environ.get('resource_name', '')
-        cluster_tag = os.environ.get('cluster_tag', '')
-        service_type = os.environ.get('service_type', '')
+        policy_output = environment_variables_dict.get('policy_output', '')
+        resource = environment_variables_dict.get('resource', '')
+        resource_name = environment_variables_dict.get('resource_name', '')
+        cluster_tag = environment_variables_dict.get('cluster_tag', '')
+        service_type = environment_variables_dict.get('service_type', '')
         if dry_run == 'no':  # delete
             zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource,
-                                                    cluster_tag=cluster_tag, resource_name=resource_name, service_type=service_type)
+                                                    cluster_tag=cluster_tag, resource_name=resource_name,
+                                                    service_type=service_type)
         else:  # default: yes or other
             zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag,
                                                     resource_name=resource_name, service_type=service_type)
@@ -150,12 +120,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,
                                                         policy_result=zombie_result))
     elif policy == 'tag_non_cluster':
-        # instance_name = os.environ['resource_name']
-        mandatory_tags = os.environ.get('mandatory_tags', {})
-        tag_operation = os.environ.get('tag_operation', '')
-        file_name = os.environ.get('file_name', '')
+        # instance_name = environment_variables_dict['resource_name']
+        mandatory_tags = environment_variables_dict.get('mandatory_tags', {})
+        tag_operation = environment_variables_dict.get('tag_operation', '')
+        file_name = environment_variables_dict.get('file_name', '')
         if file_name:
-            file_path = os.environ.get('file_path', '')
+            file_path = environment_variables_dict.get('file_path', '')
             if file_path:
                 tag_na_resources(file_name=file_name, region=region, tag_operation=tag_operation, file_path=file_path)
             else:
@@ -169,10 +139,10 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             else:
                 tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
     elif policy == 'gitleaks':
-        git_access_token = os.environ.get('git_access_token')
-        git_repo = os.environ.get('git_repo')
-        several_repos = os.environ.get('several_repos', '')
-        policy_output = os.environ.get('policy_output', '')
+        git_access_token = environment_variables_dict.get('git_access_token')
+        git_repo = environment_variables_dict.get('git_repo')
+        several_repos = environment_variables_dict.get('several_repos', '')
+        policy_output = environment_variables_dict.get('policy_output', '')
         try:
             if several_repos == 'yes':
                 git_leaks = GitLeaks(git_access_token=git_access_token,
@@ -204,42 +174,36 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = os.environ.get('AWS_DEFAULT_REGION', 'us-east-2')
-    dry_run = os.environ.get('dry_run', 'yes')
+    region_env = environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
+    dry_run = environment_variables_dict.get('dry_run', 'yes')
 
-    account = os.environ.get('account', '')
-    policy = os.environ.get('policy', '')
-    upload_data_es = os.environ.get('upload_data_es', '')
-    es_host = os.environ.get('es_host', '')
-    es_port = os.environ.get('es_port', '')
-    es_index = os.environ.get('es_index', '')
-    es_doc_type = os.environ.get('es_doc_type', '')
-    bucket = os.environ.get('bucket', '')
+    account = environment_variables_dict.get('account', '')
+    policy = environment_variables_dict.get('policy', '')
+    upload_data_es = environment_variables_dict.get('upload_data_es', '')
+    es_host = environment_variables_dict.get('es_host', '')
+    es_port = environment_variables_dict.get('es_port', '')
+    es_index = environment_variables_dict.get('es_index', '')
+    es_doc_type = environment_variables_dict.get('es_doc_type', '')
+    bucket = environment_variables_dict.get('bucket', '')
 
-    zombie_non_cluster_polices = ['ec2_idle', 'ec2_stop', 'ec2_run',
-                                  'ebs_in_use', 'ebs_unattached', 's3_inactive',
-                                  'empty_roles', 'ip_unattached', 'nat_gateway_unused',
-                                  'zombie_snapshots', 'skipped_resources', 'monthly_report']
-    zombie_non_cluster_polices_runner = None
-    is_zombie_non_cluster_polices_runner = policy in zombie_non_cluster_polices
-    if is_zombie_non_cluster_polices_runner:
-        zombie_non_cluster_polices_runner = ZombieNonClusterPolicies()
+    non_cluster_polices_runner = None
+    is_non_cluster_polices_runner = policy in environment_variables_dict.get('aws_non_cluster_policies')
+    if is_non_cluster_polices_runner:
+        non_cluster_polices_runner = ZombieNonClusterPolicies()
 
-    tag_ibm_classic_infrastructure_policies = ['tag_baremetal', 'tag_vm', 'ibm_cost_report', 'ibm_cost_over_usage']
     tag_ibm_classic_infrastructure_runner = None
-    is_tag_ibm_classic_infrastructure_runner = policy in tag_ibm_classic_infrastructure_policies
+    is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
     if is_tag_ibm_classic_infrastructure_runner:
         tag_ibm_classic_infrastructure_runner = IBMPolicyRunner()
 
-    cost_explorer_policies = ['cost_explorer', 'cost_over_usage']
     cost_explorer_policies_runner = None
-    is_cost_explorer_policies_runner = policy in cost_explorer_policies
+    is_cost_explorer_policies_runner = policy in environment_variables_dict.get('aws_cost_policies')
     if is_cost_explorer_policies_runner:
         cost_explorer_policies_runner = CostReportPolicies()
 
     @logger_time_stamp
-    def run_zombie_non_cluster_polices_runner():
-        zombie_non_cluster_polices_runner.run()
+    def run_non_cluster_polices_runner():
+        non_cluster_polices_runner.run()
 
     def run_tag_ibm_classic_infrastructure_runner():
         tag_ibm_classic_infrastructure_runner.run()
@@ -264,8 +228,8 @@ def main():
         elk_uploader = ESUploader(**input_data)
         elk_uploader.upload_to_es(account=account)
     # 2. POLICY
-    elif is_zombie_non_cluster_polices_runner:
-        run_zombie_non_cluster_polices_runner()
+    elif is_non_cluster_polices_runner:
+        run_non_cluster_polices_runner()
     elif is_tag_ibm_classic_infrastructure_runner:
         run_tag_ibm_classic_infrastructure_runner()
     elif is_cost_explorer_policies_runner:
@@ -276,12 +240,12 @@ def main():
             raise Exception(f'Missing Policy name: "{policy}"')
         if region_env == 'all':
             # must be set for boto3 client default region
-            # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+            # environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
             ec2 = boto3.client('ec2')
             regions_data = ec2.describe_regions()
             for region in regions_data['Regions']:
                 # logger.info(f"region: {region['RegionName']}")
-                os.environ['AWS_DEFAULT_REGION'] = region['RegionName']
+                environment_variables_dict['AWS_DEFAULT_REGION'] = region['RegionName']
                 run_policy(account=account, policy=policy, region=region['RegionName'], dry_run=dry_run)
         else:
             run_policy(account=account, policy=policy, region=region_env, dry_run=dry_run)

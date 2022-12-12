@@ -6,6 +6,7 @@ import pandas
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class CostOverUsage:
@@ -19,8 +20,9 @@ class CostOverUsage:
 
     def __init__(self):
         super().__init__()
-        self.__ignore_mails = os.environ.get('IGNORE_MAILS', '')
-        self.__ldap_host_name = os.environ.get('LDAP_HOST_NAME', '')
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.__ignore_mails = self.__environment_variables_dict.get('IGNORE_MAILS', '')
+        self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self.__ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._elastic_upload = ElasticUpload()
 
