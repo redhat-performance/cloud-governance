@@ -1,3 +1,5 @@
+import os
+
 import boto3
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
@@ -37,3 +39,13 @@ class IAMOperations:
         @return:
         """
         return self.utils.get_details_resource_list(self.iam_client.list_users, input_tag='Users', check_tag='Marker')
+
+    def get_account_alias_cloud_name(self):
+        """
+        This method returns the aws account alias and cloud name
+        @return:
+        """
+        account_alias = self.iam_client.list_account_aliases()['AccountAliases']
+        if account_alias:
+            return account_alias[0].upper(), 'AwsCloud'.upper()
+        return os.environ.get('account', '').upper(), 'AwsCloud'.upper()

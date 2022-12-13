@@ -21,7 +21,7 @@ class ElasticUpload:
         if self.es_host:
             self.elastic_search_operations = ElasticSearchOperations(es_host=self.es_host, es_port=self.__es_port)
 
-    def es_upload_data(self, items: list, es_index: str = ''):
+    def es_upload_data(self, items: list, es_index: str = '', **kwargs):
         """
         This method upload data to elastic search
         @param items:
@@ -35,10 +35,13 @@ class ElasticUpload:
             for item in items:
                 if not item.get('Account'):
                     item['Account'] = self.account
-                self.elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item)
+                if kwargs.get('set_index'):
+                    self.elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item, id=item[kwargs.get('set_index')])
+                else:
+                    self.elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item)
                 count += 1
             if count > 0 and len(items) > 0:
-                logger.info(f'Data Uploaded to {es_index} successfully')
+                logger.info(f'Data Uploaded to {es_index} successfully, Total data: {count}')
         except Exception as err:
             logger.info(f'Error raised {err}')
 

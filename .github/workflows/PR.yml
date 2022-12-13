@@ -157,7 +157,7 @@ jobs:
           python -m pytest -v tests/integration
 
   terraform_destroy:
-    name: Terraform Destroy
+    name: terraform_destroy
     needs: [unittest, terraform_apply, integration]
     if: success() || failure()
     runs-on: ubuntu-latest
