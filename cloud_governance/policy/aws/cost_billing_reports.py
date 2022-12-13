@@ -9,6 +9,7 @@ from cloud_governance.common.clouds.aws.sts.sts_oprations import STSOperations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.main.environment_variables import environment_variables
+from cloud_governance.common.google_drive.upload_to_gsheet import UploadToGsheet
 
 
 class CostBillingReports:
@@ -28,6 +29,7 @@ class CostBillingReports:
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
         self.gdrive_operations = GoogleDriveOperations()
         self.cost_center, self.__account_budget = self.get_cost_center_budget_details()
+        self.update_to_gsheet = UploadToGsheet()
 
     def get_cost_center_budget_details(self):
         """
@@ -79,6 +81,7 @@ class CostBillingReports:
             data['CostCenter'] = self.cost_center
             data['CloudName'] = self.__cloud_name
             data['Forecast'] = 0
+            data['AccountId'] = self.__account_id
             data['filter_date'] = data['start_date']+data['Month'].strip()
             cost_data[data['start_date']] = data
         return cost_data
@@ -97,6 +100,7 @@ class CostBillingReports:
                 cost_usage_data[start_date]['Forecast'] = cost
             else:
                 data = {}
+                data['AccountId'] = self.__account_id
                 data['Actual'] = 0
                 data['Forecast'] = cost
                 data['Account'] = self.account_name
@@ -123,7 +127,13 @@ class CostBillingReports:
         cost_forecast_data = self.__cost_explorer_operations.get_cost_forecast(start_date=start_date, end_date=end_date, granularity=self.GRANULARITY, cost_metric=self.COST_METRIC)
         cost_filtered_data = self.filter_cost_usage_data(cost_usage_data=cost_data['ResultsByTime'], cost_metric=self.COST_METRIC.title().replace('_', ''))
         self.append_forecasting_data(cost_usage_data=cost_filtered_data, cost_forecast_data=cost_forecast_data['ForecastResultsByTime'])
-        self.elastic_upload.es_upload_data(items=list(cost_filtered_data.values()), set_index='index_id')
+        # self.elastic_upload.es_upload_data(items=list(cost_filtered_data.values()), set_index='index_id')
+        upload_data = {
+            'cloud_alias_name': self.account_name,
+            'cloud_name': 'AWS',
+            'cloud_data': list(cost_filtered_data.values())
+        }
+        self.update_to_gsheet.update_data(cloud_data=upload_data)
         return cost_filtered_data
 
     def run(self):
