@@ -26,6 +26,29 @@ class GoogleDriveOperations:
             self.__service = build('sheets', 'v4', credentials=self.__creds, num_retries=self.RETRIES)
 
     @logger_time_stamp
+    def create_work_sheet(self, gsheet_id: str, sheet_name: str):
+        """
+        This method checks for worksheet and create the worksheet
+        @return:
+        """
+        try:
+            if not self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id):
+                create_worksheet_meta_data = {
+                    'requests': [{
+                        'addSheet': {
+                            'properties': {
+                                'title': sheet_name
+                            }
+                        }
+                    }]}
+                self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id, body=create_worksheet_meta_data).execute()
+                logger.info(f'{sheet_name} worksheet created')
+            else:
+                logger.info(f'{sheet_name} Worksheet Already present')
+        except Exception as err:
+            raise err
+
+    @logger_time_stamp
     def download_spreadsheet(self, spreadsheet_id: str, sheet_name: str, file_path: str):
         """
         This method download spreadsheet from the Google Drive
@@ -39,13 +62,15 @@ class GoogleDriveOperations:
             result = self.__service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=sheet_name).execute()
             file_name = f'{sheet_name}.csv'
             output_file = os.path.join(file_path, file_name)
-            with open(output_file, 'w') as f:
-                writer = csv.writer(f)
-                writer.writerows(result.get('values'))
+            if result.get('values'):
+                with open(output_file, 'w') as f:
+                    writer = csv.writer(f)
+                    writer.writerows(result.get('values'))
+                logger.info(f'Successfully downloaded {sheet_name}.csv')
         except HttpError as error:
             logger.info(f'An error occurred: {error}')
-        logger.info(f'Successfully downloaded {sheet_name}.csv')
 
+    @logger_time_stamp
     def append_values(self, spreadsheet_id, sheet_name: str, values: list, value_input_option: str = 'USER_ENTERED'):
         """
         This method append the values in the spreadsheet
@@ -60,10 +85,12 @@ class GoogleDriveOperations:
             result = self.__service.spreadsheets().values().append(
                 spreadsheetId=spreadsheet_id, range=sheet_name,
                 valueInputOption=value_input_option, body=body).execute()
+            logger.info(f'Data is append to the end of the worksheet {sheet_name}')
             return result
         except HttpError as error:
             logger.info(f'An error occurred: {error}')
 
+    @logger_time_stamp
     def find_sheet_id_by_name(self, sheet_name: str, spreadsheet_id: str):
         """
         This method find the sheet id in the spreadsheet
@@ -71,12 +98,15 @@ class GoogleDriveOperations:
         @param spreadsheet_id:
         @return:
         """
-        sheets_with_properties = self.__service.spreadsheets() .get(spreadsheetId=spreadsheet_id, fields='sheets.properties').execute().get('sheets')
+        sheets_with_properties = self.__service.spreadsheets().get(spreadsheetId=spreadsheet_id,
+                                                                   fields='sheets.properties').execute().get('sheets')
         for sheet in sheets_with_properties:
             if 'title' in sheet['properties'].keys():
                 if sheet['properties']['title'] == sheet_name:
                     return sheet['properties']['sheetId']
+        return ''
 
+    @logger_time_stamp
     def delete_rows(self, spreadsheet_id: str, sheet_name: str, row_number: int):
         """
         This method delete row from the spreadsheet bases on row number
@@ -93,7 +123,7 @@ class GoogleDriveOperations:
                             "sheetId": self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id),
                             "dimension": "ROWS",
                             "startIndex": row_number,
-                            "endIndex": row_number+1
+                            "endIndex": row_number + 1
                         }
                     }
                 }
@@ -104,6 +134,7 @@ class GoogleDriveOperations:
         except HttpError as error:
             logger.into(f'An error occurred: {error}')
 
+    @logger_time_stamp
     def paste_csv_to_gsheet(self, csv_path, spreadsheet_id: str, sheet_name: str):
         """
         This method paste the csv data into the specific sheet
@@ -134,4 +165,28 @@ class GoogleDriveOperations:
             }
             request = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body)
             response = request.execute()
+            logger.info(f'Pasted data into the {sheet_name}')
             return response
+
+    @logger_time_stamp
+    def update_row_in_gsheet(self, data: list, gsheet_id: str, row: int, sheet_name: str):
+        """
+        This method update the values in a row
+        @return:
+        """
+        sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id)
+        requests_body = {'requests': [{
+            'updateCells': {
+                'rows': [{"values": data}],
+                'fields': '*',
+                'start': {
+                    "sheetId": sheet_id,
+                    "rowIndex": row,
+                    "columnIndex": '0'
+                }
+            }
+        }]}
+        request = self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id, body=requests_body)
+        response = request.execute()
+        logger.info(f'Updated the row in the worksheet {sheet_name}')
+        return response
