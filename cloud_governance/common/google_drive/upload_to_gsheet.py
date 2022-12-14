@@ -62,10 +62,10 @@ class UploadToGsheet:
             if not os.path.exists(file_path):
                 self.gsheet_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=cloud_alias_name, file_path=tmp_dir)
             cloud_data = pd.read_csv(file_path)
-            budget_agg = math.ceil(sum(cloud_data['Budget'].tolist()[-12:]))
-            forecast_agg = sum(cloud_data['Forecast'].tolist()[-12:-1])
-            actual_cost = cloud_data['ActualCost'].sum()
-            available = budget_agg - actual_cost
+            budget_agg = round(math.ceil(sum(cloud_data['Budget'].tolist()[-12:])), 3)
+            forecast_agg = round(sum(cloud_data['Forecast'].tolist()[-12:-1]), 3)
+            actual_cost = round(cloud_data['ActualCost'].sum(), 3)
+            available = round(budget_agg - actual_cost, 3)
             account_id = cloud_data['AccountId'].tolist()[0]
             account_name = cloud_data['Account'].tolist()[0]
             cost_center = cloud_data['CostCenter'].tolist()[0]
@@ -102,8 +102,8 @@ class UploadToGsheet:
             gsheet_row_values = []
             for data in cloud_data.get('cloud_data'):
                 data_values = [data.get('index_id'), int(data.get('AccountId')), data.get('Account'), data.get('Month'), data.get('CostCenter'),
-                               data.get('Actual'), data.get('Budget'), float(data.get('Forecast')),
-                               int(data.get('AllocatedBudget')), data.get('Budget') - data.get('Actual')]
+                               round(data.get('Actual'), 3), round(data.get('Budget'), 3), round(float(data.get('Forecast')), 3),
+                               int(data.get('AllocatedBudget')), round(data.get('Budget') - data.get('Actual'), 3)]
                 gsheet_row_values.append(data_values)
             if os.path.exists(file_path):
                 data_in_gsheet = pd.read_csv(file_path)

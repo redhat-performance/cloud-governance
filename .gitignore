@@ -214,3 +214,4 @@ empty_test_environment_variables.py
 /terraform/aws_instance/input_vars.tfvars
 
 /cloud_governance/main/.env
+/cloud_governance/main/.test_env

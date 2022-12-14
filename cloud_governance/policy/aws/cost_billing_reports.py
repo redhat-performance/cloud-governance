@@ -127,7 +127,7 @@ class CostBillingReports:
         cost_forecast_data = self.__cost_explorer_operations.get_cost_forecast(start_date=start_date, end_date=end_date, granularity=self.GRANULARITY, cost_metric=self.COST_METRIC)
         cost_filtered_data = self.filter_cost_usage_data(cost_usage_data=cost_data['ResultsByTime'], cost_metric=self.COST_METRIC.title().replace('_', ''))
         self.append_forecasting_data(cost_usage_data=cost_filtered_data, cost_forecast_data=cost_forecast_data['ForecastResultsByTime'])
-        # self.elastic_upload.es_upload_data(items=list(cost_filtered_data.values()), set_index='index_id')
+        self.elastic_upload.es_upload_data(items=list(cost_filtered_data.values()), set_index='index_id')
         upload_data = {
             'cloud_alias_name': self.account_name,
             'cloud_name': 'AWS',

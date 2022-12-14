@@ -29,6 +29,7 @@ pipeline {
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credential')
 
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
