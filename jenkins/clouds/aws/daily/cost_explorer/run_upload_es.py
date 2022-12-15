@@ -45,14 +45,14 @@ os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-
 
 
 input_vars_to_container = [{'account': 'perf-dept', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF,
-                            'AWS_SECRET_ACCESS_KEY_DELETE_PERF': AWS_SECRET_ACCESS_KEY_DELETE_PERF},
+                            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF},
                            {'account': 'perf-scale', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE,
-                            'AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE},
+                            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE},
                            {'account': 'psap', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
-                            'AWS_SECRET_ACCESS_KEY_DELETE_PSAP': AWS_SECRET_ACCESS_KEY_DELETE_PSAP}]
+                            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP}]
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-global-cost-billing-reports', 'log_level': 'INFO'}
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
     envs = list(map(combine_vars, input_vars.items()))
-    os.system(f"""podman run --rm --name cloud-governance -e policy="cost_explorer_reports" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -v "GOOGLE_APPLICATION_CREDENTIALS":"{GOOGLE_APPLICATION_CREDENTIALS}" quay.io/ebattat/cloud-governance:latest""")
+    os.system(f"""podman run --rm --name cloud-governance -e policy="cost_billing_reports" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -v "GOOGLE_APPLICATION_CREDENTIALS":"{GOOGLE_APPLICATION_CREDENTIALS}" quay.io/ebattat/cloud-governance:latest""")
