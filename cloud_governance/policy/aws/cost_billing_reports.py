@@ -1,5 +1,6 @@
 import datetime
 import os
+import tempfile
 
 import pandas as pd
 
@@ -36,14 +37,14 @@ class CostBillingReports:
         This method returns the cost center & budget details
         @return:
         """
-        file_path = '/tmp/Accounts.csv'
-        if os.path.exists(file_path):
-            self.gdrive_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name='Accounts', file_path=f'/tmp')
-        accounts_df = pd.read_csv(file_path)
-        account_row = accounts_df[accounts_df['AccountId'] == self.__account_id].reset_index().to_dict(orient='records')
-        if account_row:
-            return account_row[0].get('CostCenter', 0), float(account_row[0].get('Budget', '0').replace(',', ''))
-        return 0, 0
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = f'{temp_dir}/Accounts.csv'
+            self.gdrive_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name='Accounts', file_path=temp_dir)
+            accounts_df = pd.read_csv(file_path)
+            account_row = accounts_df[accounts_df['AccountId'] == self.__account_id].reset_index().to_dict(orient='records')
+            if account_row:
+                return account_row[0].get('CostCenter', 0), float(account_row[0].get('Budget', '0').replace(',', ''))
+            return 0, 0
 
     def get_date_ranges(self, days: int = 0):
         """
