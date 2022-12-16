@@ -4,6 +4,7 @@ from ast import literal_eval  # str to dict
 import boto3  # regions
 
 from cloud_governance.aws.cost_expenditure.cost_report_policies import CostReportPolicies
+from cloud_governance.azure.azure_policy_runner import AzurePolicyRunner
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
     remove_cluster_resources_tags
@@ -196,21 +197,50 @@ def main():
     if is_tag_ibm_classic_infrastructure_runner:
         tag_ibm_classic_infrastructure_runner = IBMPolicyRunner()
 
-    cost_explorer_policies_runner = None
-    is_cost_explorer_policies_runner = policy in environment_variables_dict.get('aws_cost_policies')
-    if is_cost_explorer_policies_runner:
-        cost_explorer_policies_runner = CostReportPolicies()
+    is_cost_explorer_policies_runner = ''
+    if not environment_variables_dict.get('PUBLIC_CLOUD_NAME'):
+        cost_explorer_policies_runner = None
+        is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
+        if is_cost_explorer_policies_runner:
+            cost_explorer_policies_runner = CostReportPolicies()
+
+    is_azure_policy_runner = ''
+    if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AZURE':
+        azure_cost_policy_runner = None
+        is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
+        if is_azure_policy_runner:
+            azure_cost_policy_runner = AzurePolicyRunner()
 
     @logger_time_stamp
     def run_non_cluster_polices_runner():
+        """
+        This method run the aws non-cluster policies
+        @return:
+        """
         non_cluster_polices_runner.run()
 
     def run_tag_ibm_classic_infrastructure_runner():
+        """
+        This method run the IBM policies
+        @return:
+        """
         tag_ibm_classic_infrastructure_runner.run()
 
     @logger_time_stamp
     def run_cost_explorer_policies_runner():
+        """
+        This method run the aws cost_explorer policies
+        @return:
+        """
         cost_explorer_policies_runner.run()
+
+    @logger_time_stamp
+    def run_azure_policy_runner():
+        """
+        This method run the azure policies
+        @return:
+        """
+        azure_cost_policy_runner.run()
 
     # 1. ELK Uploader
     if upload_data_es:
@@ -234,6 +264,8 @@ def main():
         run_tag_ibm_classic_infrastructure_runner()
     elif is_cost_explorer_policies_runner:
         run_cost_explorer_policies_runner()
+    elif is_azure_policy_runner:
+        run_azure_policy_runner()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')

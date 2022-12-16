@@ -24,6 +24,9 @@ def __get_test_environment_variable():
 
     # local vars
     test_environment_variable['INSTANCE_ID'] = EnvironmentVariables.get_env('INSTANCE_ID', '')
+    test_environment_variable['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
+    test_environment_variable['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
+    test_environment_variable['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
 
     return test_environment_variable
 

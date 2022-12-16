@@ -1,0 +1,38 @@
+{
+    "id": "/subscriptions/0f15d975-3110-4b83-934d-802cb96d6cc4/providers/Microsoft.Authorization/roleDefinitions/f3421c69-dbd8-4c4b-960b-9855964e83b4",
+    "properties": {
+        "roleName": "CloudGovernanceCostManagement",
+        "description": "",
+        "assignableScopes": [
+            "/subscriptions/0f15d975-3110-4b83-934d-802cb96d6cc4"
+        ],
+        "permissions": [
+            {
+                "actions": [
+                    "Microsoft.CostManagement/query/action",
+                    "Microsoft.CostManagement/forecast/action",
+                    "Microsoft.CostManagement/budgets/read",
+                    "Microsoft.CostManagement/exports/read",
+                    "Microsoft.CostManagement/dimensions/read",
+                    "Microsoft.CostManagement/externalBillingAccounts/read",
+                    "Microsoft.CostManagement/externalBillingAccounts/dimensions/read",
+                    "Microsoft.CostManagement/externalBillingAccounts/query/read",
+                    "Microsoft.CostManagement/externalBillingAccounts/externalSubscriptions/read",
+                    "Microsoft.CostManagement/externalBillingAccounts/forecast/read",
+                    "Microsoft.CostManagement/externalSubscriptions/read",
+                    "Microsoft.CostManagement/externalSubscriptions/dimensions/read",
+                    "Microsoft.CostManagement/externalSubscriptions/query/read",
+                    "Microsoft.CostManagement/externalSubscriptions/forecast/read",
+                    "Microsoft.CostManagement/forecast/read",
+                    "Microsoft.CostManagement/query/read",
+                    "Microsoft.CostManagement/operations/read",
+                    "Microsoft.CostManagement/reports/read",
+                    "Microsoft.CostManagement/views/read"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+            }
+        ]
+    }
+}

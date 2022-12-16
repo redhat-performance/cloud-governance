@@ -1,4 +1,3 @@
-import argparse
 import os
 
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
@@ -14,7 +13,6 @@ class EnvironmentVariables:
 
         # env files override true ENV. Not best order, but easier to write :/
         # .env.generated can be auto-generated (by an external tool) based on the local cluster's configuration.
-
         for env in ".env", ".env.generated":
             try:
                 with open(env) as f:
@@ -45,7 +43,7 @@ class EnvironmentVariables:
                                                                         'nat_gateway_unused',
                                                                         'zombie_snapshots', 'skipped_resources',
                                                                         'monthly_report']
-        self._environment_variables_dict['aws_cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports']
+        self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
 
@@ -69,6 +67,14 @@ class EnvironmentVariables:
         self._environment_variables_dict['end_date'] = EnvironmentVariables.get_env('end_date', '')
         self._environment_variables_dict['granularity'] = EnvironmentVariables.get_env('granularity', 'DAILY')
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags', '{}')
+
+        # AZURE Credentials
+        self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
+        self._environment_variables_dict['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
+        self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
+        if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID']\
+                and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
+            self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'
 
         # IBM env vars
         self._environment_variables_dict['IBM_ACCOUNT_ID'] = EnvironmentVariables.get_env('IBM_ACCOUNT_ID', '')
