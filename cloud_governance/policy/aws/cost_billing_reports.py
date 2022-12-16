@@ -1,5 +1,4 @@
 import datetime
-import os
 import tempfile
 
 import pandas as pd
@@ -20,6 +19,7 @@ class CostBillingReports:
 
     GRANULARITY = 'MONTHLY'
     COST_METRIC = 'UNBLENDED_COST'
+    MONTHS = 12
 
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
@@ -29,22 +29,8 @@ class CostBillingReports:
         self.__account_id = STSOperations().get_account_id()
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
         self.gdrive_operations = GoogleDriveOperations()
-        self.cost_center, self.__account_budget = self.get_cost_center_budget_details()
         self.update_to_gsheet = UploadToGsheet()
-
-    def get_cost_center_budget_details(self):
-        """
-        This method returns the cost center & budget details
-        @return:
-        """
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f'{temp_dir}/Accounts.csv'
-            self.gdrive_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name='Accounts', file_path=temp_dir)
-            accounts_df = pd.read_csv(file_path)
-            account_row = accounts_df[accounts_df['AccountId'] == self.__account_id].reset_index().to_dict(orient='records')
-            if account_row:
-                return account_row[0].get('CostCenter', 0), float(account_row[0].get('Budget', '0').replace(',', ''))
-            return 0, 0
+        self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
 
     def get_date_ranges(self, days: int = 0):
         """
@@ -70,6 +56,7 @@ class CostBillingReports:
         """
         cost_data = {}
         for cost_usage in cost_usage_data:
+            start_year = str(cost_usage.get('TimePeriod').get('Start')).split('-')[0]
             data = {}
             data['Actual'] = round(float(cost_usage.get('Total').get(cost_metric).get('Amount')), 3)
             data['Account'] = self.account_name
@@ -77,8 +64,12 @@ class CostBillingReports:
             data['index_id'] = f"""{data['start_date']}-{data['Account'].lower()}"""
             data['timestamp'] = datetime.datetime.strptime(data['start_date'], '%Y-%m-%d')
             data['Month'] = datetime.datetime.strftime(data['timestamp'], '%Y %b')
-            data['Budget'] = round(self.__account_budget/12, 3)
-            data['AllocatedBudget'] = self.__account_budget
+            if start_year in self.__years:
+                data['Budget'] = round(self.__account_budget/self.MONTHS, 3)
+                data['AllocatedBudget'] = self.__account_budget
+            else:
+                data['Budget'] = 0
+                data['AllocatedBudget'] = 0
             data['CostCenter'] = self.cost_center
             data['CloudName'] = self.__cloud_name
             data['Forecast'] = 0
@@ -97,6 +88,7 @@ class CostBillingReports:
         for cost_forecast in cost_forecast_data:
             start_date = str((cost_forecast.get('TimePeriod').get('Start')))
             cost = round(float(cost_forecast.get('MeanValue')), 3)
+            start_year = str(cost_forecast.get('TimePeriod').get('Start')).split('-')[0]
             if start_date in cost_usage_data:
                 cost_usage_data[start_date]['Forecast'] = cost
             else:
@@ -109,8 +101,12 @@ class CostBillingReports:
                 data['index_id'] = f"""{data['start_date']}-{data['Account'].lower()}"""
                 data['timestamp'] = datetime.datetime.strptime(data['start_date'], '%Y-%m-%d')
                 data['Month'] = datetime.datetime.strftime(data['timestamp'], '%Y %b')
-                data['Budget'] = round(self.__account_budget/12, 3)
-                data['AllocatedBudget'] = self.__account_budget
+                if start_year in self.__years:
+                    data['Budget'] = round(self.__account_budget / self.MONTHS, 3)
+                    data['AllocatedBudget'] = self.__account_budget
+                else:
+                    data['Budget'] = 0
+                    data['AllocatedBudget'] = 0
                 data['CostCenter'] = self.cost_center
                 data['CloudName'] = self.__cloud_name
                 data['filter_date'] = data['start_date']+data['Month']

@@ -4,7 +4,10 @@
         {
             "Sid": "VisualEditor0",
             "Effect": "Allow",
-            "Action": "ce:GetCostAndUsage",
+            "Action": [
+                "ce:GetCostAndUsage",
+                "ce:GetCostForecast"
+            ],
             "Resource": "*"
         }
     ]
