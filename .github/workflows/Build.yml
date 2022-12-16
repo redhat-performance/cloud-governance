@@ -91,9 +91,6 @@ jobs:
           ROLE_NAME: ${{ secrets.ROLE_NAME }}
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
           TAG_NAME: ${{ secrets.TAG_NAME }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           cd terraform/aws_instance
           # terrafrom apply
@@ -158,6 +155,9 @@ jobs:
           ELASTICSEARCH: 'localhost'
           ELASTICSEARCH_PORT: '9200'
           INSTANCE_ID: ${{ needs.terraform_apply.outputs.INSTANCE_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           pytest -v tests/integration --cov=cloud_governqance --cov-report=term-missing
           coverage run -m pytest -v tests/integration
