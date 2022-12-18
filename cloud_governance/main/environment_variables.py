@@ -31,10 +31,13 @@ class EnvironmentVariables:
         ##################################################################################################
         # dynamic parameters - configure for local run
         # parameters for running policies
-        self.iam_operations = IAMOperations()
-        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', self.iam_operations.get_account_alias_cloud_name()[0]).upper()
-        self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION',
-                                                                                              'us-east-2')
+        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper()
+        self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
+
+        if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
+            self.iam_operations = IAMOperations()
+            self._environment_variables_dict['account'] = self.iam_operations.get_account_alias_cloud_name()[0].upper()
+
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
         self._environment_variables_dict['aws_non_cluster_policies'] = ['ec2_idle', 'ec2_stop', 'ec2_run', 'ebs_in_use',
