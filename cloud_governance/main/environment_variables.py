@@ -88,7 +88,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['year'] = EnvironmentVariables.get_env('year', '')
 
         self._environment_variables_dict['tag_remove_name'] = EnvironmentVariables.get_env('tag_remove_name', '')
-        self._environment_variables_dict['tag_custom'] = EnvironmentVariables.get_env('tag_custom', '')
+        self._environment_variables_dict['tag_custom'] = EnvironmentVariables.get_env('tag_custom', '{}')
 
         # Common env vars
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')

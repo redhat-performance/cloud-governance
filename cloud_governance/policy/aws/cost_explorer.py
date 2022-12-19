@@ -28,6 +28,7 @@ class CostExplorer:
         self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
         self._ec2_operations = EC2Operations(region=self.region)
         self._elastic_upload = ElasticUpload()
+        self.__account = self.__environment_variables_dict.get('account')
 
     def get_user_resources(self):
         """
@@ -37,18 +38,20 @@ class CostExplorer:
         ec2_global_list_user_resources = self._ec2_operations.get_global_ec2_list_by_user()
         return ec2_global_list_user_resources
 
-    def filter_data_by_tag(self, groups: list, tag: str):
+    def filter_data_by_tag(self, groups: dict, tag: str):
         """
         This method extract data by tag
         @param tag:
         @param groups: Data from the cloud explorer
         @return: converted into dict format
         """
-        data = []
+        data = {}
         user_resources = []
+        start_time = groups.get('TimePeriod').get('Start')
+        account = self.__account
         if tag == 'User':
             user_resources = self.get_user_resources()
-        for group in groups:
+        for group in groups.get('Groups'):
             name = ''
             amount = ''
             if group.get('Keys'):
@@ -57,12 +60,21 @@ class CostExplorer:
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:
-                upload_data = {tag: name, 'Cost': round(float(amount), 3)}
-                if user_resources and name in user_resources:
-                    upload_data['Instances'] = user_resources[name]
-                upload_data['timestamp'] = datetime.datetime.utcnow() - datetime.timedelta(2)
-                data.append(upload_data)
-        return data
+                if 'aws-go-sdk' in name:
+                    name = 'aws-go-sdk'
+                else:
+                    if 'vm_import_image' in name:
+                        name = 'vm_import_image'
+                index_id = f'{start_time.lower()}-{account.lower()}-{tag.lower()}-{name.lower()}'
+                if index_id not in data:
+                    upload_data = {tag: name.upper(), 'Cost': round(float(amount), 3), 'index_id': index_id}
+                    if user_resources and name in user_resources:
+                        upload_data['Instances'] = user_resources[name]
+                    upload_data['timestamp'] = start_time
+                    data[index_id] = upload_data
+                else:
+                    data[index_id]['Cost'] += round(float(amount), 3)
+        return list(data.values())
 
     def __get_daily_cost_by_tags(self):
         """
@@ -79,7 +91,7 @@ class CostExplorer:
             if results_by_time:
                 data_house[tag] = []
                 for result in results_by_time:
-                    data_house[tag].extend(self.filter_data_by_tag(result.get('Groups'), tag))
+                    data_house[tag].extend(self.filter_data_by_tag(result, tag))
         return data_house
 
     def __upload_data(self, data: list, index: str):
@@ -101,8 +113,8 @@ class CostExplorer:
                 if self._elastic_upload.es_index == 'cloud-governance-cost-explorer-global':
                     if 'Budget' not in value:
                         value['Budget'] = self._elastic_upload.account
-                self._elastic_upload.elastic_search_operations.upload_to_elasticsearch(index=index, data=value)
-        logger.info(f'Data uploaded to {index}')
+                self._elastic_upload.elastic_search_operations.upload_to_elasticsearch(index=index, data=value, id=value['index_id'])
+        logger.info(f'Data uploaded to {index}, Total Data: {len(data)}')
 
     def upload_tags_cost_to_elastic_search(self):
         """
