@@ -54,6 +54,7 @@ policies = get_policies()
 policies.remove('cost_explorer')
 policies.remove('cost_over_usage')
 policies.remove('monthly_report')
+policies.remove('cost_billing_reports')
 
 for region in regions:
     for policy in policies:
