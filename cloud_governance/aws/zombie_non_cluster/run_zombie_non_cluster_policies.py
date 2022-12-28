@@ -125,7 +125,7 @@ class NonClusterZombiePolicy:
                 resource_str = ''
                 for resource in resource_data[:-1]:
                     resource_str += f'{resource} | '
-                resource_str += resource_data[-1]
+                resource_str += str(resource_data[-1])
                 upload_data.append(resource_str)
             else:
                 upload_data.append(resource_data)
