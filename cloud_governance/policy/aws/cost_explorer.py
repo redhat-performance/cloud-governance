@@ -6,6 +6,7 @@ from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -14,6 +15,8 @@ class CostExplorer:
     This class fetches the cost_explorer report from the AWS based on two days ago data and upload to ElasticSearch.
     fetching AWS cost explorer of two days ago because day ago cost calculation is not closed.
     """
+
+    BULK_UPLOAD_THREADS = 8
 
     def __init__(self):
         super().__init__()
@@ -49,7 +52,7 @@ class CostExplorer:
         user_resources = []
         start_time = groups.get('TimePeriod').get('Start')
         account = self.__account
-        if tag == 'User':
+        if tag == 'User' and start_time in str(datetime.datetime.now()- datetime.timedelta(1)):
             user_resources = self.get_user_resources()
         for group in groups.get('Groups'):
             name = ''
@@ -67,10 +70,12 @@ class CostExplorer:
                         name = 'vm_import_image'
                 index_id = f'{start_time.lower()}-{account.lower()}-{tag.lower()}-{name.lower()}'
                 if index_id not in data:
-                    upload_data = {tag: name.upper(), 'Cost': round(float(amount), 3), 'index_id': index_id}
+                    upload_data = {tag: name.upper(), 'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
                     if user_resources and name in user_resources:
                         upload_data['Instances'] = user_resources[name]
-                    upload_data['timestamp'] = start_time
+                    if 'global' in self._elastic_upload.es_index:
+                        if 'Budget' not in upload_data:
+                            upload_data['Budget'] = self._elastic_upload.account
                     data[index_id] = upload_data
                 else:
                     data[index_id]['Cost'] += round(float(amount), 3)
@@ -94,6 +99,7 @@ class CostExplorer:
                     data_house[tag].extend(self.filter_data_by_tag(result, tag))
         return data_house
 
+    @logger_time_stamp
     def __upload_data(self, data: list, index: str):
         """
         This method upload to elastic search
@@ -104,17 +110,31 @@ class CostExplorer:
         if self.file_name:
             with open(f'/tmp/{self.file_name}', 'a') as file:
                 for value in data:
-                    if self._elastic_upload.es_index == 'cloud-governance-cost-explorer-global':
-                        if 'Budget' not in value:
-                            value['Budget'] = self._elastic_upload.account
                     file.write(f'{value}\n')
         else:
-            for value in data:
-                if self._elastic_upload.es_index == 'cloud-governance-cost-explorer-global':
-                    if 'Budget' not in value:
-                        value['Budget'] = self._elastic_upload.account
-                self._elastic_upload.elastic_search_operations.upload_to_elasticsearch(index=index, data=value, id=value['index_id'])
+            pass
+            for bulk in range(0, len(data), self.BULK_UPLOAD_THREADS):
+                jobs = []
+                for value in data[bulk: bulk+self.BULK_UPLOAD_THREADS]:
+                    p = Process(target=self.upload_item_to_es, args=(value, index, value['index_id'], ))
+                    p.start()
+                    jobs.append(p)
+                for job in jobs:
+                    job.join()
         logger.info(f'Data uploaded to {index}, Total Data: {len(data)}')
+
+    def upload_item_to_es(self, item: dict, index: str, index_id: str = ''):
+        """
+        This method upload one item to es
+        @param item:
+        @param index:
+        @param index_id:
+        @return:
+        """
+        if index_id:
+            self._elastic_upload.elastic_search_operations.upload_to_elasticsearch(index=index, data=item, id=index_id)
+        else:
+            self._elastic_upload.elastic_search_operations.upload_to_elasticsearch(index=index, data=item)
 
     def upload_tags_cost_to_elastic_search(self):
         """
@@ -123,14 +143,9 @@ class CostExplorer:
         """
         logger.info(f'Get {self.granularity} Cost usage by metric: {self.cost_metric}')
         cost_data = self.__get_daily_cost_by_tags()
-        jobs = []
         for key, values in cost_data.items():
             index = f'{self._elastic_upload.es_index}-{key.lower()}'
-            p = Process(target=self.__upload_data, args=(values, index, ))
-            p.start()
-            jobs.append(p)
-        for job in jobs:
-            job.join()
+            self.__upload_data(values, index)
 
     def run(self):
         """

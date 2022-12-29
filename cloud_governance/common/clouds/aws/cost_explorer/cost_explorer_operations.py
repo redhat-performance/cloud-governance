@@ -8,6 +8,9 @@ class CostExplorerOperations:
     This class extracts the price data from AWS Cost Explorer
     """
 
+    START_DAY = 1
+    END_DAY = 31
+
     def __init__(self):
         self.cost_explorer_client = boto3.client('ce')
 
@@ -17,8 +20,8 @@ class CostExplorerOperations:
         @return:
         """
         if not start_date and not end_date:
-            end_date = datetime.now() - timedelta(1)
-            start_date = end_date - timedelta(1)
+            end_date = datetime.now() + timedelta(self.START_DAY)
+            start_date = end_date - timedelta(self.END_DAY)
             start_date = str(start_date.strftime('%Y-%m-%d'))
             end_date = str(end_date.strftime('%Y-%m-%d'))
         return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, cost_metric=cost_metric, GroupBy=[{'Type': 'TAG', 'Key': tag}])
