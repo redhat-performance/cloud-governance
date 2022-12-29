@@ -59,6 +59,8 @@ class CostExplorer:
             amount = ''
             if group.get('Keys'):
                 name = group.get('Keys')[0].split('$')[-1]
+                if name == 'PERF-SCALE':
+                    name = 'PERFSCALE'
                 name = name if name else f'{self._elastic_upload.account}-REFUND'
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
