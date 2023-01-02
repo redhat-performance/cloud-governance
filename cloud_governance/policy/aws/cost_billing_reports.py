@@ -1,5 +1,7 @@
 import datetime
+import operator
 import tempfile
+from operator import sub, add
 
 import pandas as pd
 
@@ -20,17 +22,31 @@ class CostBillingReports:
     GRANULARITY = 'MONTHLY'
     COST_METRIC = 'UNBLENDED_COST'
     MONTHS = 12
+    END_DAY = 31
 
     def __init__(self):
-        self.__environment_variables_dict = environment_variables.environment_variables_dict
-        self.__cost_explorer_operations = CostExplorerOperations()
-        self.elastic_upload = ElasticUpload()
-        self.account_name, self.__cloud_name = IAMOperations().get_account_alias_cloud_name()
-        self.__account_id = STSOperations().get_account_id()
-        self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
-        self.gdrive_operations = GoogleDriveOperations()
-        self.update_to_gsheet = UploadToGsheet()
-        self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
+        try:
+            self.__environment_variables_dict = environment_variables.environment_variables_dict
+            self.__cost_explorer_operations = CostExplorerOperations()
+            self.elastic_upload = ElasticUpload()
+            self.account_name, self.__cloud_name = IAMOperations().get_account_alias_cloud_name()
+            self.__account_id = STSOperations().get_account_id()
+            self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
+            self.gdrive_operations = GoogleDriveOperations()
+            self.update_to_gsheet = UploadToGsheet()
+            self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
+        except:
+            pass
+
+    def __get_start_date(self, end_date: datetime, days: int, operation: operator) -> datetime:
+        """
+        This method return start_date
+        @param operation:
+        @param end_date:
+        @param days:
+        @return:
+        """
+        return operation(end_date, datetime.timedelta(days=days))
 
     def get_date_ranges(self, days: int = 0):
         """
@@ -40,10 +56,10 @@ class CostBillingReports:
         """
         end_date = datetime.datetime.now()+datetime.timedelta(1)
         if days == 0:
-            start_date = f"{end_date.year}-{end_date.month-1}-01"
+            start_date = self.__get_start_date(end_date=end_date, days=self.END_DAY, operation=sub).replace(day=1).strftime('%Y-%m-%d')
         else:
             start_date = end_date.strftime('%Y-%m-%d')
-            end_date = end_date + datetime.timedelta(days)
+            end_date = self.__get_start_date(end_date=end_date, days=days, operation=add)
         end_date = end_date.strftime('%Y-%m-%d')
         return start_date, end_date
 
