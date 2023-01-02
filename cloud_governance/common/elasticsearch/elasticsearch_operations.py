@@ -30,7 +30,7 @@ class ElasticSearchOperations:
         self.__es_port = es_port
         self.__region = region
         self.__timeout = timeout
-        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}])
+        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=30, max_retries=10, retry_on_timeout=True)
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
@@ -133,10 +133,10 @@ class ElasticSearchOperations:
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
-                self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
+                self.__es.index(index=index, doc_type=doc_type, body=data, timeout='30s', **kwargs)
             else:  # JSON Array
                 for record in data:
-                    self.__es.index(index=index, doc_type=doc_type, body=record, **kwargs)
+                    self.__es.index(index=index, doc_type=doc_type, body=record, timeout='30s', **kwargs)
             return True
         except Exception as err:
             raise err
