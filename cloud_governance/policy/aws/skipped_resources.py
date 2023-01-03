@@ -116,4 +116,7 @@ class SkippedResources(NonClusterZombiePolicy):
             # deleting past data to show fresh report
             self._es_upload.elastic_search_operations.delete_data_in_between_in_es(es_index=self.es_index, start_datetime=start_datetime, end_datetime=end_datetime)
             self._es_upload.es_upload_data(items=resources_data, es_index=self.es_index)
+        for resource in resources_data:
+            if resource.get('timestamp'):
+                resource['timestamp'] = str(resource['timestamp'])
         return resources_data

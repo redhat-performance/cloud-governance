@@ -133,10 +133,10 @@ class ElasticSearchOperations:
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
-                self.__es.index(index=index, doc_type=doc_type, body=data, timeout='30s', **kwargs)
+                self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
             else:  # JSON Array
                 for record in data:
-                    self.__es.index(index=index, doc_type=doc_type, body=record, timeout='30s', **kwargs)
+                    self.__es.index(index=index, doc_type=doc_type, body=record, **kwargs)
             return True
         except Exception as err:
             raise err
