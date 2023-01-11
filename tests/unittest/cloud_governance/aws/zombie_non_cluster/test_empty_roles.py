@@ -4,7 +4,7 @@ import os
 import boto3
 from moto import mock_ec2, mock_iam
 
-from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 os.environ['dry_run'] = 'no'

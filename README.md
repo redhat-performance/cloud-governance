@@ -26,10 +26,10 @@ This tool support the following policies:
 * [ec2_run](cloud_governance/policy/aws/ec2_run.py): running ec2.
 * [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status.
 * [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes.
-* [tag_resources](cloud_governance/aws/tag_cluster): Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
+* [tag_resources](cloud_governance/policy/policy_operations/aws/tag_cluster): Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
 * [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Delete cluster's zombie resources
-* [tag_non_cluster](cloud_governance/aws/tag_non_cluster): tag ec2 resources (instance, volume, ami, snapshot) by instance name
-* [tag_iam_user](cloud_governance/aws/tag_user): update the user tags from the csv file
+* [tag_non_cluster](cloud_governance/policy/policy_operations/aws/tag_non_cluster): tag ec2 resources (instance, volume, ami, snapshot) by instance name
+* [tag_iam_user](cloud_governance/policy/policy_operations/aws/tag_user): update the user tags from the csv file
 * [cost_explorer](cloud_governance/policy/aws/cost_explorer.py): Get data from cost explorer and upload to ElasticSearch
 * [ip_unattached](cloud_governance/policy/aws/ip_unattached.py): Get the unattached IP and delete it after 7 days.
 * [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Get the inactive/empty buckets and delete them after 7 days.

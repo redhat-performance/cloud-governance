@@ -3,7 +3,7 @@ import os
 import boto3
 from moto import mock_ec2
 
-from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 from cloud_governance.policy.aws.ebs_unattached import EbsUnattached
 
 AWS_DEFAULT_REGION = 'us-east-2'

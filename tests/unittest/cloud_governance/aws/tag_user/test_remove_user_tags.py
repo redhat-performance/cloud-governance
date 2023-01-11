@@ -1,7 +1,7 @@
 import boto3
 from moto import mock_iam
 
-from cloud_governance.aws.tag_user.remove_user_tags import RemoveUserTags
+from cloud_governance.policy.policy_operations.aws.tag_user.remove_user_tags import RemoveUserTags
 
 
 @mock_iam

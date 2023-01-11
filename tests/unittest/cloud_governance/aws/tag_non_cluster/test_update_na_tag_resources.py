@@ -3,7 +3,7 @@ import os
 import boto3
 from moto import mock_ec2
 
-from cloud_governance.aws.tag_non_cluster.update_na_tag_resources import UpdateNATags
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.update_na_tag_resources import UpdateNATags
 os.environ['SLEEP_SECONDS'] = '0'
 
 

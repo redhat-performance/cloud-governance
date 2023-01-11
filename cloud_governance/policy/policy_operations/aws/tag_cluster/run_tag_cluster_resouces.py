@@ -1,6 +1,6 @@
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.aws.tag_cluster.remove_cluster_tags import RemoveClusterTags
-from cloud_governance.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_cluster.remove_cluster_tags import RemoveClusterTags
+from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
 
 
 def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', tag_operation: str = 'yes', cluster_only: bool = False):

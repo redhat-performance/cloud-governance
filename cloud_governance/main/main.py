@@ -3,22 +3,22 @@ import typeguard
 from ast import literal_eval  # str to dict
 import boto3  # regions
 
-from cloud_governance.aws.cost_expenditure.cost_report_policies import CostReportPolicies
-from cloud_governance.azure.azure_policy_runner import AzurePolicyRunner
+from cloud_governance.policy.policy_operations.aws.cost_expenditure.cost_report_policies import CostReportPolicies
+from cloud_governance.policy.policy_operations.azure.azure_policy_runner import AzurePolicyRunner
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
-from cloud_governance.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
+from cloud_governance.policy.policy_operations.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
     remove_cluster_resources_tags
-from cloud_governance.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
     remove_tag_non_cluster_resource, tag_na_resources
-from cloud_governance.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
-from cloud_governance.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
-from cloud_governance.gitleaks.gitleaks import GitLeaks
-from cloud_governance.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
+from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
+from cloud_governance.policy.policy_operations.gitleaks.gitleaks import GitLeaks
+from cloud_governance.policy.policy_operations.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
-from cloud_governance.aws.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.validate_zombies import ValidateZombies
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
 
 
 environment_variables_dict = environment_variables.environment_variables_dict

@@ -3,7 +3,7 @@ import inspect
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
-from cloud_governance.ibm.ibm_operations.ibm_operations import IBMOperations
+from cloud_governance.policy.policy_operations.ibm.ibm_operations.ibm_operations import IBMOperations
 
 
 class IBMPolicyRunner(IBMOperations):

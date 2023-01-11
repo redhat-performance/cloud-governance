@@ -1,6 +1,6 @@
 import boto3
 
-from cloud_governance.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.clouds.aws.utils.utils import Utils
@@ -11,9 +11,9 @@ from cloud_governance.common.clouds.aws.utils.utils import Utils
 # while "NextToken" in response:
 #     response = client.get_servers(NextToken=response["NextToken"])
 #     results.extend(response["serverList"])
-from cloud_governance.aws.zombie_cluster.delete_ec2_resources import DeleteEC2Resources
-from cloud_governance.aws.zombie_cluster.delete_iam_resources import DeleteIAMResources
-from cloud_governance.aws.zombie_cluster.delete_s3_resources import DeleteS3Resources
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_ec2_resources import DeleteEC2Resources
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_iam_resources import DeleteIAMResources
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_s3_resources import DeleteS3Resources
 
 
 class ZombieClusterResources(ZombieClusterCommonMethods):
