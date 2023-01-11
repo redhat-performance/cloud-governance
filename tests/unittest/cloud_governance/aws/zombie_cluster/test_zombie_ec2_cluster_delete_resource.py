@@ -9,12 +9,35 @@ tags = [
     {'Key': 'Owner', 'Value': 'unitest'}
 ]
 region_name = 'us-east-2'
+DAYS = 7
+FOUR_DAYS = 4
 
 
 @mock_ec2
-def test_delete_ec2_ami():
+def test_force_delete_ec2_ami():
     """
-    This method tests the deletion of AMI image
+    This method tests the deletion of AMI image force
+    :return:
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    default_ami_id = 'ami-03cf127a'
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    instance_id = ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1)[0].instance_id
+    image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
+                                         InstanceId=instance_id, Name='test-image').get('ImageId')
+    ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_ami', force_delete=True)
+    zombie_cluster_resources.zombie_cluster_ami()
+    assert not EC2Operations(region_name).find_ami(image_name)
+
+
+@mock_ec2
+def test_not_delete_ec2_ami():
+    """
+    This method tests the not deletion of AMI image
     :return:
     """
     ec2_client = boto3.client('ec2', region_name=region_name)
@@ -29,14 +52,78 @@ def test_delete_ec2_ami():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami')
     zombie_cluster_resources.zombie_cluster_ami()
+    assert EC2Operations(region_name).find_ami(image_name)
+
+
+@mock_ec2
+def test_delete_ec2_ami_after_seven():
+    """
+    This method tests the deletion of AMI image after seven days
+    :return:
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    default_ami_id = 'ami-03cf127a'
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    instance_id = ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1)[0].instance_id
+    image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
+                                         InstanceId=instance_id, Name='test-image').get('ImageId')
+    ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_ami')
+    for i in range(DAYS):
+        zombie_cluster_resources.zombie_cluster_ami()
     assert not EC2Operations(region_name).find_ami(image_name)
 
 
 @mock_ec2
-@mock_elb
-def test_delete_ec2_elastic_load_balancer():
+def test_not_delete_ec2_ami_after_four():
     """
-    This method tests the deletion of Elastic Load Balancer
+    This method tests the not deletion of AMI image after four days
+    :return:
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    default_ami_id = 'ami-03cf127a'
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    instance_id = ec2_resource.create_instances(ImageId=default_ami_id, MaxCount=1, MinCount=1)[0].instance_id
+    image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
+                                         InstanceId=instance_id, Name='test-image').get('ImageId')
+    ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_ami')
+    for i in range(FOUR_DAYS):
+        zombie_cluster_resources.zombie_cluster_ami()
+    assert EC2Operations(region_name).find_ami(image_name)
+
+
+@mock_ec2
+@mock_elb
+def test_force_delete_ec2_elastic_load_balancer():
+    """
+    This method tests the force deletion of Elastic Load Balancer
+    :return:
+    """
+    elb = boto3.client('elb', region_name=region_name)
+    elb.create_load_balancer(Listeners=[{
+        'InstancePort': 80, 'InstanceProtocol': 'HTTP',
+        'LoadBalancerPort': 80, 'Protocol': 'HTTP'
+    }], LoadBalancerName='test-load-balancer', Tags=tags)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_load_balancer', force_delete=True)
+    zombie_cluster_resources.zombie_cluster_load_balancer()
+    assert not EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
+
+
+@mock_ec2
+@mock_elb
+def test_not_delete_ec2_elastic_load_balancer():
+    """
+    This method tests the not deletion of Elastic Load Balancer
     :return:
     """
     elb = boto3.client('elb', region_name=region_name)
@@ -49,7 +136,49 @@ def test_delete_ec2_elastic_load_balancer():
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer')
     zombie_cluster_resources.zombie_cluster_load_balancer()
+    assert EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
+
+
+@mock_ec2
+@mock_elb
+def test_delete_ec2_elastic_load_balancer_after_seven_days():
+    """
+    This method tests the deletion of Elastic Load Balancer after seven days
+    :return:
+    """
+    elb = boto3.client('elb', region_name=region_name)
+    elb.create_load_balancer(Listeners=[{
+        'InstancePort': 80, 'InstanceProtocol': 'HTTP',
+        'LoadBalancerPort': 80, 'Protocol': 'HTTP'
+    }], LoadBalancerName='test-load-balancer', Tags=tags)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_load_balancer')
+    for i in range(DAYS):
+        zombie_cluster_resources.zombie_cluster_load_balancer()
     assert not EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
+
+
+@mock_ec2
+@mock_elb
+def test_not_delete_ec2_elastic_load_balancer_after_four_days():
+    """
+    This method tests the non deletion of Elastic Load Balancer after four days
+    :return:
+    """
+    elb = boto3.client('elb', region_name=region_name)
+    elb.create_load_balancer(Listeners=[{
+        'InstancePort': 80, 'InstanceProtocol': 'HTTP',
+        'LoadBalancerPort': 80, 'Protocol': 'HTTP'
+    }], LoadBalancerName='test-load-balancer', Tags=tags)
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_load_balancer')
+    for i in range(FOUR_DAYS):
+        zombie_cluster_resources.zombie_cluster_load_balancer()
+    assert EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
 @mock_ec2
@@ -68,7 +197,7 @@ def test_delete_ec2_elastic_load_balancer_v2():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_load_balancer_v2')
+                                                      resource_name='zombie_cluster_load_balancer_v2', force_delete=True)
     zombie_cluster_resources.zombie_cluster_load_balancer_v2()
 
     assert not EC2Operations(region_name).find_load_balancer_v2(elb_name='test-load-balancer-v2')
@@ -86,7 +215,7 @@ def test_delete_ebs_volume():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_volume')
+                                                      resource_name='zombie_cluster_volume', force_delete=True)
     zombie_cluster_resources.zombie_cluster_volume()
     assert EC2Operations(region_name).find_volume()
 
@@ -104,7 +233,7 @@ def test_delete_snapshots():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_snapshot')
+                                                      resource_name='zombie_cluster_snapshot', force_delete=True)
     zombie_cluster_resources.zombie_cluster_snapshot()
     assert not EC2Operations(region_name).find_snapshots(snapshots['SnapshotId'])
 
@@ -124,7 +253,7 @@ def test_delete_ec2_vpc_endpoints():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_vpc_endpoint')
+                                                      resource_name='zombie_cluster_vpc_endpoint', force_delete=True)
     zombie_cluster_resources.zombie_cluster_vpc_endpoint()
     assert EC2Operations(region_name).find_vpc_endpoints(vpc_endpoint_id)
 
@@ -145,7 +274,7 @@ def test_delete_dhcp_option_set():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_dhcp_option')
+                                                      resource_name='zombie_cluster_dhcp_option', force_delete=True)
     zombie_cluster_resources.zombie_cluster_dhcp_option()
     assert EC2Operations(region_name).find_dhcp_options(dhcp_id=dhcp['DhcpOptions']['DhcpOptionsId'])
 
@@ -168,7 +297,7 @@ def test_delete_route_table():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_route_table')
+                                                      resource_name='zombie_cluster_route_table', force_delete=True)
     zombie_cluster_resources.zombie_cluster_route_table()
     assert not EC2Operations(region_name).find_route_table(route_table_id)
 
@@ -190,7 +319,7 @@ def test_delete_security_group():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_security_group')
+                                                      resource_name='zombie_cluster_security_group', force_delete=True)
     zombie_cluster_resources.zombie_cluster_security_group()
     assert not EC2Operations(region_name).find_security_group(sg1)
 
@@ -210,7 +339,7 @@ def test_delete_nat_gateway():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_nat_gateway')
+                                                      resource_name='zombie_cluster_nat_gateway', force_delete=True)
     zombie_cluster_resources.zombie_cluster_nat_gateway()
     assert EC2Operations(region_name).find_nat_gateway(nat_gateway_id)
 
@@ -229,7 +358,7 @@ def test_delete_network_acl():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_network_acl')
+                                                      resource_name='zombie_cluster_network_acl', force_delete=True)
     zombie_cluster_resources.zombie_cluster_network_acl(vpc_id)
     assert not EC2Operations(region_name).find_network_acl(network_acl_id)
 
@@ -252,7 +381,7 @@ def test_delete_network_interface():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_network_interface')
+                                                      resource_name='zombie_cluster_network_interface', force_delete=True)
     zombie_cluster_resources.zombie_cluster_network_interface()
     assert EC2Operations(region_name).find_network_interface(network_interface_id)
 
@@ -272,7 +401,7 @@ def test_delete_internet_gateway():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_internet_gateway')
+                                                      resource_name='zombie_cluster_internet_gateway', force_delete=True)
     zombie_cluster_resources.zombie_cluster_internet_gateway()
     assert not EC2Operations(region_name).find_internet_gateway(ing_id)
 
@@ -293,7 +422,7 @@ def test_delete_subnet():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_subnet')
+                                                      resource_name='zombie_cluster_subnet', force_delete=True)
     zombie_cluster_resources.zombie_cluster_subnet()
     assert not EC2Operations(region_name).find_subnet(subnet1)
 
@@ -319,7 +448,7 @@ def test_delete_elastic_ip():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_elastic_ip')
+                                                      resource_name='zombie_cluster_elastic_ip', force_delete=True)
     zombie_cluster_resources.zombie_cluster_elastic_ip()
     assert EC2Operations(region_name).find_elastic_ip()
 
@@ -381,6 +510,73 @@ def test_delete_vpc():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_vpc')
+                                                      resource_name='zombie_cluster_vpc', force_delete=True)
     zombie_cluster_resources.zombie_cluster_vpc()
     assert not EC2Operations(region_name).find_vpc('kubernetes.io/cluster/unittest-test-cluster')
+
+
+@mock_ec2
+def test_zombie_security_group_delete_after_seven_days():
+    """
+    This method test the zombie resource delete
+    """
+    days = 7
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_id = vpc_response['Vpc']['VpcId']
+    subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+    sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing the security groups',
+                                           TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
+                                           GroupName='sg-testing')['GroupId']
+    ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_security_group')
+    for i in range(days):
+        zombie_cluster_resources.zombie_cluster_security_group()
+    assert not EC2Operations(region_name).find_security_group(sg1)
+
+
+@mock_ec2
+def test_zombie_security_group_not_delete_after_four_days():
+    """
+    This method test the zombie resource not delete after four days
+    """
+    days = 4
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_id = vpc_response['Vpc']['VpcId']
+    subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+    sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing the security groups',
+                                           TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
+                                           GroupName='sg-testing')['GroupId']
+    ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_security_group')
+    for i in range(days):
+        zombie_cluster_resources.zombie_cluster_security_group()
+    assert EC2Operations(region_name).find_security_group(sg1)
+
+
+@mock_ec2
+def test_zombie_security_group_force_delete():
+    """
+    This method test the zombie resource delete
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_id = vpc_response['Vpc']['VpcId']
+    subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+    sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing the security groups',
+                                           TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
+                                           GroupName='sg-testing')['GroupId']
+    ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+                                                      cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+                                                      region=region_name,
+                                                      resource_name='zombie_cluster_security_group', force_delete=True)
+    zombie_cluster_resources.zombie_cluster_security_group()
+    assert not EC2Operations(region_name).find_security_group(sg1)

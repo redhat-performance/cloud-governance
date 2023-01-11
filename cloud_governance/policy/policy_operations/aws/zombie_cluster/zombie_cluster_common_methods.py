@@ -17,7 +17,7 @@ class ZombieClusterCommonMethods:
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAYS_TO_DELETE_RESOURCE = 7
 
-    def __init__(self, region: str):
+    def __init__(self, region: str, force_delete: bool):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.region = region
         self.dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
@@ -35,6 +35,7 @@ class ZombieClusterCommonMethods:
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._mail = Postfix()
         self._mail_description = MailMessage()
+        self._force_delete = self.__environment_variables_dict.get('FORCE_DELETE') if self.__environment_variables_dict.get('FORCE_DELETE') else force_delete
 
     def _literal_eval(self, data: any):
         tags = {}
