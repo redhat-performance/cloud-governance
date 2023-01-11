@@ -1,7 +1,7 @@
 
 import typeguard
 
-from cloud_governance.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources

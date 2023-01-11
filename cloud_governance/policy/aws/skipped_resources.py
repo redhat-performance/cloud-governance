@@ -1,6 +1,6 @@
 import datetime
 
-from cloud_governance.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 from cloud_governance.common.clouds.aws.price.price import AWSPrice
 
 

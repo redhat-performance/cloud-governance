@@ -1,9 +1,9 @@
 
 import boto3
 import pytest
-from cloud_governance.aws.tag_non_cluster.remove_non_cluster_tags import RemoveNonClusterTags
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.remove_non_cluster_tags import RemoveNonClusterTags
 
-from cloud_governance.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 from tests.integration.test_environment_variables import test_environment_variable
 
 INSTANCE_ID = test_environment_variable.get('INSTANCE_ID')

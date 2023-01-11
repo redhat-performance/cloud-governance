@@ -1,5 +1,5 @@
 
-from cloud_governance.aws.dynamodb_upload_data.upload_data_to_dynamodb import UploadDataToDynamoDb
+from cloud_governance.policy.policy_operations.aws.dynamodb_upload_data.upload_data_to_dynamodb import UploadDataToDynamoDb
 
 
 class CloudTrailToDynamoDb(UploadDataToDynamoDb):

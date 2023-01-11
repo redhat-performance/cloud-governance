@@ -5,7 +5,7 @@ import os
 import boto3
 from moto import mock_ec2, mock_iam, mock_cloudtrail
 
-from cloud_governance.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
 mandatory_tags = {'test': 'ec2-update'}
 region_name = 'us-east-2'

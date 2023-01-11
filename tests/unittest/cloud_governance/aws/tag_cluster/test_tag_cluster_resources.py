@@ -5,7 +5,7 @@ import os
 from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3
 import boto3
 
-from cloud_governance.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
 
 cluster_prefix = 'kubernetes.io/cluster/'
 cluster_name = ''

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.aws.tag_non_cluster.non_cluster_operations import NonClusterOperations
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.non_cluster_operations import NonClusterOperations
 
 
 class TagNonClusterResources(NonClusterOperations):

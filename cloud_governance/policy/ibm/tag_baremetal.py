@@ -1,7 +1,7 @@
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
-from cloud_governance.ibm.tagging.tagging_operations import TaggingOperations
+from cloud_governance.policy.policy_operations.ibm.tagging.tagging_operations import TaggingOperations
 
 
 class TagBareMetal(TaggingOperations):

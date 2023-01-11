@@ -1,9 +1,9 @@
 
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.aws.tag_user.iam_user_tags import ValidateIAMUserTags
-from cloud_governance.aws.tag_user.remove_user_tags import RemoveUserTags
-from cloud_governance.aws.tag_user.tag_iam_user import TagUser
+from cloud_governance.policy.policy_operations.aws.tag_user.iam_user_tags import ValidateIAMUserTags
+from cloud_governance.policy.policy_operations.aws.tag_user.remove_user_tags import RemoveUserTags
+from cloud_governance.policy.policy_operations.aws.tag_user.tag_iam_user import TagUser
 from cloud_governance.main.environment_variables import environment_variables
 
 

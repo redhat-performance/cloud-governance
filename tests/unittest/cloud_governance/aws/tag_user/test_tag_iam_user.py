@@ -4,7 +4,7 @@ import os
 import boto3
 from moto import mock_iam
 
-from cloud_governance.aws.tag_user.tag_iam_user import TagUser
+from cloud_governance.policy.policy_operations.aws.tag_user.tag_iam_user import TagUser
 
 
 file_name = 'tag_user.csv'

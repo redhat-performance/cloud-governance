@@ -7,9 +7,9 @@ import boto3
 import pytest
 from moto import mock_cloudtrail, mock_ec2, mock_dynamodb2, mock_iam
 
-from cloud_governance.aws.dynamodb_upload_data.upload_data_to_dynamodb import UploadDataToDynamoDb
+from cloud_governance.policy.policy_operations.aws.dynamodb_upload_data.upload_data_to_dynamodb import UploadDataToDynamoDb
 from cloud_governance.policy.aws.ec2_stop import EC2Stop
-from cloud_governance.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 os.environ['TABLE_NAME'] = 'test_table'
