@@ -44,7 +44,7 @@ def test_s3_zombie_bucket_exists():
     create_s3_bucket()
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
-                                                      resource_name='zombie_cluster_s3_bucket')
+                                                      resource_name='zombie_cluster_s3_bucket', force_delete=True)
 
     assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()[0]) >= 1
 
@@ -56,7 +56,7 @@ def test_s3_zombie_bucket_delete():
     """
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
-                                                      resource_name='zombie_cluster_s3_bucket')
+                                                      resource_name='zombie_cluster_s3_bucket', force_delete=True)
 
     zombie_cluster_resources.zombie_cluster_s3_bucket()
     s3_operations = S3Operations(region_name='us-east-1')
