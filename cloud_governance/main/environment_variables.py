@@ -105,6 +105,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['es_port'] = EnvironmentVariables.get_env('es_port', '')
         self._environment_variables_dict['es_index'] = EnvironmentVariables.get_env('es_index', '')
         self._environment_variables_dict['es_doc_type'] = EnvironmentVariables.get_env('es_doc_type', '')
+        self._environment_variables_dict['ES_TIMEOUT'] = EnvironmentVariables.get_env('ES_TIMEOUT', 2000)
 
         # GitHub credentials
         self._environment_variables_dict['git_access_token'] = EnvironmentVariables.get_env('git_access_token', '')

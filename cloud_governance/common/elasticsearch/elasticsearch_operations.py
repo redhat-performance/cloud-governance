@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 import time
 import pandas as pd
+from cloud_governance.main.environment_variables import environment_variables
 
 from elasticsearch_dsl import Search
 from elasticsearch import Elasticsearch
@@ -26,11 +27,12 @@ class ElasticSearchOperations:
 
     def __init__(self, es_host: str, es_port: str, region: str = '', bucket: str = '', logs_bucket_key: str = '',
                  timeout: int = 2000):
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_host = es_host
         self.__es_port = es_port
         self.__region = region
-        self.__timeout = timeout
-        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=30, max_retries=10, retry_on_timeout=True)
+        self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
+        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
