@@ -31,7 +31,7 @@ class CostExplorer:
         self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
         self._ec2_operations = EC2Operations(region=self.region)
         self._elastic_upload = ElasticUpload()
-        self.__account = self.__environment_variables_dict.get('account')
+        self.__account = self.__environment_variables_dict.get('account').upper().replace('OPENSHIFT-', "").strip()
 
     def get_user_resources(self):
         """
@@ -52,16 +52,16 @@ class CostExplorer:
         user_resources = []
         start_time = groups.get('TimePeriod').get('Start')
         account = self.__account
-        if tag == 'User' and start_time in str(datetime.datetime.now()- datetime.timedelta(1)):
+        if tag == 'User' and start_time in str(datetime.datetime.now() - datetime.timedelta(1)):
             user_resources = self.get_user_resources()
         for group in groups.get('Groups'):
             name = ''
             amount = ''
             if group.get('Keys'):
-                name = group.get('Keys')[0].split('$')[-1]
+                name = group.get('Keys')[0].split('$')[-1].strip().replace(' ', '-')
                 if name == 'PERF-SCALE':
                     name = 'PERFSCALE'
-                name = name if name else f'{self._elastic_upload.account}-REFUND'
+                name = name if name else f'{self._elastic_upload.account}-REFUND/TAX/RECURRING_FEE'
             if group.get('Metrics'):
                 amount = group.get('Metrics').get(self.cost_metric).get('Amount')
             if name and amount:
@@ -72,7 +72,8 @@ class CostExplorer:
                         name = 'vm_import_image'
                 index_id = f'{start_time.lower()}-{account.lower()}-{tag.lower()}-{name.lower()}'
                 if index_id not in data:
-                    upload_data = {tag: name.upper(), 'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
+                    upload_data = {tag: name if tag.upper() == 'ChargeType'.upper() else name.upper(),
+                                   'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
                     if user_resources and name in user_resources:
                         upload_data['Instances'] = user_resources[name]
                     if 'global' in self._elastic_upload.es_index:
