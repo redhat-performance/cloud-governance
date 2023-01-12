@@ -24,7 +24,10 @@ class CostExplorerOperations:
             start_date = end_date - timedelta(self.END_DAY)
             start_date = str(start_date.strftime('%Y-%m-%d'))
             end_date = str(end_date.strftime('%Y-%m-%d'))
-        return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, cost_metric=cost_metric, GroupBy=[{'Type': 'TAG', 'Key': tag}])
+        if tag.upper() == 'ChargeType'.upper():
+            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, GroupBy=[{'Type': 'DIMENSION', 'Key': 'RECORD_TYPE'}])
+        else:
+            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, cost_metric=cost_metric, GroupBy=[{'Type': 'TAG', 'Key': tag}])
 
     def get_cost_and_usage_from_aws(self, start_date: str, end_date: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost', **kwargs):
         """

@@ -14,7 +14,7 @@ class ElasticUpload:
         self.es_host = self.__environment_variables_dict.get('es_host', '')
         self.__es_port = self.__environment_variables_dict.get('es_port', '')
         self.es_index = self.__environment_variables_dict.get('es_index', '')
-        self.account = self.__environment_variables_dict.get('account', '').upper()
+        self.account = self.__environment_variables_dict.get('account', '').upper().replace('OPENSHIFT-', '').strip()
         self.special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
         self.postfix_mail = Postfix()
         self.mail_message = MailMessage()
