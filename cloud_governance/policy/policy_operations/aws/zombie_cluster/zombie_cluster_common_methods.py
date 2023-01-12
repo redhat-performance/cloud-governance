@@ -17,7 +17,7 @@ class ZombieClusterCommonMethods:
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAYS_TO_DELETE_RESOURCE = 7
 
-    def __init__(self, region: str, force_delete: bool):
+    def __init__(self, region: str, force_delete: bool = False):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.region = region
         self.dry_run = self.__environment_variables_dict.get('dry_run', 'yes')

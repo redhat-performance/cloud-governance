@@ -9,7 +9,7 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 @mock_s3
 def test_not_zombie_s3_bucket_deletion():
     """
-    This method tests the s3 bucket not deleted
+    This method tests force the s3 bucket deletion
     :return:
     """
     s3_resource = boto3.resource('s3', region_name='us-east-1')
