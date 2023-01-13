@@ -101,6 +101,21 @@ class CloudTrailOperations:
         except Exception as err:
             return ['', '']
 
+    def __ger_username_from_arn(self, resource_arn: str):
+        """
+        This method return the username from the userIdentity arn
+        """
+        events = self.__get_cloudtrail_responses(resource_arn=resource_arn, start_time=None, end_time=None)
+        for event in events:
+            for resource in event.get('Resources'):
+                if resource.get('ResourceType') == 'AWS::STS::AssumedRole':
+                    if resource.get('ResourceName') == resource_arn:
+                        username, assumed_event = self.__check_event_is_assumed_role(event.get('CloudTrailEvent'))
+                        if username:
+                            return [username, assumed_event]
+                        return [event.get('Username'), event]
+        return ['', '']
+
     def __check_event_is_assumed_role(self, cloudtrail_event: str):
         """
         This method checks if it assumed_role, if it is return the username and its event from role.
@@ -112,6 +127,9 @@ class CloudTrailOperations:
             if cloudtrail_event.get('userIdentity').get('type') == "AssumedRole":
                 role_name = cloudtrail_event.get('userIdentity').get('sessionContext').get('sessionIssuer').get('arn')
                 assumerole_username, event = self.__get_username_by_role(role_name, "CreateRole", "AWS::IAM::Role")
+                if not assumerole_username:
+                    arn = cloudtrail_event.get('userIdentity').get('arn')
+                    assumerole_username, event = self.__ger_username_from_arn(resource_arn=arn)
                 return [assumerole_username, event]
             return [False, '']
         except Exception as err:
