@@ -65,6 +65,9 @@ setup(
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'typing==3.7.4.3',
         'typeguard==2.13.3',  # checking types
+        'aiohttp==3.8.1',  # required by jira
+        'urllib3==1.26.7',  # required by jira
+        'oauthlib~=3.1.1',  # required by jira
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

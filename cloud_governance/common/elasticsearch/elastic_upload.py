@@ -18,8 +18,7 @@ class ElasticUpload:
         self.special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
         self.postfix_mail = Postfix()
         self.mail_message = MailMessage()
-        if self.es_host:
-            self.elastic_search_operations = ElasticSearchOperations(es_host=self.es_host, es_port=self.__es_port)
+        self.elastic_search_operations = ElasticSearchOperations(es_host=self.es_host, es_port=self.__es_port) if self.es_host else None
 
     def es_upload_data(self, items: list, es_index: str = '', **kwargs):
         """

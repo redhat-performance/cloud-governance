@@ -22,3 +22,8 @@ sphinx-rtd-theme==1.0.0
 python-ldap==3.4.2
 typing==3.7.4.3
 typeguard==2.13.3
+
+# EC2 LongRun Required by Jira
+aiohttp==3.8.1
+urllib3==1.26.7
+oauthlib~=3.1.1

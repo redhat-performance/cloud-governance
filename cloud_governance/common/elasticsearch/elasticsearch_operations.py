@@ -248,3 +248,17 @@ class ElasticSearchOperations:
         """
         if self.__es.indices.exists(index=es_index):
             return self.__es.indices.delete(index=es_index)
+
+    def verify_elastic_index_doc_id(self, index: str, doc_id: str):
+        """
+        This method verify that document present in the index or not
+        """
+        return self.__es.exists(index=index, id=doc_id)
+
+    def get_es_data_by_id(self, id: str, index: str):
+        """This method fetch the data from the es based on the match case and match value"""
+        try:
+            es_data = self.__es.get(index=index, id=id)
+        except Exception as err:
+            es_data = {}
+        return es_data

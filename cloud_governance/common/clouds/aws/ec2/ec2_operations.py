@@ -320,21 +320,21 @@ class EC2Operations:
                 non_cluster.append(resource)
         return [cluster, non_cluster]
 
-    def get_instances(self):
+    def get_instances(self, **kwargs):
         """
         This method returns all instances from the region
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_instances,
-                                                    input_tag='Reservations', check_tag='NextToken')
+                                                    input_tag='Reservations', check_tag='NextToken', **kwargs)
 
-    def get_volumes(self):
+    def get_volumes(self, **kwargs):
         """
         This method returns all volumes in the region
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes',
-                                                    check_tag='NextToken')
+                                                    check_tag='NextToken', **kwargs)
 
     def get_images(self):
         """
@@ -504,3 +504,15 @@ class EC2Operations:
                 else:
                     users_list[user] = [user_data]
         return users_list
+
+    def get_tag_value_from_tags(self, tags: list, tag_name: str) -> str:
+        """
+        This method return the tag value inputted by tag_name
+        """
+        if tags:
+            for tag in tags:
+                key = tag.get('Key').lower().replace("_", '').replace("-", '')
+                if key == tag_name.lower():
+                    return tag.get('Value')
+        return ''
+

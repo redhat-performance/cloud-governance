@@ -135,7 +135,7 @@ class CloudTrailOperations:
         except Exception as err:
             return [False, '']
 
-    def __get_full_responses(self, **kwargs):
+    def get_full_responses(self, **kwargs):
         """
         This method return all responses
         @param kwargs:
@@ -161,7 +161,7 @@ class CloudTrailOperations:
         @return:
         """
         try:
-            responses = self.__get_full_responses(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
+            responses = self.get_full_responses(StartTime=start_time, EndTime=end_time, LookupAttributes=[{
                 'AttributeKey': event_type, 'AttributeValue': resource_type}])
             for event in responses:
                 if event.get('EventName') == resource_type:

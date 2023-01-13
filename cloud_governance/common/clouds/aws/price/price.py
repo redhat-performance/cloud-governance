@@ -25,11 +25,11 @@ class AWSPrice:
     This class return aws resource price
     """
 
-    def __init__(self):
+    def __init__(self, region_name: str = ''):
         # Use AWS Pricing API at US-East-1
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__client = boto3.client('pricing', region_name='us-east-1')
-        self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
+        self.region = region_name if region_name else self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
 
     # Get current AWS price for an on-demand instance
     def get_price(self, **kwargs):
