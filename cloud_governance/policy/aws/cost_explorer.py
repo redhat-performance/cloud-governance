@@ -1,6 +1,5 @@
 import datetime
 from ast import literal_eval
-from multiprocessing import Process
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
@@ -115,16 +114,9 @@ class CostExplorer:
                 for value in data:
                     file.write(f'{value}\n')
         else:
-            pass
-            for bulk in range(0, len(data), self.BULK_UPLOAD_THREADS):
-                jobs = []
-                for value in data[bulk: bulk+self.BULK_UPLOAD_THREADS]:
-                    p = Process(target=self.upload_item_to_es, args=(value, index, value['index_id'], ))
-                    p.start()
-                    jobs.append(p)
-                for job in jobs:
-                    job.join()
-        logger.info(f'Data uploaded to {index}, Total Data: {len(data)}')
+            for value in data:
+                self.upload_item_to_es(index=index, item=value, index_id=value['index_id'])
+            logger.info(f'Data uploaded to {index}, Total Data: {len(data)}')
 
     def upload_item_to_es(self, item: dict, index: str, index_id: str = ''):
         """
