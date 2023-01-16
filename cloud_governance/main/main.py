@@ -192,10 +192,13 @@ def main():
     if is_non_cluster_polices_runner:
         non_cluster_polices_runner = ZombieNonClusterPolicies()
 
-    tag_ibm_classic_infrastructure_runner = None
+    ibm_classic_infrastructure_policy_runner = None
     is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
+    if not is_tag_ibm_classic_infrastructure_runner:
+        if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'IBM':
+            is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('cost_policies')
     if is_tag_ibm_classic_infrastructure_runner:
-        tag_ibm_classic_infrastructure_runner = IBMPolicyRunner()
+        ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
 
     is_cost_explorer_policies_runner = ''
     if not environment_variables_dict.get('PUBLIC_CLOUD_NAME'):
@@ -224,7 +227,7 @@ def main():
         This method run the IBM policies
         @return:
         """
-        tag_ibm_classic_infrastructure_runner.run()
+        ibm_classic_infrastructure_policy_runner.run()
 
     @logger_time_stamp
     def run_cost_explorer_policies_runner():

@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import SoftLayer
@@ -33,12 +34,14 @@ class IBMAccount:
         try:
             if self.__API_KEY and self.__API_USERNAME:
                 self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY, timeout=self.DELAY)
+                self.short_account_id = str(self.__API_USERNAME.split('_')[0])
             if self.__environment_variables_dict.get('USAGE_REPORTS_APIKEY'):
                 self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
             raise err
         self.__account = self.__environment_variables_dict.get('account', '')
         self.__account_id = self.__environment_variables_dict.get('IBM_ACCOUNT_ID', '')
+
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
         self.__gsheet_client = GoogleDriveOperations()
         self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
@@ -50,6 +53,12 @@ class IBMAccount:
         @return:
         """
         return self.__sl_client
+
+    @logger_time_stamp
+    def get_account_details(self):
+        mask = "mask[statusDate]"
+        print(self.short_account_id)
+        print(self.__sl_client.call('SoftLayer_Account_Contact', 'getAccount', id=self.__account_id))
 
     @typechecked
     def __organise_user_tags(self, tags: dict):
@@ -183,6 +192,12 @@ class IBMAccount:
         return combine_invoice_data, users
 
     @logger_time_stamp
+    def get_next_recurring_invoice(self):
+        """This method returns the next recurring invoice"""
+        invoice_items = self.__sl_client.call('SoftLayer_Account', 'getNextInvoiceTotalRecurringAmount', iter=True)
+        return float(invoice_items[0]) if invoice_items else 0
+
+    @logger_time_stamp
     def get_daily_usage(self, month: int, year: int):
         """
         This method get IBM monthly usage
@@ -193,3 +208,8 @@ class IBMAccount:
         billing_month = str(year) + '-' + str(month)  # yyyy-mm
         account_summary = self.__service_client.get_account_summary(account_id=self.__account_id, billingmonth=billing_month, timeout=self.DELAY).get_result()
         return account_summary
+
+    def get_ac(self):
+        object_filter = {"users": {"username": {"operation": self.__API_USERNAME}}}
+        users = self.__sl_client.call('SoftLayer_Account', 'getUsers', filter=object_filter)
+        print(users)
