@@ -20,17 +20,18 @@ class UploadToGsheet:
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
 
     @logger_time_stamp
-    def get_cost_center_budget_details(self, account_id: str):
+    def get_cost_center_budget_details(self, account_id: str, dir_path: str = ''):
         """
         This method returns the cost center & budget details
         @return:
         """
         with tempfile.TemporaryDirectory() as tmp_dir:
             sheet_name = 'Accounts'
-            file_path = f'{tmp_dir}/{sheet_name}.csv'
+            dirtectory = dir_path if dir_path else tmp_dir
+            file_path = f'{tmp_dir}/{sheet_name}.csv' if not dir_path else f'{dir_path}/{sheet_name}.csv'
             if not os.path.exists(file_path):
                 self.gsheet_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=sheet_name,
-                                                            file_path=tmp_dir)
+                                                            file_path=dirtectory)
             accounts_df = pd.read_csv(file_path)
             account_row = accounts_df[
                 accounts_df['AccountId'] == account_id].reset_index().to_dict(

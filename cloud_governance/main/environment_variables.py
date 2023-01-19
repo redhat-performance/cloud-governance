@@ -46,7 +46,7 @@ class EnvironmentVariables:
                                                                         'nat_gateway_unused',
                                                                         'zombie_snapshots', 'skipped_resources',
                                                                         'monthly_report']
-        self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports']
+        self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports', 'cost_explorer_payer_billings']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
 
@@ -128,6 +128,11 @@ class EnvironmentVariables:
         # Google Drive env vars
         self._environment_variables_dict['GOOGLE_APPLICATION_CREDENTIALS'] = EnvironmentVariables.get_env('GOOGLE_APPLICATION_CREDENTIALS', '')
         self._environment_variables_dict['SPREADSHEET_ID'] = EnvironmentVariables.get_env('SPREADSHEET_ID', '')
+
+
+        # AWS Top Acconut
+        self._environment_variables_dict['AWS_ACCOUNT_ROLE'] = EnvironmentVariables.get_env('AWS_ACCOUNT_ROLE', '')
+        self._environment_variables_dict['COST_CENTER_OWNER'] = EnvironmentVariables.get_env('COST_CENTER_OWNER', '{}')
 
     @staticmethod
     def get_env(var: str, defval: any = ''):
