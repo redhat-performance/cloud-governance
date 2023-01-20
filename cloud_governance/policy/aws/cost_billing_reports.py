@@ -23,15 +23,16 @@ class CostBillingReports:
     COST_METRIC = 'UNBLENDED_COST'
     MONTHS = 12
     END_DAY = 31
+    FORECAST_DAYS = 360
 
     def __init__(self):
         try:
-            self.__environment_variables_dict = environment_variables.environment_variables_dict
+            self._environment_variables_dict = environment_variables.environment_variables_dict
             self.__cost_explorer_operations = CostExplorerOperations()
             self.elastic_upload = ElasticUpload()
             self.account_name, self.__cloud_name = IAMOperations().get_account_alias_cloud_name()
             self.__account_id = STSOperations().get_account_id()
-            self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
+            self.__gsheet_id = self._environment_variables_dict.get('SPREADSHEET_ID', '')
             self.gdrive_operations = GoogleDriveOperations()
             self.update_to_gsheet = UploadToGsheet()
             self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
@@ -136,7 +137,7 @@ class CostBillingReports:
         """
         start_date, end_date = self.get_date_ranges()
         cost_data = self.__cost_explorer_operations.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=self.GRANULARITY)
-        start_date, end_date = self.get_date_ranges(days=360)
+        start_date, end_date = self.get_date_ranges(days=self.FORECAST_DAYS)
         cost_forecast_data = self.__cost_explorer_operations.get_cost_forecast(start_date=start_date, end_date=end_date, granularity=self.GRANULARITY, cost_metric=self.COST_METRIC)
         cost_filtered_data = self.filter_cost_usage_data(cost_usage_data=cost_data['ResultsByTime'], cost_metric=self.COST_METRIC.title().replace('_', ''))
         self.append_forecasting_data(cost_usage_data=cost_filtered_data, cost_forecast_data=cost_forecast_data['ForecastResultsByTime'])

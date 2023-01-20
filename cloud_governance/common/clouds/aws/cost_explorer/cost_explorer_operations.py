@@ -11,8 +11,8 @@ class CostExplorerOperations:
     START_DAY = 1
     END_DAY = 31
 
-    def __init__(self):
-        self.cost_explorer_client = boto3.client('ce')
+    def __init__(self, ce_client = ''):
+        self.cost_explorer_client = boto3.client('ce') if not ce_client else ce_client
 
     def get_cost_by_tags(self, tag: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost', start_date: str = '', end_date: str = ''):
         """
@@ -44,7 +44,7 @@ class CostExplorerOperations:
             'End': end_date
         }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
 
-    def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str):
+    def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):
         """
         This method return the cost forecasting
         @param start_date:
@@ -59,5 +59,5 @@ class CostExplorerOperations:
                 'End': end_date
             },
             Granularity=granularity,
-            Metric=cost_metric
+            Metric=cost_metric, **kwargs
         )
