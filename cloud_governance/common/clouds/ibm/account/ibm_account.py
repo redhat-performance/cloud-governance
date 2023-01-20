@@ -39,7 +39,7 @@ class IBMAccount:
                 self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
             raise err
-        self.__account = self.__environment_variables_dict.get('account', '')
+        self.account = self.__environment_variables_dict.get('account', '')
         self.__account_id = self.__environment_variables_dict.get('IBM_ACCOUNT_ID', '')
 
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
@@ -53,12 +53,6 @@ class IBMAccount:
         @return:
         """
         return self.__sl_client
-
-    @logger_time_stamp
-    def get_account_details(self):
-        mask = "mask[statusDate]"
-        print(self.short_account_id)
-        print(self.__sl_client.call('SoftLayer_Account_Contact', 'getAccount', id=self.__account_id))
 
     @typechecked
     def __organise_user_tags(self, tags: dict):
@@ -83,9 +77,9 @@ class IBMAccount:
         @param file_path:
         @return:
         """
-        file_name = os.path.join(file_path, f'{self.__account}.csv')
+        file_name = os.path.join(file_path, f'{self.account}.csv')
         if not os.path.exists(file_name):
-            self.__gsheet_client.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=self.__account,
+            self.__gsheet_client.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=self.account,
                                                       file_path=file_path)
         df = pd.read_csv(file_name)
         df.fillna('', inplace=True)
@@ -208,8 +202,3 @@ class IBMAccount:
         billing_month = str(year) + '-' + str(month)  # yyyy-mm
         account_summary = self.__service_client.get_account_summary(account_id=self.__account_id, billingmonth=billing_month, timeout=self.DELAY).get_result()
         return account_summary
-
-    def get_ac(self):
-        object_filter = {"users": {"username": {"operation": self.__API_USERNAME}}}
-        users = self.__sl_client.call('SoftLayer_Account', 'getUsers', filter=object_filter)
-        print(users)

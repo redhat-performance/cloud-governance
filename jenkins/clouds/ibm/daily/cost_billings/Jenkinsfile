@@ -1,18 +1,27 @@
 pipeline {
-    options {
-        disableConcurrentBuilds()
-    }
     agent {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm  --network host -u root -v /tmp/ibm/tagging/:/var/lib/containers --privileged'
+            args  '--rm  --network host -u root -v /tmp/ibm/ibm-cost-billing-reports/:/var/lib/containers --privileged'
         }
     }
     environment {
-        IBM_API_USERNAME = credentials('cloud-governance-ibm-api-username-performance-scale')
-        IBM_API_KEY = credentials('cloud-governance-ibm-api-key-performance-scale')
-        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        IBM_API_USERNAME_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-api-username-performance-scale')
+        IBM_API_KEY_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-api-key-performance-scale')
+        IBM_ACCOUNT_ID_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-account-id-performance-scale')
+        USAGE_REPORTS_APIKEY_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-service-id-performance-scale')
+        IBM_API_USERNAME_INTEROP_IBM_CI = credentials('cloud-governance-ibm-api-username-interop-ibm-ci')
+        IBM_API_KEY_INTEROP_IBM_CI = credentials('cloud-governance-ibm-api-key-interop-ibm-ci')
+        IBM_ACCOUNT_ID_INTEROP_IBM_CI = credentials('cloud-governance-ibm-account-id-interop-ibm-ci')
+        USAGE_REPORTS_APIKEY_INTEROP_IBM_CI = credentials('cloud-governance-ibm-service-id-interop-ibm-ci')
+        IBM_API_USERNAME_CERTIFICATION_CE = credentials('cloud-governance-ibm-api-username-certification-ce')
+        IBM_API_KEY_CERTIFICATION_CE = credentials('cloud-governance-ibm-api-key-certification-ce')
+        IBM_ACCOUNT_ID_CERTIFICATION_CE = credentials('cloud-governance-ibm-account-id-certification-ce')
+        USAGE_REPORTS_APIKEY_CERTIFICATION_CE = credentials('cloud-governance-ibm-service-id-certification-ce')
+        COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         contact1 = "ebattat@redhat.com"
@@ -31,7 +40,7 @@ pipeline {
         }
         stage('Run Tagging Cluster & Non-Cluster') {
             steps {
-                 sh 'python3 jenkins/clouds/ibm/hourly/tagging/tagging.py'
+                 sh 'python3 jenkins/clouds/ibm/daily/cost_billings/run_ibm_cost_reports.py'
             }
         }
         stage('Finalize Cleanup') {
