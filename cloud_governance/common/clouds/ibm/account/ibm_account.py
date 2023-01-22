@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import SoftLayer
@@ -33,12 +34,14 @@ class IBMAccount:
         try:
             if self.__API_KEY and self.__API_USERNAME:
                 self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY, timeout=self.DELAY)
+                self.short_account_id = str(self.__API_USERNAME.split('_')[0])
             if self.__environment_variables_dict.get('USAGE_REPORTS_APIKEY'):
                 self.__service_client = UsageReportsV4.new_instance()
         except Exception as err:
             raise err
-        self.__account = self.__environment_variables_dict.get('account', '')
+        self.account = self.__environment_variables_dict.get('account', '')
         self.__account_id = self.__environment_variables_dict.get('IBM_ACCOUNT_ID', '')
+
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID', '')
         self.__gsheet_client = GoogleDriveOperations()
         self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
@@ -74,9 +77,9 @@ class IBMAccount:
         @param file_path:
         @return:
         """
-        file_name = os.path.join(file_path, f'{self.__account}.csv')
+        file_name = os.path.join(file_path, f'{self.account}.csv')
         if not os.path.exists(file_name):
-            self.__gsheet_client.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=self.__account,
+            self.__gsheet_client.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=self.account,
                                                       file_path=file_path)
         df = pd.read_csv(file_name)
         df.fillna('', inplace=True)
@@ -181,6 +184,12 @@ class IBMAccount:
                     }
                 co += value
         return combine_invoice_data, users
+
+    @logger_time_stamp
+    def get_next_recurring_invoice(self):
+        """This method returns the next recurring invoice"""
+        invoice_items = self.__sl_client.call('SoftLayer_Account', 'getNextInvoiceTotalRecurringAmount', iter=True)
+        return float(invoice_items[0]) if invoice_items else 0
 
     @logger_time_stamp
     def get_daily_usage(self, month: int, year: int):

@@ -84,8 +84,11 @@ class EnvironmentVariables:
         self._environment_variables_dict['IBM_API_USERNAME'] = EnvironmentVariables.get_env('IBM_API_USERNAME', '')
         self._environment_variables_dict['IBM_API_KEY'] = EnvironmentVariables.get_env('IBM_API_KEY', '')
         self._environment_variables_dict['USAGE_REPORTS_APIKEY'] = EnvironmentVariables.get_env('USAGE_REPORTS_APIKEY', '')
+        if self._environment_variables_dict['USAGE_REPORTS_APIKEY']:
+            self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'IBM'
         self._environment_variables_dict['month'] = EnvironmentVariables.get_env('month', '')
         self._environment_variables_dict['year'] = EnvironmentVariables.get_env('year', '')
+        self._environment_variables_dict['COST_CENTER_OWNER'] = EnvironmentVariables.get_env('COST_CENTER_OWNER', '')
 
         self._environment_variables_dict['tag_remove_name'] = EnvironmentVariables.get_env('tag_remove_name', '')
         self._environment_variables_dict['tag_custom'] = EnvironmentVariables.get_env('tag_custom', '{}')
