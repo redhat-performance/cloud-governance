@@ -1,4 +1,4 @@
-import datetime
+
 from ast import literal_eval
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
@@ -32,14 +32,6 @@ class CostExplorer:
         self._elastic_upload = ElasticUpload()
         self.__account = self.__environment_variables_dict.get('account').upper().replace('OPENSHIFT-', "").strip()
 
-    def get_user_resources(self):
-        """
-        This method get User all region ec2 instances
-        @return:
-        """
-        ec2_global_list_user_resources = self._ec2_operations.get_global_ec2_list_by_user()
-        return ec2_global_list_user_resources
-
     def filter_data_by_tag(self, groups: dict, tag: str):
         """
         This method extract data by tag
@@ -48,11 +40,8 @@ class CostExplorer:
         @return: converted into dict format
         """
         data = {}
-        user_resources = []
         start_time = groups.get('TimePeriod').get('Start')
         account = self.__account
-        if tag == 'User' and start_time in str(datetime.datetime.now() - datetime.timedelta(1)):
-            user_resources = self.get_user_resources()
         for group in groups.get('Groups'):
             name = ''
             amount = ''
@@ -73,8 +62,6 @@ class CostExplorer:
                 if index_id not in data:
                     upload_data = {tag: name if tag.upper() == 'ChargeType'.upper() else name.upper(),
                                    'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
-                    if user_resources and name in user_resources:
-                        upload_data['Instances'] = user_resources[name]
                     if 'global' in self._elastic_upload.es_index:
                         if 'Budget' not in upload_data:
                             upload_data['Budget'] = self._elastic_upload.account
