@@ -74,7 +74,7 @@ class CostBillingReports:
                 cost_data['index_id'] = f"""{cost_data['start_date']}-{cost_data['Account'].lower()}-{self.azure_operations.cloud_name.lower()}"""
                 cost_data['timestamp'] = datetime.datetime.strptime(cost_data['start_date'], '%Y-%m-%d')
                 cost_data['Month'] = datetime.datetime.strftime(cost_data['timestamp'], '%Y %b')
-                cost_data['filter_date'] = cost_data['start_date'] + cost_data['Month'].split()[-1]
+                cost_data['filter_date'] = f"{cost_data['start_date']}-{cost_data['Month'].split()[-1]}"
                 cost_billing_data[cost_data['start_date']] = cost_data
             else:
                 cost_billing_data[start_date].update(cost_data)
