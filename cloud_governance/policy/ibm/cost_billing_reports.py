@@ -28,7 +28,7 @@ class CostBillingReports:
     def prepare_es_data(self, usage_cost: float, next_invoice: float):
         """This method prepares the data to upload to the es"""
         date = datetime.datetime.now()
-        start_date = f'{date.year}-{date.month}-01'
+        start_date = f'{date.year}-{date.strftime("%m")}-01'
         timestamp = datetime.datetime.strptime(start_date, '%Y-%m-%d')
         month = datetime.datetime.strftime(timestamp, '%Y %b')
         es_data = {
@@ -46,7 +46,6 @@ class CostBillingReports:
             'Forecast': round(next_invoice, 3),
             'Actual': round(usage_cost, 3),
             'filter_date': f'{start_date}-{month.split()[-1]}',
-
         }
         return es_data
 

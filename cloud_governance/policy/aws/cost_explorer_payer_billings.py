@@ -56,9 +56,9 @@ class CostExplorerPayerBillings(CostBillingReports):
                                 budget = account_budget if start_time.split('-')[0] in years else 0
                                 index_id = f'{start_time}-{name}'
                                 upload_data = {tag: name, 'Actual': round(float(amount), 3), 'start_date': start_time,
-                                               'timestamp': timestamp, 'CloudName': 'AWS Cloud', 'Month': month,
+                                               'timestamp': timestamp, 'CloudName': 'AWS', 'Month': month,
                                                'Forecast': 0,
-                                               'filter_date': f'{start_time} {month.split()[-1]}',
+                                               'filter_date': f'{start_time}-{month.split()[-1]}',
                                                'Budget': round(budget / self.MONTHS, 3), 'CostCenter': cost_center,
                                                'AllocatedBudget': budget,
                                                "Owner": owner
@@ -106,8 +106,8 @@ class CostExplorerPayerBillings(CostBillingReports):
                     data['Budget'] = 0
                     data['AllocatedBudget'] = 0
                 data['CostCenter'] = cost_center
-                data['CloudName'] = "AWS Cloud"
-                data['filter_date'] = data['start_date'] + data['Month']
+                data['CloudName'] = "AWS"
+                data['filter_date'] = f'{data["start_date"]}-{data["Month"].split()[-1]}'
                 cost_usage_data[account][index] = data
 
     @logger_time_stamp
