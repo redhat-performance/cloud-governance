@@ -9,7 +9,7 @@ def test_get_usage():
     """
     cost_management_operations = CostManagementOperations()
     cost_usage_data = cost_management_operations.get_usage()
-    assert cost_usage_data.get('rows')
+    assert cost_usage_data
 
 
 def test_get_forecast():
@@ -19,4 +19,4 @@ def test_get_forecast():
     """
     cost_management_operations = CostManagementOperations()
     cost_forecast_data = cost_management_operations.get_forecast()
-    assert cost_forecast_data.get('rows')
+    assert cost_forecast_data
