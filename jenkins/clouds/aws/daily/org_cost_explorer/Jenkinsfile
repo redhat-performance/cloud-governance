@@ -15,6 +15,7 @@ pipeline {
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         AWS_ACCOUNT_ROLE = credentials('cloud-governance-aws-account-role')
         COST_CENTER_OWNER = credentials('cloud-governance-cost-center-owner')
+        REPLACE_ACCOUNT_NAME = credentials('cloud-governance-replace-account-names')
 
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"

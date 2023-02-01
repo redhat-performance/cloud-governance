@@ -63,6 +63,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['cluster_tag'] = EnvironmentVariables.get_env('cluster_tag', '')
         self._environment_variables_dict['service_type'] = EnvironmentVariables.get_env('service_type', '')
         self._environment_variables_dict['TABLE_NAME'] = EnvironmentVariables.get_env('TABLE_NAME', '')
+        self._environment_variables_dict['REPLACE_ACCOUNT_NAME'] = EnvironmentVariables.get_env('REPLACE_ACCOUNT_NAME', '{}')
 
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
