@@ -20,6 +20,7 @@ class CostExplorerPayerBillings(CostBillingReports):
         self.__ce_client = boto3.client('ce', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
         self.__cost_explorer_operations = CostExplorerOperations(ce_client=self.__ce_client)
         self.__cost_center_owner = literal_eval(self._environment_variables_dict.get('COST_CENTER_OWNER'))
+        self.__replacement_account = literal_eval(self._environment_variables_dict.get('REPLACE_ACCOUNT_NAME'))
 
     def __get_sts_credentials(self):
         """This method returns the temporary credentials from the sts service"""
@@ -72,6 +73,8 @@ class CostExplorerPayerBillings(CostBillingReports):
             for dimension_values in cost_data.get('DimensionValueAttributes'):
                 account_id = dimension_values.get("Value")
                 account = dimension_values.get('Attributes').get('description')
+                if self.__replacement_account.get(account):
+                    account = self.__replacement_account.get(account)
                 for key_index_id in data.keys():
                     if account_id in key_index_id:
                         index_id = f'{data[key_index_id]["start_date"]}-{account}'.lower()
