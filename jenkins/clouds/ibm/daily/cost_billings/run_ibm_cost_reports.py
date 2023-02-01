@@ -23,7 +23,7 @@ LOGS = os.environ.get('LOGS', 'logs')
 
 print('Run IBM Cost Forecast, Budget upload monthly')
 
-es_index = 'cloud-governance-payer-billing-reports'
+es_index = 'cloud-governance-clouds-billing-reports'
 
 key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAME_PERFORMANCE_SCALE, "IBM_API_KEY": IBM_API_KEY_PERFORMANCE_SCALE, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_PERFORMANCE_SCALE, "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_PERFORMANCE_SCALE},
             {"account": "interop-ibm-ci", "IBM_API_USERNAME": IBM_API_USERNAME_INTEROP_IBM_CI, "IBM_API_KEY": IBM_API_KEY_INTEROP_IBM_CI, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_INTEROP_IBM_CI, "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_INTEROP_IBM_CI},
