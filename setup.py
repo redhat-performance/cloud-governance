@@ -45,6 +45,7 @@ setup(
         'azure-identity==1.12.0',  # azure identity
         'azure-mgmt-costmanagement==3.0.0',  # azure cost management
         'azure-mgmt-subscription==3.1.1',  # azure subscriptions
+        'azure-mgmt-billing==6.0.0',  # azure billing management
         'botocore==1.29.1',  # required by c7n 0.9.14
         'boto3==1.26.1',  # required by c7n 0.9.14
         'elasticsearch==7.11.0',  # depend on elasticsearch server

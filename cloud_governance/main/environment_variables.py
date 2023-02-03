@@ -73,12 +73,14 @@ class EnvironmentVariables:
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags', '{}')
 
         # AZURE Credentials
+        self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
         self._environment_variables_dict['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
         if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID']\
                 and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'
+        self._environment_variables_dict['TOTAL_ACCOUNTS'] = bool(EnvironmentVariables.get_env('TOTAL_ACCOUNTS', ''))
 
         # IBM env vars
         self._environment_variables_dict['IBM_ACCOUNT_ID'] = EnvironmentVariables.get_env('IBM_ACCOUNT_ID', '')

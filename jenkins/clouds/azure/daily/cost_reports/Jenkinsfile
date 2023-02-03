@@ -9,6 +9,7 @@ pipeline {
     environment {
         AZURE_CLIENT_SECRET = credentials('cloud-governance-azure-client-secret')
         AZURE_TENANT_ID = credentials('cloud-governance-azure-tenant-id')
+        AZURE_ACCOUNT_ID = credentials('cloud-governance-azure-account-id')
         AZURE_CLIENT_ID = credentials('cloud-governance-azure-client-id')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')

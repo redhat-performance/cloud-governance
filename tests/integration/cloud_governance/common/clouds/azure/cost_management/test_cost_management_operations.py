@@ -8,7 +8,7 @@ def test_get_usage():
     @return:
     """
     cost_management_operations = CostManagementOperations()
-    cost_usage_data = cost_management_operations.get_usage()
+    cost_usage_data = cost_management_operations.get_usage(scope=cost_management_operations.azure_operations.scope)
     assert cost_usage_data
 
 
@@ -18,5 +18,5 @@ def test_get_forecast():
     @return:
     """
     cost_management_operations = CostManagementOperations()
-    cost_forecast_data = cost_management_operations.get_forecast()
+    cost_forecast_data = cost_management_operations.get_forecast(scope=cost_management_operations.azure_operations.scope)
     assert cost_forecast_data
