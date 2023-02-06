@@ -226,3 +226,53 @@ Cloud-governance Team""".strip()
         </div>
         """.strip()
         return subject, body
+
+    def get_long_run_alert(self, days: int, user: str, jira_id: str):
+        """
+        This method return the LongRun, second Alert Message
+        """
+        subject = f'Cloud LongRun Alert: Expiring in {days} days'
+        body = f"""
+                <div>
+                <p>Hi {user},</p>
+                </div>
+                <div>
+                    <p>This is a message to alert you that in {days} days, the cloud request is expiring.</p>
+                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
+                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target="_blank">{jira_id}</a></p>
+                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
+                </div>
+                <div style="color:gray" class="footer">
+                    <address>
+                        --<br/>
+                        Best Regards,<br/>
+                        Cloud-governance Team<br/>
+                    </address>
+                </div>
+""".strip()
+        return subject, body
+
+    def get_long_run_expire_alert(self, user: str, jira_id: str):
+        """
+        This method return the LongRun, Expire Alert Message
+        """
+        subject = f'LongRun Alert: Expired'
+        body = f"""
+                <div>
+                <p>Hi {user},</p>
+                </div>
+                <div>
+                    <p>This is a message to alert you that the cloud long run request is expired.</p>
+                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
+                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target=="_blank">{jira_id}</a></p>
+                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
+                </div>
+                <div style="color:gray" class="footer">
+                    <address>
+                        --<br/>
+                        Best Regards,<br/>
+                        Cloud-governance Team<br/>
+                    </address>
+                </div>
+        """.strip()
+        return subject, body

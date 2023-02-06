@@ -135,10 +135,21 @@ class EnvironmentVariables:
         self._environment_variables_dict['GOOGLE_APPLICATION_CREDENTIALS'] = EnvironmentVariables.get_env('GOOGLE_APPLICATION_CREDENTIALS', '')
         self._environment_variables_dict['SPREADSHEET_ID'] = EnvironmentVariables.get_env('SPREADSHEET_ID', '')
 
-
         # AWS Top Acconut
         self._environment_variables_dict['AWS_ACCOUNT_ROLE'] = EnvironmentVariables.get_env('AWS_ACCOUNT_ROLE', '')
         self._environment_variables_dict['COST_CENTER_OWNER'] = EnvironmentVariables.get_env('COST_CENTER_OWNER', '{}')
+
+        # Jira env parameters
+        self._environment_variables_dict['JIRA_URL'] = EnvironmentVariables.get_env('JIRA_URL', '')
+        self._environment_variables_dict['JIRA_USERNAME'] = EnvironmentVariables.get_env('JIRA_USERNAME', '')
+        self._environment_variables_dict['JIRA_TOKEN'] = EnvironmentVariables.get_env('JIRA_TOKEN', '')
+        self._environment_variables_dict['JIRA_QUEUE'] = EnvironmentVariables.get_env('JIRA_QUEUE', '')
+        self._environment_variables_dict['JIRA_PASSWORD'] = EnvironmentVariables.get_env('JIRA_PASSWORD', '')
+
+        # Cloud Resource Orchestration
+        self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
+        self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
+        self._environment_variables_dict['MANAGEMENT'] = bool(EnvironmentVariables.get_env('MANAGEMENT', False))
 
     @staticmethod
     def get_env(var: str, defval: any = ''):

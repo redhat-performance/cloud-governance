@@ -3,6 +3,7 @@ import typeguard
 from ast import literal_eval  # str to dict
 import boto3  # regions
 
+from cloud_governance.cloud_resource_orchestration.monitor.cloud_monitor import CloudMonitor
 from cloud_governance.policy.policy_operations.aws.cost_expenditure.cost_report_policies import CostReportPolicies
 from cloud_governance.policy.policy_operations.azure.azure_policy_runner import AzurePolicyRunner
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
@@ -167,6 +168,12 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
 
 
 @logger_time_stamp
+def run_cloud_management():
+    """This method run the cloud management"""
+    return CloudMonitor().run()
+
+
+@logger_time_stamp
 def main():
     """
     This main run 2 processes:
@@ -213,6 +220,11 @@ def main():
         is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
         if is_azure_policy_runner:
             azure_cost_policy_runner = AzurePolicyRunner()
+
+    # cloud_resource_orchestration lon_run/short_run
+    is_cloud_management = False
+    if environment_variables_dict.get('MANAGEMENT'):
+        is_cloud_management = True
 
     @logger_time_stamp
     def run_non_cluster_polices_runner():
@@ -269,6 +281,8 @@ def main():
         run_cost_explorer_policies_runner()
     elif is_azure_policy_runner:
         run_azure_policy_runner()
+    elif is_cloud_management:
+        run_cloud_management()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')

@@ -16,7 +16,7 @@ class Utils:
         pass
 
     @typeguard.typechecked
-    def get_details_resource_list(self, func_name: Callable, input_tag: str, check_tag: str):
+    def get_details_resource_list(self, func_name: Callable, input_tag: str, check_tag: str, **kwargs):
         """
         This method fetch all Items of the resource i.e: EC2, IAM
         :param func_name:
@@ -25,12 +25,12 @@ class Utils:
         :return:
         """
         resource_list = []
-        resources = func_name()
+        resources = func_name(**kwargs)
         resource_list.extend(resources[input_tag])
         while check_tag in resources.keys():
             if check_tag == 'NextToken':
-                resources = func_name(NextToken=resources[check_tag])
+                resources = func_name(NextToken=resources[check_tag], **kwargs)
             elif check_tag == 'Marker':
-                resources = func_name(Marker=resources[check_tag])
+                resources = func_name(Marker=resources[check_tag], **kwargs)
             resource_list.extend(resources[input_tag])
         return resource_list

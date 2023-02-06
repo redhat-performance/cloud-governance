@@ -1,0 +1,67 @@
+pipeline {
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '--rm --network host -u root -v /tmp/cloud_resource_orchestration/:/var/lib/containers --privileged'
+        }
+    }
+    environment {
+        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
+        AWS_ACCESS_KEY_ID_DELETE_PSAP = credentials('cloud-governance-aws-access-key-id-delete-psap')
+        AWS_SECRET_ACCESS_KEY_DELETE_PSAP = credentials('cloud-governance-aws-secret-access-key-delete-psap')
+        AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
+        AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        JIRA_URL = credentials('JIRA_URL')
+        JIRA_USERNAME = credentials('JIRA_USERNAME')
+        JIRA_TOKEN = credentials('JIRA_TOKEN')
+        JIRA_QUEUE = credentials('JIRA_QUEUE')
+        CLOUD_RESOURCE_ORCHESTRATION_INDEX = credentials('cloud-resource-orchestration-index')
+
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+          steps {
+            checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
+        stage('Upload ElasticSearch') {
+            steps {
+                sh 'python3 jenkins/cloud_resource_orchestration/run_cloud_resource_orchestration.py'
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+       always {
+           deleteDir()
+       }
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
+                subject: msg,
+                to: "${contact1}, ${contact2}"
+            }
+        }
+    }
+}
