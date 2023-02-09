@@ -71,12 +71,28 @@ class JiraOperations:
     def get_all_issues_in_progress(self):
         """This method get all issues which are in progress"""
         issues = self.__loop.run_until_complete(self.__jira_object.search_tickets(query={'Status': "'IN PROGRESS'"})).get('issues')
-        jira_ids = []
+        jira_ids = {}
         for issue in issues:
             if '[Clouds]' in issue['fields']['summary']:
                 jira_id = issue.get('key')
-                jira_ids.append(jira_id)
+                description = self.beautify_issue_description(issue['fields']['description'])
+                jira_ids[jira_id] = description.get('Region')
         return jira_ids
+
+    def beautify_issue_description(self, description):
+        """
+        This method beautify the issue description
+        """
+        description = description.split("\n")
+        description_data = {}
+        for index, line in enumerate(description):
+            if line:
+                if ':' in line:
+                    key, value = line.strip().split(':', 1)
+                    description_data[key.strip().replace(' ', '')] = value.strip()
+                else:
+                    description_data[index] = line.strip()
+        return description_data
 
     @logger_time_stamp
     def get_jira_id_sub_tasks(self, jira_id: str, closed: bool = False):
@@ -99,7 +115,7 @@ class JiraOperations:
         cost_estimation = 0
         for sub_task in sub_tasks:
             description = self.get_issue_description(jira_id=sub_task, sub_task=True)
-            cost_estimation += int(description.get('CostEstimation', 0))
+            cost_estimation += float(description.get('CostEstimation', 0))
         return cost_estimation
 
 

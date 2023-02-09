@@ -22,6 +22,7 @@ class MonitorInProgressIssues:
         self.__es_index = self.__environment_variables_dict.get('es_index')
         self.__ec2_monitor_operations = EC2MonitorOperations(region_name=self.__region_name)
         self.__jira_queue = self.__environment_variables_dict.get('JIRA_QUEUE')
+        self.__trails_snapshot_time = self.__environment_variables_dict.get('TRAILS_SNAPSHOT_TIME')
 
     def __update_data_and_close_ticket(self, jira_id: str):
         """
@@ -37,9 +38,10 @@ class MonitorInProgressIssues:
         """
         jira_ids = self.jira_operations.get_all_issues_in_progress()
         es_jira_ids = []
-        for jira_id in jira_ids:
-            if self.__es_upload.elastic_search_operations.verify_elastic_index_doc_id(index=self.__es_index, doc_id=jira_id):
-                es_jira_ids.append(jira_id)
+        for jira_id, region in jira_ids.items():
+            if region == self.__region_name:
+                if self.__es_upload.elastic_search_operations.verify_elastic_index_doc_id(index=self.__es_index, doc_id=jira_id):
+                    es_jira_ids.append(jira_id)
         long_run_jira_ids = []
         long_run_instances = self.__ec2_monitor_operations.get_instances_by_filtering(tag_key_name='JiraId')
         for instance in long_run_instances:
@@ -55,21 +57,34 @@ class MonitorInProgressIssues:
             instance_ids = source.get('instance_ids')
             total_price = 0
             terminated = 0
+            running_days = 0
             for instance_id in instance_ids:
-                if instance_id.get('instance_state') != 'terminated':
-                    last_saved_time = instance_id.get('last_saved_time')
+                if source[instance_id].get('instance_state') != 'terminated':
+                    last_saved_time = datetime.strptime(source[instance_id].get('last_saved_time'), "%Y-%m-%dT%H:%M:%S%z")
+                    launch_time = datetime.strptime(source[instance_id].get('instance_create_time'), "%Y-%m-%dT%H:%M:%S%z")
+                    create_datetime = datetime.strptime(source[instance_id].get('instance_create_time'), "%Y-%m-%dT%H:%M:%S%z")
                     trails = self.__ec2_monitor_operations.get_instance_logs(instance_id, last_saved_time=last_saved_time)
+                    running_days = max(running_days, self.__ec2_monitor_operations.calculate_days(create_datetime))
                     run_hours = self.__ec2_monitor_operations.get_run_hours_from_trails(last_saved_time=last_saved_time, trails=trails,
-                                                                                        launch_time=instance_id.get('instance_create_time'),
-                                                                                        last_instance_state=instance_id.get('instance_state'))
-                    price = self.__ec2_monitor_operations.get_instance_hours_price(instance_type=instance_id.get('instance_type'), run_hours=run_hours)
+                                                                                        launch_time=launch_time,
+                                                                                        last_instance_state=source[instance_id].get('instance_state'), create_datetime=create_datetime,  present_state='terminated')
+                    price = self.__ec2_monitor_operations.get_instance_hours_price(instance_type=source[instance_id].get('instance_type'), run_hours=run_hours)
                     source[instance_id]['total_run_price'] = round(float(source[instance_id]['total_run_price']) + price, 3)
                     source[instance_id]['total_run_hours'] = round(run_hours + float(source[instance_id]['total_run_hours']), 3)
                     source[instance_id]['instance_state'] = 'terminated'
+                    source[instance_id]['last_saved_time'] = self.__trails_snapshot_time
+                    source[instance_id]['instance_running_days'] = self.__ec2_monitor_operations.calculate_days(create_datetime)
                     total_price += price
-                    terminated += 1
-            source['total_run_price'] = total_price
+                terminated += 1
+            source['total_run_price'] += total_price
             source['timestamp'] = datetime.utcnow()
+            if running_days != 0:
+                source['running_days'] = running_days
+            source['remaining_days'] = source['long_run_days'] - running_days
+
             if source.get('remaining_days') == source.get('long_run_days') or terminated == len(instance_ids):
                 self.__update_data_and_close_ticket(jira_id=jira_id)
+                source['jira_id_state'] = 'closed'
+            self.__es_upload.elastic_search_operations.update_elasticsearch_index(index=self.__es_index,
+                                                                                  metadata=source, id=jira_id)
         return terminated_jira_ids

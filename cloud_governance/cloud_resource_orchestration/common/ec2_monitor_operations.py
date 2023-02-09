@@ -99,7 +99,7 @@ class EC2MonitorOperations:
                 prev_instance_state = curr_instance_state
         return processed_trails
 
-    def get_run_hours_from_trails(self, trails: list, last_instance_state: str, create_datetime: datetime, launch_time: datetime, trails_snapshot_time: datetime = environment_variables.environment_variables_dict.get('TRAILS_SNAPSHOT_TIME'), last_saved_time: datetime = None):
+    def get_run_hours_from_trails(self, trails: list, last_instance_state: str, create_datetime: datetime, launch_time: datetime, trails_snapshot_time: datetime = environment_variables.environment_variables_dict.get('TRAILS_SNAPSHOT_TIME'), last_saved_time: datetime = None, present_state: str = ''):
         """
         This method returns the trail hours
         """
@@ -107,7 +107,7 @@ class EC2MonitorOperations:
         tzinfo = launch_time.tzinfo
         run_hours = 0
         if not trails:
-            if last_instance_state != 'stopped':
+            if last_instance_state not in ('stopped', 'terminated'):
                 if last_saved_time:
                     run_hours += self.get_hours_in_two_date_times(time1=last_saved_time, time2=trails_snapshot_time)
                 else:
@@ -115,6 +115,8 @@ class EC2MonitorOperations:
             return run_hours
         start = 0
         end = len(trails) - 1
+        if present_state == 'terminated' and len(trails) == 1:
+            return 0
         if trails[0].get('Key') == 'StopInstances' and trails[len(trails) - 1].get('Key') == 'StopInstances':
             start += 1
             stop_event_time = trails[0].get('Value').astimezone(tzinfo)
