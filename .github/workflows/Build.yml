@@ -158,7 +158,13 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          GOOGLE_APPLICATION_CREDENTIALS_CONTENTS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          GCP_DATABASE_NAME: ${{ GCP_DATABASE_NAME }}
+          GCP_DATABASE_TABLE_NAME: ${{ GCP_DATABASE_TABLE_NAME }}
+          RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
         run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_CONTENTS" > "$RUNNER_PATH/gcp_service.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_PATH/gcp_service.json" >> "$GITHUB_ENV"
           pytest -v tests/integration --cov=cloud_governqance --cov-report=term-missing
           coverage run -m pytest -v tests/integration
           coverage report -m

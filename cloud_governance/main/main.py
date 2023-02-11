@@ -13,6 +13,7 @@ from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_c
     remove_tag_non_cluster_resource, tag_na_resources
 from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
+from cloud_governance.policy.policy_operations.gcp.gcp_policy_runner import GcpPolicyRunner
 from cloud_governance.policy.policy_operations.gitleaks.gitleaks import GitLeaks
 from cloud_governance.policy.policy_operations.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
 from cloud_governance.main.environment_variables import environment_variables
@@ -208,7 +209,7 @@ def main():
         ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
 
     is_cost_explorer_policies_runner = ''
-    if not environment_variables_dict.get('PUBLIC_CLOUD_NAME'):
+    if environment_variables_dict.get('PUBLIC_CLOUD_NAME') == 'AWS':
         cost_explorer_policies_runner = None
         is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
         if is_cost_explorer_policies_runner:
@@ -225,6 +226,13 @@ def main():
     is_cloud_management = False
     if environment_variables_dict.get('MANAGEMENT'):
         is_cloud_management = True
+
+    is_gcp_policy_runner = ''
+    if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'GCP':
+        gcp_cost_policy_runner = None
+        is_gcp_policy_runner = policy in environment_variables_dict.get('cost_policies')
+        if is_gcp_policy_runner:
+            gcp_cost_policy_runner = GcpPolicyRunner()
 
     @logger_time_stamp
     def run_non_cluster_polices_runner():
@@ -257,6 +265,13 @@ def main():
         """
         azure_cost_policy_runner.run()
 
+    @logger_time_stamp
+    def run_gcp_policy_runner():
+        """
+        This method run the gcp policies
+        """
+        gcp_cost_policy_runner.run()
+
     # 1. ELK Uploader
     if upload_data_es:
         input_data = {'es_host': es_host,
@@ -283,6 +298,8 @@ def main():
         run_azure_policy_runner()
     elif is_cloud_management:
         run_cloud_management()
+    elif is_gcp_policy_runner:
+        run_gcp_policy_runner()
     else:
         if not policy:
             logger.exception(f'Missing Policy name: "{policy}"')

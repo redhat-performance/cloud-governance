@@ -10,6 +10,8 @@ elasticsearch-dsl==7.4.0
 google-api-python-client==2.57.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.2
+google-cloud-billing==1.9.1
+google-cloud-bigquery==3.5.0
 ibm_platform_services==0.27.0
 myst-parser==0.17.0
 pandas

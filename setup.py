@@ -53,6 +53,8 @@ setup(
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
         'google-auth-oauthlib==0.5.2',  # google drive
+        'google-cloud-billing==1.9.1',  # google cloud cost
+        'google-cloud-bigquery==3.5.0',  # google cloud cost
         'ibm_platform_services==0.27.0',  # IBM Usage reports
         'myst-parser==0.17.0',  # readthedocs
         'pandas',  # latest: aggregate ec2/ebs cluster data

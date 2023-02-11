@@ -1,0 +1,58 @@
+pipeline {
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        GCP_DATABASE_NAME = credentials('cloud-governance-gcp-database-name')
+        GCP_DATABASE_TABLE_NAME = credentials('cloud-governance-gcp-database-table-name')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+          steps {
+            checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
+        stage('Upload ElasticSearch') {
+            steps {
+                sh 'python3 jenkins/clouds/gcp/daily/cost_reports/run_reports.py'
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+       always {
+           deleteDir()
+       }
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
+                subject: msg,
+                to: "${contact1}, ${contact2}"
+            }
+        }
+    }
+}

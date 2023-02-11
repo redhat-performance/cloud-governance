@@ -73,6 +73,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['end_date'] = EnvironmentVariables.get_env('end_date', '')
         self._environment_variables_dict['granularity'] = EnvironmentVariables.get_env('granularity', 'DAILY')
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags', '{}')
+        self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
 
         # AZURE Credentials
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
@@ -155,6 +156,12 @@ class EnvironmentVariables:
         self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
         self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
         self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT', False)
+
+        # GCP Account
+        self._environment_variables_dict['GCP_DATABASE_NAME'] = EnvironmentVariables.get_env('GCP_DATABASE_NAME')
+        self._environment_variables_dict['GCP_DATABASE_TABLE_NAME'] = EnvironmentVariables.get_env('GCP_DATABASE_TABLE_NAME')
+        if self._environment_variables_dict.get('GCP_DATABASE_TABLE_NAME'):
+            self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'GCP'
 
         self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', True)
         self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('MANAGER_EMAIL_ALERT', True)
