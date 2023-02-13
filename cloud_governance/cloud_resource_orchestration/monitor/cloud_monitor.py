@@ -79,6 +79,7 @@ class CloudMonitor:
         This verify the cloud and run the monitor
         """
         if self.__cloud_name.upper() == "AWS".upper():
+            logger.info(f'Account = {self.__environment_variables_dict.get("account")}, Region = {self.__region}, Monitoring = {self.__monitor}')
             self.aws_cloud_monitor()
 
     def run(self):

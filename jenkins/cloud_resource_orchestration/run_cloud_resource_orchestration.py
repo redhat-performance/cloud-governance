@@ -37,4 +37,4 @@ common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
     envs = list(map(combine_vars, input_vars.items()))
     for region in regions:
-        os.system(f"""podman run --rm --name cloud_resource_orchestration -e MONITOR="long_run" -e AWS_DEFAULT_REGION="{region}" -e policy="cost_billing_reports" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)}  quay.io/ebattat/cloud-governance:latest""")
+        os.system(f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e MONITOR="long_run" -e AWS_DEFAULT_REGION="{region}" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} quay.io/ebattat/cloud-governance:latest""")
