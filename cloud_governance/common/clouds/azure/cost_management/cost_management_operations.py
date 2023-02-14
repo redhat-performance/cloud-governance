@@ -13,8 +13,6 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 class CostManagementOperations:
     """This class for fetching the azure usage and forecast reports"""
 
-    SLEEP_TIME = 60
-
     def __init__(self):
         self.azure_operations = AzureOperations()
 
@@ -77,6 +75,5 @@ class CostManagementOperations:
             result['rows'] = list(row_data.values())
             return result
         except Exception as err:
-            time.sleep(self.SLEEP_TIME)
-            return self.get_forecast(scope=scope, **kwargs)
-        return []
+            logger.info(f'Error raised when fetching the forecasting results {err}')
+            return []
