@@ -29,8 +29,7 @@ es_index_perf = 'cloud-governance-cost-explorer-perf'
 es_index_psap = 'cloud-governance-cost-explorer-psap'
 es_index_perf_scale = 'cloud-governance-cost-explorer-perf-scale'
 es_index_global = 'cloud-governance-cost-explorer-global'
-
-cost_tags = ['ChargeType', 'User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email', 'Environment']
+cost_tags = ['PurchaseType', 'ChargeType', 'User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email', 'Environment']
 
 # Cost Explorer upload to ElasticSearch
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost

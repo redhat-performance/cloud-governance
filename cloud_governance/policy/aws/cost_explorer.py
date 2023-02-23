@@ -60,7 +60,7 @@ class CostExplorer:
                         name = 'vm_import_image'
                 index_id = f'{start_time.lower()}-{account.lower()}-{tag.lower()}-{name.lower()}'
                 if index_id not in data:
-                    upload_data = {tag: name if tag.upper() == 'ChargeType'.upper() else name.upper(),
+                    upload_data = {tag: name if tag.upper() in ('ChargeType'.upper(), 'PurchaseType'.upper()) else name.upper(),
                                    'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
                     if 'global' in self._elastic_upload.es_index:
                         if 'Budget' not in upload_data:
