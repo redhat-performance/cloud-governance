@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
-            args  '--rm --net host -u root -v /tmp/aws/cloud-governance-monthly/:/var/lib/containers --privileged'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
     }
     environment {
