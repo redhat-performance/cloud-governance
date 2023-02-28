@@ -10,11 +10,13 @@ class CostExplorerOperations:
 
     START_DAY = 1
     END_DAY = 31
+    PURCHASE_OPTIONS = ['On Demand Instances', 'Savings Plans', 'Spot Instances', 'Standard Reserved Instances']
 
-    def __init__(self, ce_client = ''):
+    def __init__(self, ce_client=''):
         self.cost_explorer_client = boto3.client('ce') if not ce_client else ce_client
 
-    def get_cost_by_tags(self, tag: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost', start_date: str = '', end_date: str = ''):
+    def get_cost_by_tags(self, tag: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost',
+                         start_date: str = '', end_date: str = ''):
         """
         This method extracts the price by Tag provided
         @return:
@@ -25,11 +27,17 @@ class CostExplorerOperations:
             start_date = str(start_date.strftime('%Y-%m-%d'))
             end_date = str(end_date.strftime('%Y-%m-%d'))
         if tag.upper() == 'ChargeType'.upper():
-            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, GroupBy=[{'Type': 'DIMENSION', 'Key': 'RECORD_TYPE'}])
+            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity,
+                                                    GroupBy=[{'Type': 'DIMENSION', 'Key': 'RECORD_TYPE'}])
+        elif tag.upper() == 'PURCHASETYPE':
+            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity,
+                                                    GroupBy=[{'Type': 'DIMENSION', 'Key': 'PURCHASE_TYPE'}])
         else:
-            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity, cost_metric=cost_metric, GroupBy=[{'Type': 'TAG', 'Key': tag}])
+            return self.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity=granularity,
+                                                    cost_metric=cost_metric, GroupBy=[{'Type': 'TAG', 'Key': tag}])
 
-    def get_cost_and_usage_from_aws(self, start_date: str, end_date: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost', **kwargs):
+    def get_cost_and_usage_from_aws(self, start_date: str, end_date: str, granularity: str = 'DAILY',
+                                    cost_metric: str = 'UnblendedCost', **kwargs):
         """
         This method returns the cost and usage reports
         @param start_date:
@@ -39,10 +47,20 @@ class CostExplorerOperations:
         @param kwargs:
         @return:
         """
-        return self.cost_explorer_client.get_cost_and_usage(TimePeriod={
+        usage_cost = {}
+        response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
             'Start': start_date,
             'End': end_date
         }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
+        usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
+        usage_cost['ResultsByTime'] = response.get('ResultsByTime')
+        while response.get('NextPageToken'):
+            response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
+                'Start': start_date,
+                'End': end_date
+            }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
+            usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
+        return usage_cost
 
     def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):
         """
