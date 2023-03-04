@@ -23,8 +23,7 @@ class CostBillingReports:
         self.__ibm_account = IBMAccount()
         self.__elastic_upload = ElasticUpload()
         self.update_to_gsheet = UploadToGsheet()
-        self.owner = self.__environment_variables_dict.get('COST_CENTER_OWNER')
-        self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__ibm_account.short_account_id)
+        self.cost_center, self.__account_budget, self.__years, self.__owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__ibm_account.short_account_id)
 
     def prepare_es_data(self, month: str, year: str, usage_cost: float = 0, next_invoice: float = 0):
         """This method prepares the data to upload to the es"""
@@ -42,7 +41,7 @@ class CostBillingReports:
             'Month': month,
             'CostCenter': self.cost_center,
             'CloudName': 'IBM Cloud',
-            'Owner': self.owner,
+            'Owner': self.__owner,
             'Forecast': round(next_invoice, 3),
             'Actual': round(usage_cost, 3),
             'filter_date': f'{start_date}-{month.split()[-1]}',
@@ -66,10 +65,17 @@ class CostBillingReports:
         if past_usage_cost:
             es_data = self.prepare_es_data(usage_cost=round(past_usage_cost.get('resources').get('billable_cost'), 3), month=str(last_month), year=str(last_month_year))
             upload_es_data[es_data['index_id']] = es_data
-        for next_month in range(month+1, month+11):
-            new_year = date + relativedelta(month=next_month)
-            es_data = self.prepare_es_data(month=new_year.strftime("%m"), year=str(new_year.year))
-            upload_es_data[es_data['index_id']] = es_data
+        for next_month in range(self.MONTHS):
+            next_month = (next_month + month) % self.MONTHS
+            if next_month != month:
+                c_year = year
+                if len(str(next_month)) != 2:
+                    next_month = f'0{next_month}'
+                if next_month == '00':
+                    year += 1
+                    next_month = str(12)
+                es_data = self.prepare_es_data(month=str(next_month), year=str(c_year))
+                upload_es_data[es_data['index_id']] = es_data
         if upload_es_data:
             self.__elastic_upload.es_upload_data(items=list(upload_es_data.values()), set_index='index_id')
         return list(upload_es_data.values())

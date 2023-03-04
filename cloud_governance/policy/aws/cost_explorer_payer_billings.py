@@ -13,13 +13,14 @@ from cloud_governance.policy.aws.cost_billing_reports import CostBillingReports
 class CostExplorerPayerBillings(CostBillingReports):
     """This class is responsible for generation cost billing report for Budget, Actual, Forecast from the Org level"""
 
+    TEMP_DIR = '/tmp'
+
     def __init__(self):
         super().__init__()
         self.__aws_role = self._environment_variables_dict.get("AWS_ACCOUNT_ROLE")
         self.__access_key, self.__secret_key, self.__session = self.__get_sts_credentials()
         self.__ce_client = boto3.client('ce', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
         self.__cost_explorer_operations = CostExplorerOperations(ce_client=self.__ce_client)
-        self.__cost_center_owner = literal_eval(self._environment_variables_dict.get('COST_CENTER_OWNER'))
         self.__replacement_account = literal_eval(self._environment_variables_dict.get('REPLACE_ACCOUNT_NAME'))
 
     def __get_sts_credentials(self):
@@ -50,10 +51,9 @@ class CostExplorerPayerBillings(CostBillingReports):
                     if name and amount:
                         if name not in data:
                             if cost_center:
-                                acc_cost_center, account_budget, years = self.update_to_gsheet.get_cost_center_budget_details(account_id=name, dir_path='/tmp')
+                                acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=name, dir_path=self.TEMP_DIR)
                                 timestamp = datetime.datetime.strptime(start_time, '%Y-%m-%d')
                                 month = datetime.datetime.strftime(timestamp, "%Y %b")
-                                owner = self.__cost_center_owner.get(str(acc_cost_center)) if self.__cost_center_owner.get(str(acc_cost_center)) else 'Others'
                                 budget = account_budget if start_time.split('-')[0] in years else 0
                                 index_id = f'{start_time}-{name}'
                                 upload_data = {tag: name, 'Actual': round(float(amount), 3), 'start_date': start_time,
@@ -82,8 +82,7 @@ class CostExplorerPayerBillings(CostBillingReports):
         return data
 
     def filter_forecast_data(self, cost_forecast_data: list, cost_usage_data: dict, account_id: str, cost_center: int, account: str):
-        acc_cost_center, account_budget, years = self.update_to_gsheet.get_cost_center_budget_details(account_id=account_id, dir_path='/tmp')
-        owner = self.__cost_center_owner.get(str(acc_cost_center)) if self.__cost_center_owner.get(str(acc_cost_center)) else 'Others'
+        acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=account_id, dir_path=self.TEMP_DIR)
         for cost_forecast in cost_forecast_data:
             start_date = str((cost_forecast.get('TimePeriod').get('Start')))
             start_year = start_date.split('-')[0]
