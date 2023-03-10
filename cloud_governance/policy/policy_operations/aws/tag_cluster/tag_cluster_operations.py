@@ -13,7 +13,7 @@ class TagClusterOperations:
     This class tags AWS resources
     """
 
-    def __init__(self, input_tags: dict,  cluster_name: str,  cluster_prefix: str, region: str, dry_run: str, cluster_only: bool):
+    def __init__(self, region: str, input_tags: dict = None,  cluster_name: str = None,  cluster_prefix: str = None, dry_run: str = None, cluster_only: bool = None):
         self.cluster_only = cluster_only
         self.cluster_prefix = cluster_prefix
         self.utils = Utils(region=region)

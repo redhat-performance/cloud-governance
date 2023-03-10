@@ -1,5 +1,4 @@
 from cloud_governance.common.ldap.ldap_search import LdapSearch
-from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -16,8 +15,12 @@ class MailMessage:
         self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
         self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
         self.__public_cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
+        self.__portal = self.__environment_variables_dict.get('CRO_PORTAL', '')
+        self.__cro_duration_days = self.__environment_variables_dict.get('CRO_DURATION_DAYS')
+        self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
+        self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
 
-    def get_user_display_name(self, user_name: str):
+    def get_user_ldap_details(self, user_name: str):
         """
         This method return user details from ldap
         :param user_name:
@@ -245,54 +248,119 @@ Cloud-governance Team""".strip()
         """.strip()
         return subject, body
 
-    def get_long_run_alert(self, days: int, user: str, jira_id: str):
+    def cro_monitor_alert_message(self, days: int, user: str, ticket_id: str):
         """
-        This method return the LongRun, second Alert Message
+        This method return the CRO Alert Message
+        :param days:
+        :param user:
+        :param ticket_id:
+        :return:
         """
-        subject = f'Cloud LongRun Alert: Expiring in {days} days'
+        ticket_id = ticket_id.split('-')[-1]
+        subject = f'CRO Alert: Expiring in {days} days'
+        user_display_name = self.get_user_ldap_details(user_name=user)
         body = f"""
                 <div>
-                <p>Hi {user},</p>
+                <p>Hi {user_display_name},</p>
                 </div>
                 <div>
-                    <p>This is a message to alert you that in {days} days, the cloud request is expiring.</p>
-                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
-                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target="_blank">{jira_id}</a></p>
-                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
+                    <p>You project budget request (TicketId: {ticket_id}) will be expired in {days} days</p>
+                    <p>You can extend the project duration in the following url {self.__portal} or terminate the instances</p>
+                    <p>Visit the <a href="{self.__portal}">wiki page</a> to get more information</p>
                 </div>
-                <div style="color:gray" class="footer">
-                    <address>
-                        --<br/>
-                        Best Regards,<br/>
-                        Cloud-governance Team<br/>
-                    </address>
-                </div>
+                {self.FOOTER}
 """.strip()
         return subject, body
 
-    def get_long_run_expire_alert(self, user: str, jira_id: str):
+    def cro_cost_over_usage(self, **kwargs):
         """
-        This method return the LongRun, Expire Alert Message
+        This method returns the subject, body for cost over usage
+        :param kwargs:
+        :return:
         """
-        subject = f'LongRun Alert: Expired'
+        cloud_name = kwargs.get('CloudName', 'NA').upper()
+        over_usage_cost = kwargs.get('OverUsageCost', 'NA')
+        full_name = kwargs.get('FullName', '')
+        if not full_name:
+            full_name = kwargs.get('to')
+        user_cost = round(kwargs.get('Cost', 0), 3)
+        subject = f'{cloud_name} Cost Over Usage alert: > {over_usage_cost} $'
+        if user_cost > over_usage_cost:
+            message = f"it's over {over_usage_cost} $."
+        else:
+            message = f"it may over {over_usage_cost} $ in next few days."
         body = f"""
-                <div>
-                <p>Hi {user},</p>
-                </div>
-                <div>
-                    <p>This is a message to alert you that the cloud long run request is expired.</p>
-                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
-                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target=="_blank">{jira_id}</a></p>
-                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
-                </div>
-                <div style="color:gray" class="footer">
-                    <address>
-                        --<br/>
-                        Best Regards,<br/>
-                        Cloud-governance Team<br/>
-                    </address>
-                </div>
-        """.strip()
+        <div>
+        Hi {full_name},
+        </div><br/>
+        <div>
+            Your {cloud_name} cost usage in the last {self.__cro_duration_days} days is {user_cost}$ and {message}<br/>
+            You must open the project ticket in the following <a href="{self.__portal}">Link</a>.<br />
+            After submitting a ticket, you must add Tag (TicketID:#) to every active resource that is related to the project ticket.<br/>
+            
+            If you have any questions, please let us know in slack channel #perf-dept-public-clouds
+        <div><br/><br/>
+        {self.FOOTER}
+"""
+        return subject, body
+
+    def cro_request_for_manager_approval(self, manager: str, user: str, cloud_name: str):
+        """
+        This method returns the message for manager, regarding user approval
+        :param manager:
+        :param user:
+        :param cloud_name:
+        :return:
+        """
+        subject = 'CRO Alert: Required budget approval'
+        manager_full_name = self.get_user_ldap_details(user_name=manager)
+        user_full_name = self.get_user_ldap_details(user_name=user)
+        body = f"""
+            <div>Hi {manager_full_name},</div><br />
+            <div>{user_full_name} is waiting for your project cloud budget approval<br />
+            Please approve the request in the following url< a href="{self.__portal}">{self.__portal}</a></div><br />
+            {self.FOOTER}
+        """
+        return subject, body
+
+    def cro_send_user_alert_to_add_tags(self, user: str, ticket_id: str):
+        """
+        This method return the subject, body for adding tags
+        :param user:
+        :param ticket_id:
+        :return:
+        """
+        subject = 'CRO Alert: Required addition of TicketId tag'
+        ticket_id = ticket_id.split('-')[-1]
+        user_display_name = self.get_user_ldap_details(user_name=user)
+        body = f"""
+        <div>Hi {user_display_name},</div><br />
+        <p>Your project budget request ( TicketId: # ) was approved by your manager.</p><br />
+        <p>Please tag your instances with tag TicketId: {ticket_id}</p>
+        </div><br />
+        {self.FOOTER}
+        """
+        return subject, body
+
+    def cro_send_closed_alert(self, user: str, es_data: dict, ticket_id: str):
+        """
+        This method send cro ticket close alert
+        :param user:
+        :param es_data:
+        :param ticket_id:
+        :return:
+        """
+        subject = 'CRO Alert: Closing ticket'
+        ticket_id = ticket_id.split('-')[-1]
+        user_full_name = self.get_user_ldap_details(user_name=user)
+        body = f"""
+        <div>Hi {user_full_name},</div><br />
+            <div>
+            Your cloud project request ( TicketId:{ticket_id} ) duration expired and the ticket auto closed.<br />
+            You can find the summary in <a href="{self.__portal}/wikipage">Portal</a>.<br />
+            </div><br /><br/>
+        {self.FOOTER}
+        """
         return subject, body
 
     def filter_resources_on_days(self, resources: dict):
@@ -343,7 +411,7 @@ Cloud-governance Team""".strip()
         :param user_resources:
         :return:
         """
-        display_name = self.get_user_display_name(user_name=user)
+        display_name = self.get_user_ldap_details(user_name=user)
         resources_by_days = self.filter_resources_on_days(resources=user_resources)
         table_data = self.get_data_in_html_table_format(resources=resources_by_days)
         display_name = display_name if display_name else user

@@ -1,5 +1,7 @@
 import argparse
 import os
+
+import tempfile
 from ast import literal_eval
 
 import boto3
@@ -35,17 +37,15 @@ class EnvironmentVariables:
         ##################################################################################################
         # dynamic parameters - configure for local run
         # parameters for running policies
-        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper()
+        self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper().strip()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
-
         self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
         self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS', True)
         if not self._environment_variables_dict['AWS_DEFAULT_REGION']:
             self._environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
-
+        self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
         if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper()
-
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
         self._environment_variables_dict['aws_non_cluster_policies'] = ['ec2_idle', 'ec2_stop', 'ec2_run', 'ebs_in_use',
@@ -158,6 +158,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['JIRA_PASSWORD'] = EnvironmentVariables.get_env('JIRA_PASSWORD', '')
 
         # Cloud Resource Orchestration
+        self._environment_variables_dict['CRO_PORTAL'] = EnvironmentVariables.get_env('CRO_PORTAL', '')
         self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
         self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
         self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT', False)
@@ -182,6 +183,17 @@ class EnvironmentVariables:
         self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
         if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
+        # CRO -- Cloud Resource Orch
+        self._environment_variables_dict['CLOUD_RESOURCE_ORCHESTRATION'] = EnvironmentVariables.get_boolean_from_environment('CLOUD_RESOURCE_ORCHESTRATION', False)
+        self._environment_variables_dict['USER_COST_INDEX'] = EnvironmentVariables.get_env('USER_COST_INDEX', '')
+        self._environment_variables_dict['CRO_ES_INDEX'] = EnvironmentVariables.get_env('CRO_ES_INDEX', 'cloud-governance-resource-orchestration')
+        self._environment_variables_dict['CRO_COST_OVER_USAGE'] = int(EnvironmentVariables.get_env('CRO_COST_OVER_USAGE', '500'))
+        self._environment_variables_dict['CRO_DEFAULT_ADMINS'] = literal_eval(EnvironmentVariables.get_env('CRO_DEFAULT_ADMINS', "[]"))
+        self._environment_variables_dict['CRO_DURATION_DAYS'] = int(EnvironmentVariables.get_env('CRO_DURATION_DAYS', '30'))
+        self._environment_variables_dict['RUN_ACTIVE_REGIONS'] = EnvironmentVariables.get_boolean_from_environment('RUN_ACTIVE_REGIONS', False)
+        self._environment_variables_dict['CRO_RESOURCE_TAG_NAME'] = EnvironmentVariables.get_env('CRO_RESOURCE_TAG_NAME', 'TicketId')
+        self._environment_variables_dict['CRO_REPLACED_USERNAMES'] = literal_eval(EnvironmentVariables.get_env('CRO_REPLACED_USERNAMES', "['osdCcsAdmin']"))
+        self._environment_variables_dict['CE_PAYER_INDEX'] = EnvironmentVariables.get_env('CE_PAYER_INDEX', '')
 
 
     @staticmethod
@@ -248,7 +260,6 @@ class EnvironmentVariables:
 
 
 environment_variables = EnvironmentVariables()
-
 # env vars examples
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
