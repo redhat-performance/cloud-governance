@@ -54,12 +54,14 @@ class CostExplorerOperations:
         }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
         usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
         usage_cost['ResultsByTime'] = response.get('ResultsByTime')
+        usage_cost['DimensionValueAttributes'] = response.get('DimensionValueAttributes')
         while response.get('NextPageToken'):
             response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
                 'Start': start_date,
                 'End': end_date
             }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
             usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
+            usage_cost['DimensionValueAttributes'].extend(response.get('DimensionValueAttributes'))
         return usage_cost
 
     def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):

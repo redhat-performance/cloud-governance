@@ -17,9 +17,6 @@ class CostBillingReports:
     This class is responsible for generation cost billing report for Budget, Actual, Forecast
     """
 
-    COST_CENTER_OWNER = 'Shai'
-    COST_CENTER_OWNER_OTHERS = 'Others'
-
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__total_account = self.__environment_variables_dict.get('TOTAL_ACCOUNTS', '')
@@ -29,7 +26,7 @@ class CostBillingReports:
         self.gdrive_operations = GoogleDriveOperations()
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID')
         self.update_to_gsheet = UploadToGsheet()
-        self.__cost_center, self.__allocated_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.azure_operations.subscription_id, dir_path='/tmp')
+        self.__cost_center, self.__allocated_budget, self.__years, self.__owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.azure_operations.subscription_id, dir_path='/tmp')
         self.__common_data = self.get_common_data()
 
     def get_common_data(self):
@@ -44,7 +41,7 @@ class CostBillingReports:
         upload_data['AllocatedBudget'] = 0
         upload_data['CostCenter'] = int(self.__cost_center)
         upload_data['CloudName'] = self.azure_operations.cloud_name
-        upload_data['Owner'] = self.COST_CENTER_OWNER_OTHERS
+        upload_data['Owner'] = self.__owner
         return upload_data
 
     @logger_time_stamp
@@ -66,12 +63,12 @@ class CostBillingReports:
         if cost_center > 0:
             common_data['CostCenter'] = cost_center
         if subscription_id:
-            cost_center, allocated_budget, years = self.update_to_gsheet.get_cost_center_budget_details(account_id=subscription_id, dir_path='/tmp')
+            cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=subscription_id, dir_path='/tmp')
             if cost_center:
                 common_data['CostCenter'] = int(cost_center)
-                common_data['Owner'] = self.COST_CENTER_OWNER
+                common_data['Owner'] = owner
             else:
-                common_data['Owner'] = self.COST_CENTER_OWNER_OTHERS
+                common_data['Owner'] = owner
         else:
             allocated_budget, years = self.__allocated_budget, self.__years
         for index, item in enumerate(cost_data_rows):
@@ -87,12 +84,12 @@ class CostBillingReports:
                     common_data['Account'] = item[key]
                 elif column.get('name') == 'SubscriptionId':
                     common_data['AccountId'] = item[key]
-                    cost_center, allocated_budget, years = self.update_to_gsheet.get_cost_center_budget_details(account_id=item[key], dir_path='/tmp')
+                    cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=item[key], dir_path='/tmp')
                     if cost_center:
                         common_data['CostCenter'] = int(cost_center)
-                        common_data['Owner'] = self.COST_CENTER_OWNER
+                        common_data['Owner'] = owner
                     else:
-                        common_data['Owner'] = self.COST_CENTER_OWNER_OTHERS
+                        common_data['Owner'] = owner
                 else:
                     if column.get('type') == 'Datetime':
                         start_date = item[key].split('T')[0]

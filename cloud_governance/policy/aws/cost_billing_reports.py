@@ -35,7 +35,7 @@ class CostBillingReports:
             self.__gsheet_id = self._environment_variables_dict.get('SPREADSHEET_ID', '')
             self.gdrive_operations = GoogleDriveOperations()
             self.update_to_gsheet = UploadToGsheet()
-            self.cost_center, self.__account_budget, self.__years = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
+            self.cost_center, self.__account_budget, self.__years, self.__owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.__account_id)
         except:
             pass
 

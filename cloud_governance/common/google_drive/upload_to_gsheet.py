@@ -38,8 +38,8 @@ class UploadToGsheet:
                 orient='records')
             if account_row:
                 return account_row[0].get('CostCenter', 0), round(
-                    float(account_row[0].get('Budget', '0').replace(',', '')), 0), str(account_row[0].get('Year'))
-            return 0, 0, ''
+                    float(account_row[0].get('Budget', '0').replace(',', '')), 0), str(account_row[0].get('Year')), account_row[0].get('Owner')
+            return 0, 0, '', 'Others'
 
     def format_for_updating_the_cells(self, update_data: list, gsheet_data: pd, sheet_name: str, doc_id: str, doc_id2: str = ''):
         """

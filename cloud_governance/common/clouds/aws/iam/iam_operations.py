@@ -45,7 +45,9 @@ class IAMOperations:
         This method returns the aws account alias and cloud name
         @return:
         """
-        account_alias = self.iam_client.list_account_aliases()['AccountAliases']
-        if account_alias:
-            return account_alias[0].upper(), 'AwsCloud'.upper()
-        return os.environ.get('account', '').upper(), 'AwsCloud'.upper()
+        try:
+            account_alias = self.iam_client.list_account_aliases()['AccountAliases']
+            if account_alias:
+                return account_alias[0].upper(), 'AwsCloud'.upper()
+        except:
+            return os.environ.get('account', '').upper(), 'AwsCloud'.upper()
