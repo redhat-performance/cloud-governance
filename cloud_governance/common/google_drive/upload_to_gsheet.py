@@ -41,6 +41,21 @@ class UploadToGsheet:
                     float(account_row[0].get('Budget', '0').replace(',', '')), 0), str(account_row[0].get('Year')), account_row[0].get('Owner')
             return 0, 0, '', 'Others'
 
+    def get_monthly_spa(self, month_name: str, dir_path: str = ''):
+        """This method gets the monthly savings plan amortization"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sheet_name = 'ASP'
+            dirtectory = dir_path if dir_path else tmp_dir
+            file_path = f'{tmp_dir}/{sheet_name}.csv' if not dir_path else f'{dir_path}/{sheet_name}.csv'
+            if not os.path.exists(file_path):
+                self.gsheet_operations.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=sheet_name, file_path=dirtectory)
+            accounts_df = pd.read_csv(file_path)
+            records = accounts_df.to_dict(orient='records')
+            for record in records:
+                if record.get('Month').lower() == month_name.lower():
+                    return float(record.get('Total'))
+            return 0
+
     def format_for_updating_the_cells(self, update_data: list, gsheet_data: pd, sheet_name: str, doc_id: str, doc_id2: str = ''):
         """
         This method format the data to be updated to GSheet and update in the GSheet
