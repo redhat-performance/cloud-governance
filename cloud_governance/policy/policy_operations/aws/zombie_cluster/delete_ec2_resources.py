@@ -165,8 +165,9 @@ class DeleteEC2Resources:
     @typeguard.typechecked
     def __delete_volume(self, resource_id: str):
         try:
-            self.client.delete_volume(VolumeId=resource_id)
-            logger.info(f'delete_volume: {resource_id}')
+            logger.info(f'Cluster volumes are handled by ebs_unattached')
+            # self.client.delete_volume(VolumeId=resource_id)
+            # logger.info(f'delete_volume: {resource_id}')
         except Exception as err:
             logger.exception(f'Cannot delete_volume: {resource_id}, {err}')
 

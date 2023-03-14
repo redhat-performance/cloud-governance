@@ -32,6 +32,7 @@ class ZombieClusterCommonMethods:
         self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self._special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
         self._account_admin = self.__environment_variables_dict.get('account_admin', '')
+        self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT') if self.__environment_variables_dict.get('EMAIL_ALERT') else False
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self._mail = Postfix()
         self._mail_description = MailMessage()
@@ -263,15 +264,16 @@ class ZombieClusterCommonMethods:
         @param delete_data:
         @return:
         """
-        for cluster_tag, resource_ids in notify_data.items():
-            self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
-            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
-                              days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
-                              resources=resource_ids, message_type='notification')
-        for cluster_tag, resource_ids in delete_data.items():
-            self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
-            self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
-                              days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids, message_type='delete')
+        if self.__email_alert:
+            for cluster_tag, resource_ids in notify_data.items():
+                self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
+                self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
+                                  days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
+                                  resources=resource_ids, message_type='notification')
+            for cluster_tag, resource_ids in delete_data.items():
+                self.update_resource_tags(tags=cluster_data[cluster_tag], tag_name='Name', tag_value=cluster_tag)
+                self.trigger_mail(tags=cluster_data[cluster_tag], resource_id=cluster_tag,
+                                  days=self.DAYS_TO_DELETE_RESOURCE, resources=resource_ids, message_type='delete')
 
     @logger_time_stamp
     def _check_zombie_cluster_deleted_days(self, resources: dict, cluster_left_out_days: dict, zombie: str, cluster_tag: str):
