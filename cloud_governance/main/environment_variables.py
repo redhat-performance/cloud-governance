@@ -156,7 +156,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
         self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT', False)
 
-        self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', False)
+        self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', True)
+        self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('MANAGER_EMAIL_ALERT', True)
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):

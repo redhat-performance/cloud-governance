@@ -49,6 +49,7 @@ class NonClusterZombiePolicy:
         self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
         self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT') if self.__environment_variables_dict.get('EMAIL_ALERT') else False
+        self.__manager_email_alert = self.__environment_variables_dict.get('MANAGER_EMAIL_ALERT')
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
         self._es_upload = ElasticUpload()
         self.resource_pricing = ResourcesPricing()
@@ -174,7 +175,7 @@ class NonClusterZombiePolicy:
                     resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self._ldap.get_user_details(user_name=to)
-                cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+                cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com'] if self.__manager_email_alert else []
                 name = to
                 if ldap_data:
                     name = ldap_data.get('displayName')
@@ -186,7 +187,8 @@ class NonClusterZombiePolicy:
                 if not kwargs.get('admins'):
                     self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
                 else:
-                    kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
+                    if self.__manager_email_alert:
+                        kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
                     self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
             except Exception as err:
                 logger.info(err)
