@@ -137,6 +137,8 @@ class EnvironmentVariables:
 
         # AWS Top Acconut
         self._environment_variables_dict['AWS_ACCOUNT_ROLE'] = EnvironmentVariables.get_env('AWS_ACCOUNT_ROLE', '')
+        self._environment_variables_dict['PAYER_SUPPORT_FEE_CREDIT'] = EnvironmentVariables.get_env('PAYER_SUPPORT_FEE_CREDIT', 0)
+        self._environment_variables_dict['TEMPORARY_DIR'] = EnvironmentVariables.get_env('TEMPORARY_DIR', '/tmp')
         self._environment_variables_dict['COST_CENTER_OWNER'] = EnvironmentVariables.get_env('COST_CENTER_OWNER', '{}')
 
         # Jira env parameters

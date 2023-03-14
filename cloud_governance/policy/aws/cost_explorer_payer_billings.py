@@ -3,6 +3,8 @@ import datetime
 from ast import literal_eval
 
 import boto3
+from dateutil.relativedelta import relativedelta
+
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 from cloud_governance.common.logger.init_logger import logger
@@ -11,9 +13,11 @@ from cloud_governance.policy.aws.cost_billing_reports import CostBillingReports
 
 
 class CostExplorerPayerBillings(CostBillingReports):
-    """This class is responsible for generation cost billing report for Budget, Actual, Forecast from the Org level"""
-
-    TEMP_DIR = '/tmp'
+    """
+    This class is responsible for generation cost billing report for Budget, Actual, Forecast from the Org level
+    Monthly savings Plan Amortization: (linked_account_total_cost/payer_account_total_cost) * monthly_savings_plan_cost
+    Monthly_support_fee: (monthly_support_fee - (monthly_support_fee * discount ) ) * (linked_account_total_cost/payer_account_total_cost)
+    """
 
     def __init__(self):
         super().__init__()
@@ -22,6 +26,10 @@ class CostExplorerPayerBillings(CostBillingReports):
         self.__ce_client = boto3.client('ce', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
         self.__cost_explorer_operations = CostExplorerOperations(ce_client=self.__ce_client)
         self.__replacement_account = literal_eval(self._environment_variables_dict.get('REPLACE_ACCOUNT_NAME'))
+        self.__savings_discounts = float(self._environment_variables_dict.get('PAYER_SUPPORT_FEE_CREDIT', 0))
+        self.__monthly_cost_for_spa_calc = {}
+        self.__monthly_cost_for_support_fee = {}
+        self.__temporary_dir = self._environment_variables_dict.get('TEMPORARY_DIR', '')
 
     def __get_sts_credentials(self):
         """This method returns the temporary credentials from the sts service"""
@@ -51,9 +59,11 @@ class CostExplorerPayerBillings(CostBillingReports):
                     if name and amount:
                         if name not in data:
                             if cost_center:
-                                acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=name, dir_path=self.TEMP_DIR)
+                                acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=name, dir_path=self.__temporary_dir)
                                 timestamp = datetime.datetime.strptime(start_time, '%Y-%m-%d')
                                 month = datetime.datetime.strftime(timestamp, "%Y %b")
+                                month_full_name = datetime.datetime.strftime(timestamp, "%B")
+                                payer_monthly_savings_plan = self.update_to_gsheet.get_monthly_spa(month_name=month_full_name, dir_path=self.__temporary_dir)
                                 budget = account_budget if start_time.split('-')[0] in years else 0
                                 index_id = f'{start_time}-{name}'
                                 upload_data = {tag: name, 'Actual': round(float(amount), 3), 'start_date': start_time,
@@ -62,8 +72,11 @@ class CostExplorerPayerBillings(CostBillingReports):
                                                'filter_date': f'{start_time}-{month.split()[-1]}',
                                                'Budget': round(budget / self.MONTHS, 3), 'CostCenter': cost_center,
                                                'AllocatedBudget': budget,
-                                               "Owner": owner
+                                               "Owner": owner,
+                                               'SavingsPlanCost': (float(amount) / float(self.__monthly_cost_for_spa_calc.get(start_time))) * payer_monthly_savings_plan,
+                                               'TotalPercentage': (float(amount) / float(self.__monthly_cost_for_spa_calc.get(start_time)))
                                                }
+                                upload_data['PremiumSupportFee'] = (float(self.__monthly_cost_for_support_fee.get(start_time)) - (float(self.__monthly_cost_for_support_fee.get(start_time)) * self.__savings_discounts)) * upload_data['TotalPercentage'],
                             else:
                                 index_id = f'{start_time}-{name}'
                                 upload_data = {tag: name, 'Actual': round(float(amount), 3)}
@@ -82,19 +95,28 @@ class CostExplorerPayerBillings(CostBillingReports):
         return data
 
     def filter_forecast_data(self, cost_forecast_data: list, cost_usage_data: dict, account_id: str, cost_center: int, account: str):
-        acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=account_id, dir_path=self.TEMP_DIR)
+        acc_cost_center, account_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=account_id, dir_path=self.__temporary_dir)
         for cost_forecast in cost_forecast_data:
             start_date = str((cost_forecast.get('TimePeriod').get('Start')))
             start_year = start_date.split('-')[0]
             cost = round(float(cost_forecast.get('MeanValue')), 3)
             index = f'{start_date}-{account_id}'
+            month_full_name = datetime.datetime.strftime(datetime.datetime.strptime(start_date, '%Y-%m-%d'), "%B")
+            total_percentage = (cost / float(self.__monthly_cost_for_spa_calc.get(start_date)))
+            payer_monthly_savings_plan = self.update_to_gsheet.get_monthly_spa(month_name=month_full_name, dir_path=self.__temporary_dir)
             if index in cost_usage_data[account]:
                 cost_usage_data[account][index]['Forecast'] = cost
+                cost_usage_data[account][index]['TotalPercentage'] = total_percentage
+                cost_usage_data[account][index]['SavingsPlanCost'] = total_percentage * payer_monthly_savings_plan
+                cost_usage_data[account][index]['PremiumSupportFee'] = total_percentage * (float(self.__monthly_cost_for_support_fee.get(start_date)) - (float(self.__monthly_cost_for_support_fee.get(start_date)) * self.__savings_discounts))
             else:
                 data = {}
                 data['AccountId'] = account_id
                 data['Actual'] = 0
                 data['Forecast'] = cost
+                data['TotalPercentage'] = total_percentage
+                data['SavingsPlanCost'] = total_percentage * payer_monthly_savings_plan
+                data['PremiumSupportFee'] = total_percentage * (float(self.__monthly_cost_for_support_fee.get(start_date)) - (float(self.__monthly_cost_for_support_fee.get(start_date)) * self.__savings_discounts))
                 data['Account'] = account
                 data['start_date'] = str((cost_forecast.get('TimePeriod').get('Start')))
                 data['index_id'] = f"""{data['start_date']}-{data['Account'].lower()}"""
@@ -124,8 +146,8 @@ class CostExplorerPayerBillings(CostBillingReports):
             try:
                 cost_forecast_data = self.__cost_explorer_operations.get_cost_forecast(start_date=start_date, end_date=end_date, granularity=self.GRANULARITY, cost_metric=self.COST_METRIC, Filter={'Dimensions': {'Key': 'LINKED_ACCOUNT', 'Values': [account_id]}})
                 self.filter_forecast_data(cost_forecast_data=cost_forecast_data['ForecastResultsByTime'], cost_center=cost_center, account=account, account_id=account_id, cost_usage_data=linked_account_usage)
-            except:
-                logger.info(f'No Data to get forecast: {account_id}: {account}')
+            except Exception as err:
+                logger.info(f'No Data to get forecast: {account_id}: {account}, {err}')
 
     @logger_time_stamp
     def get_cost_centers(self):
@@ -162,8 +184,43 @@ class CostExplorerPayerBillings(CostBillingReports):
                 monthly_account_cost.append(cost)
             self.elastic_upload.es_upload_data(items=monthly_account_cost, set_index='index_id')
 
+    def filter_cost_details_for_sp(self, total_cost: list):
+        """"This method filter the account total cost"""
+        results = {}
+        for row in total_cost:
+            start_time = row.get('TimePeriod').get('Start')
+            if row.get('MeanValue'):
+                cost = round(float(row.get('MeanValue')), 3)
+            else:
+                cost = round(float(row.get('Total').get('UnblendedCost').get('Amount')), 3)
+            results[start_time] = cost
+        return results
+
+    def get_monthly_cost_details(self, start_date: datetime = None, end_date: datetime = None):
+        """This method list the savings plan details"""
+        current_date = datetime.datetime.utcnow()
+        if not start_date and not end_date:
+            end_date = (current_date.replace(day=1) - datetime.timedelta(days=1)).date()
+            start_date = end_date.replace(day=1)
+            end_date = end_date + datetime.timedelta(days=1)
+        payer_cost_response = self.__cost_explorer_operations.get_cost_and_usage_from_aws(start_date=str(start_date), end_date=str(end_date), granularity='MONTHLY', cost_metric=self.COST_METRIC, Filter={'Not': {'Dimensions': {'Key': 'RECORD_TYPE', 'Values': ['Support', 'Refund', 'Credit']}}})
+        payer_support_fee = self.__cost_explorer_operations.get_cost_and_usage_from_aws(start_date=str(start_date), end_date=str(end_date), granularity='MONTHLY', cost_metric=self.COST_METRIC, Filter={'Dimensions': {'Key': 'RECORD_TYPE', 'Values': ['Support']}})
+        filtered_payer_cost = self.filter_cost_details_for_sp(payer_cost_response.get('ResultsByTime'))
+        filtered_support_fee = self.filter_cost_details_for_sp(payer_support_fee.get('ResultsByTime'))
+        self.__monthly_cost_for_spa_calc = filtered_payer_cost
+        self.__monthly_cost_for_support_fee.update(filtered_support_fee)
+        start_date = current_date.date()
+        end_date = start_date + datetime.timedelta(days=360)
+        forecast_response = self.__cost_explorer_operations.get_cost_forecast(start_date=str(start_date), end_date=str(end_date), granularity=self.GRANULARITY, cost_metric=self.COST_METRIC, Filter={'Not': {'Dimensions': {'Key': 'RECORD_TYPE', 'Values': ['Support', 'Refund', 'Credit']}}})
+        payer_forecast_support_fee = self.__cost_explorer_operations.get_cost_forecast(start_date=str(start_date), end_date=str(end_date), granularity=self.GRANULARITY, cost_metric=self.COST_METRIC, Filter={'Dimensions': {'Key': 'RECORD_TYPE', 'Values': ['Support']}})
+        filtered_payer_forecast = self.filter_cost_details_for_sp(forecast_response.get('ForecastResultsByTime'))
+        filtered_payer_support_forecast = self.filter_cost_details_for_sp(payer_forecast_support_fee.get('ForecastResultsByTime'))
+        self.__monthly_cost_for_spa_calc.update(filtered_payer_forecast)
+        self.__monthly_cost_for_support_fee.update(filtered_payer_support_forecast)
+
     def run(self):
         """
         This method run the methods
         """
+        self.get_monthly_cost_details()
         self.get_linked_accounts_usage()
