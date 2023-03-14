@@ -203,6 +203,7 @@ def test_delete_ec2_elastic_load_balancer_v2():
     assert not EC2Operations(region_name).find_load_balancer_v2(elb_name='test-load-balancer-v2')
 
 
+@pytest.mark.skip(reason="Handled by ebs_unattached")
 @mock_ec2
 def test_delete_ebs_volume():
     """

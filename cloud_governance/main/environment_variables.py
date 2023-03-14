@@ -1,6 +1,8 @@
+import argparse
 import os
 
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
+from cloud_governance.main.environment_variables_exceptions import ParseFailed
 
 
 class EnvironmentVariables:
@@ -80,7 +82,7 @@ class EnvironmentVariables:
         if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID']\
                 and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'
-        self._environment_variables_dict['TOTAL_ACCOUNTS'] = bool(EnvironmentVariables.get_env('TOTAL_ACCOUNTS', ''))
+        self._environment_variables_dict['TOTAL_ACCOUNTS'] = EnvironmentVariables.get_boolean_from_environment('TOTAL_ACCOUNTS', False)
 
         # IBM env vars
         self._environment_variables_dict['IBM_ACCOUNT_ID'] = EnvironmentVariables.get_env('IBM_ACCOUNT_ID', '')
@@ -98,7 +100,8 @@ class EnvironmentVariables:
 
         # Common env vars
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')
-        self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_env('FORCE_DELETE', False)
+        if str(EnvironmentVariables.get_env('FORCE_DELETE', 'False')).lower() == 'False'.lower():
+            self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment('FORCE_DELETE', False)
         self._environment_variables_dict['policy_output'] = EnvironmentVariables.get_env('policy_output', '')
         self._environment_variables_dict['bucket'] = EnvironmentVariables.get_env('bucket', '')
         self._environment_variables_dict['file_path'] = EnvironmentVariables.get_env('file_path', '')
@@ -151,11 +154,50 @@ class EnvironmentVariables:
         # Cloud Resource Orchestration
         self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
         self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
-        self._environment_variables_dict['MANAGEMENT'] = bool(EnvironmentVariables.get_env('MANAGEMENT', False))
+        self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT', False)
+
+        self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', False)
 
     @staticmethod
-    def get_env(var: str, defval: any = ''):
-        return os.environ.get(var, defval)
+    def to_bool(arg, def_val: bool = None):
+        if isinstance(arg, bool):
+            return arg
+        if isinstance(arg, (int, float)):
+            return arg != 0
+        if isinstance(arg, str):
+            arg = arg.lower()
+            if arg == 'true' or arg == 'yes':
+                return True
+            elif arg == 'false' or arg == 'no':
+                return False
+            try:
+                arg1 = int(arg)
+                return arg1 != 0
+            except Exception:
+                pass
+        if def_val is not None:
+            return def_val
+        raise ParseFailed(f'Cannot parse {arg} as a boolean value')
+
+    @staticmethod
+    def get_env(var: str, defval=''):
+        lcvar = var.lower()
+        dashvar = lcvar.replace('_', '-')
+        parser = argparse.ArgumentParser(description='Run CloudGovernance', allow_abbrev=False)
+        if lcvar == dashvar:
+            parser.add_argument(f"--{lcvar}", default=os.environ.get(var, defval), type=str, metavar='String', help=var)
+        else:
+            parser.add_argument(f"--{lcvar}", f"--{dashvar}", default=os.environ.get(var, defval), type=str,
+                                metavar='String', help=var)
+        args, ignore = parser.parse_known_args()
+        if hasattr(args, lcvar):
+            return getattr(args, lcvar)
+        else:
+            return os.environ.get(var, defval)
+
+    @staticmethod
+    def get_boolean_from_environment(var: str, defval: bool):
+        return EnvironmentVariables.to_bool(EnvironmentVariables.get_env(var), defval)
 
     @property
     def environment_variables_dict(self):
