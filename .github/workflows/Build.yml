@@ -167,6 +167,7 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
           pytest -v tests/integration --cov=cloud_governqance --cov-report=term-missing
           coverage run -m pytest -v tests/integration
           coverage report -m
