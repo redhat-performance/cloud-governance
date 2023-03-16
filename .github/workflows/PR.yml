@@ -149,8 +149,6 @@ jobs:
       - name: Set GCP credentials for pytest
         env:
           GOOGLE_APPLICATION_CREDENTIALS_CONTENTS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          GCP_DATABASE_NAME: ${{ secrets.GCP_DATABASE_NAME }}
-          GCP_DATABASE_TABLE_NAME: ${{ secrets.GCP_DATABASE_TABLE_NAME }}
           RUNNER_PATH: ${{ secrets.RUNNER_PATH }}
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_CONTENTS" > "$RUNNER_PATH/gcp_service.json"
@@ -165,6 +163,8 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          GCP_DATABASE_NAME: ${{ secrets.GCP_DATABASE_NAME }}
+          GCP_DATABASE_TABLE_NAME: ${{ secrets.GCP_DATABASE_TABLE_NAME }}
         run: |
           python -m pytest -v tests/integration
 
