@@ -230,6 +230,7 @@ jobs:
       - name: Install dependencies
         run: |
           # ldap requirements
+          sudo apt update -y
           sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov

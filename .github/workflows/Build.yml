@@ -263,6 +263,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           # ldap requirements
+          sudo apt update -y
           sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
           echo '⌛ Wait till package will be updated in PyPI'
           # Verfiy and wait till latest cloud-governance version will be updated in Pypi (timeout 900 seconds)
