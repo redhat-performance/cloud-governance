@@ -101,8 +101,7 @@ class EnvironmentVariables:
 
         # Common env vars
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')
-        if str(EnvironmentVariables.get_env('FORCE_DELETE', 'False')).lower() == 'False'.lower():
-            self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment('FORCE_DELETE', False)
+        self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment('FORCE_DELETE', False)
         self._environment_variables_dict['policy_output'] = EnvironmentVariables.get_env('policy_output', '')
         self._environment_variables_dict['bucket'] = EnvironmentVariables.get_env('bucket', '')
         self._environment_variables_dict['file_path'] = EnvironmentVariables.get_env('file_path', '')
