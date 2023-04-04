@@ -17,7 +17,6 @@ pipeline {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
-        contact3 = "hhalbfin@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -32,7 +31,7 @@ pipeline {
         }
         stage('Run Tagging Cluster & Non-Cluster') {
             steps {
-                 sh 'python3 jenkins/poc/haim/run_policies.py'
+                 sh 'python3 jenkins/poc/haim/hourly/run_policies.py'
             }
         }
         stage('Finalize Cleanup') {
