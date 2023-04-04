@@ -2,8 +2,8 @@
 import os
 
 
-AWS_ACCESS_KEY_ID_APPENG = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
-AWS_SECRET_ACCESS_KEY_APPENG = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
+AWS_ACCESS_KEY_ID_APPENG = os.environ['AWS_ACCESS_KEY_ID_APPENG']
+AWS_SECRET_ACCESS_KEY_APPENG = os.environ['AWS_SECRET_ACCESS_KEY_APPENG']
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
@@ -40,8 +40,8 @@ os.system(f"""echo "Running the CloudGovernance policies" """)
 for region in regions:
     for policy in run_policies:
         if policy in ('empty_roles', 's3_inactive') and region == 'us-east-1':
-            os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e account="APPENG" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{BUCKET_APPENG}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+            os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="APPENG" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{BUCKET_APPENG}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
         else:
-            os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e account="APPENG" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{BUCKET_APPENG}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+            os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="APPENG" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{BUCKET_APPENG}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
 
