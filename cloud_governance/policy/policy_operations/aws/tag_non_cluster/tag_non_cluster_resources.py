@@ -36,7 +36,7 @@ class TagNonClusterResources(NonClusterOperations):
         @param tags:
         @return:
         """
-        username = self._get_username_from_cloudtrail(start_time=launch_time, resource_id=instance_id, resource_type='AWS::EC2::Instance')
+        username = self.get_username(start_time=launch_time, resource_id=instance_id, resource_type='AWS::EC2::Instance', tags=tags)
         search_tags = []
         user_tags = []
         if not username:
@@ -90,7 +90,8 @@ class TagNonClusterResources(NonClusterOperations):
         volume_ids = []
         for volume in volumes_data:
             volume_id = volume.get('VolumeId')
-            username = self._get_username_from_cloudtrail(start_time=volume.get('CreateTime'), resource_id=volume_id, resource_type='AWS::EC2::Volume')
+            tags = volume.get('Tags')
+            username = self.get_username(start_time=volume.get('CreateTime'), resource_id=volume_id, resource_type='AWS::EC2::Volume', tags=tags)
             search_tags = []
             if not username:
                 get_tags, username = self._get_tags_fom_attachments(attachments=volume.get('Attachments'))
@@ -135,7 +136,8 @@ class TagNonClusterResources(NonClusterOperations):
         snapshot_ids = []
         for snapshot in snapshots:
             snapshot_id = snapshot.get('SnapshotId')
-            username = self._get_username_from_cloudtrail(start_time=snapshot.get('StartTime'), resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot')
+            tags = snapshot.get('Tags')
+            username = self.get_username(start_time=snapshot.get('StartTime'), resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot', tags=tags)
             search_tags = []
             if not username:
                 if snapshot.get('Description') and 'Created' in snapshot.get('Description'):
@@ -187,8 +189,10 @@ class TagNonClusterResources(NonClusterOperations):
         image_ids = []
         for image in images:
             image_id = image.get('ImageId')
+            tags = image.get('Tags')
+            image_name = image.get('Name')
             start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
-            username = self._get_username_from_cloudtrail(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami')
+            username = self.get_username(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami', tags=tags, resource_name=image_name)
             search_tags = []
             search_tags.extend(self._append_input_tags())
             if username:
