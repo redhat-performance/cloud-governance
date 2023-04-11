@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import boto3
 
 from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
@@ -27,6 +29,7 @@ class TagClusterOperations:
         self.cloudtrail = CloudTrailOperations(region_name='us-east-1')
         self._get_username_from_instance_id_and_time = CloudTrailOperations(region_name=region).get_username_by_instance_id_and_time
         self.dry_run = dry_run
+        self.iam_users = self.iam_operations.get_iam_users_list()
 
     def _input_tags_list_builder(self):
         """
@@ -67,3 +70,25 @@ class TagClusterOperations:
             else:
                 tags.append({'Key': key, 'Value': value})
         return tags
+
+    def get_user_name_from_name_tag(self, tags: list):
+        """
+        This method retuns the username from the name tag verified  with iam users
+        :param tags:
+        :return:
+        """
+        name_tag = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='Name')
+        for user in self.iam_users:
+            if user in name_tag:
+                return user
+        return None
+
+    def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list):
+        """
+        This method returns the username
+        :return:
+        """
+        iam_username = self.get_user_name_from_name_tag(tags=tags)
+        if not iam_username:
+            return self._get_username_from_instance_id_and_time(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
+        return None

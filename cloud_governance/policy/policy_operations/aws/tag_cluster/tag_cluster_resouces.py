@@ -248,24 +248,21 @@ class TagClusterResources(TagClusterOperations):
         for instance in resources:
             for item in instance:
                 instance_id = item['InstanceId']
-                if item.get('Tags'):
+                tags = item.get('Tags')
+                if tags:
                     # search that not exist permanent tags in the resource
-                    if not self.__validate_existing_tag(item.get('Tags')):
-                        for tag in item['Tags']:
+                    if not self.__validate_existing_tag(tags):
+                        for tag in tags:
                             if self.cluster_prefix in tag.get('Key'):
                                 add_tags = self.__append_input_tags()
                                 cluster_name = tag.get('Key').split('/')[-1]
                                 if cluster_name in cluster_instances:
-                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
-                                                                                       search_tags=cluster_tags[
-                                                                                           cluster_name])
+                                    add_tags = self.__filter_resource_tags_by_add_tags(tags=tags, search_tags=cluster_tags[cluster_name])
                                     if add_tags:
                                         cluster_instances[cluster_name].append(instance_id)
                                     break
                                 else:
-                                    username = self._get_username_from_instance_id_and_time(
-                                        start_time=item.get('LaunchTime'), resource_id=instance_id,
-                                        resource_type='AWS::EC2::Instance')
+                                    username = self.get_username(start_time=item.get('LaunchTime'), resource_id=instance_id, resource_type='AWS::EC2::Instance', tags=tags)
                                     if username:
                                         if username == 'AutoScaling':
                                             add_tags.extend(self._fill_na_tags(user=username))

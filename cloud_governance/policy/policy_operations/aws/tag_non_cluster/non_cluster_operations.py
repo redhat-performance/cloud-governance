@@ -21,6 +21,7 @@ class NonClusterOperations:
         self.iam_client = IAMOperations()
         self.ec2_operations = EC2Operations(region=region)
         self.utils = Utils(region=region)
+        self.iam_users = self.iam_client.get_iam_users_list()
 
     def _get_instances_data(self, instance_id: str = ''):
         """
@@ -183,4 +184,27 @@ class NonClusterOperations:
                     username = self._get_username_from_cloudtrail(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami')
         return tags, username
 
+    def get_user_name_from_name_tag(self, tags: list = None, resource_name: str = None):
+        """
+        This method retuns the username from the name tag verified  with iam users
+        :param resource_name:
+        :param tags:
+        :return:
+        """
+        name_tag = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='Name') if tags else resource_name
+        for user in self.iam_users:
+            if user in name_tag:
+                return user
+        return None
 
+    def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list, resource_name: str = ''):
+        """
+        This method returns the username
+        :return:
+        """
+        iam_username = self.get_user_name_from_name_tag(tags=tags, resource_name=resource_name)
+        if not iam_username:
+            iam_username = self.get_user_name_from_name_tag(resource_name=resource_name)
+            if not iam_username:
+                return self._get_username_from_cloudtrail(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
+        return iam_username

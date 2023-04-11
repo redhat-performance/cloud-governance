@@ -51,3 +51,14 @@ class IAMOperations:
                 return account_alias[0].upper(), 'AwsCloud'.upper()
         except:
             return os.environ.get('account', '').upper(), 'AwsCloud'.upper()
+
+    def get_iam_users_list(self):
+        """
+        This method return the IAM users list
+        :return:
+        """
+        iam_users = []
+        users = self.get_users()
+        for user in users:
+            iam_users.append(user.get('UserName'))
+        return iam_users
