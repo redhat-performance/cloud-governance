@@ -48,7 +48,7 @@ def test_delete_data_between_range():
     es.delete_data_in_between_in_es(es_index=es_index, start_datetime=start_time, end_datetime=end_time)
     start_time = end_time.replace(hour=0, minute=0, second=0)
     end_time = datetime.datetime.now()
-    assert len(es.fetch_data_between_range(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 1
+    assert len(es.fetch_data_by_es_query(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 1
     es.delete_data_in_es(es_index=es_index)
 
 
@@ -63,10 +63,10 @@ def test_fetch_data_between_range():
     time.sleep(3)
     end_time = datetime.datetime.now()
     start_time = (end_time - datetime.timedelta(1)).replace(hour=0, minute=0, second=0)
-    assert len(es.fetch_data_between_range(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 1
+    assert len(es.fetch_data_by_es_query(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 1
     es.delete_data_in_es(es_index=es_index)
     start_time = end_time - datetime.timedelta(1)
-    assert len(es.fetch_data_between_range(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 0
+    assert len(es.fetch_data_by_es_query(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 0
     es.delete_data_in_es(es_index=es_index)
 
 
@@ -78,4 +78,4 @@ def test_delete_data_in_elastic_search():
     es.delete_data_in_es(es_index=es_index)
     end_time = datetime.datetime.now().replace(hour=0, minute=0, second=0)
     start_time = (end_time - datetime.timedelta(1)).replace(hour=0, minute=0, second=0)
-    assert len(es.fetch_data_between_range(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 0
+    assert len(es.fetch_data_by_es_query(es_index=es_index, start_datetime=start_time, end_datetime=end_time)) == 0
