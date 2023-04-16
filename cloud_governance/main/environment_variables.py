@@ -1,7 +1,8 @@
 import argparse
 import os
 
-from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
+import boto3
+
 from cloud_governance.main.environment_variables_exceptions import ParseFailed
 
 
@@ -37,8 +38,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
 
         if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
-            self.iam_operations = IAMOperations()
-            self._environment_variables_dict['account'] = self.iam_operations.get_account_alias_cloud_name()[0].upper()
+            self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper()
 
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
@@ -164,6 +164,7 @@ class EnvironmentVariables:
 
         self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', True)
         self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('MANAGER_EMAIL_ALERT', True)
+        self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):
@@ -185,6 +186,20 @@ class EnvironmentVariables:
         if def_val is not None:
             return def_val
         raise ParseFailed(f'Cannot parse {arg} as a boolean value')
+
+    def get_aws_account_alias_name(self):
+        """
+        This method return the aws account alias name
+        :return:
+        """
+        iam_client = boto3.client('iam')
+        try:
+            account_alias = iam_client.list_account_aliases()['AccountAliases']
+            if account_alias:
+                return account_alias[0].upper()
+        except:
+            return os.environ.get('account', '').upper()
+
 
     @staticmethod
     def get_env(var: str, defval=''):

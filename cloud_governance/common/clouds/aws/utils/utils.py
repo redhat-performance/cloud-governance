@@ -1,9 +1,10 @@
+from multiprocessing import Process, cpu_count
 from typing import Callable
 
-import boto3
 import typeguard
 
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class Utils:
@@ -13,7 +14,8 @@ class Utils:
 
     def __init__(self, region: str = 'us-east-2'):
         self.region = region
-        pass
+        self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.__update_tag_bulks = self.__environment_variables_dict.get('UPDATE_TAG_BULKS')
 
     @typeguard.typechecked
     def get_details_resource_list(self, func_name: Callable, input_tag: str, check_tag: str, **kwargs):
@@ -34,3 +36,53 @@ class Utils:
                 resources = func_name(Marker=resources[check_tag], **kwargs)
             resource_list.extend(resources[input_tag])
         return resource_list
+
+    @logger_time_stamp
+    def __tag_resources(self, client_method: Callable, resource_ids: list, tags: list, tags_name: str = 'Tags'):
+        """
+        This method tag resources
+        :param client_method:
+        :param resource_ids:
+        :param tags:
+        :param tags_name:
+        :return:
+        """
+        if tags_name == 'Tags':
+            client_method(Resources=resource_ids, Tags=tags)
+
+    @logger_time_stamp
+    def __split_run_bulks(self, iterable: list, limit: int = 1):
+        """
+        This method splits run into bulk depends on threads limit
+        @return: run bulks
+        """
+        result = []
+        length = len(iterable)
+        for ndx in range(0, length, limit):
+            result.append(iterable[ndx:min(ndx + limit, length)])
+        return result
+
+    @typeguard.typechecked
+    @logger_time_stamp
+    def tag_aws_resources(self, client_method: Callable, tags: list, resource_ids: list):
+        """
+        This method tag the aws resources with batch wise of 20
+        :param client_method:
+        :param tags:
+        :param resource_ids:
+        :return:
+        """
+        proc = []
+        bulk_resource_ids_list = self.__split_run_bulks(iterable=resource_ids, limit=self.__update_tag_bulks)  # split the aws resource_ids into batches
+        co = 0
+        cpu_based_resource_ids_list = self.__split_run_bulks(iterable=bulk_resource_ids_list, limit=self.__update_tag_bulks)
+        for cpu_based_resource_ids_list in cpu_based_resource_ids_list:
+            for resource_ids_list in cpu_based_resource_ids_list:
+                p = Process(target=self.__tag_resources, args=(client_method, resource_ids_list, tags, ))
+                co += 1
+                p.start()
+                proc.append(p)
+            for p in proc:
+                p.join()
+        return co
+
