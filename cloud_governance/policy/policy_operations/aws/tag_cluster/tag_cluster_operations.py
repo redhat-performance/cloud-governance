@@ -77,11 +77,15 @@ class TagClusterOperations:
         :param tags:
         :return:
         """
-        name_tag = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='Name')
-        for user in self.iam_users:
-            if user in name_tag:
-                return user
-        return None
+        user_name = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='User')
+        if user_name in self.iam_users:
+            return user_name
+        else:
+            name_tag = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='Name')
+            for user in self.iam_users:
+                if user in name_tag:
+                    return user
+            return None
 
     def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list):
         """
@@ -91,4 +95,4 @@ class TagClusterOperations:
         iam_username = self.get_user_name_from_name_tag(tags=tags)
         if not iam_username:
             return self._get_username_from_instance_id_and_time(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
-        return None
+        return iam_username

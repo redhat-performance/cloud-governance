@@ -10,6 +10,8 @@ from cloud_governance.common.clouds.aws.utils.utils import Utils
 
 class NonClusterOperations:
 
+    NA_VALUE = 'NA'
+
     def __init__(self, region: str = 'us-east-2', dry_run: str = 'yes', input_tags: dict = ''):
         self.region = region
         self.dry_run = dry_run
@@ -64,13 +66,21 @@ class NonClusterOperations:
             for search_tag in search_tags:
                 found = False
                 for tag in tags:
-                    if tag.get('Key') == search_tag.get('Key'):
+                    if tag.get('Key') == search_tag.get('Key') and tag.get('Value') != 'NA':
                         found = True
                 if not found:
                     add_tags.append(search_tag)
         else:
             add_tags.extend(search_tags)
-        return add_tags
+        filter_tags = {}
+        for tag in add_tags:
+            key = tag.get('Key')
+            value = tag.get('Value')
+            if key in filter_tags and filter_tags[key].get('Value') == self.NA_VALUE:
+                filter_tags[key] = {'Key': key, 'Value': value}
+            else:
+                filter_tags[key] = {'Key': key, 'Value': value}
+        return list(filter_tags.values())
 
     def _fill_na_tags(self, user: str = None):
         """

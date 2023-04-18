@@ -12,6 +12,7 @@ class TagClusterResources(TagClusterOperations):
     """
 
     SHORT_ID = 5
+    NA_VALUE = 'NA'
 
     def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None,
                  region: str = 'us-east-2', dry_run: str = 'yes', cluster_only: bool = False):
@@ -229,11 +230,14 @@ class TagClusterResources(TagClusterOperations):
         @param tags:
         @return:
         """
+        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
         for tag in tags:
-            for key, value in self.input_tags.items():
-                if tag.get('Key') == key:
-                    return True
-        return False
+            if tag.get('Key') in check_tags:
+                if tag.get('Value') == 'NA':
+                    return False
+            else:
+                return False
+        return True
 
     def update_cluster_tags(self, resources: list):
         """
@@ -727,13 +731,22 @@ class TagClusterResources(TagClusterOperations):
             for search_tag in search_tags:
                 found = False
                 for tag in tags:
-                    if tag.get('Key') == search_tag.get('Key'):
+                    if tag.get('Key') == search_tag.get('Key') and tag.get('Value') != 'NA':
                         found = True
+                        break
                 if not found:
                     add_tags.append(search_tag)
         else:
             add_tags.extend(search_tags)
-        return add_tags
+        filter_tags = {}
+        for tag in add_tags:
+            key = tag.get('Key')
+            value = tag.get('Value')
+            if key in filter_tags and filter_tags[key].get('Value') == self.NA_VALUE:
+                filter_tags[key] = {'Key': key, 'Value': value}
+            else:
+                filter_tags[key] = {'Key': key, 'Value': value}
+        return list(filter_tags.values())
 
     def __remove_launchTime(self, tags: list):
         """
