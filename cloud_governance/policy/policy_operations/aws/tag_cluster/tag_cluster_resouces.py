@@ -142,10 +142,7 @@ class TagClusterResources(TagClusterOperations):
         for cluster_name, cluster_id in cluster_ids.items():
             if self.dry_run == 'no':
                 try:
-                    if self.cluster_name in cluster_name:
-                        self.ec2_client.create_tags(Resources=cluster_id, Tags=cluster_tags.get(cluster_name))
-                    else:
-                        self.ec2_client.create_tags(Resources=cluster_id, Tags=cluster_tags.get(cluster_name))
+                    self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=cluster_id, tags=cluster_tags.get(cluster_name))
                     logger.info(f'{input_resource_id}:: {cluster_name}, count: {len(cluster_id)}, {cluster_id},  {cluster_tags.get(cluster_name)}')
                 except Exception as err:
                     logger.info(err)
@@ -175,12 +172,12 @@ class TagClusterResources(TagClusterOperations):
                             if self.cluster_name:
                                 if self.cluster_name in cluster_tag[0].get('Key'):
                                     if self.dry_run == 'no':
-                                        self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                        self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[resource_id],  tags=all_tags)
                                         logger.info(all_tags)
                                     result_resources_list.append(resource_id)
                             else:
                                 if self.dry_run == 'no':
-                                    self.ec2_client.create_tags(Resources=[resource_id], Tags=all_tags)
+                                    self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[resource_id], tags=all_tags)
                                     logger.info(all_tags)
                                 result_resources_list.append(resource_id)
                         break
@@ -301,11 +298,7 @@ class TagClusterResources(TagClusterOperations):
         for cluster_instance_name, instance_ids in cluster_instances.items():
             if self.dry_run == 'no':
                 try:
-                    if self.cluster_name:
-                        if cluster_instance_name == self.cluster_name:
-                            self.ec2_client.create_tags(Resources=instance_ids, Tags=cluster_tags.get(cluster_instance_name))
-                    else:
-                        self.ec2_client.create_tags(Resources=instance_ids, Tags=cluster_tags.get(cluster_instance_name))
+                    self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=instance_ids, tags=cluster_tags.get(cluster_instance_name))
                     logger.info(f'Cluster :: {cluster_instance_name} count: {len(instance_ids)} :: InstanceId :: {instance_ids} :: {cluster_tags.get(cluster_instance_name)}')
                 except Exception as err:
                     logger.info(err)

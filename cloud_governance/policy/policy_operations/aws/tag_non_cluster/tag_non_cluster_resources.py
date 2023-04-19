@@ -71,7 +71,7 @@ class TagNonClusterResources(NonClusterOperations):
                 if add_tags:
                     if self.dry_run == 'no':
                         try:
-                            self.ec2_client.create_tags(Resources=[instance_id], Tags=add_tags)
+                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[instance_id], tags=add_tags)
                             logger.info(f'Added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
                         except Exception as err:
                             logger.info(err)
@@ -117,7 +117,7 @@ class TagNonClusterResources(NonClusterOperations):
             if volume_tags:
                 if self.dry_run == 'no':
                     try:
-                        self.ec2_client.create_tags(Resources=[volume_id], Tags=volume_tags)
+                        self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[volume_id], tags=volume_tags)
                         logger.info(f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
                     except Exception as err:
                         logger.info(err)
@@ -169,7 +169,7 @@ class TagNonClusterResources(NonClusterOperations):
             if snapshot_tags:
                 if self.dry_run == 'no':
                     try:
-                        self.ec2_client.create_tags(Resources=[snapshot_id], Tags=snapshot_tags)
+                        self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[snapshot_id], tags=snapshot_tags)
                         logger.info(f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
                     except Exception as err:
                         logger.info(err)
@@ -212,7 +212,7 @@ class TagNonClusterResources(NonClusterOperations):
             if image_tags:
                 if self.dry_run == 'no':
                     try:
-                        self.ec2_client.create_tags(Resources=[image_id], Tags=image_tags)
+                        self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[image_id], tags=image_tags)
                         logger.info(f'added tags to image: {image_id} total: {len(image_tags)} tags: {image_tags}')
                     except Exception as err:
                         logger.info(err)
