@@ -72,17 +72,18 @@ class Utils:
         :param resource_ids:
         :return:
         """
-        proc = []
-        bulk_resource_ids_list = self.__split_run_bulks(iterable=resource_ids, limit=self.__update_tag_bulks)  # split the aws resource_ids into batches
-        co = 0
-        cpu_based_resource_ids_list = self.__split_run_bulks(iterable=bulk_resource_ids_list, limit=self.__update_tag_bulks)
-        for cpu_based_resource_ids_list in cpu_based_resource_ids_list:
-            for resource_ids_list in cpu_based_resource_ids_list:
-                p = Process(target=self.__tag_resources, args=(client_method, resource_ids_list, tags, ))
-                co += 1
-                p.start()
-                proc.append(p)
-            for p in proc:
-                p.join()
-        return co
+        if tags:
+            proc = []
+            bulk_resource_ids_list = self.__split_run_bulks(iterable=resource_ids, limit=self.__update_tag_bulks)  # split the aws resource_ids into batches
+            co = 0
+            cpu_based_resource_ids_list = self.__split_run_bulks(iterable=bulk_resource_ids_list, limit=self.__update_tag_bulks)
+            for cpu_based_resource_ids_list in cpu_based_resource_ids_list:
+                for resource_ids_list in cpu_based_resource_ids_list:
+                    p = Process(target=self.__tag_resources, args=(client_method, resource_ids_list, tags, ))
+                    co += 1
+                    p.start()
+                    proc.append(p)
+                for p in proc:
+                    p.join()
+            return co
 
