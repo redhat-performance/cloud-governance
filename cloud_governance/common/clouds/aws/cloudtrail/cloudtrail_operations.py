@@ -194,16 +194,18 @@ class CloudTrailOperations:
         diff = (current_time - start_time.replace(tzinfo=None))
         return (diff.days * 24 * 60 * 60) + diff.seconds
 
-    def get_username_by_instance_id_and_time(self, resource_id: str, resource_type: str, start_time: datetime = '', event_type: str = 'ResourceType'):
+    def get_username_by_instance_id_and_time(self, resource_id: str, resource_type: str, start_time: datetime = '', event_type: str = 'ResourceType', end_time: datetime = None):
         """
         This method find Username in cloud trail events according to start_time and resource_id
         @param event_type:
         @param start_time:
         @param resource_id:
         @param resource_type:
+        @param end_time:
         @return: if user not found it return empty string
+
         """
-        if start_time:
+        if start_time and not end_time:
             delay_seconds = int(os.environ.get('SLEEP_SECONDS', self.SLEEP_SECONDS))
             if self.__get_time_difference(start_time=start_time) <= delay_seconds:
                 time.sleep(delay_seconds)
@@ -211,8 +213,9 @@ class CloudTrailOperations:
             end_time = start_time + search_time
             start_time = start_time - search_time
         else:
-            start_time = datetime.now() - timedelta(days=self.LOOKBACK_DAYS)
-            end_time = datetime.now()
+            if not start_time and not end_time:
+                start_time = datetime.now() - timedelta(days=self.LOOKBACK_DAYS)
+                end_time = datetime.now()
         username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type, event_type)
         return self.__check_filter_username(username, event)
 

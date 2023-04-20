@@ -100,7 +100,7 @@ class NonClusterOperations:
                 tags.append({'Key': key, 'Value': value})
         return tags
 
-    def _get_username_from_cloudtrail(self, start_time: datetime, resource_id: str, resource_type: str):
+    def _get_username_from_cloudtrail(self, start_time: datetime, resource_id: str, resource_type: str, end_time: datetime = None):
         """
         This method return username fom cloudtrail
         @param start_time:
@@ -108,7 +108,7 @@ class NonClusterOperations:
         @param resource_type:
         @return:
         """
-        return self.cloudtrail.get_username_by_instance_id_and_time(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
+        return self.cloudtrail.get_username_by_instance_id_and_time(start_time=start_time, resource_id=resource_id, resource_type=resource_type, end_time=end_time)
 
     def _get_resource_data(self, resource_method: callable):
         """
@@ -207,7 +207,7 @@ class NonClusterOperations:
                 return user
         return None
 
-    def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list, resource_name: str = ''):
+    def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list, resource_name: str = '', end_time: datetime = None):
         """
         This method returns the username
         :return:
@@ -216,5 +216,5 @@ class NonClusterOperations:
         if not iam_username:
             iam_username = self.get_user_name_from_name_tag(resource_name=resource_name)
             if not iam_username:
-                return self._get_username_from_cloudtrail(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
+                return self._get_username_from_cloudtrail(start_time=start_time, resource_id=resource_id, resource_type=resource_type, end_time=end_time)
         return iam_username
