@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.non_cluster_operations import NonClusterOperations
@@ -138,6 +138,12 @@ class TagNonClusterResources(NonClusterOperations):
             snapshot_id = snapshot.get('SnapshotId')
             tags = snapshot.get('Tags')
             username = self.get_username(start_time=snapshot.get('StartTime'), resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot', tags=tags)
+            if 'vm_import_image' in username:
+                start_time = snapshot.get('StartTime') + timedelta(seconds=5)
+                end_time = start_time + timedelta(minutes=30)
+                assume_username = self.get_username(start_time=start_time, resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot', tags=tags, end_time=end_time)
+                if assume_username:
+                    username = assume_username
             search_tags = []
             if not username:
                 if snapshot.get('Description') and 'Created' in snapshot.get('Description'):
