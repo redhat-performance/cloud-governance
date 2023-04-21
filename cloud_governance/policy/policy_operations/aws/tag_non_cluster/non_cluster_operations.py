@@ -218,3 +218,19 @@ class NonClusterOperations:
             if not iam_username:
                 return self._get_username_from_cloudtrail(start_time=start_time, resource_id=resource_id, resource_type=resource_type, end_time=end_time)
         return iam_username
+
+    def validate_existing_tag(self, tags: list):
+        """
+        This method validates that permanent tag exists in tags list
+        @param tags:
+        @return:
+        """
+        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
+        tag_count = 0
+        if tags:
+            for tag in tags:
+                if tag.get('Key') in check_tags:
+                    tag_count += 1
+                    if tag.get('Value') == 'NA':
+                        return False
+        return tag_count == len(check_tags)
