@@ -228,13 +228,13 @@ class TagClusterResources(TagClusterOperations):
         @return:
         """
         check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
+        tag_count = 0
         for tag in tags:
             if tag.get('Key') in check_tags:
+                tag_count += 1
                 if tag.get('Value') == 'NA':
                     return False
-            else:
-                return False
-        return True
+        return tag_count == len(check_tags)
 
     def update_cluster_tags(self, resources: list):
         """
@@ -257,7 +257,8 @@ class TagClusterResources(TagClusterOperations):
                             if self.cluster_prefix in tag.get('Key'):
                                 add_tags = self.__append_input_tags()
                                 cluster_name = tag.get('Key').split('/')[-1]
-                                if cluster_name in cluster_instances:
+                                user = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='User')
+                                if cluster_name in cluster_instances and user and user != 'NA':
                                     add_tags = self.__filter_resource_tags_by_add_tags(tags=tags, search_tags=cluster_tags[cluster_name])
                                     if add_tags:
                                         cluster_instances[cluster_name].append(instance_id)
@@ -292,7 +293,7 @@ class TagClusterResources(TagClusterOperations):
                                     add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
                                                                                        search_tags=add_tags)
                                     if add_tags:
-                                        cluster_instances[cluster_name] = [instance_id]
+                                        cluster_instances.setdefault(cluster_name, []).append(instance_id)
                                         cluster_tags[cluster_name] = add_tags
                                     break
         for cluster_instance_name, instance_ids in cluster_instances.items():
