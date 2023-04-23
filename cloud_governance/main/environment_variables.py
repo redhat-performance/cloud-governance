@@ -1,5 +1,6 @@
 import argparse
 import os
+from ast import literal_eval
 
 import boto3
 
@@ -36,6 +37,11 @@ class EnvironmentVariables:
         # parameters for running policies
         self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
+
+        self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
+        self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS', True)
+        if not self._environment_variables_dict['AWS_DEFAULT_REGION']:
+            self._environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
 
         if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper()
@@ -165,6 +171,18 @@ class EnvironmentVariables:
         self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', True)
         self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('MANAGER_EMAIL_ALERT', True)
         self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
+
+        # policies aggregate alert
+        self._environment_variables_dict['BUCKET_NAME'] = EnvironmentVariables.get_env('BUCKET_NAME')
+        self._environment_variables_dict['BUCKET_KEY'] = EnvironmentVariables.get_env('BUCKET_KEY')
+        self._environment_variables_dict['MAIL_ALERT_DAYS'] = literal_eval(EnvironmentVariables.get_env('MAIL_ALERT_DAYS', '[]'))
+        self._environment_variables_dict['POLICY_ACTIONS_DAYS'] = literal_eval(EnvironmentVariables.get_env('POLICY_ACTIONS_DAYS', '[]'))
+        self._environment_variables_dict['DEFAULT_ADMINS'] = literal_eval(EnvironmentVariables.get_env('DEFAULT_ADMINS', '[]'))
+        self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
+        self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
+        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts']:
+            self._environment_variables_dict['COMMON_POLICIES'] = True
+
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):

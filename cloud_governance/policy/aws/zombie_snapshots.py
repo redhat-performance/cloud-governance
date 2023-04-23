@@ -51,12 +51,13 @@ class ZombieSnapshots(NonClusterZombiePolicy):
                                                                           days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE,
                                                                           tags=tags)
                         if zombie_snapshot:
-                            zombie_snapshots.append([snapshot.get('SnapshotId'),
-                                                     self._get_tag_name_from_tags(tags=tags),
-                                                     self._get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                                     f'{str(snapshot.get("VolumeSize"))}Gb',
-                                                     self._get_policy_value(tags=snapshot.get('Tags')), str(unused_days)
-                                                     ])
+                            zombie_snapshots.append({'ResourceId': snapshot.get('SnapshotId'),
+                                                     'Name': self._get_tag_name_from_tags(tags=tags),
+                                                     'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                     'Size': f'{str(snapshot.get("VolumeSize"))}Gb',
+                                                     'Skip': self._get_policy_value(tags=snapshot.get('Tags')),
+                                                     'Days': str(unused_days)
+                            })
                     else:
                         unused_days = 0
                     self._update_resource_tags(resource_id=snapshot_id, tags=tags, left_out_days=unused_days,

@@ -516,3 +516,13 @@ class EC2Operations:
                     return tag.get('Value')
         return default_value
 
+    def get_active_regions(self):
+        """
+        This method return active regions in aws account
+        :return:
+        """
+        responses = self.ec2_client.describe_regions()['Regions']
+        active_regions = []
+        for region in responses:
+            active_regions.append(region.get('RegionName'))
+        return active_regions

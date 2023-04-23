@@ -52,9 +52,10 @@ class EbsUnattached(NonClusterZombiePolicy):
                                                                              days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE,
                                                                              extra_purse=ebs_cost, delta_cost=delta_cost)
                         if unattached_volumes:
-                            unattached_volumes_data.append([volume.get('VolumeId'),
-                                                            self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Name'),
-                                                            self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='User'),
-                                                            str(last_detached_days),
-                                                            self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Policy')])
+                            unattached_volumes_data.append({'ResourceId': volume.get('VolumeId'),
+                                                            'Name': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Name'),
+                                                            'User': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='User'),
+                                                            'Days': str(last_detached_days),
+                                                            'Skip': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Policy')
+                                                            })
         return unattached_volumes_data

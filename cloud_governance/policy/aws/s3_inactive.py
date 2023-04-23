@@ -49,7 +49,7 @@ class S3Inactive(NonClusterZombiePolicy):
                             self._cloudtrail.set_cloudtrail(region_name=region)
                         empty_bucket = self._check_resource_and_delete(resource_name='S3 Bucket', resource_id='Name', resource_type='CreateBucket', resource=bucket, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
                         if empty_bucket:
-                            empty_buckets.append([bucket.get('Name'), self._get_tag_name_from_tags(tags=tags, tag_name='User'), str(bucket.get('CreationDate')), str(empty_days), self._get_policy_value(tags=tags)])
+                            empty_buckets.append({'ResourceId': bucket.get('Name'), 'Name': bucket.get('Name'), 'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'), 'Date': str(bucket.get('CreationDate')), 'Days': str(empty_days), 'Skip': self._get_policy_value(tags=tags)})
                 else:
                     empty_days = 0
                 self._update_resource_tags(resource_id=bucket_name, tags=tags, left_out_days=empty_days, resource_left_out=bucket_empty)
