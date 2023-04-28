@@ -505,7 +505,7 @@ class EC2Operations:
                     users_list[user] = [user_data]
         return users_list
 
-    def get_tag_value_from_tags(self, tags: list, tag_name: str) -> str:
+    def get_tag_value_from_tags(self, tags: list, tag_name: str, default_value: any = '') -> str:
         """
         This method return the tag value inputted by tag_name
         """
@@ -514,5 +514,5 @@ class EC2Operations:
                 key = tag.get('Key').lower().replace("_", '').replace("-", '')
                 if key == tag_name.lower():
                     return tag.get('Value')
-        return ''
+        return default_value
 
