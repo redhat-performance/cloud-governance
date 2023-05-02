@@ -35,7 +35,7 @@ class MonthlyReport:
             'ec2_idle': 'stops the idle instances in the last 7 days.  ( CPU < 5%, Network < 5k )',
             'ebs_unattached': 'Delete  unattached EBS volumes, where the unused days are calculated by the last DeattachedTime',
             'ip_unattached': 'Delete all the elastic_ips that are unused',
-            'nat_gateway_unused': ' Delete all unused nat gateways',
+            'unused_nat_gateway': ' Delete all unused nat gateways',
             'zombie_snapshots': 'Delete all the snapshots which the AMI does not use',
             's3_inactive': 'Delete the empty buckets which don’t have any content.',
             'empty_roles': 'Delete the empty role which does\'t have any policies',
