@@ -1,4 +1,3 @@
-
 from ast import literal_eval
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
@@ -16,6 +15,18 @@ class CostExplorer:
     """
 
     BULK_UPLOAD_THREADS = 8
+    SAVINGS_PLAN_FILTER = {  # savings plan usage for ce filter
+                            'Dimensions': {
+                                        'Key': 'RECORD_TYPE',
+                                        'Values': ['SavingsPlanRecurringFee', 'SavingsPlanNegation', 'SavingsPlanCoveredUsage']
+                                }
+                    }
+    EXCLUDE = 'exclude'
+    INCLUDE = 'include'
+    CE_KEY_RESULTS_BY_TIME = 'ResultsByTime'
+    INDEX_ID = 'index_id'
+    APPEND = 'a'
+    CE_OPERATION = 'Not'
 
     def __init__(self):
         super().__init__()
@@ -32,11 +43,12 @@ class CostExplorer:
         self._elastic_upload = ElasticUpload()
         self.__account = self.__environment_variables_dict.get('account').upper().replace('OPENSHIFT-', "").strip()
 
-    def filter_data_by_tag(self, groups: dict, tag: str):
+    def filter_data_by_tag(self, groups: dict, tag: str, savings_plan: str):
         """
         This method extract data by tag
         @param tag:
         @param groups: Data from the cloud explorer
+        @param savings_plan:
         @return: converted into dict format
         """
         data = {}
@@ -58,13 +70,14 @@ class CostExplorer:
                 else:
                     if 'vm_import_image' in name:
                         name = 'vm_import_image'
-                index_id = f'{start_time.lower()}-{account.lower()}-{tag.lower()}-{name.lower()}'
+                index_id = f'{start_time}-{account}-{tag}-savings-{savings_plan}-{name}'.lower()
                 if index_id not in data:
-                    upload_data = {tag: name if tag.upper() in ('ChargeType'.upper(), 'PurchaseType'.upper()) else name.upper(),
-                                   'Cost': round(float(amount), 3), 'index_id': index_id, 'timestamp': start_time}
+                    upload_data = {tag: name if tag.upper() in list(self.__cost_explorer.CE_COST_TYPES) else name.upper(),
+                                   'Cost': round(float(amount), 3), self.INDEX_ID: index_id, 'timestamp': start_time, 'savings_plan': savings_plan}
                     if 'global' in self._elastic_upload.es_index:
                         if 'Budget' not in upload_data:
                             upload_data['Budget'] = self._elastic_upload.account
+                    upload_data['tag'] = tag.lower()
                     data[index_id] = upload_data
                 else:
                     data[index_id]['Cost'] += round(float(amount), 3)
@@ -77,15 +90,19 @@ class CostExplorer:
         """
         data_house = {}
         for tag in self.cost_tags:
-            if self.start_date and self.end_date:
-                response = self.__cost_explorer.get_cost_by_tags(tag=tag, start_date=self.start_date, end_date=self.end_date, granularity=self.granularity, cost_metric=self.cost_metric)
-            else:
-                response = self.__cost_explorer.get_cost_by_tags(tag=tag, granularity=self.granularity, cost_metric=self.cost_metric)
-            results_by_time = response.get('ResultsByTime')
-            if results_by_time:
-                data_house[tag] = []
-                for result in results_by_time:
-                    data_house[tag].extend(self.filter_data_by_tag(result, tag))
+            for savings_plan in [self.EXCLUDE, self.INCLUDE]:
+                filters = {}
+                if savings_plan == self.EXCLUDE:
+                    filters = {self.CE_OPERATION: self.SAVINGS_PLAN_FILTER}
+                if self.start_date and self.end_date:
+                    response = self.__cost_explorer.get_cost_by_tags(tag=tag, start_date=self.start_date, end_date=self.end_date, granularity=self.granularity, cost_metric=self.cost_metric, Filter=filters)
+                else:
+                    response = self.__cost_explorer.get_cost_by_tags(tag=tag, granularity=self.granularity, cost_metric=self.cost_metric, Filter=filters)
+                results_by_time = response.get(self.CE_KEY_RESULTS_BY_TIME)
+                if results_by_time:
+                    data_house[f'{tag}-{savings_plan}'] = []
+                    for result in results_by_time:
+                        data_house[f'{tag}-{savings_plan}'].extend(self.filter_data_by_tag(result, tag, savings_plan))
         return data_house
 
     @logger_time_stamp
@@ -97,12 +114,12 @@ class CostExplorer:
         @return:
         """
         if self.file_name:
-            with open(f'/tmp/{self.file_name}', 'a') as file:
+            with open(f'/tmp/{self.file_name}', self.APPEND) as file:
                 for value in data:
                     file.write(f'{value}\n')
         else:
             for value in data:
-                self.upload_item_to_es(index=index, item=value, index_id=value['index_id'])
+                self.upload_item_to_es(index=index, item=value, index_id=value[self.INDEX_ID])
             logger.info(f'Data uploaded to {index}, Total Data: {len(data)}')
 
     def upload_item_to_es(self, item: dict, index: str, index_id: str = ''):
@@ -126,8 +143,8 @@ class CostExplorer:
         logger.info(f'Get {self.granularity} Cost usage by metric: {self.cost_metric}')
         cost_data = self.__get_daily_cost_by_tags()
         for key, values in cost_data.items():
-            index = f'{self._elastic_upload.es_index}-{key.lower()}'
-            self.__upload_data(values, index)
+            logger.info(f"Uploading the data of {key} tag")
+            self.__upload_data(values, self._elastic_upload.es_index)
 
     def run(self):
         """

@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 import time
 import pandas as pd
@@ -31,7 +30,8 @@ class ElasticSearchOperations:
         self.__es_host = es_host
         self.__es_port = es_port
         self.__region = region
-        self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
+        self.__timeout = int(
+            self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
         self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
@@ -131,7 +131,7 @@ class ElasticSearchOperations:
         # utcnow - solve timestamp issue
         if not data.get('timestamp'):
             data['timestamp'] = datetime.utcnow()  # datetime.now()
-
+        data['policy'] = self.__environment_variables_dict.get('policy')
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
@@ -208,20 +208,38 @@ class ElasticSearchOperations:
 
     @typechecked()
     @logger_time_stamp
-    def fetch_data_between_range(self, es_index: str, start_datetime: datetime, end_datetime: datetime):
+    def fetch_data_by_es_query(self, es_index: str, query: dict = None, start_datetime: datetime = None,
+                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = ''):
         """
-        This method fetches the data in between range
+        This method fetches the data in between range, if you need aggregation results pass you own query with aggegation
         @param es_index:
         @param start_datetime:
         @param end_datetime:
+        @param query:
+        @param result_agg:
+        @param group_by:
         @return:
         """
+        es_data = []
         if self.__es.indices.exists(index=es_index):
-            query_body = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
-            data = self.__es.search(index=es_index, body=query_body, doc_type='_doc').get('hits')
-            if data:
-                return data['hits']
-        return []
+            if not query:
+                if start_datetime and end_datetime:
+                    query = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
+            if query:
+                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=100, scroll='1h')
+                if result_agg:
+                    es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
+                else:
+                    scroll_id = response.get('_scroll_id')
+                    if response.get('hits').get('hits'):
+                        es_data.extend(response.get('hits').get('hits'))
+                    while scroll_id:
+                        response = self.__es.scroll(scroll_id=scroll_id, scroll="1h")
+                        if len(response.get('hits').get('hits')) > 0:
+                            es_data.extend(response.get('hits').get('hits'))
+                        else:
+                            break
+        return es_data
 
     @typechecked()
     @logger_time_stamp
