@@ -35,7 +35,11 @@ os.system('echo "Upload data to ElasticSearch - ec2 index"')
 es_index = 'cloud-governance-appeng-ec2-index'
 es_doc_type = '_doc'
 for region in regions:
-    for policy_types in ['ec2', 'zombie', 'ebs']:
+    for policy_types in ['ec2', 'zombie', 'ebs', 'empty_roles', 's3', 'ip', 'nat_gateway_unused']:
         policies = get_policies(type=policy_types)
         for policy in policies:
-            os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="APPENG" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index}" -e es_doc_type="{es_doc_type}" -e bucket="{BUCKET_APPENG}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+            if policy in ('empty_roles', 's3_inactive'):
+                if region == 'us-east-1':
+                    os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="APPENG" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index}" -e es_doc_type="{es_doc_type}" -e bucket="{BUCKET_APPENG}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+            else:
+                os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="APPENG" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{es_index}" -e es_doc_type="{es_doc_type}" -e bucket="{BUCKET_APPENG}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")

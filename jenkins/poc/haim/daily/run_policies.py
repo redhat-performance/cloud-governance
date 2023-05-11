@@ -48,6 +48,6 @@ for region in regions:
 cost_tags = ['PurchaseType', 'ChargeType', 'User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email', 'Environment', 'User:Spot']
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
 granularity = 'DAILY'  # DAILY/MONTHLY/HOURLY
-cost_explorer_index = 'cloud-governance-haim-cost-explorer-index'
+cost_explorer_index = 'cloud-governance-haim-cost-explorer-global-index'
 os.system(f"""echo "Running the CloudGovernance CostExplorer Policies" """)
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="appeng" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_APPENG}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_APPENG}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_index="{cost_explorer_index}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
