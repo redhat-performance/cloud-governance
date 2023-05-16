@@ -40,9 +40,12 @@ class IpUnattached(NonClusterZombiePolicy):
                                                                  days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags,
                                                                  extra_purse=eip_cost, delta_cost=delta_cost)
                     if zombie_eip:
-                        zombie_addresses.append([address.get('AllocationId'), self._get_tag_name_from_tags(tags=tags),
-                                                 self._get_tag_name_from_tags(tags=tags, tag_name='User'), address.get('PublicIp'),
-                                                 self._get_policy_value(tags=tags), unused_days])
+                        zombie_addresses.append({'ResourceId': address.get('AllocationId'),
+                                                 'Name': self._get_tag_name_from_tags(tags=tags),
+                                                 'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                 'PublicIp': address.get('PublicIp'),
+                                                 'Skip': self._get_policy_value(tags=tags),
+                                                 'Days': unused_days})
                 else:
                     unused_days = 0
                 self._update_resource_tags(resource_id=address.get('AllocationId'), tags=tags, left_out_days=unused_days, resource_left_out=ip_no_used)

@@ -34,6 +34,7 @@ class Postfix:
         self.__es_port = self.__environment_variables_dict.get('es_port', '')
         self.__account = self.__environment_variables_dict.get('account', '')
         self.__policy_output = self.__environment_variables_dict.get('policy_output', '')
+        self.__default_admins = self.__environment_variables_dict.get('DEFAULT_ADMINS')
         self.bucket_name, self.key = self.get_bucket_name()
         self.__es_index = 'cloud-governance-mail-messages'
         if self.__es_host:
@@ -53,6 +54,7 @@ class Postfix:
 
     @logger_time_stamp
     def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
+        cc.extend(self.__default_admins)
         msg = MIMEMultipart('alternative')
         msg["Subject"] = subject
         msg["From"] = "%s <%s>" % (

@@ -15,13 +15,13 @@ def test_nat_gateway_unused():
     This method tests, deletion od unused of NatGateways
     @return:
     """
-    os.environ['policy'] = 'nat_gateway_unused'
+    os.environ['policy'] = 'unused_nat_gateway'
     ec2_client = boto3.client('ec2', region_name=os.environ.get('AWS_DEFAULT_REGION'))
     subnet_id = ec2_client.describe_subnets()['Subnets'][0].get('SubnetId')
     ec2_client.create_nat_gateway(SubnetId=subnet_id)
     nat_gateway_unused = NonClusterZombiePolicy()
     nat_gateway_unused.set_dryrun(value='no')
-    nat_gateway_unused.set_policy(value='nat_gateway_unused')
+    nat_gateway_unused.set_policy(value='unused_nat_gateway')
     nat_gateway_unused.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     nat_gateway_unused._check_resource_and_delete(resource_name='Nat Gateway',
                                                   resource_id='NatGatewayId',
@@ -39,7 +39,7 @@ def test_nat_gateway_unused_not_delete():
     This method tests, deletion od unused of NatGateways
     @return:
     """
-    os.environ['policy'] = 'nat_gateway_unused'
+    os.environ['policy'] = 'unused_nat_gateway'
     tags = [
         {'Key': 'Name', 'Value': 'CloudGovernanceTestZombieNatGateway'},
         {'Key': 'Owner', 'Value': 'CloudGovernance'},
@@ -50,7 +50,7 @@ def test_nat_gateway_unused_not_delete():
     ec2_client.create_nat_gateway(SubnetId=subnet_id, TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}])
     nat_gateway_unused = NonClusterZombiePolicy()
     nat_gateway_unused.set_dryrun(value='no')
-    nat_gateway_unused.set_policy(value='nat_gateway_unused')
+    nat_gateway_unused.set_policy(value='unused_nat_gateway')
     nat_gateway_unused.DAYS_TO_TRIGGER_RESOURCE_MAIL = -1
     nat_gateway_unused._check_resource_and_delete(resource_name='Nat Gateway',
                                                   resource_id='NatGatewayId',

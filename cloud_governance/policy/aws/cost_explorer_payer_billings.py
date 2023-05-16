@@ -175,7 +175,6 @@ class CostExplorerPayerBillings(CostBillingReports):
         self.upload_data_elastic_search(linked_account_usage=cost_usage_data)
         return cost_usage_data
 
-    @logger_time_stamp
     def upload_data_elastic_search(self, linked_account_usage: dict):
         """This method uploads the data to elastic search"""
         for account, monthly_cost in linked_account_usage.items():

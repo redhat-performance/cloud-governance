@@ -40,7 +40,12 @@ class EmptyRoles(NonClusterZombiePolicy):
                         empty_days = self._get_resource_last_used_days(tags=tags)
                         empty_role = self._check_resource_and_delete(resource_name='IAM Role', resource_id='RoleName', resource_type='CreateRole', resource=get_role, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
                         if empty_role:
-                            zombie_roles.append([empty_role.get('RoleName'), self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_policy_value(tags=tags), empty_days])
+                            zombie_roles.append({
+                                'ResourceId': empty_role.get('RoleName'),
+                                'Name': empty_role.get('RoleName'),
+                                'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                'Skip': self._get_policy_value(tags=tags),
+                                'Days': empty_days})
                     else:
                         empty_days = 0
                     self._update_resource_tags(resource_id=role_name, tags=tags, left_out_days=empty_days, resource_left_out=role_empty)

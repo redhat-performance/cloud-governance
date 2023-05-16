@@ -226,20 +226,22 @@ class S3Operations:
 
     @logger_time_stamp
     @typeguard.typechecked
-    def get_last_objects(self, bucket: str, logs_bucket_key: str, policy: str):
+    def get_last_objects(self, bucket: str, logs_bucket_key: str = '', policy: str = '', key_prefix: str = ''):
         """
         This method return last object per policy, only path without file name
         @param logs_bucket_key:
         @param bucket:
         @param policy:
+        @param key_prefix:
         @return:
         """
         try:
-            if '_' in policy:
-                policy = policy.replace('_', '-')
-            date_key = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y/%m/%d")
-            objs = self.__s3_client.list_objects_v2(Bucket=bucket,
-                                                    Prefix=f'{logs_bucket_key}/{policy}/{date_key}')['Contents']
+            if not key_prefix:
+                if '_' in policy:
+                    policy = policy.replace('_', '-')
+                date_key = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y/%m/%d")
+                key_prefix = f'{logs_bucket_key}/{policy}/{date_key}'
+            objs = self.__s3_client.list_objects_v2(Bucket=bucket, Prefix=key_prefix)['Contents']
         except:
             return None
         get_last_modified_key = lambda obj: int(obj['LastModified'].strftime('%s'))
@@ -302,20 +304,21 @@ class S3Operations:
                                      logs_bucket_key=f'{self.__logs_bucket_key}/{self.__region}',
                                      policy=policy)
 
-    def get_last_s3_policy_content(self, policy: str, file_name: str):
+    def get_last_s3_policy_content(self, policy: str = '', file_name: str = '', s3_file_path: str = None):
         """
         This method return last policy content
         @return:
         """
         with tempfile.TemporaryDirectory() as temp_local_directory:
             local_file = temp_local_directory + '/' + file_name + '.gz'
-            if self.__get_s3_latest_policy_file(policy=policy):
-                latest_policy_path = self.__get_s3_latest_policy_file(policy=policy)
-                self.download_file(bucket=self.__bucket,
-                                   key=str(latest_policy_path),
-                                   download_file=file_name + '.gz',
-                                   file_name_path=local_file)
-                # gzip
-                os.system(f"gzip -d {local_file}")
-                with open(os.path.join(temp_local_directory, file_name)) as f:
-                    return f.read()
+            if not s3_file_path:
+                if self.__get_s3_latest_policy_file(policy=policy):
+                    s3_file_path = self.__get_s3_latest_policy_file(policy=policy)
+            self.download_file(bucket=self.__bucket,
+                               key=str(s3_file_path),
+                               download_file=file_name + '.gz',
+                               file_name_path=local_file)
+            # gzip
+            os.system(f"gzip -d {local_file}")
+            with open(os.path.join(temp_local_directory, file_name)) as f:
+                return f.read()

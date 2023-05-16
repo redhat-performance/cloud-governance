@@ -1,15 +1,33 @@
-
+from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
 
 class MailMessage:
-    RESTRICTION = 'Do not reply this email. If you need more clarification, please reach out to us in the CoreOS slack channel - #perf-dept-public-clouds.'
+
+    RESTRICTION = 'Do not reply this email. If you need more information, please reach out to us in the slack channel - #perf-dept-public-clouds.'
+    FOOTER = '<div style="color:gray">---<br />Thanks, <br />Cloud GovernanceTeam</div>'
 
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
-        self.account = self.__environment_variables_dict.get('account', '')
+        self.account = self.__environment_variables_dict.get('account', '').upper()
         self.policy = self.__environment_variables_dict.get('policy', '')
         self.region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', '')
+        self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
+        self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
+        self.__public_cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
+
+    def get_user_display_name(self, user_name: str):
+        """
+        This method return user details from ldap
+        :param user_name:
+        :return:
+        """
+        user_details = self.__ldap_search.get_user_details(user_name=user_name)
+        if user_details:
+            return user_details.get('displayName')
+        else:
+            return None
 
     def ec2_stop(self, name: str, days: int, image_id: str, delete_instance_days: int, instance_name: str,
                  resource_id: str, stopped_time: str, ec2_type: str, **kwargs):
@@ -275,4 +293,71 @@ Cloud-governance Team""".strip()
                     </address>
                 </div>
         """.strip()
+        return subject, body
+
+    def filter_resources_on_days(self, resources: dict):
+        """
+        This method return the resources based on the days
+        :param resources:
+        :param days:
+        :return:
+        """
+        resources_by_days = {}
+        for policy_name, resource_data in resources.items():
+            for region_name, policy_region_data in resource_data.items():
+                for data_item in policy_region_data:
+                    resources_by_days.setdefault(data_item.get('Days'), []).append(data_item)
+        return resources_by_days
+
+    def get_data_in_html_table_format(self, resources: dict):
+        """
+        This method return user policy alerts in HTML table format
+        :param resources:
+        :return:
+        """
+        html_table_format = '<table width="auto" border="2" style="border-collapse: collapse;padding: 10px;border: 2px solid black;">'
+        html_style_value = "border-collapse: collapse;padding: 10px;border: 2px solid black;"
+        html_style = f'style="{html_style_value}"'
+        html_style_color = f'style="color:red;{html_style_value}"'
+        td_left, td_right = f'<td align="left" {html_style}>', '</td>'
+        td_left_color = f'<td align="left" {html_style_color}>'
+        th_left, th_right = f'<th align="left" {html_style}>', '</th>'
+        tr_left, tr_right = f'<tr {html_style}>', '</tr>'
+        thead_values = ['Policy', 'Region', 'ResourceId', 'Name', 'Action', 'DeletedDay']
+        html_table_format += '<thead>' + tr_left + ''.join([f'{th_left}{value}{th_right}' for value in thead_values]) + f'{tr_right}</thead><tbody>'
+        for days, resource_data in resources.items():
+            resource_data = sorted(resource_data, key=lambda item: (item.get('Policy'), item.get('Region')))
+            for resource in resource_data:
+                td_data = [resource.get(th_value) for th_value in thead_values]
+                if 'Deleted' == resource.get('Action'):
+                    html_table_format += f"""{tr_left }{''.join([f'{td_left_color}{value}{td_right}' for value in td_data])}{tr_right}"""
+                else:
+                    html_table_format += f"""{tr_left}{''.join([f'{td_left}{value}{td_right}' for value in td_data])}{tr_right}"""
+        html_table_format += '</tbody></table>'
+        return html_table_format
+
+    def get_agg_policies_mail_message(self, user: str, user_resources: dict):
+        """
+        This method return the message for the aggregated alert of all policies
+        :param user:
+        :param user_resources:
+        :return:
+        """
+        display_name = self.get_user_display_name(user_name=user)
+        resources_by_days = self.filter_resources_on_days(resources=user_resources)
+        table_data = self.get_data_in_html_table_format(resources=resources_by_days)
+        display_name = display_name if display_name else user
+        subject = f'Cloud Governance: Policy Alerts'
+        body = f"""
+        <div>
+            <p>Hi {display_name},</p>
+        </div>
+        <div>
+            <p>You can find below your unused resources in the {self.__public_cloud_name} account ({self.account}).</p>
+            <p>If you want to keep them, please add "Policy=Not_Delete" or "Policy=skip" tag for each resource</p>
+            {table_data}
+        </div>
+        <p>{self.RESTRICTION}</p>
+        {self.FOOTER}
+"""
         return subject, body

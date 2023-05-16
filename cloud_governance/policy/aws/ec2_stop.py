@@ -71,10 +71,12 @@ class EC2Stop(NonClusterZombiePolicy):
                             stopped_instance_tags[instance_id] = resource.get('Tags')
                             ec2_types[instance_id] = resource.get('InstanceType')
                             block_device_mappings[instance_id] = resource.get('BlockDeviceMappings')
-                        stopped_instances.append([resource.get('InstanceId'), self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
-                                                  self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'), str(resource.get('LaunchTime')),
-                                                  self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Policy')
-                                                  ])
+                        stopped_instances.append({
+                            'ResourceId': resource.get('InstanceId'),
+                            'Name': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
+                            'User': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'),
+                            'LaunchTime': str(resource.get('LaunchTime')),
+                            'Policy': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Policy')})
         if self._dry_run == "no":
             for instance_id, tags in stopped_instance_tags.items():
                 if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):

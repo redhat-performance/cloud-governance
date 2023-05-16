@@ -235,7 +235,7 @@ class NonClusterZombiePolicy:
                 self._ec2_client.delete_volume(VolumeId=resource_id)
             elif self._policy == 'ip_unattached':
                 self._ec2_client.release_address(AllocationId=resource_id)
-            elif self._policy == 'nat_gateway_unused':
+            elif self._policy == 'unused_nat_gateway':
                 self._ec2_client.delete_nat_gateway(NatGatewayId=resource_id)
             elif self._policy == 'zombie_snapshots':
                 self._ec2_client.delete_snapshot(SnapshotId=resource_id)
@@ -291,7 +291,7 @@ class NonClusterZombiePolicy:
                         self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
                     elif self._policy == 'empty_roles':
                         self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
-                    elif self._policy in ('ip_unattached', 'nat_gateway_unused', 'zombie_snapshots'):
+                    elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots'):
                         self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
                 except Exception as err:
                     logger.info(f'Exception raised: {err}: {resource_id}')
