@@ -102,7 +102,7 @@ policies.remove('ec2_run')
 policies.remove('ebs_in_use')
 remove_polices = ['ec2_run', 'ebs_in_use', 'zombie_cluster_resource', 'ec2_idle', 'skipped_resources', 'ec2_stop']  # policies that will not aggregate
 policies = [policy.replace('_', '-') for policy in policies if policy not in remove_polices]
-common_input_vars = {'PUBLIC_CLOUD_NAME': 'AWS', 'BUCKET_KEY': 'logs', 'KERBEROS_USERS': f"{special_user_mails}", 'LDAP_HOST_NAME': f"{LDAP_HOST_NAME}", 'log_level': "INFO", 'MAIL_ALERT_DAYS': "[4, 6, 7]", 'POLICY_ACTIONS_DAYS': "[7]", 'POLICIES_TO_ALERT': policies}
+common_input_vars = {'PUBLIC_CLOUD_NAME': 'AWS', 'BUCKET_KEY': 'logs', 'KERBEROS_USERS': f"{special_user_mails}", 'LDAP_HOST_NAME': f"{LDAP_HOST_NAME}", 'log_level': "INFO", 'MAIL_ALERT_DAYS': "[4, 6, 7]", 'POLICY_ACTIONS_DAYS': "[7]", 'POLICIES_TO_ALERT': policies, 'es_host': ES_HOST, 'es_port': ES_PORT}
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 for account in accounts:
