@@ -39,7 +39,7 @@ class GitLeaks:
 
     def __get_gitleaks_report(self):
         """
-        This method return dict report content
+        This method returns dict report content
         """
         report_file = self.__report_file_full_path
         if os.path.isfile(report_file):

@@ -28,7 +28,7 @@ class SkippedResources(NonClusterZombiePolicy):
 
     def get_resources(self, resource_name: str):
         """
-        This method return resource data based on resource name
+        This method returns resource data based on resource name
         @param resource_name:
         @return:
         """
@@ -45,7 +45,7 @@ class SkippedResources(NonClusterZombiePolicy):
 
     def get_ebs_cost(self, volume_id: str):
         """
-        This method return the size of the ebs_volume
+        This method returns the size of the ebs_volume
         @param volume_id:
         @return:
         """
@@ -57,7 +57,7 @@ class SkippedResources(NonClusterZombiePolicy):
 
     def get_instance_volume_size(self, resource: dict):
         """
-        This method return size of the attached volumes of the instance
+        This method returns size of the attached volumes of the instance
         @param resource:
         @return:
         """
@@ -106,7 +106,7 @@ class SkippedResources(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return all tag "Not_Delete" or "skip" resources
+        This method returns all tag "Not_Delete" or "skip" resources
         @return:
         """
         resources_data = self.get_not_delete_resources()

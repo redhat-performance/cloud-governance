@@ -27,7 +27,7 @@ class IBMCostReport:
     @typechecked
     def collect_tags_from_machines(self, tags: list):
         """
-        This method return tags from list of string tags
+        This method returns tags from list of string tags
         @param tags:
         @return:
         """

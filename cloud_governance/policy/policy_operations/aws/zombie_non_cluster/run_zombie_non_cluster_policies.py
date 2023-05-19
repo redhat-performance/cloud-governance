@@ -97,7 +97,7 @@ class NonClusterZombiePolicy:
 
     def _calculate_days(self, create_date: datetime):
         """
-        This method return the days
+        This method returns the days
         @return:
         """
         today = datetime.date.today()

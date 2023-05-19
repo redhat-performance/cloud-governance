@@ -116,7 +116,7 @@ class EC2Idle(NonClusterZombiePolicy):
 
     def __get_proposed_metrics(self, metrics: list, metric_period: int):
         """
-        This method return the metrics
+        This method returns the metrics
         @param metrics:
         @param metric_period:
         @return:
@@ -125,7 +125,7 @@ class EC2Idle(NonClusterZombiePolicy):
 
     def __get_time_difference(self, launch_time: datetime):
         """
-        This method return the difference of datetime
+        This method returns the difference of datetime
         @param launch_time:
         @return:
         """

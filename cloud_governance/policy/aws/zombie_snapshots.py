@@ -25,7 +25,7 @@ class ZombieSnapshots(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return all the zombie snapshots, delete if dry_run no
+        This method returns all the zombie snapshots, delete if dry_run no
         @return:
         """
         snapshots = self._ec2_operations.get_snapshots()

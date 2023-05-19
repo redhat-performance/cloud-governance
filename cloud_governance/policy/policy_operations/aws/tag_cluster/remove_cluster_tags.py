@@ -66,7 +66,7 @@ class RemoveClusterTags(TagClusterOperations):
 
     def get_cluster(self, clusters: list):
         """
-        This method return cluster, and it tags
+        This method returns cluster, and it tags
         @param clusters:
         @return:
         """
@@ -205,7 +205,7 @@ class RemoveClusterTags(TagClusterOperations):
 
     def cluster_snapshot(self, instance_tags: dict):
         """
-        This method return list of cluster's snapshot according to cluster tag name
+        This method returns list of cluster's snapshot according to cluster tag name
         @return:
         """
         snapshots_data = self.ec2_operations.get_snapshots()
@@ -458,7 +458,7 @@ class RemoveClusterTags(TagClusterOperations):
 
     def cluster_user(self, instance_tags: dict):
         """
-        This method return list of cluster's user according to cluster name
+        This method returns list of cluster's user according to cluster name
         @param instance_tags:
         @return:
         """

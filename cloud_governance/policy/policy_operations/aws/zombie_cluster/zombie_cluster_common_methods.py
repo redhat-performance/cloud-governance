@@ -46,7 +46,7 @@ class ZombieClusterCommonMethods:
 
     def get_tag_name_from_tags(self, tags: list, tag_name: str):
         """
-        This method return tag_name from resource_tags
+        This method returns tag_name from resource_tags
         @param tags:
         @param tag_name:
         @return:
@@ -76,7 +76,7 @@ class ZombieClusterCommonMethods:
     def _get_tags_of_zombie_resources(self, resources: list, resource_id_name: str, zombies: dict, aws_service: str,
                                       aws_tag: str = 'Tags'):
         """
-        This method return tags of the resource i.e {resource_id: tags}
+        This method returns tags of the resource i.e {resource_id: tags}
         @param resources:
         @param tags:
         @return:
@@ -178,7 +178,7 @@ class ZombieClusterCommonMethods:
 
     def get_cluster_delete_days(self, tags: list) -> int:
         """
-        This method return the ClusterDeleteDays tag
+        This method returns the ClusterDeleteDays tag
         @param tags:
         @return:
         """

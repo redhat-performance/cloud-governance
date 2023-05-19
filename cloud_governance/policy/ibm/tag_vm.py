@@ -13,7 +13,7 @@ class TagVM(TaggingOperations):
 
     def get_virtual_machine_username(self, vm_id: str):
         """
-        This method return the virtual machine username from the billing order lists
+        This method returns the virtual machine username from the billing order lists
         @param vm_id:
         @return:
         """

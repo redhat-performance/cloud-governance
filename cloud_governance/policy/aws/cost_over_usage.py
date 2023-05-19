@@ -28,7 +28,7 @@ class CostOverUsage:
 
     def get_user_used_instances(self, user_used_list: list):
         """
-        This method return user used instances group by region
+        This method returns user used instances group by region
         @return:
         """
         region_resources = {}

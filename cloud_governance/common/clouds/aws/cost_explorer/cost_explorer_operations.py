@@ -52,6 +52,36 @@ class CostExplorerOperations:
                 ce_default_filter = ce_filter
         return ce_default_filter
 
+    def get_ce_report_filter_data(self, ce_response: dict, tag_name: str):
+        """
+        This method returns data filter by tag_name
+        :param tag_name:
+        :param ce_response:
+        :return:
+        """
+        data = {}
+        if ce_response.get('ResultsByTime'):
+            for results_by_time in ce_response.get('ResultsByTime'):
+                start_time = results_by_time.get('TimePeriod').get('Start')
+                for group in results_by_time.get('Groups'):
+                    name = group.get('Keys')[0].split('$')[-1].strip().replace(' ', '-') if group.get('Keys') else ''
+                    amount = group.get('Metrics').get('UnblendedCost').get('Amount') if group.get('Metrics') else 0
+                    index_id = "%s-%s" % (start_time, name)
+                    data[index_id] = {
+                        tag_name: amount,
+                        'ce_match_id': index_id,
+                        'start_date': start_time
+                    }
+        if ce_response.get('DimensionValueAttributes'):
+            for dimension_values in ce_response.get('DimensionValueAttributes'):
+                account_id = dimension_values.get("Value")
+                account = dimension_values.get('Attributes').get('description')
+                for key_index_id in data.keys():
+                    if account_id in key_index_id:
+                        index_id = f'{data[key_index_id]["start_date"]}-{account}'.lower()
+                        data[key_index_id].update({'Account': account, 'index_id': index_id})
+        return data
+
     def get_cost_by_tags(self, tag: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost',
                          start_date: str = '', end_date: str = '', **kwargs):
         """
@@ -105,7 +135,7 @@ class CostExplorerOperations:
 
     def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):
         """
-        This method return the cost forecasting
+        This method returns the cost forecasting
         @param start_date:
         @param end_date:
         @param granularity:

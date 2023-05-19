@@ -12,7 +12,7 @@ class EmptyRoles(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return all empty roles, delete if dry_run no
+        This method returns all empty roles, delete if dry_run no
         @return:
         """
         return self.__delete_empty_roles()

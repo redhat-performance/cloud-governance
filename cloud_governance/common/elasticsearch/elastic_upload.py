@@ -33,16 +33,16 @@ class ElasticUpload:
             count = 0
             for item in items:
                 if not item.get('Account'):
-                    item['Account'] = self.account
+                    item['Account'] = kwargs.get('Account') if kwargs.get('Account') else self.account
                 if kwargs.get('set_index'):
                     self.elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item, id=item[kwargs.get('set_index')])
                 else:
                     self.elastic_search_operations.upload_to_elasticsearch(index=es_index, data=item)
                 count += 1
             if count > 0 and len(items) > 0:
-                logger.info(f'Data Uploaded to {es_index} successfully, Total data: {count}')
+                logger.warn(f'Data Uploaded to {es_index} successfully, Total data: {count}')
         except Exception as err:
-            logger.info(f'Error raised {err}')
+            logger.error(f'Error raised {err}')
 
     def literal_eval(self, data: any):
         """

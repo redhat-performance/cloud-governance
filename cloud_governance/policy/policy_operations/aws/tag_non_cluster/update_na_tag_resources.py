@@ -46,7 +46,7 @@ class UpdateNATags:
 
     def __get_key_value(self, key, value):
         """
-        This method return key-value pairs
+        This method returns key-value pairs
         :param key:
         :param value:
         :return:
