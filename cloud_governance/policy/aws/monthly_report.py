@@ -26,7 +26,7 @@ class MonthlyReport:
 
     def policy_description(self, policy_name: str):
         """
-        This method return the policy description
+        This method returns the policy description
         @param policy_name:
         @return:
         """
@@ -82,7 +82,7 @@ class MonthlyReport:
 
     def row_span(self, cols: int):
         """
-        This method return the table data with colspan
+        This method returns the table data with colspan
         @param cols:
         @return:
         """

@@ -1,13 +1,15 @@
 import copy
 import datetime
+import logging
 from ast import literal_eval
 
 import boto3
-from dateutil.relativedelta import relativedelta
 
+from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
+from cloud_governance.common.clouds.aws.savingsplan.savings_plans_operations import SavingsPlansOperations
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
-from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.init_logger import logger, handler
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.policy.aws.cost_billing_reports import CostBillingReports
 
@@ -19,12 +21,18 @@ class CostExplorerPayerBillings(CostBillingReports):
     Monthly_support_fee: (monthly_support_fee - (monthly_support_fee * discount ) ) * (linked_account_total_cost/payer_account_total_cost)
     """
 
+    DEFAULT_ROUND_DIGITS = 3
+
     def __init__(self):
         super().__init__()
         self.__aws_role = self._environment_variables_dict.get("AWS_ACCOUNT_ROLE")
         self.__access_key, self.__secret_key, self.__session = self.__get_sts_credentials()
         self.__ce_client = boto3.client('ce', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
+        self.__savings_plan_client = boto3.client('savingsplans', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
+        self.__iam_client = boto3.client('iam', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
+        self.__assumed_role_account_name = IAMOperations(iam_client=self.__iam_client).get_account_alias_cloud_name()
         self.__cost_explorer_operations = CostExplorerOperations(ce_client=self.__ce_client)
+        self.__savings_plan_operations = SavingsPlansOperations(savings_plan_client=self.__savings_plan_client)
         self.__replacement_account = literal_eval(self._environment_variables_dict.get('REPLACE_ACCOUNT_NAME'))
         self.__savings_discounts = float(self._environment_variables_dict.get('PAYER_SUPPORT_FEE_CREDIT', 0))
         self.__monthly_cost_for_spa_calc = {}
@@ -66,11 +74,11 @@ class CostExplorerPayerBillings(CostBillingReports):
                                 payer_monthly_savings_plan = self.update_to_gsheet.get_monthly_spa(month_name=month_full_name, dir_path=self.__temporary_dir)
                                 budget = account_budget if start_time.split('-')[0] in years else 0
                                 index_id = f'{start_time}-{name}'
-                                upload_data = {tag: name, 'Actual': round(float(amount), 3), 'start_date': start_time,
+                                upload_data = {tag: name, 'Actual': round(float(amount), self.DEFAULT_ROUND_DIGITS), 'start_date': start_time,
                                                'timestamp': timestamp, 'CloudName': 'AWS', 'Month': month,
                                                'Forecast': 0,
                                                'filter_date': f'{start_time}-{month.split()[-1]}',
-                                               'Budget': round(budget / self.MONTHS, 3), 'CostCenter': cost_center,
+                                               'Budget': round(budget / self.MONTHS, self.DEFAULT_ROUND_DIGITS), 'CostCenter': cost_center,
                                                'AllocatedBudget': budget,
                                                "Owner": owner,
                                                'SavingsPlanCost': (float(amount) / float(self.__monthly_cost_for_spa_calc.get(start_time))) * payer_monthly_savings_plan,
@@ -79,7 +87,7 @@ class CostExplorerPayerBillings(CostBillingReports):
                                 upload_data['PremiumSupportFee'] = (float(self.__monthly_cost_for_support_fee.get(start_time)) - (float(self.__monthly_cost_for_support_fee.get(start_time)) * self.__savings_discounts)) * upload_data['TotalPercentage'],
                             else:
                                 index_id = f'{start_time}-{name}'
-                                upload_data = {tag: name, 'Actual': round(float(amount), 3)}
+                                upload_data = {tag: name, 'Actual': round(float(amount), self.DEFAULT_ROUND_DIGITS)}
                             if index_id:
                                 data[index_id] = upload_data
         if cost_data.get('DimensionValueAttributes'):
@@ -99,7 +107,7 @@ class CostExplorerPayerBillings(CostBillingReports):
         for cost_forecast in cost_forecast_data:
             start_date = str((cost_forecast.get('TimePeriod').get('Start')))
             start_year = start_date.split('-')[0]
-            cost = round(float(cost_forecast.get('MeanValue')), 3)
+            cost = round(float(cost_forecast.get('MeanValue')), self.DEFAULT_ROUND_DIGITS)
             index = f'{start_date}-{account_id}'
             month_full_name = datetime.datetime.strftime(datetime.datetime.strptime(start_date, '%Y-%m-%d'), "%B")
             total_percentage = (cost / float(self.__monthly_cost_for_spa_calc.get(start_date)))
@@ -124,7 +132,7 @@ class CostExplorerPayerBillings(CostBillingReports):
                 data['Month'] = datetime.datetime.strftime(data['timestamp'], '%Y %b')
                 data['Owner'] = owner
                 if start_year in years:
-                    data['Budget'] = round(account_budget / self.MONTHS, 3)
+                    data['Budget'] = round(account_budget / self.MONTHS, self.DEFAULT_ROUND_DIGITS)
                     data['AllocatedBudget'] = account_budget
                 else:
                     data['Budget'] = 0
@@ -134,7 +142,6 @@ class CostExplorerPayerBillings(CostBillingReports):
                 data['filter_date'] = f'{data["start_date"]}-{data["Month"].split()[-1]}'
                 cost_usage_data[account][index] = data
 
-    @logger_time_stamp
     def get_linked_accounts_forecast(self, linked_account_usage: dict):
         """
         This method append the forecast to the linked accounts
@@ -172,9 +179,36 @@ class CostExplorerPayerBillings(CostBillingReports):
                 account = usage['Account']
                 cost_usage_data.setdefault(account, {}).update({idx: usage})
         self.get_linked_accounts_forecast(linked_account_usage=cost_usage_data)
+        self.__get_ce_cost_usage_by_filter_tag(tag_name='spot', cost_centers=cost_centers, cost_usage_data=cost_usage_data)
+        handler.setLevel(logging.WARN)
+        #  To prevent printing the **kwargs of the function when using the logger_time_stamp decorator.
         self.upload_data_elastic_search(linked_account_usage=cost_usage_data)
+        handler.setLevel(logging.INFO)
         return cost_usage_data
 
+    def __get_ce_cost_usage_by_filter_tag(self, cost_centers: list, tag_name: str, cost_usage_data: dict):
+        """
+        This method returns the cost by filter tag_name
+        :param cost_centers:
+        :param tag_name:
+        :return:
+        """
+        start_date, end_date = self.get_date_ranges()
+        for cost_center in cost_centers:
+            cost_center_number = cost_center.get('CostCenter')
+            filter_cost_center = {'CostCategories': {'Key': 'CostCenter', 'Values': [cost_center_number]}}
+            values = self.__cost_explorer_operations.CE_COST_FILTERS[tag_name.upper()]['Values']
+            filter_tag_value = {'Dimensions': {'Key': 'PURCHASE_TYPE', 'Values': values}}
+            group_by = {'Type': 'DIMENSION', 'Key': 'LINKED_ACCOUNT'}
+            cost_data = self.__cost_explorer_operations.get_cost_and_usage_from_aws(start_date=start_date, end_date=end_date, granularity="MONTHLY",
+                                                                                    GroupBy=[group_by], Filter={'And': [filter_cost_center, filter_tag_value]})
+            filtered_data = self.__cost_explorer_operations.get_ce_report_filter_data(ce_response=cost_data, tag_name=tag_name)
+            if filtered_data:
+                for index_id, row in filtered_data.items():
+                    account = row.get('Account')
+                    cost_usage_data[account][index_id][f'{tag_name.title()}Usage'] = round(float(row.get(tag_name)), self.DEFAULT_ROUND_DIGITS)
+
+    @logger_time_stamp
     def upload_data_elastic_search(self, linked_account_usage: dict):
         """This method uploads the data to elastic search"""
         for account, monthly_cost in linked_account_usage.items():
@@ -189,9 +223,9 @@ class CostExplorerPayerBillings(CostBillingReports):
         for row in total_cost:
             start_time = row.get('TimePeriod').get('Start')
             if row.get('MeanValue'):
-                cost = round(float(row.get('MeanValue')), 3)
+                cost = round(float(row.get('MeanValue')), self.DEFAULT_ROUND_DIGITS)
             else:
-                cost = round(float(row.get('Total').get('UnblendedCost').get('Amount')), 3)
+                cost = round(float(row.get('Total').get('UnblendedCost').get('Amount')), self.DEFAULT_ROUND_DIGITS)
             results[start_time] = cost
         return results
 

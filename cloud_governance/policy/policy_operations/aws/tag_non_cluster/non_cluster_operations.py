@@ -102,7 +102,7 @@ class NonClusterOperations:
 
     def _get_username_from_cloudtrail(self, start_time: datetime, resource_id: str, resource_type: str, end_time: datetime = None):
         """
-        This method return username fom cloudtrail
+        This method returns username fom cloudtrail
         @param start_time:
         @param resource_id:
         @param resource_type:
@@ -132,7 +132,7 @@ class NonClusterOperations:
 
     def _build_tag(self, key: str, value: any):
         """
-        This method return Key value pair
+        This method returns Key value pair
         @param key:
         @param value:
         @return:
@@ -163,7 +163,7 @@ class NonClusterOperations:
 
     def _get_tags_fom_attachments(self, attachments: list):
         """
-        This method return tags from attachments
+        This method returns tags from attachments
         @param attachments:
         @return:
         """

@@ -82,7 +82,7 @@ def __get_resource_list(region, delete: bool = False, resource: str = '', cluste
 def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', resource: str = '', cluster_tag: str = '',
                             resource_name: str = '', service_type: str = ''):
     """
-    This method return zombie cluster resources,
+    This method returns zombie cluster resources,
     How its works? if not exist an instance cluster, the resource is zombie
     if delete true it will delete the zombie resource
     :return: list of zombie resources

@@ -15,7 +15,7 @@ class S3Inactive(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return all Empty buckets and delete if dry_run no
+        This method returns all Empty buckets and delete if dry_run no
         @return:
         """
         return self.__delete_s3_inactive()

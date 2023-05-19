@@ -13,7 +13,7 @@ class IpUnattached(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return zombie elastic_ip's and delete if dry_run no
+        This method returns zombie elastic_ip's and delete if dry_run no
         @return:
         """
         addresses = self._ec2_operations.get_elastic_ips()

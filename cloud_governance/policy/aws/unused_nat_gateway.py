@@ -54,7 +54,7 @@ class UnusedNatGateway(NonClusterZombiePolicy):
 
     def run(self):
         """
-        This method return zombie NatGateways, delete if dry_run no
+        This method returns zombie NatGateways, delete if dry_run no
         @return:
         """
         nat_gateways = self._ec2_operations.get_nat_gateways()

@@ -41,7 +41,7 @@ class CostBillingReports:
 
     def __get_start_date(self, end_date: datetime, days: int, operation: operator) -> datetime:
         """
-        This method return start_date
+        This method returns start_date
         @param operation:
         @param end_date:
         @param days:

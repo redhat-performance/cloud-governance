@@ -7,8 +7,8 @@ from cloud_governance.common.clouds.aws.utils.utils import Utils
 
 class IAMOperations:
 
-    def __init__(self):
-        self.iam_client = boto3.client('iam')
+    def __init__(self, iam_client=None):
+        self.iam_client = iam_client if iam_client else boto3.client('iam')
         self.utils = Utils()
 
     def get_user_tags(self, username: str):

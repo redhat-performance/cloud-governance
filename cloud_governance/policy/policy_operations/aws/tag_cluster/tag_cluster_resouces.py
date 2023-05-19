@@ -108,7 +108,7 @@ class TagClusterResources(TagClusterOperations):
     def __generate_cluster_resources_list_by_tag(self, resources_list: list, input_resource_id: str,
                                                  tags: str = 'Tags'):
         """
-        This method return resource list that related to input resource id according to cluster's tag name and update the tags
+        This method returns resource list that related to input resource id according to cluster's tag name and update the tags
         @param resources_list:
         @param input_resource_id:
         @param ids:
@@ -151,7 +151,7 @@ class TagClusterResources(TagClusterOperations):
 
     def __generate_cluster_resources_list_by_vpc(self, resources_list: list, input_resource_id: str):
         """
-        This method return resource list that related to input resource id according to cluster's vpc id
+        This method returns resource list that related to input resource id according to cluster's vpc id
         @param resources_list:
         @param input_resource_id:
         @return:
@@ -313,7 +313,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_instance(self):
         """
-        This method return list of cluster's instance according to cluster tag name,
+        This method returns list of cluster's instance according to cluster tag name,
         The instances list is different from other resources
         it will search for full cluster name (including random suffix string) in case of user input cluster name was given
         @return:
@@ -334,7 +334,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_volume(self):
         """
-        This method return list of cluster's volume according to cluster tag name
+        This method returns list of cluster's volume according to cluster tag name
         @return:
         """
         volumes_data = self.ec2_operations.get_volumes()
@@ -348,7 +348,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_ami(self):
         """
-        This method return list of cluster's ami according to cluster tag name
+        This method returns list of cluster's ami according to cluster tag name
         @return:
         """
         images_data = self.ec2_operations.get_images()
@@ -362,7 +362,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_snapshot(self):
         """
-        This method return list of cluster's snapshot according to cluster tag name
+        This method returns list of cluster's snapshot according to cluster tag name
         @return:
         """
         snapshots_data = self.ec2_operations.get_snapshots()
@@ -376,14 +376,14 @@ class TagClusterResources(TagClusterOperations):
 
     def __get_security_group_data(self):
         """
-        This method return security group data
+        This method returns security group data
         @return:
         """
         return self.ec2_operations.get_security_groups()
 
     def cluster_security_group(self):
         """
-        This method return list of cluster's security group according to cluster tag name
+        This method returns list of cluster's security group according to cluster tag name
         @return:
         """
         security_group_ids = self.__generate_cluster_resources_list_by_tag(
@@ -393,7 +393,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_elastic_ip(self):
         """
-        This method return list of cluster's elastic ip according to cluster tag name
+        This method returns list of cluster's elastic ip according to cluster tag name
         @return:
         """
         elastic_ips_data = self.ec2_operations.get_elastic_ips()
@@ -404,7 +404,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_network_interface(self):
         """
-        This method return list of cluster's network interface according to cluster tag name
+        This method returns list of cluster's network interface according to cluster tag name
         @return:
         """
         network_interfaces_data = self.ec2_operations.get_network_interface()
@@ -417,7 +417,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_load_balancer(self):
         """
-        This method return list of cluster's load balancer according to cluster vpc
+        This method returns list of cluster's load balancer according to cluster vpc
         @return:
         """
         result_resources_list = []
@@ -465,7 +465,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_load_balancer_v2(self):
         """
-        This method return list of cluster's load balancer according to cluster vpc
+        This method returns list of cluster's load balancer according to cluster vpc
         @return:
         """
         result_resources_list = []
@@ -513,7 +513,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_vpc(self):
         """
-        This method return list of cluster's vpc according to cluster tag name
+        This method returns list of cluster's vpc according to cluster tag name
         @return:
         """
         vpcs_data = self.ec2_operations.get_vpcs()
@@ -540,7 +540,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_subnet(self):
         """
-        This method return list of cluster's subnet according to cluster tag name
+        This method returns list of cluster's subnet according to cluster tag name
         @return:
         """
         subnets_data = self.ec2_operations.get_subnets()
@@ -551,7 +551,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_route_table(self):
         """
-        This method return list of cluster's route table according to cluster tag name
+        This method returns list of cluster's route table according to cluster tag name
         @return:
         """
         route_tables_data = self.ec2_operations.get_route_tables()
@@ -562,7 +562,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_internet_gateway(self):
         """
-        This method return list of cluster's route table internet gateway according to cluster tag name
+        This method returns list of cluster's route table internet gateway according to cluster tag name
         @return:
         """
         internet_gateways_data = self.ec2_operations.get_internet_gateways()
@@ -574,7 +574,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_dhcp_option(self):
         """
-        This method return list of cluster's dhcp option according to cluster tag name
+        This method returns list of cluster's dhcp option according to cluster tag name
         @return:
         """
         dhcp_options_data = self.ec2_operations.get_dhcp_options()
@@ -585,7 +585,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_vpc_endpoint(self):
         """
-        This method return list of cluster's vpc endpoint according to cluster tag name
+        This method returns list of cluster's vpc endpoint according to cluster tag name
         @return:
         """
         vpc_endpoints_data = self.ec2_operations.get_vpce()
@@ -596,7 +596,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_nat_gateway(self):
         """
-        This method return list of cluster's nat gateway according to cluster tag name
+        This method returns list of cluster's nat gateway according to cluster tag name
         @return:
         """
         nat_gateways_data = self.ec2_operations.get_nat_gateways()
@@ -607,7 +607,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_network_acl(self):
         """
-        This method return list of cluster's network acl according to cluster vpc id
+        This method returns list of cluster's network acl according to cluster vpc id
         Missing OpenShift Tags for it based on VPCs
         @return:
         """
@@ -619,7 +619,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_role(self, cluster_names: list = []):
         """
-        This method return list of cluster's role according to cluster name
+        This method returns list of cluster's role according to cluster name
         @param cluster_names:
         @return:
         """
@@ -669,7 +669,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_user(self, cluster_names: list = []):
         """
-        This method return list of cluster's user according to cluster name
+        This method returns list of cluster's user according to cluster name
         @param cluster_names:
         @return:
         """
@@ -752,7 +752,7 @@ class TagClusterResources(TagClusterOperations):
 
     def cluster_s3_bucket(self, cluster_names: list = []):
         """
-        This method return list of cluster's s3 bucket according to cluster name
+        This method returns list of cluster's s3 bucket according to cluster name
         @param cluster_names:
         @return:
         """

@@ -43,7 +43,7 @@ class SendAggregatedAlerts:
     @logger_time_stamp
     def __get_kerberos_users_for_iam_users(self):
         """
-        This method return the users which IAM users are not kerberos username
+        This method returns the users which IAM users are not kerberos username
         :return:
         """
         responses = {}
@@ -54,7 +54,7 @@ class SendAggregatedAlerts:
 
     def __get_users_agg_result(self, policy_result: list, agg_users_result: dict, policy_name: str, region: str):
         """
-        This method return the aggregated users resources list
+        This method returns the aggregated users resources list
         :param agg_users_result:
         :param policy_result:
         :return:
@@ -73,7 +73,7 @@ class SendAggregatedAlerts:
 
     def __get_policy_data_in_bucket(self, region: str, policy: str):
         """
-        This method return the policy data in s3 bucket
+        This method returns the policy data in s3 bucket
         :param region:
         :param policy:
         :return:
@@ -106,7 +106,7 @@ class SendAggregatedAlerts:
 
     def __get_policy_agg_data_by_region(self, policy_data: dict):
         """
-        This method return the policy data agg by region
+        This method returns the policy data agg by region
         :param policy_data:
         :return:
         """
@@ -121,7 +121,7 @@ class SendAggregatedAlerts:
     @logger_time_stamp
     def __get_policy_agg_data(self, user_policy_data: list):
         """
-        This method return the data agg by policy
+        This method returns the data agg by policy
         :param user_policy_data:
         :return:
         """
