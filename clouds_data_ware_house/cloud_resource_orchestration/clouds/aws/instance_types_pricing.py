@@ -69,3 +69,6 @@ class InstanceTypes:
             # aws_pricing[region['RegionName']] = region_pricing
         with open('instances_price.json', 'w') as file:
             json.dump(region_pricing, file, indent=4)
+
+
+# InstanceTypes().instance_prices()
