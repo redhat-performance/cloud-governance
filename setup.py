@@ -60,7 +60,7 @@ setup(
         'pandas',  # latest: aggregate ec2/ebs cluster data
         'PyGitHub==1.55',  # gitleaks
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
-        'requests==2.27.1',  # rest api & lambda
+        'requests==2.31.0',  # rest api & lambda
         'retry==0.9.2',
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx==4.5.0',  # readthedocs
