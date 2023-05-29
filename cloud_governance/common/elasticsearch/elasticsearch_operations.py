@@ -30,8 +30,7 @@ class ElasticSearchOperations:
         self.__es_host = es_host
         self.__es_port = es_port
         self.__region = region
-        self.__timeout = int(
-            self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
+        self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
         self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
@@ -111,7 +110,8 @@ class ElasticSearchOperations:
         raise ElasticSearchDataNotUploaded
 
     @typechecked()
-    def upload_to_elasticsearch(self, index: str, data: dict, doc_type: str = '_doc', es_add_items: dict = None, **kwargs):
+    def upload_to_elasticsearch(self, index: str, data: dict, doc_type: str = '_doc', es_add_items: dict = None,
+                                **kwargs):
         """
         This method is upload json data into elasticsearch
         :param index: index name to be stored in elasticsearch
@@ -209,7 +209,7 @@ class ElasticSearchOperations:
     @typechecked()
     @logger_time_stamp
     def fetch_data_by_es_query(self, es_index: str, query: dict = None, start_datetime: datetime = None,
-                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = ''):
+                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = '', search_size: int = 100, limit_to_size: bool = False):
         """
         This method fetches the data in between range, if you need aggregation results pass you own query with aggegation
         @param es_index:
@@ -218,6 +218,8 @@ class ElasticSearchOperations:
         @param query:
         @param result_agg:
         @param group_by:
+        @param search_size:
+        @param limit_to_size: limit to size
         @return:
         """
         es_data = []
@@ -226,19 +228,20 @@ class ElasticSearchOperations:
                 if start_datetime and end_datetime:
                     query = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
             if query:
-                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=100, scroll='1h')
+                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h')
                 if result_agg:
                     es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
                 else:
-                    scroll_id = response.get('_scroll_id')
                     if response.get('hits').get('hits'):
                         es_data.extend(response.get('hits').get('hits'))
-                    while scroll_id:
-                        response = self.__es.scroll(scroll_id=scroll_id, scroll="1h")
-                        if len(response.get('hits').get('hits')) > 0:
-                            es_data.extend(response.get('hits').get('hits'))
-                        else:
-                            break
+                    if not limit_to_size:
+                        scroll_id = response.get('_scroll_id')
+                        while scroll_id:
+                            response = self.__es.scroll(scroll_id=scroll_id, scroll="1h")
+                            if len(response.get('hits').get('hits')) > 0:
+                                es_data.extend(response.get('hits').get('hits'))
+                            else:
+                                break
         return es_data
 
     @typechecked()

@@ -5,6 +5,7 @@ import boto3  # regions
 
 from cloud_governance.cloud_resource_orchestration.monitor.cloud_monitor import CloudMonitor
 from cloud_governance.main.main_common_operations import run_common_policies
+from cloud_governance.main.run_cloud_resource_orchestration import run_cloud_resource_orchestration
 from cloud_governance.policy.policy_operations.aws.cost_expenditure.cost_report_policies import CostReportPolicies
 from cloud_governance.policy.policy_operations.azure.azure_policy_runner import AzurePolicyRunner
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
@@ -170,12 +171,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
 
 
 @logger_time_stamp
-def run_cloud_management():
-    """This method run the cloud management"""
-    return CloudMonitor().run()
-
-
-@logger_time_stamp
 def main():
     """
     This main run 2 processes:
@@ -198,6 +193,8 @@ def main():
 
     if environment_variables_dict.get('COMMON_POLICIES'):
         run_common_policies()
+    elif environment_variables_dict.get('CLOUD_RESOURCE_ORCHESTRATION'):
+        run_cloud_resource_orchestration()
     else:
         non_cluster_polices_runner = None
         is_non_cluster_polices_runner = policy in environment_variables_dict.get('aws_non_cluster_policies')
@@ -225,11 +222,6 @@ def main():
             is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
             if is_azure_policy_runner:
                 azure_cost_policy_runner = AzurePolicyRunner()
-
-        # cloud_resource_orchestration lon_run/short_run
-        is_cloud_management = False
-        if environment_variables_dict.get('MANAGEMENT'):
-            is_cloud_management = True
 
         is_gcp_policy_runner = ''
         if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'GCP':
@@ -300,8 +292,6 @@ def main():
             run_cost_explorer_policies_runner()
         elif is_azure_policy_runner:
             run_azure_policy_runner()
-        elif is_cloud_management:
-            run_cloud_management()
         elif is_gcp_policy_runner:
             run_gcp_policy_runner()
         else:
