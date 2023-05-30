@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 import typeguard
@@ -5,7 +6,7 @@ import typeguard
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
-from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.init_logger import logger, handler
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
@@ -180,7 +181,7 @@ class CostOverUsage:
         else:
             total_in_progress_tickets_cost = 0
             for cro_data in user_in_progress_tickets:
-                opened_ticket_cost = cro_data.get('_source').get('estimated_cost')
+                opened_ticket_cost = float(cro_data.get('_source').get('estimated_cost'))
                 total_in_progress_tickets_cost += opened_ticket_cost
             if user_cost - total_in_progress_tickets_cost > self.__over_usage_amount:
                 return True
@@ -198,7 +199,7 @@ class CostOverUsage:
             user_name = str(user.get('User'))
             user_cost = round(user.get('Cost'), self.DEFAULT_ROUND_DIGITS)
             if user_cost >= (self.__over_usage_amount - self.__over_usage_threshold):
-                if self.verify_user_should_open_ticket_or_not(user_name=user_name, user_cost=user):
+                if self.verify_user_should_open_ticket_or_not(user_name=user_name, user_cost=user_cost):
                     over_usage_users.append(user)
         return over_usage_users
 
@@ -225,7 +226,9 @@ class CostOverUsage:
                                                                         OverUsageCost=self.__over_usage_amount,
                                                                         FullName=name, Cost=cost, Project=project, to=user)
                 es_data = {'Alert': 1}
+                handler.setLevel(logging.WARN)
                 self.__postfix_mail.send_email_postfix(to=user, cc=[], content=body, subject=subject, mime_type='html', es_data=es_data, message_type=self.CRO_OVER_USAGE_ALERT)
+                handler.setLevel(logging.INFO)
         return alerted_users
 
     def get_last_mail_alert_status(self, user: str):
