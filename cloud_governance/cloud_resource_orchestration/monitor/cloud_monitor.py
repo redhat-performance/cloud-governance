@@ -20,6 +20,7 @@ class CloudMonitor:
         self.__region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', '')
         self.__cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
         self.__monitor = self.__environment_variables_dict.get('MONITOR')
+        self.__account = self.__environment_variables_dict.get('account')
         self.__run_cro = RunCRO()
 
     @logger_time_stamp
@@ -36,7 +37,7 @@ class CloudMonitor:
         """
 
         if self.__cloud_name.upper() == self.AWS:
-            logger.info(f'CLOUD_RESOURCE_ORCHESTRATION = True, PublicCloudName=  {self.__cloud_name}')
+            logger.info(f'CLOUD_RESOURCE_ORCHESTRATION = True, PublicCloudName=  {self.__cloud_name}, Account {self.__account}')
             self.aws_cloud_monitor()
 
     def run(self):

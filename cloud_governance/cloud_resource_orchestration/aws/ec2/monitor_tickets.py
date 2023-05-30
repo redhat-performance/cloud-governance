@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 import boto3
@@ -6,6 +7,7 @@ import typeguard
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
+from cloud_governance.common.logger.init_logger import handler
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
@@ -95,10 +97,12 @@ class MonitorTickets:
                 ticket_monitoring_days = (current_date - ticket_opened_date).days
                 duration = int(es_id_data.get('duration'))
                 remaining_duration = duration - ticket_monitoring_days
+                handler.setLevel(logging.WARN)
                 es_data_change = self.verify_es_instances_state(es_data=es_id_data)
                 if es_data_change:
                     self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id, metadata=es_id_data)
                 self.__alert_in_progress_ticket_users(ticket_id=ticket_id, es_id_data=es_id_data, remaining_duration=remaining_duration)
+                handler.setLevel(logging.INFO)
 
     @typeguard.typechecked
     @logger_time_stamp
