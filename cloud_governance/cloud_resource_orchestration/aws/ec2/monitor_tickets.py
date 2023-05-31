@@ -70,7 +70,7 @@ class MonitorTickets:
                     cc = self.__default_admins
                     if ticket_status == self.NEW:  # alert manager if didn't take any action
                         to = manager
-                        subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, user=user, cloud_name=self.__cloud_name)
+                        subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description)
                         cc.append(description.get('EmailAddress'))
                     else:  # alert user if doesn't add tag name
                         to = user

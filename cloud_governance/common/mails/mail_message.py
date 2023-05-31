@@ -1,3 +1,7 @@
+import os.path
+
+from jinja2 import Environment, FileSystemLoader
+
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -19,6 +23,8 @@ class MailMessage:
         self.__cro_duration_days = self.__environment_variables_dict.get('CRO_DURATION_DAYS')
         self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
         self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
+        self.__templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+        self.env_loader = Environment(loader=FileSystemLoader(self.__templates_path))
 
     def get_user_ldap_details(self, user_name: str):
         """
@@ -304,23 +310,25 @@ Cloud-governance Team""".strip()
 """
         return subject, body
 
-    def cro_request_for_manager_approval(self, manager: str, user: str, cloud_name: str):
+    def cro_request_for_manager_approval(self, manager: str, request_user: str, cloud_name: str, ticket_id: str, description: dict):
         """
         This method returns the message for manager, regarding user approval
+        :param description:
+        :param ticket_id:
         :param manager:
-        :param user:
+        :param request_user:
         :param cloud_name:
         :return:
         """
         subject = 'CRO Alert: Required budget approval'
         manager_full_name = self.get_user_ldap_details(user_name=manager)
-        user_full_name = self.get_user_ldap_details(user_name=user)
-        body = f"""
-            <div>Hi {manager_full_name},</div><br />
-            <div>{user_full_name} is waiting for your project cloud budget approval<br />
-            Please approve the request in the following url< a href="{self.__portal}">{self.__portal}</a></div><br />
-            {self.FOOTER}
-        """
+        user_full_name = self.get_user_ldap_details(user_name=request_user)
+        ticket_id = ticket_id.split('-')[-1]
+        context = {'manager': manager, 'manager_full_name': manager_full_name, 'user_full_name': user_full_name,
+                   'ticket_id': ticket_id, 'portal': self.__portal, 'request_user': request_user, 'description': description,
+                   'footer': self.FOOTER}
+        template_loader = self.env_loader.get_template('cro_request_for_manager_approval.j2')
+        body = template_loader.render(context)
         return subject, body
 
     def cro_send_user_alert_to_add_tags(self, user: str, ticket_id: str):

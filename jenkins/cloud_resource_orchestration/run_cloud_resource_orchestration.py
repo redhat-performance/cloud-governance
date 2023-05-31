@@ -42,4 +42,4 @@ common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
     os.system(f"""echo Running on Account {input_vars.get("account").upper()}""")
     envs = list(map(combine_vars, input_vars.items()))
-    os.system(f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="False" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} quay.io/ebattat/cloud-governance:latest""")
+    os.system(f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} quay.io/ebattat/cloud-governance:latest""")
