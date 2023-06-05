@@ -263,14 +263,14 @@ Cloud-governance Team""".strip()
         :return:
         """
         ticket_id = ticket_id.split('-')[-1]
-        subject = f'CRO Alert: Expiring in {days} days'
+        subject = f'[Action required] Cloud Resources Ticket Expiring in {days} days'
         user_display_name = self.get_user_ldap_details(user_name=user)
         body = f"""
                 <div>
-                <p>Hi {user_display_name},</p>
+                    <p>Hi {user_display_name},</p>
                 </div>
                 <div>
-                    <p>You project budget request (TicketId: {ticket_id}) will be expired in {days} days</p>
+                    <p>You project budget request ( TicketId: {ticket_id} ) will be expired in {days} days.</p>
                     <p>You can extend the project duration in the following url {self.__portal} or terminate the instances</p>
                     <p>Visit the <a href="{self.__portal}">wiki page</a> to get more information</p>
                 </div>
@@ -290,7 +290,7 @@ Cloud-governance Team""".strip()
         if not full_name:
             full_name = kwargs.get('to')
         user_cost = round(kwargs.get('Cost', 0), 3)
-        subject = f'{cloud_name} Cost Over Usage alert: > {over_usage_cost} $'
+        subject = f'[Action required]: Cloud Resources Open Ticket Request'
         if user_cost > over_usage_cost:
             message = f"it's over {over_usage_cost} $."
         else:
@@ -302,7 +302,7 @@ Cloud-governance Team""".strip()
         <div>
             Your {cloud_name} cost usage in the last {self.__cro_duration_days} days is {user_cost}$ and {message}<br/>
             You must open the project ticket in the following <a href="{self.__portal}">Link</a>.<br />
-            After submitting a ticket, you must add Tag (TicketID:#) to every active resource that is related to the project ticket.<br/>
+            After submitting a ticket, you must add Tag (TicketId:#) to every active resource that is related to the project ticket.<br/>
             
             If you have any questions, please let us know in slack channel #perf-dept-public-clouds
         <div><br/><br/>
@@ -320,7 +320,7 @@ Cloud-governance Team""".strip()
         :param cloud_name:
         :return:
         """
-        subject = 'CRO Alert: Required budget approval'
+        subject = '[Action required]: Cloud Resources Budget Request Approval'
         manager_full_name = self.get_user_ldap_details(user_name=manager)
         user_full_name = self.get_user_ldap_details(user_name=request_user)
         ticket_id = ticket_id.split('-')[-1]
@@ -338,12 +338,12 @@ Cloud-governance Team""".strip()
         :param ticket_id:
         :return:
         """
-        subject = 'CRO Alert: Required addition of TicketId tag'
+        subject = '[Action required]: Required addition of TicketId tag'
         ticket_id = ticket_id.split('-')[-1]
         user_display_name = self.get_user_ldap_details(user_name=user)
         body = f"""
         <div>Hi {user_display_name},</div><br />
-        <p>Your project budget request ( TicketId: # ) was approved by your manager.</p><br />
+        <p>Your project budget request ( TicketId: {ticket_id} ) was approved by your manager.</p><br />
         <p>Please tag your instances with tag TicketId: {ticket_id}</p>
         </div><br />
         {self.FOOTER}
@@ -364,8 +364,8 @@ Cloud-governance Team""".strip()
         body = f"""
         <div>Hi {user_full_name},</div><br />
             <div>
-            Your cloud project request ( TicketId:{ticket_id} ) duration expired and the ticket auto closed.<br />
-            You can find the summary in <a href="{self.__portal}/wikipage">Portal</a>.<br />
+            Your cloud project request ( TicketId: {ticket_id} ) duration expired and the ticket auto closed.<br />
+            You can find the summary in <a href="{self.__portal}/wiki/clouds">Portal</a>.<br />
             </div><br /><br/>
         {self.FOOTER}
         """
