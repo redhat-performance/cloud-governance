@@ -64,29 +64,32 @@ class CostOverUsage:
         :param end_date:
         :return:
         """
-        remove_savings_cost = {  # removed the savings plan usage from the user costs
-            'Not': {
-                'Dimensions': {
-                    'Key': 'RECORD_TYPE',
-                    'Values': ['SavingsPlanRecurringFee', 'SavingsPlanNegation', 'SavingsPlanCoveredUsage']
-                }
-            }
-        }
-        Filters = remove_savings_cost
+        # remove_savings_cost = {  # removed the savings plan usage from the user costs
+        #     'Not': {
+        #         'Dimensions': {
+        #             'Key': 'RECORD_TYPE',
+        #             'Values': ['SavingsPlanRecurringFee', 'SavingsPlanNegation', 'SavingsPlanCoveredUsage']
+        #         }
+        #     }
+        # }
+        Filters = {} #remove_savings_cost
         if extra_filters:
             if type(extra_filters) == list:
-                Filters = {
-                    extra_operation: [
-                        *extra_filters,
-                        remove_savings_cost
-                    ]
-                }
+                if len(extra_filters) == 1:
+                    Filters = extra_filters[0]
+                else:
+                    Filters = {
+                        extra_operation: [
+                            *extra_filters,
+                            # remove_savings_cost
+                        ]
+                    }
             else:
                 Filters = {
-                    extra_operation: [
-                        extra_filters,
-                        remove_savings_cost
-                    ]
+                    # extra_operation: [
+                        extra_filters
+                        # remove_savings_cost
+                    # ]
                 }
         if forecast:
             results_by_time = self.__ce_operations.get_cost_forecast(start_date=start_date, end_date=end_date, granularity=self.FORECAST_GRANULARITY, cost_metric=self.FORECAST_COST_METRIC, Filter=Filters)['Total']

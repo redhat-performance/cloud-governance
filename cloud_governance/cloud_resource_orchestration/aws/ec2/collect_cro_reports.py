@@ -250,8 +250,8 @@ class CollectCROReports:
                 duration = int(source_data.get('duration', 0))
                 user_project = source_data.get('project')
                 group_by_tag_name = self.COST_EXPLORER_TAGS[self.TICKET_ID_KEY]
-                user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=ticket_opened_date, extra_filter_key_values={'Project': user_project})
-                user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
+                user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=ticket_opened_date)
+                user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), forecast=True, duration=duration)
                 update_data = {'actual_cost': user_cost, 'forecast': user_forecast, 'timestamp': datetime.utcnow(), f'TotalCurrentUsage-{datetime.utcnow().year}': total_account_cost}
                 if not source_data.get(self.ALLOCATED_BUDGET):
                     update_data[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
