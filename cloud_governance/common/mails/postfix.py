@@ -56,7 +56,7 @@ class Postfix:
     @logger_time_stamp
     def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
         if self.__email_alert:
-            cc = [cc_user for cc_user in cc if to not in cc_user]
+            cc = [cc_user for cc_user in cc if to and to not in cc_user]
             cc = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
             msg = MIMEMultipart('alternative')
             msg["Subject"] = subject
