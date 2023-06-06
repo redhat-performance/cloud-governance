@@ -323,12 +323,13 @@ class EC2Operations:
                 non_cluster.append(resource)
         return [cluster, non_cluster]
 
-    def get_instances(self, **kwargs):
+    def get_instances(self, ec2_client: boto3.client = None, **kwargs):
         """
         This method returns all instances from the region
         @return:
         """
-        return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_instances,
+        describe_instances = ec2_client.describe_instances if ec2_client else self.ec2_client.describe_instances
+        return self.utils.get_details_resource_list(func_name=describe_instances,
                                                     input_tag='Reservations', check_tag='NextToken', **kwargs)
 
     def get_volumes(self, **kwargs):
@@ -601,3 +602,33 @@ class EC2Operations:
             if mapping.get('Ebs').get('DeleteOnTermination'):
                 return mapping.get('Ebs').get('AttachTime')
         return ''
+
+    def get_active_instances(self, tag_name: str, tag_value: str, skip_full_scan: bool = False):
+        """
+        This method returns all active instances by filter tag_name, tag_value in all active regions
+        :param skip_full_scan:
+        :param tag_name:
+        :param tag_value:
+        :return:
+        """
+        active_instances = []
+        active_regions = self.get_active_regions()
+        for region_name in active_regions[::-1]:
+            filters = [{'Name': f'tag:{tag_name}', 'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
+            self.get_ec2_instance_list()
+            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2', region_name=region_name))
+            if active_instances_in_region:
+                if skip_full_scan:
+                    return True
+                else:
+                    active_instances.append({region_name: active_instances_in_region})
+        return False if skip_full_scan else active_instances
+
+    def verify_active_instances(self, tag_name: str, tag_value: str):
+        """
+        This method verify any active instances in all regions by tag_name, tag_value
+        :param tag_name:
+        :param tag_value:
+        :return:
+        """
+        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True)

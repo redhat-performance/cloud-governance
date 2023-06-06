@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import typeguard
 
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
+from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger, handler
@@ -46,6 +47,7 @@ class CostOverUsage:
         self.__ce_operations = CostExplorerOperations()
         self.es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
         self.__over_usage_threshold = self.OVER_USAGE_THRESHOLD * self.__over_usage_amount
+        self.__ec2_operations = EC2Operations()
 
     def get_cost_explorer_operations(self):
         return self.__ce_operations
@@ -152,18 +154,17 @@ class CostOverUsage:
         start_date, end_date = self.__get_start_end_dates(start_date=start_date, end_date=end_date)
         return self.get_cost_based_on_tag(start_date=str(start_date), end_date=str(end_date), tag_name=tag_name, granularity=granularity, extra_filters=extra_matches, extra_operation=extra_operation, forecast=True)
 
-    def verify_user_should_open_ticket_or_not(self, user_name: str, user_cost: float):
+    def get_user_active_ticket_costs(self, user_name: str):
         """
         This method returns a boolean indicating whether the user should open the ticket or not
-        :param user_cost:
         :param user_name:
         :return:
         """
         query = {  # check user opened the ticket in elastic_search
             "query": {
                 "bool": {
-                    "must": [{"term": {"user": user_name}},
-                             {"term": {"ticket_id_state.keyword": 'in-progress'}},
+                    "must": [{"term": {"user_cro.keyword": user_name}},
+                             {"terms": {"ticket_id_state.keyword": ['new', 'manager-approved', 'in-progress']}},
                              {"term": {"account_name.keyword": self.__aws_account.upper()}}
                              ],
                     "filter": {
@@ -178,17 +179,15 @@ class CostOverUsage:
                 }
             }
         }
-        user_in_progress_tickets = self.es_operations.fetch_data_by_es_query(es_index=self.es_index_cro, query=query)
-        if not user_in_progress_tickets:
-            return True
+        user_active_tickets = self.es_operations.fetch_data_by_es_query(es_index=self.es_index_cro, query=query)
+        if not user_active_tickets:
+            return None
         else:
-            total_in_progress_tickets_cost = 0
-            for cro_data in user_in_progress_tickets:
+            total_active_ticket_cost = 0
+            for cro_data in user_active_tickets:
                 opened_ticket_cost = float(cro_data.get('_source').get('estimated_cost'))
-                total_in_progress_tickets_cost += opened_ticket_cost
-            if user_cost - total_in_progress_tickets_cost > self.__over_usage_amount:
-                return True
-        return False
+                total_active_ticket_cost += opened_ticket_cost
+            return total_active_ticket_cost
 
     @logger_time_stamp
     def get_cost_over_usage_users(self):
@@ -202,8 +201,14 @@ class CostOverUsage:
             user_name = str(user.get('User'))
             user_cost = round(user.get('Cost'), self.DEFAULT_ROUND_DIGITS)
             if user_cost >= (self.__over_usage_amount - self.__over_usage_threshold):
-                if self.verify_user_should_open_ticket_or_not(user_name=user_name, user_cost=user_cost):
+                user_active_tickets_cost = self.get_user_active_ticket_costs(user_name=user_name)
+                if not user_active_tickets_cost:
                     over_usage_users.append(user)
+                else:
+                    user_cost_without_active_ticket = user_cost - user_active_tickets_cost
+                    if user_cost_without_active_ticket > self.__over_usage_amount:
+                        user['Cost'] = user_cost_without_active_ticket
+                        over_usage_users.append(user)
         return over_usage_users
 
     @logger_time_stamp
@@ -223,15 +228,16 @@ class CostOverUsage:
             cc = [*self.__cro_admins]
             user_details = self.__ldap_search.get_user_details(user_name=user)
             if user_details:
-                name = f'{user_details.get("FullName")}'
-                cc.append(user_details.get('managerId'))
-                subject, body = self.__mail_message.cro_cost_over_usage(CloudName=self.__public_cloud_name,
-                                                                        OverUsageCost=self.__over_usage_amount,
-                                                                        FullName=name, Cost=cost, Project=project, to=user)
-                es_data = {'Alert': 1}
-                handler.setLevel(logging.WARN)
-                self.__postfix_mail.send_email_postfix(to=user, cc=[], content=body, subject=subject, mime_type='html', es_data=es_data, message_type=self.CRO_OVER_USAGE_ALERT)
-                handler.setLevel(logging.INFO)
+                if True:#self.__ec2_operations.verify_active_instances(tag_name='User', tag_value=str(user)):
+                    name = f'{user_details.get("FullName")}'
+                    cc.append(user_details.get('managerId'))
+                    subject, body = self.__mail_message.cro_cost_over_usage(CloudName=self.__public_cloud_name,
+                                                                            OverUsageCost=self.__over_usage_amount,
+                                                                            FullName=name, Cost=cost, Project=project, to=user)
+                    es_data = {'Alert': 1}
+                    handler.setLevel(logging.WARN)
+                    self.__postfix_mail.send_email_postfix(to=user, cc=[], content=body, subject=subject, mime_type='html', es_data=es_data, message_type=self.CRO_OVER_USAGE_ALERT)
+                    handler.setLevel(logging.INFO)
         return alerted_users
 
     def get_last_mail_alert_status(self, user: str):

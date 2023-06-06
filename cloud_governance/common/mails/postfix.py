@@ -36,6 +36,8 @@ class Postfix:
         self.__policy_output = self.__environment_variables_dict.get('policy_output', '')
         self.__default_admins = self.__environment_variables_dict.get('DEFAULT_ADMINS')
         self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT')
+        self.__mail_to = self.__environment_variables_dict.get('EMAIL_TO')  # testing purposes
+        self.__mail_cc = self.__environment_variables_dict.get('EMAIL_CC')
         self.bucket_name, self.key = self.get_bucket_name()
         self.__es_index = 'cloud-governance-mail-messages'
         if self.__es_host:
@@ -56,6 +58,10 @@ class Postfix:
     @logger_time_stamp
     def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
         if self.__email_alert:
+            if self.__mail_to:
+                to = self.__mail_to
+            if self.__mail_cc:
+                cc = self.__mail_cc
             cc = [cc_user for cc_user in cc if to and to not in cc_user]
             cc = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
             msg = MIMEMultipart('alternative')
@@ -88,9 +94,9 @@ class Postfix:
                         logger.debug(email_string)
                         s.send_message(msg)
                         if isinstance(to, str):
-                            logger.info(f'Mail sent successfully to {to}@redhat.com')
+                            logger.warn(f'Mail sent successfully to {to}@redhat.com')
                         elif isinstance(to, list):
-                            logger.info(f'Mail sent successfully to {", ".join(to)}@redhat.com')
+                            logger.warn(f'Mail sent successfully to {", ".join(to)}@redhat.com')
                         if kwargs.get('filename'):
                             file_name = kwargs['filename'].split('/')[-1]
                             date_key = datetime.datetime.now().strftime("%Y%m%d%H")
@@ -109,14 +115,14 @@ class Postfix:
                         if kwargs.get('extra_purse'):
                             data['extra_purse'] = round(kwargs['extra_purse'], 3)
                         if self.__es_host:
-                            self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
-                            logger.info(f'Uploaded to es index: {self.__es_index}')
+                            # self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+                            logger.warn(f'Uploaded to es index: {self.__es_index}')
                         else:
-                            logger.info('Error missing the es_host')
+                            logger.warn('Error missing the es_host')
                     except smtplib.SMTPException as ex:
-                        logger.info(f'Error while sending mail, {ex}')
+                        logger.error(f'Error while sending mail, {ex}')
                         return False
                 return True
             except Exception as err:
-                logger.info(f'Some error occurred, {err}')
+                logger.error(f'Some error occurred, {err}')
                 return False

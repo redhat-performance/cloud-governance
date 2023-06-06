@@ -92,8 +92,11 @@ class TagCROInstances:
             self.jira_operations.move_issue_state(ticket_id=ticket_id, state='inprogress')
             logger.info(f'Extra tags are added to the instances: {instance_id}, had an ticket_id: {ticket_id}')
             if volume_ids:
-                self.__ec2_operations.tag_ec2_resources(client_method=self.__ec2_client.create_tags, resource_ids=volume_ids, tags=tags)
-                logger.info(f'Tagged the instance: {instance_id} attached volumes {volume_ids}')
+                try:
+                    self.__ec2_operations.tag_ec2_resources(client_method=self.__ec2_client.create_tags, resource_ids=volume_ids, tags=tags)
+                    logger.info(f'Tagged the instance: {instance_id} attached volumes {volume_ids}')
+                except Exception as err:
+                    logger.error(err)
             return True
         return False
 

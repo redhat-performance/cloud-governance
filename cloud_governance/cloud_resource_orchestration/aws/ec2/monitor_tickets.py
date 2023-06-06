@@ -1,8 +1,10 @@
 import logging
+import os
 from datetime import datetime
 
 import boto3
 import typeguard
+from jinja2 import Environment, FileSystemLoader
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -34,11 +36,13 @@ class MonitorTickets:
         self.es_cro_index = self.__environment_variables_dict.get('CRO_ES_INDEX', '')
         self.__default_admins = self.__environment_variables_dict.get('CRO_DEFAULT_ADMINS', [])
         self.__cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME', '')
+        self.__account = self.__environment_variables_dict.get('account', '')
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
         self.__es_port = self.__environment_variables_dict.get('es_port', '')
         self.__es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
+        self.__ec2_operations = EC2Operations()
 
     @typeguard.typechecked
     @logger_time_stamp
@@ -64,20 +68,35 @@ class MonitorTickets:
         """
         if ticket_status in (self.NEW, self.REFINEMENT):
             for ticket_id, description in tickets.items():
-                if description.get('TicketOpenedDate').date() != datetime.now().date():
-                    user = description.get('EmailAddress').split('@')[0]
-                    manager = description.get('ManagerApprovalAddress').split('@')[0]
-                    cc = self.__default_admins
-                    if ticket_status == self.NEW:  # alert manager if didn't take any action
-                        to = manager
-                        subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description)
-                        cc.append(description.get('EmailAddress'))
-                    else:  # alert user if doesn't add tag name
-                        to = user
-                        cc.append(description.get('ManagerApprovalAddress'))
-                        subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user, ticket_id=ticket_id)
-                    if ticket_status in (self.NEW, self.REFINEMENT):
-                        self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html')
+                ticket_id = ticket_id.split('-')[-1]
+                if self.__account in description.get('AccountName'):
+                    if not self.__es_operations.verify_elastic_index_doc_id(index=self.es_cro_index, doc_id=ticket_id) or ticket_id == '130':
+                        if ticket_status == self.REFINEMENT:
+                            ticket_status = 'manager-approved'
+                        source = {'cloud_name': description.get('CloudName'), 'account_name': description.get('AccountName').replace('OPENSHIFT-', ''),
+                                  'region_name': description.get('Region'), 'user': '',
+                                  'user_cro': description.get('EmailAddress').split('@')[0], 'user_cost': 0, 'ticket_id': ticket_id, 'ticket_id_state': ticket_status.lower(),
+                                  'estimated_cost': description.get('CostEstimation'), 'instances_count': 0, 'monitored_days': 0,
+                                  'ticket_opened_date': description.get('TicketOpenedDate').date(), 'duration': description.get('Days'), 'approved_manager': '',
+                                  'user_manager': '', 'project': description.get('Project'), 'owner': f'{description.get("FirstName")} {description.get("LastName")}'.upper(), 'total_spots': 0,
+                                  'total_ondemand': 0, 'AllocatedBudget': [], 'instances_list': [], 'instance_types_list': []}
+                        self.__es_operations.upload_to_elasticsearch(index=self.es_cro_index, data=source, id=ticket_id)
+                    if description.get('TicketOpenedDate').date() != datetime.now().date():
+                        user = description.get('EmailAddress').split('@')[0]
+                        manager = description.get('ManagerApprovalAddress').split('@')[0]
+                        cc = self.__default_admins
+                        subject = body = to = None
+                        if ticket_status == self.NEW:  # alert manager if didn't take any action
+                            to = manager
+                            subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description)
+                            cc.append(description.get('EmailAddress'))
+                        else:  # alert user if doesn't add tag name
+                            if self.__ec2_operations.verify_active_instances(tag_value=user, tag_name='User'):
+                                to = user
+                                cc.append(description.get('ManagerApprovalAddress'))
+                                subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user, ticket_id=ticket_id)
+                        if ticket_status in (self.NEW, self.REFINEMENT) and subject and body:
+                            self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html')
 
     @typeguard.typechecked
     @logger_time_stamp
@@ -89,20 +108,21 @@ class MonitorTickets:
         """
         current_date = datetime.now().date()
         for ticket_id, description in tickets.items():
-            ticket_id = ticket_id.split('-')[-1]
-            es_id_data = self.__es_operations.get_es_data_by_id(id=ticket_id, index=self.es_cro_index).get('_source')
-            if es_id_data:
-                ticket_opened_date = description.get('TicketOpenedDate').date()
-                self.__region_name = description.get('Region')
-                ticket_monitoring_days = (current_date - ticket_opened_date).days
-                duration = int(es_id_data.get('duration'))
-                remaining_duration = duration - ticket_monitoring_days
-                handler.setLevel(logging.WARN)
-                es_data_change = self.verify_es_instances_state(es_data=es_id_data)
-                if es_data_change:
-                    self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id, metadata=es_id_data)
-                self.__alert_in_progress_ticket_users(ticket_id=ticket_id, es_id_data=es_id_data, remaining_duration=remaining_duration)
-                handler.setLevel(logging.INFO)
+            if self.__account in description.get('AccountName'):
+                ticket_id = ticket_id.split('-')[-1]
+                es_id_data = self.__es_operations.get_es_data_by_id(id=ticket_id, index=self.es_cro_index).get('_source')
+                if es_id_data:
+                    ticket_opened_date = description.get('TicketOpenedDate').date()
+                    self.__region_name = description.get('Region')
+                    ticket_monitoring_days = (current_date - ticket_opened_date).days
+                    duration = int(es_id_data.get('duration'))
+                    remaining_duration = duration - ticket_monitoring_days
+                    handler.setLevel(logging.WARN)
+                    es_data_change = self.verify_es_instances_state(es_data=es_id_data)
+                    if es_data_change:
+                        self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id, metadata=es_id_data)
+                    self.__alert_in_progress_ticket_users(ticket_id=ticket_id, es_id_data=es_id_data, remaining_duration=remaining_duration)
+                    handler.setLevel(logging.INFO)
 
     @typeguard.typechecked
     @logger_time_stamp
