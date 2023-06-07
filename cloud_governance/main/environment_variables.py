@@ -45,7 +45,7 @@ class EnvironmentVariables:
             self._environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
         self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
         if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
-            self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper()
+            self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace('OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
         self._environment_variables_dict['aws_non_cluster_policies'] = ['ec2_idle', 'ec2_stop', 'ec2_run', 'ebs_in_use',
@@ -194,6 +194,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['CRO_RESOURCE_TAG_NAME'] = EnvironmentVariables.get_env('CRO_RESOURCE_TAG_NAME', 'TicketId')
         self._environment_variables_dict['CRO_REPLACED_USERNAMES'] = literal_eval(EnvironmentVariables.get_env('CRO_REPLACED_USERNAMES', "['osdCcsAdmin']"))
         self._environment_variables_dict['CE_PAYER_INDEX'] = EnvironmentVariables.get_env('CE_PAYER_INDEX', '')
+        self._environment_variables_dict['EMAIL_TO'] = EnvironmentVariables.get_env('EMAIL_TO', '')
+        self._environment_variables_dict['EMAIL_CC'] = literal_eval(EnvironmentVariables.get_env('EMAIL_CC', "[]"))
 
 
     @staticmethod

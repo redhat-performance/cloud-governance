@@ -185,6 +185,12 @@ class CollectCROReports:
         if instance_data[self.ZERO].get('user') and source.get('user') != instance_data[self.ZERO].get('user'):
             source['user'] = instance_data[self.ZERO].get('user')
         source['timestamp'] = datetime.utcnow()
+        if source.get('ticket_id_state') != 'in-progress':
+            source['ticket_id_state'] = 'in-progress'
+            source['approved_manager'] = instance_data[self.ZERO].get('approved_manager')
+            source['user_manager'] = instance_data[self.ZERO].get('manager'),
+            source['user_manager'] = instance_data[self.ZERO].get('manager'),
+            source[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
         return source
 
     @typeguard.typechecked
