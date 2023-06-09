@@ -36,7 +36,11 @@ os.system('echo Run CloudResourceOrchestration in pre active region')
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO', 'LDAP_HOST_NAME': LDAP_HOST_NAME,
                      'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME, 'JIRA_URL': JIRA_URL,
                      'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL, 'CRO_DEFAULT_ADMINS': CRO_DEFAULT_ADMINS, 'CRO_REPLACED_USERNAMES': CRO_REPLACED_USERNAMES,
-                     'CE_PAYER_INDEX': 'cloud-governance-clouds-billing-reports', 'RUN_ACTIVE_REGIONS': True, 'AWS_DEFAULT_REGION': 'us-east-1'}
+                     'CE_PAYER_INDEX': 'cloud-governance-clouds-billing-reports', 'RUN_ACTIVE_REGIONS': True, 'AWS_DEFAULT_REGION': 'us-east-1', 'AWS_MAX_ATTEMPTS': 5, 'AWS_RETRY_MODE': 'standard'}
+#  Added the AWS_MAX_ATTEMPTS, AWS_RETRY_MODE to handle the RateLimit Exception in aws api calls using boto3
+# for more information on throttle api calls: https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html
+# AWS Default varibles https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#:~:text=to%20use%20this.-,AWS_MAX_ATTEMPTS,-The%20total%20number
+
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
