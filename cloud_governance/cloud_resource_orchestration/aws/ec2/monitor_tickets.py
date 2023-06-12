@@ -208,7 +208,7 @@ class MonitorTickets:
         :param es_data:
         :return:
         """
-        instance_ids = [resource.split(',')[1].strip() for resource in es_data.get('instances') if 'terminated' not in resource]
+        instance_ids = [resource.split(',')[1].strip() for resource in es_data.get('instances', []) if 'terminated' not in resource]
         es_data_change = False
         if instance_ids:
             local_ec2_operations = EC2Operations(region=self.__region_name)

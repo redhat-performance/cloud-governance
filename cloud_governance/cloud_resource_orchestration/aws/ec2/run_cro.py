@@ -47,6 +47,7 @@ class RunCRO:
             logger.info(f'Cost Over Usage Users list: {", ".join(cost_over_usage_users)}')
             self.monitor_tickets.run()
             self.cro_reports.update_in_progress_ticket_cost()
+        self.save_current_timestamp()
 
     @logger_time_stamp
     def save_current_timestamp(self):
@@ -97,7 +98,6 @@ class RunCRO:
         """
         self.send_cro_alerts()
         self.run_cloud_resources()
-        self.save_current_timestamp()
 
     @logger_time_stamp
     def run(self):
