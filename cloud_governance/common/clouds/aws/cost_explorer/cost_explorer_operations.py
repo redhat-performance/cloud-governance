@@ -142,24 +142,32 @@ class CostExplorerOperations:
         @param kwargs:
         @return:
         """
-        if self.FILTER in kwargs and not kwargs.get('Filter'):
-            kwargs.pop('Filter')
-        usage_cost = {}
-        response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
-            'Start': start_date,
-            'End': end_date
-        }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
-        usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
-        usage_cost['ResultsByTime'] = response.get('ResultsByTime')
-        usage_cost['DimensionValueAttributes'] = response.get('DimensionValueAttributes')
-        while response.get('NextPageToken'):
+        try:
+            if self.FILTER in kwargs and not kwargs.get('Filter'):
+                kwargs.pop('Filter')
+            usage_cost = {}
             response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
                 'Start': start_date,
                 'End': end_date
-            }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
-            usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
-            usage_cost['DimensionValueAttributes'].extend(response.get('DimensionValueAttributes'))
-        return usage_cost
+            }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
+            usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
+            usage_cost['ResultsByTime'] = response.get('ResultsByTime')
+            usage_cost['DimensionValueAttributes'] = response.get('DimensionValueAttributes')
+            while response.get('NextPageToken'):
+                response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
+                    'Start': start_date,
+                    'End': end_date
+                }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
+                usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
+                usage_cost['DimensionValueAttributes'].extend(response.get('DimensionValueAttributes'))
+            return usage_cost
+        except Exception as err:
+            logger.error(err)
+            return {
+                'ResultsByTime': [],
+                'DimensionValueAttributes': [],
+                'GroupDefinitions': [],
+            }
 
     def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):
         """
@@ -180,5 +188,5 @@ class CostExplorerOperations:
                 Metric=cost_metric, **kwargs
             )
         except Exception as err:
-            logger.info(err)
-            return {'Total': {'Amount': 0}}
+            logger.error(err)
+            return {'Total': {'Amount': 0}, 'ForecastResultsByTime': []}
