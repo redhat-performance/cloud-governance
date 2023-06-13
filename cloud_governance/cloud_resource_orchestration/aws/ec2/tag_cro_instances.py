@@ -67,6 +67,7 @@ class TagCROInstances:
         :param volume_ids:
         :return:
         """
+        ticket_id = ticket_id.split('-')[-1]
         ticket_description = self.jira_operations.get_issue_description(ticket_id=ticket_id, state='INPROGRESS')
         if ticket_description:
             duration = ticket_description.get('Days')

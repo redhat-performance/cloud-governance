@@ -559,10 +559,18 @@ class EC2Operations:
         :return:
         """
         instances_list = []
+        ignore_tag = kwargs.pop('ignore_tag', None)
         instances = self.get_instances(**kwargs)
         for instance in instances:
             for resource in instance['Instances']:
-                instances_list.append(resource)
+                skip_resource = False
+                if ignore_tag:
+                    for tag in resource.get('Tags', []):
+                        if tag.get('Key') == ignore_tag:
+                            skip_resource = True
+                            break
+                if not skip_resource:
+                    instances_list.append(resource)
         return instances_list
 
     def get_ec2_instance_ids(self, **kwargs):
@@ -603,9 +611,10 @@ class EC2Operations:
                 return mapping.get('Ebs').get('AttachTime')
         return ''
 
-    def get_active_instances(self, tag_name: str, tag_value: str, skip_full_scan: bool = False):
+    def get_active_instances(self, tag_name: str, tag_value: str, skip_full_scan: bool = False, ignore_tag: str = ''):
         """
         This method returns all active instances by filter tag_name, tag_value in all active regions
+        :param ignore_tag:
         :param skip_full_scan:
         :param tag_name:
         :param tag_value:
@@ -616,7 +625,7 @@ class EC2Operations:
         for region_name in active_regions[::-1]:
             filters = [{'Name': f'tag:{tag_name}', 'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
             self.get_ec2_instance_list()
-            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2', region_name=region_name))
+            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2', region_name=region_name), ignore_tag=ignore_tag)
             if active_instances_in_region:
                 if skip_full_scan:
                     return True
@@ -631,4 +640,5 @@ class EC2Operations:
         :param tag_value:
         :return:
         """
-        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True)
+        ignore_tag = 'TicketId'
+        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True, ignore_tag=ignore_tag)
