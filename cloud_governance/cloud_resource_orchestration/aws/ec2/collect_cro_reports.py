@@ -154,25 +154,22 @@ class CollectCROReports:
         :return: dict data
         """
         for instance in instance_data:
-            index = [idx for idx, es_instance in enumerate(source.get('instances')) if instance.get('instance_id') in es_instance]
+            index = [idx for idx, es_instance in enumerate(source.get('instances', [])) if instance.get('instance_id') in es_instance]
             running_days = instance.get('instance_running_days')
             if index:
                 source['instances'][index[self.ZERO]] = f"{instance.get('instance_name')}, {instance.get('instance_id')}, " \
                                                 f"{instance.get('instance_plan')}, {instance.get('instance_type')}, " \
                                                 f"{instance.get('instance_state')}, {running_days}"
             else:
-                source['instances'].append(f"{instance.get('instance_name')}, {instance.get('instance_id')}, "
-                                           f"{instance.get('instance_plan')}, {instance.get('instance_type')}, "
-                                           f"{instance.get('instance_state')}, {running_days}")
-                if source.get('instance_types'):
-                    source['instance_types'].append(instance.get('instance_type'))
+                source.setdefault('instances', []).append(f"{instance.get('instance_name')}, {instance.get('instance_id')}, "
+                                                          f"{instance.get('instance_plan')}, {instance.get('instance_type')}, "
+                                                          f"{instance.get('instance_state')}, {running_days}")
+                source.setdefault('instance_types', []).append(instance.get('instance_type'))
+                if instance.get('instance_plan', '').lower() == 'spot':
+                    source['total_spots'] = source.get('total_spots', 0) + 1
                 else:
-                    source['instance_types'] = [instance.get('instance_type')]
-                if instance.get('instance_plan').lower() == 'spot':
-                    source['total_spots'] = source.get('total_spots') + 1
-                else:
-                    if instance.get('instance_plan').lower() == 'ondemand':
-                        source['total_ondemand'] = source.get('total_ondemand') + 1
+                    if instance.get('instance_plan', '').lower() == 'ondemand':
+                        source['total_ondemand'] = source.get('total_ondemand', 0) + 1
         MonitorTickets().verify_es_instances_state(es_data=source)
         if datetime.strptime(source.get('timestamp'), "%Y-%m-%dT%H:%M:%S.%f").date() != datetime.now().date():
             source['monitored_days'] = (datetime.utcnow().date() - source.get('ticket_opened_date')).days
@@ -203,6 +200,7 @@ class CollectCROReports:
         """
         upload_data = {}
         for ticket_id, instance_data in monitor_data.items():
+            ticket_id = ticket_id.split('-')[-1]
             user = instance_data[self.ZERO].get('user')
             user_project = instance_data[self.ZERO].get('project')
             issue_description = self.jira_operations.get_issue_description(ticket_id=ticket_id, state='ANY')

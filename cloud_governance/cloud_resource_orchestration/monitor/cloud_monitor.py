@@ -37,7 +37,7 @@ class CloudMonitor:
         """
 
         if self.__cloud_name.upper() == self.AWS:
-            logger.info(f'CLOUD_RESOURCE_ORCHESTRATION = True, PublicCloudName=  {self.__cloud_name}, Account {self.__account}')
+            logger.info(f'CLOUD_RESOURCE_ORCHESTRATION = True, PublicCloudName = {self.__cloud_name}, Account = {self.__account}')
             self.aws_cloud_monitor()
 
     def run(self):
