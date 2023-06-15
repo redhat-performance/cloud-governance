@@ -207,7 +207,6 @@ class ElasticSearchOperations:
         return query
 
     @typechecked()
-    @logger_time_stamp
     def fetch_data_by_es_query(self, es_index: str, query: dict = None, start_datetime: datetime = None,
                                end_datetime: datetime = None, result_agg: bool = False, group_by: str = '', search_size: int = 100, limit_to_size: bool = False):
         """

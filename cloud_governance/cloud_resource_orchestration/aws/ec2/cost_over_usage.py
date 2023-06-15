@@ -228,13 +228,13 @@ class CostOverUsage:
             cc = [*self.__cro_admins]
             user_details = self.__ldap_search.get_user_details(user_name=user)
             if user_details:
-                if True:#self.__ec2_operations.verify_active_instances(tag_name='User', tag_value=str(user)):
+                if self.__ec2_operations.verify_active_instances(tag_name='User', tag_value=str(user)):
                     name = f'{user_details.get("FullName")}'
                     cc.append(user_details.get('managerId'))
                     subject, body = self.__mail_message.cro_cost_over_usage(CloudName=self.__public_cloud_name,
                                                                             OverUsageCost=self.__over_usage_amount,
                                                                             FullName=name, Cost=cost, Project=project, to=user)
-                    es_data = {'Alert': 1}
+                    es_data = {'Alert': 1, 'MissingUserTicketCost': cost}
                     handler.setLevel(logging.WARN)
                     self.__postfix_mail.send_email_postfix(to=user, cc=[], content=body, subject=subject, mime_type='html', es_data=es_data, message_type=self.CRO_OVER_USAGE_ALERT)
                     handler.setLevel(logging.INFO)
