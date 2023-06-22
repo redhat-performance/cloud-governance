@@ -310,7 +310,7 @@ Cloud-governance Team""".strip()
 """
         return subject, body
 
-    def cro_request_for_manager_approval(self, manager: str, request_user: str, cloud_name: str, ticket_id: str, description: dict):
+    def cro_request_for_manager_approval(self, manager: str, request_user: str, cloud_name: str, ticket_id: str, description: dict, **kwargs):
         """
         This method returns the message for manager, regarding user approval
         :param description:
@@ -328,6 +328,7 @@ Cloud-governance Team""".strip()
                    'ticket_id': ticket_id, 'portal': self.__portal, 'request_user': request_user, 'description': description,
                    'footer': self.FOOTER}
         template_loader = self.env_loader.get_template('cro_request_for_manager_approval.j2')
+        context['extra_message'] = kwargs.get('extra_message', '')
         body = template_loader.render(context)
         return subject, body
 
@@ -344,6 +345,7 @@ Cloud-governance Team""".strip()
         body = f"""
         <div>Hi {user_display_name},</div><br />
         <p>Your project budget request ( TicketId: {ticket_id} ) was approved by your manager.</p><br />
+        <p>Please add the tag TicketId to the the related project resources.</p>
         <p>Please tag your instances with tag TicketId: {ticket_id}</p>
         </div><br />
         {self.FOOTER}

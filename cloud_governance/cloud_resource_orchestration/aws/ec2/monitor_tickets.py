@@ -9,6 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
+from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import handler
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -40,6 +41,9 @@ class MonitorTickets:
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
         self.__es_port = self.__environment_variables_dict.get('es_port', '')
         self.__es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
+        self.__manager_escalation_days = self.__environment_variables_dict.get('MANAGER_ESCALATION_DAYS')
+        self.__ldap_search = LdapSearch(self.__environment_variables_dict.get('LDAP_HOST_NAME'))
+        self.__global_admin_name = self.__environment_variables_dict.get('GLOBAL_CLOUD_ADMIN')
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
         self.__ec2_operations = EC2Operations()
@@ -81,15 +85,26 @@ class MonitorTickets:
                                   'user_manager': '', 'project': description.get('Project'), 'owner': f'{description.get("FirstName")} {description.get("LastName")}'.upper(), 'total_spots': 0,
                                   'total_ondemand': 0, 'AllocatedBudget': [], 'instances_list': [], 'instance_types_list': []}
                         self.__es_operations.upload_to_elasticsearch(index=self.es_cro_index, data=source, id=ticket_id)
-                    if description.get('TicketOpenedDate').date() != datetime.now().date():
+                    current_date = datetime.now().date()
+                    ticket_opened_date = description.get('TicketOpenedDate').date()
+                    if ticket_opened_date != current_date:
                         user = description.get('EmailAddress').split('@')[0]
                         manager = description.get('ManagerApprovalAddress').split('@')[0]
                         cc = self.__default_admins
                         subject = body = to = None
+                        ticket_opened_days = (current_date - ticket_opened_date).days
                         if ticket_status == self.NEW:  # alert manager if didn't take any action
                             to = manager
-                            subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description)
-                            cc.append(description.get('EmailAddress'))
+                            extra_message = ''
+                            if self.__manager_escalation_days <= ticket_opened_days <= self.__manager_escalation_days + 2:
+                                manager_of_manager = self.__ldap_search.get_user_details(user_name=manager)
+                                to = manager_of_manager.get('ManagerId', '')
+                                extra_message = f"Your associate/Manager: [{manager}] doesn't approve this request.<br/>The user {user} is waiting for approval for last {ticket_opened_days} days.<br/>" \
+                                                f"Please review the below details and approve/ reject"
+                            elif ticket_opened_days >= self.__manager_escalation_days + 2:
+                                to = self.__global_admin_name
+                                extra_message = f"<b>Missing manager approval.<br />The user {user} is waiting for approval for last {ticket_opened_days} days.<br/>Please review the below details and approve/reject"
+                            subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description, extra_message=extra_message)
                         else:  # alert user if doesn't add tag name
                             if self.__ec2_operations.verify_active_instances(tag_value=user, tag_name='User'):
                                 to = user
