@@ -90,7 +90,8 @@ class TagCROInstances:
             if user:
                 tags.append({self.KEY: 'User', self.VALUE: user})
             self.__ec2_operations.tag_ec2_resources(client_method=self.__ec2_client.create_tags, resource_ids=[instance_id], tags=tags)
-            self.jira_operations.move_issue_state(ticket_id=ticket_id, state='inprogress')
+            if ticket_description.get('JiraStatus') != self.jira_operations.IN_PROGRESS:
+                self.jira_operations.move_issue_state(ticket_id=ticket_id, state='inprogress')
             logger.info(f'Extra tags are added to the instances: {instance_id}, had an ticket_id: {ticket_id}')
             if volume_ids:
                 try:
