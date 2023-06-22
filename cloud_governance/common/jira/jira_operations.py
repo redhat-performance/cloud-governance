@@ -117,6 +117,7 @@ class JiraOperations:
                             if not description_dict['Project']:
                                 description_dict['Project'] = description_dict.get('Explanationof"Other"secondaryproduct')
                     description_dict['TicketOpenedDate'] = datetime.strptime(issue_data.get('fields').get('created').split('.')[0], "%Y-%m-%dT%H:%M:%S")
+                    description_dict['JiraStatus'] = issue_data['fields']['status']['name']
                     self.cache_ticket_description(ticket_id=ticket_id, ticket_description=description_dict)
                     return description_dict
         return {}
