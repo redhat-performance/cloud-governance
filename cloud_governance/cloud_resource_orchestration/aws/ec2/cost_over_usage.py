@@ -112,7 +112,7 @@ class CostOverUsage:
         """
         if not start_date and not end_date:
             end_date = self.current_end_date.date()
-            start_date = self.current_start_date.replace(day=1).date()
+            start_date = self.current_start_date.date()
         elif not start_date:
             start_date = self.current_start_date.date()
             end_date = end_date.date()
