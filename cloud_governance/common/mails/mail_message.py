@@ -418,7 +418,7 @@ Cloud-governance Team""".strip()
                     }
                     </style>
                 """
-        html_table_format = style + '<table id="customers">'
+        html_table_format = f"""{style}<table id="customers">"""
         thead_values = ['Policy', 'Region', 'ResourceId', 'Name', 'Action', 'DeletedDay']
         html_table_format += '<thead><tr>' + ''.join([f'<th>{value}</th>' for value in thead_values]) + f'</tr></thead><tbody>'
         for days, resource_data in resources.items():
