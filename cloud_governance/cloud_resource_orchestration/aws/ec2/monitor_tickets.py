@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+import tempfile
 from datetime import datetime
 
 import boto3
@@ -71,6 +73,7 @@ class MonitorTickets:
         :return:
         """
         if ticket_status in (self.NEW, self.REFINEMENT):
+            user_tickets = {}
             for ticket_id, description in tickets.items():
                 ticket_id = ticket_id.split('-')[-1]
                 if self.__account in description.get('AccountName'):
@@ -106,12 +109,20 @@ class MonitorTickets:
                                 extra_message = f"<b>Missing manager approval.<br />The user {user} is waiting for approval for last {ticket_opened_days} days.<br/>Please review the below details and approve/reject"
                             subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description, extra_message=extra_message)
                         else:  # alert user if doesn't add tag name
-                            if self.__ec2_operations.verify_active_instances(tag_value=user, tag_name='User'):
-                                to = user
-                                cc.append(description.get('ManagerApprovalAddress'))
-                                subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user, ticket_id=ticket_id)
-                        if ticket_status in (self.NEW, self.REFINEMENT) and subject and body:
-                            self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html')
+                            user_tickets.setdefault(user, []).append(f"{ticket_id} : {description.get('Project')}")
+            if user_tickets:
+                for user, ticket_ids in user_tickets.items():
+                    active_instances = self.__ec2_operations.get_active_instances(ignore_tag='TicketId', tag_value=user, tag_name='User')
+                    if active_instances:
+                        for region, instances_list in active_instances.items():
+                            active_instances_ids = {region: [instance.get('InstanceId') for instance in instances_list]}
+                            to = user
+                            cc = self.__default_admins
+                            subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user, ticket_ids=ticket_ids)
+                            with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as filename:
+                                filename.write(json.dumps(active_instances_ids))
+                                filename.flush()
+                                self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html', filename=filename.name)
 
     @typeguard.typechecked
     @logger_time_stamp
