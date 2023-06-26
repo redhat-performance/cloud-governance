@@ -332,21 +332,22 @@ Cloud-governance Team""".strip()
         body = template_loader.render(context)
         return subject, body
 
-    def cro_send_user_alert_to_add_tags(self, user: str, ticket_id: str):
+    def cro_send_user_alert_to_add_tags(self, user: str, ticket_ids: list):
         """
         This method return the subject, body for adding tags
         :param user:
-        :param ticket_id:
+        :param ticket_ids:
         :return:
         """
         subject = '[Action required]: Add TicketId tag'
-        ticket_id = ticket_id.split('-')[-1]
+        ticket_ids = "\n".join([f"<li>{val}</li>" for idx, val in enumerate(ticket_ids)])
         user_display_name = self.get_user_ldap_details(user_name=user)
         body = f"""
-        <div>Hi {user_display_name},</div><br />
-        <p>Your project budget request ( TicketId: {ticket_id} ) was approved by your manager.</p><br />
-        <p>Please add the tag TicketId to the the related project resources.</p>
-        <p>Please tag your instances with tag TicketId: {ticket_id}</p>
+        <div>Hi {user_display_name},</div>
+        <p>You have the following <b>Approved</b> JIRA Ticket-Ids</p>
+        <ul>{ticket_ids}</ul><br />
+        Currently, there are several instances running over budget, kindly review and tag instances with TicketId: #</p>
+        <br />Please find the below attached document.<br />
         </div><br />
         {self.FOOTER}
         """

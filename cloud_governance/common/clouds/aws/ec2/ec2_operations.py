@@ -620,7 +620,7 @@ class EC2Operations:
         :param tag_value:
         :return:
         """
-        active_instances = []
+        active_instances = {}
         active_regions = self.get_active_regions()
         for region_name in active_regions[::-1]:
             filters = [{'Name': f'tag:{tag_name}', 'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
@@ -630,7 +630,7 @@ class EC2Operations:
                 if skip_full_scan:
                     return True
                 else:
-                    active_instances.append({region_name: active_instances_in_region})
+                    active_instances[region_name] = active_instances_in_region
         return False if skip_full_scan else active_instances
 
     def verify_active_instances(self, tag_name: str, tag_value: str):
