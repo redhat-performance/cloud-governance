@@ -196,7 +196,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['CE_PAYER_INDEX'] = EnvironmentVariables.get_env('CE_PAYER_INDEX', '')
         self._environment_variables_dict['EMAIL_TO'] = EnvironmentVariables.get_env('EMAIL_TO', '')
         self._environment_variables_dict['EMAIL_CC'] = literal_eval(EnvironmentVariables.get_env('EMAIL_CC', "[]"))
-
+        self._environment_variables_dict['MANAGER_ESCALATION_DAYS'] = int(EnvironmentVariables.get_env('MANAGER_ESCALATION_DAYS', '3'))
+        self._environment_variables_dict['GLOBAL_CLOUD_ADMIN'] = EnvironmentVariables.get_env('GLOBAL_CLOUD_ADMIN', 'natashba')
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):

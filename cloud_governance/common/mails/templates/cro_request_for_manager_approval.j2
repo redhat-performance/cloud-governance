@@ -1,7 +1,9 @@
 <div>Hi {{manager_full_name}},</div><br />
+{%if extra_message %}<div>{{extra_message}}</div>{%endif%}<br>
     <div>
         {{user_full_name}} is waiting for your project cloud budget approval<br />
-        Please approve the request in the following url <a href="{{portal}}">{{portal}}</a>
+        Please approve the request in the following url <a href="{{portal}}">{{portal}}</a><br />
+        <h3>TicketId: <a href="https://issues.redhat.com/browse/CLGOVN-{{ticket_id}}" target="_blank">{{ticket_id}}</a></h3>
     </div><br />
     Description of the New Request
     <div>

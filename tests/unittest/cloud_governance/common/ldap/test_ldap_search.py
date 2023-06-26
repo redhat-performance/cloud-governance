@@ -12,4 +12,4 @@ def mock_search_s(cls, base, scope, filterstr=None, attrlist=None):
 @patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
 def test_get_details():
     ldap_object = LdapSearch(ldap_host_name='example.com')
-    assert list(ldap_object.get_details(user_name='test').keys()) == ['displayName', 'manager', 'cn']
+    assert list(ldap_object._LdapSearch__get_details(user_name='test').keys()) == ['displayName', 'manager', 'cn']
