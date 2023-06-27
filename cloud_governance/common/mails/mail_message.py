@@ -394,24 +394,47 @@ Cloud-governance Team""".strip()
         :param resources:
         :return:
         """
-        html_table_format = '<table width="auto" border="2" style="border-collapse: collapse;padding: 10px;border: 2px solid black;">'
-        html_style_value = "border-collapse: collapse;padding: 10px;border: 2px solid black;"
-        html_style = f'style="{html_style_value}"'
-        html_style_color = f'style="color:red;{html_style_value}"'
-        td_left, td_right = f'<td align="left" {html_style}>', '</td>'
-        td_left_color = f'<td align="left" {html_style_color}>'
-        th_left, th_right = f'<th align="left" {html_style}>', '</th>'
-        tr_left, tr_right = f'<tr {html_style}>', '</tr>'
+        style = """
+                    <style>
+                    #customers {
+                    font-family: Verdana, Helvetica, sans-serif;
+                    border-collapse: collapse;
+                    width: 100%;
+                    }
+
+                    #customers td, #customers th {
+                    border: 2px solid #000;
+                    padding: 8px;
+                    align: left;
+                    }
+
+                    #customers tr:nth-child(even){background-color: #dddddd;}
+
+                    #customers tr:hover {background-color: #B9D9B7;}
+
+                    #customers th {
+                    padding-top: 12px;
+                    padding-bottom: 12px;
+                    text-align: left;
+                    background-color: #04AA6D;
+                    color: white;
+                    }
+                    </style>
+                """
+        html_table_format = f"""{style}<table id="customers">"""
         thead_values = ['Policy', 'Region', 'ResourceId', 'Name', 'Action', 'DeletedDay']
-        html_table_format += '<thead>' + tr_left + ''.join([f'{th_left}{value}{th_right}' for value in thead_values]) + f'{tr_right}</thead><tbody>'
+        th_elements = ''.join([f'<th>{value}</th>' for value in thead_values])
+        html_table_format += f'<thead><tr>{th_elements}</tr></thead><tbody>'
         for days, resource_data in resources.items():
             resource_data = sorted(resource_data, key=lambda item: (item.get('Policy'), item.get('Region')))
             for resource in resource_data:
-                td_data = [resource.get(th_value) for th_value in thead_values]
-                if 'Deleted' == resource.get('Action'):
-                    html_table_format += f"""{tr_left }{''.join([f'{td_left_color}{value}{td_right}' for value in td_data])}{tr_right}"""
-                else:
-                    html_table_format += f"""{tr_left}{''.join([f'{td_left}{value}{td_right}' for value in td_data])}{tr_right}"""
+                html_table_format += '<tr>'
+                for th_value in thead_values:
+                    if 'Deleted' == resource.get(th_value):
+                        html_table_format += f"<td>{resource.get(th_value)} &#128465;</td>"
+                    else:
+                        html_table_format += f"""<td>{resource.get(th_value)}</td>"""
+                html_table_format += '</tr>'
         html_table_format += '</tbody></table>'
         return html_table_format
 
