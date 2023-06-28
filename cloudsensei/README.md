@@ -1,12 +1,9 @@
 ## CloudSensei
 
-CloudSensei is a slack bot integrated with cloud governance, 
-allowing users to join a “read-only” slack channel to review 
-daily expense reports for instances (in running state) >= 7 days.
-We have had a few occurrences where cloud resources were 
-running indefinitely even after deleting the cluster. 
-But these few occurrences are good enough to be proactive and 
-this is where “CloudSensei” can give us quick access.
+CloudSensei is an effort to uncover potential cloud resource leaks which might lead to inefficient cloud management. Currently, CloudSensei helps generate a daily report allowing stakeholders to action on long-running EC2 instances.
+
+#### To-Do:
+Eventually, CloudSensei will be flipped to work as a Slackbot, allowing users to join a “read-only” Slack channel to review daily expense reports for instance.
 
 ### How it works?
 To implement this functionality, CloudSensei utilizes AWS Lambda + EventBridge.
