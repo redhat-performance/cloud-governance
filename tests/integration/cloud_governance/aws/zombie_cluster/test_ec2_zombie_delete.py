@@ -45,3 +45,10 @@ def test_ec2_zombie_vpc_delete():
     zombie_cluster_resources.zombie_cluster_vpc()
     assert not EC2Operations().find_vpc('kubernetes.io/cluster/integration-test-cluster')
 
+
+
+
+def test_describe_ec2():
+    ec2_client = boto3.client('ec2', region_name='ap-south-1')
+    response = ec2_client.describe_instances()
+    print(response)
