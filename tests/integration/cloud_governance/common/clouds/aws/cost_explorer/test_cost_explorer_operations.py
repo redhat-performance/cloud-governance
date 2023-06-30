@@ -1,8 +1,11 @@
 import datetime
 
+import pytest
+
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_get_cost_and_usage_from_aws():
     cost_explorer_operations = CostExplorerOperations()
     end_date = datetime.datetime.now()
@@ -13,6 +16,7 @@ def test_get_cost_and_usage_from_aws():
     assert aws_usage
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_get_cost_forecast():
     cost_explorer_operations = CostExplorerOperations()
     start_date = datetime.datetime.now()

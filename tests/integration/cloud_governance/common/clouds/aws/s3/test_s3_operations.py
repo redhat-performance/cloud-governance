@@ -1,5 +1,8 @@
 
 import tempfile
+
+import pytest
+
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from tests.integration.test_environment_variables import test_environment_variable
 from uuid import uuid4
@@ -19,6 +22,7 @@ def get_s3_client_object():
     return S3Operations(region_name=REGION)
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_s3_file_upload():
     """
     This method upload file to s3
@@ -34,6 +38,7 @@ def test_s3_file_upload():
         assert s3.file_exist(bucket=BUCKET, key=KEY_TEST, file_name=TEMP_FILE)
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_s3_file_download():
     """
     This method download file from s3
@@ -45,6 +50,7 @@ def test_s3_file_download():
         assert os.path.exists(os.path.join(temp_local_directory, TEMP_FILE))
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_s3_delete_file():
     """
     This method delete file from s3

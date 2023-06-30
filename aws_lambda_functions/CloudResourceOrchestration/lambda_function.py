@@ -66,6 +66,8 @@ def lambda_handler(event, context):
                             key, value = filed_value.strip().split(':', 1)
                             fields[key.strip()] = value.strip()
                 CRO_ADMINS.append(fields.get('ManagerApprovalAddress'))
+                alternate_approvals = [i.strip() for i in fields.get('AlternateApprovalMails', '').split(',')]
+                CRO_ADMINS.extend(alternate_approvals)
                 if manager_mail in CRO_ADMINS:
                     jira_description += f'\nApprovedManager: {mail_result.get("from")}\n'
                     if action.upper() == APPROVED:

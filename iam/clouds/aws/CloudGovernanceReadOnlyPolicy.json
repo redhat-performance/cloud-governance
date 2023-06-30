@@ -1,0 +1,76 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
+            ],
+            "Resource": "arn:aws:ec2:us-east-1:452958939641:instance/*",
+            "Condition": {
+                "StringEqualsIfExists": {
+                    "ec2:InstanceType": [
+                        "t2.micro"
+                    ]
+                },
+                "StringEquals": {
+                    "ec2:ResourceTag/Name": [
+                        "cloud-governance-integration-test"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "VisualEditor2",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeAddresses",
+                "ec2:DescribeInstances",
+                "s3:GetBucketTagging",
+                "cloudwatch:GetMetricData",
+                "ec2:DescribeRegions",
+                "ec2:DescribeDhcpOptions",
+                "ce:GetCostAndUsage",
+                "s3:ListBucket",
+                "ec2:DescribeSnapshots",
+                "pricing:GetProducts",
+                "ec2:DescribeInternetGateways",
+                "elasticloadbalancing:DescribeLoadBalancers",
+                "ec2:DescribeNetworkInterfaces",
+                "iam:ListAttachedRolePolicies",
+                "ec2:DescribeVolumes",
+                "iam:ListRolePolicies",
+                "ec2:DescribeNetworkAcls",
+                "ec2:DescribeRouteTables",
+                "iam:ListAccessKeys",
+                "cloudtrail:LookupEvents",
+                "iam:GetRole",
+                "cloudtrail:ListTrails",
+                "ec2:DescribeTags",
+                "ec2:DescribeVpcPeeringConnections",
+                "elasticloadbalancing:DescribeTags",
+                "iam:ListRoles",
+                "ec2:DescribeNatGateways",
+                "iam:ListUserPolicies",
+                "cloudwatch:GetMetricStatistics",
+                "ec2:DescribeSecurityGroups",
+                "ce:GetCostForecast",
+                "ec2:DescribeImages",
+                "s3:GetObject",
+                "sts:AssumeRole",
+                "s3:ListAllMyBuckets",
+                "iam:GetUserPolicy",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeInstanceTypes",
+                "iam:ListAccountAliases",
+                "iam:ListUsers",
+                "ec2:DescribeVpcEndpoints",
+                "iam:GetUser",
+                "ec2:DescribeSubnets"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

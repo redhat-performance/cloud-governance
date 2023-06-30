@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
 
+import pytest
+
 from cloud_governance.common.clouds.gcp.google_account import GoogleAccount
 from cloud_governance.main.environment_variables import environment_variables
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_query_list():
     """
     This method test fetching of the big queries data

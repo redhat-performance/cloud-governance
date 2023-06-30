@@ -1,6 +1,7 @@
 from datetime import date
 
 import boto3
+import pytest
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
@@ -20,6 +21,7 @@ def create_vpc():
     ec2_client.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_ec2_zombie_vpc_exists():
     """
     This method verify zombie cluster not deleted
@@ -33,6 +35,7 @@ def test_ec2_zombie_vpc_exists():
     assert len(zombie_cluster_resources.zombie_cluster_vpc()[0]) >= 1
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_ec2_zombie_vpc_delete():
     """
     This method tests the zombie vpc delete

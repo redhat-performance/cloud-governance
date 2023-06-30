@@ -6,7 +6,7 @@ from cloud_governance.policy.policy_operations.aws.tag_non_cluster.remove_non_cl
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 from tests.integration.test_environment_variables import test_environment_variable
 
-INSTANCE_ID = test_environment_variable.get('INSTANCE_ID')
+INSTANCE_ID = test_environment_variable.get('INSTANCE_ID', '')
 ec2_client = boto3.client('ec2', region_name='us-east-1')
 mandatory_tags = {'Budget': 'PERF-DEPT'}
 instances = [ec2_client.describe_instances(InstanceIds=[INSTANCE_ID])['Reservations'][0]['Instances']]

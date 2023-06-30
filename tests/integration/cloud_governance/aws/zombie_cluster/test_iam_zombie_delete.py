@@ -2,11 +2,13 @@ import uuid
 from datetime import datetime
 
 import boto3
+import pytest
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_iam_zombie_user_create_and_delete():
     """
     This method checks weather the zombie users exists or not

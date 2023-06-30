@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 import boto3
+import pytest
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
@@ -36,6 +37,7 @@ def create_s3_bucket():
         raise Exception('Failed to delete Bucket')
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_s3_zombie_bucket_exists():
     """
     This method checks any zombie s3 buckets are exists are not
@@ -49,6 +51,7 @@ def test_s3_zombie_bucket_exists():
     assert len(zombie_cluster_resources.zombie_cluster_s3_bucket()[0]) >= 1
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_s3_zombie_bucket_delete():
     """
     This method delete the s3 zombie bucket

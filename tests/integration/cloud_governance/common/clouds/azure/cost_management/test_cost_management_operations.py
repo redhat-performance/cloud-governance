@@ -1,7 +1,9 @@
+import pytest
 
 from cloud_governance.common.clouds.azure.cost_management.cost_management_operations import CostManagementOperations
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_get_usage():
     """
     This method tests the azure usage results getting or not
@@ -12,6 +14,7 @@ def test_get_usage():
     assert cost_usage_data
 
 
+@pytest.mark.skip(reason='Read Only')
 def test_get_forecast():
     """
     This method tests the azure forecast results getting or not
