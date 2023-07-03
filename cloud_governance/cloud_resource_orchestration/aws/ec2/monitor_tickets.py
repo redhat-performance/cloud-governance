@@ -194,6 +194,7 @@ class MonitorTickets:
         subject = body = None
         user, cc = es_id_data.get('user_cro'), self.__default_admins
         cc.append(es_id_data.get('approved_manager'))
+        ticket_extended = False
         if remaining_duration <= self.FIRST_CRO_ALERT:
             sub_tasks = self.__jira_operations.get_ticket_id_sub_tasks(ticket_id=ticket_id)
             if sub_tasks:
@@ -201,14 +202,16 @@ class MonitorTickets:
                 estimated_cost = float(es_id_data.get('estimated_cost'))
                 sub_task_count = es_id_data.get('sub_tasks', 0)
                 self.__tag_extend_instances(sub_tasks=sub_tasks, ticket_id=ticket_id, duration=duration, sub_task_count=sub_task_count, estimated_cost=estimated_cost)
+                ticket_extended = True
         if remaining_duration == self.FIRST_CRO_ALERT:
             subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=self.FIRST_CRO_ALERT, ticket_id=ticket_id)
         elif remaining_duration == self.SECOND_CRO_ALERT:
             subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=self.SECOND_CRO_ALERT, ticket_id=ticket_id)
         else:
-            if remaining_duration <= self.CLOSE_JIRA_TICKET:
-                self.__update_ticket_elastic_data(ticket_id=ticket_id, es_id_data=es_id_data)
-                subject, body = self.__mail_message.cro_send_closed_alert(user, es_id_data, ticket_id)
+            if not ticket_extended:
+                if remaining_duration <= self.CLOSE_JIRA_TICKET:
+                    self.__update_ticket_elastic_data(ticket_id=ticket_id, es_id_data=es_id_data)
+                    subject, body = self.__mail_message.cro_send_closed_alert(user, es_id_data, ticket_id)
         if subject and body:
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html')
 
