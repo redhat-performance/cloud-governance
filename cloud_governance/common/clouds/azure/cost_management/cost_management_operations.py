@@ -3,6 +3,7 @@ import datetime
 import time
 
 import pytz
+from azure.core.exceptions import HttpResponseError
 from azure.mgmt.costmanagement.models import QueryDataset, QueryAggregation, QueryTimePeriod, QueryGrouping
 
 from cloud_governance.common.clouds.azure.subscriptions.azure_operations import AzureOperations
@@ -33,8 +34,13 @@ class CostManagementOperations:
                 )
             })
             return response.as_dict()
-        except Exception as e:
-            print(e)
+        except HttpResponseError as e:
+            logger.error(e)
+            if e.status_code == 429:
+                time.sleep(10)
+                return self.get_usage(scope, start_date=start_date, end_date=end_date, granularity=granularity, **kwargs)
+        except Exception as err:
+            logger.error(err)
         return []
 
     @logger_time_stamp
