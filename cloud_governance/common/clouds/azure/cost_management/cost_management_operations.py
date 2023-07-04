@@ -80,6 +80,11 @@ class CostManagementOperations:
                     row_data[data_date] = data
             result['rows'] = list(row_data.values())
             return result
+        except HttpResponseError as e:
+            logger.error(e)
+            if e.status_code == 429:
+                time.sleep(10)
+                return self.get_usage(scope, start_date=start_date, end_date=end_date, granularity=granularity, **kwargs)
         except Exception as err:
-            logger.info(f'Error raised when fetching the forecasting results {err}')
-            return []
+            logger.error(err)
+        return []
