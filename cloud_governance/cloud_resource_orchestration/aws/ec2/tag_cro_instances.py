@@ -70,16 +70,20 @@ class TagCROInstances:
         ticket_id = ticket_id.split('-')[-1]
         ticket_description = self.jira_operations.get_issue_description(ticket_id=ticket_id, state='INPROGRESS')
         if ticket_description:
-            duration = ticket_description.get('Days')
-            estimated_cost = ticket_description.get('CostEstimation')
+            duration = int(ticket_description.get('Days', 0))
+            extended_duration = int(self.jira_operations.get_issue_sub_tasks_duration(ticket_id=ticket_id))
+            duration += extended_duration
+            estimated_cost = float(ticket_description.get('CostEstimation'))
+            extended_estimated_cost = self.jira_operations.get_issue_sub_tasks_cost_estimation(ticket_id=ticket_id)
+            estimated_cost += extended_estimated_cost
             manager_approved = ticket_description.get('ApprovedManager')
             if not manager_approved:
                 manager_approved = ticket_description.get('ManagerApprovalAddress')
             user_email = ticket_description.get('EmailAddress')
             user = user_email.split('@')[0]
             project = ticket_description.get('Project')
-            tags = [{self.KEY: 'Duration', self.VALUE: duration},
-                    {self.KEY: 'EstimatedCost', self.VALUE: estimated_cost},
+            tags = [{self.KEY: 'Duration', self.VALUE: str(duration)},
+                    {self.KEY: 'EstimatedCost', self.VALUE: str(estimated_cost)},
                     {self.KEY: 'ApprovedManager', self.VALUE: manager_approved},
                     {self.KEY: 'Project', self.VALUE: project.upper()},
                     {self.KEY: 'Email', self.VALUE: user_email},

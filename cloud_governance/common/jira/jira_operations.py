@@ -167,11 +167,12 @@ class JiraOperations:
         jira_data = self.get_issue(ticket_id=ticket_id)
         if jira_data:
             sub_tasks_ids = []
-            sub_tasks = jira_data.get('fields').get('subtasks')
-            for sub_task in sub_tasks:
-                fields = sub_task.get('fields')
-                if fields.get('status').get('name') != 'Closed' or closed:
-                    sub_tasks_ids.append(sub_task.get('key'))
+            sub_tasks = jira_data.get('fields', {}).get('subtasks', {})
+            if sub_tasks:
+                for sub_task in sub_tasks:
+                    fields = sub_task.get('fields')
+                    if fields.get('status').get('name') != 'Closed' or closed:
+                        sub_tasks_ids.append(sub_task.get('key'))
             return sub_tasks_ids
         return []
 
@@ -189,6 +190,20 @@ class JiraOperations:
             description = self.get_issue_description(ticket_id=sub_task, sub_task=True)
             cost_estimation += float(description.get('CostEstimation', 0))
         return cost_estimation
+
+    @typeguard.typechecked
+    def get_issue_sub_tasks_duration(self, ticket_id: str):
+        """
+        This method return the issue sub-tasks total duration
+        :param ticket_id:
+        :return:
+        """
+        sub_tasks = self.get_ticket_id_sub_tasks(ticket_id=ticket_id, closed=True)
+        total_duration = 0
+        for sub_task in sub_tasks:
+            description = self.get_issue_description(ticket_id=sub_task, sub_task=True)
+            total_duration += int(description.get('Days', 0))
+        return total_duration
 
     @typeguard.typechecked
     @logger_time_stamp

@@ -170,12 +170,13 @@ class MonitorTickets:
         for task_id in sub_tasks:
             description = self.__jira_operations.get_issue_description(ticket_id=task_id, sub_task=True)
             extend_duration += int(description.get('Days'))
-        instance_ids = local_ec2_operations.get_ec2_instance_ids(**filters)
-        if duration > 0:
+        if extend_duration > 0:
+            instance_ids = local_ec2_operations.get_ec2_instance_ids(**filters)
             duration += extend_duration
             tags = [{'Key': 'Duration', 'Value': str(duration)}]
             local_ec2_operations.tag_ec2_resources(client_method=local_ec2_client.create_tags, resource_ids=instance_ids, tags=tags)
-            data = {'duration': duration, 'timestamp': datetime.utcnow(), 'sub_tasks': len(sub_tasks) + sub_task_count, 'estimated_cost': round(estimated_cost, self.DEFAULT_ROUND_DIGITS)}
+            data = {'duration': duration, 'timestamp': datetime.utcnow(), 'sub_tasks': len(sub_tasks) + sub_task_count,
+                    'estimated_cost': round(estimated_cost, self.DEFAULT_ROUND_DIGITS)}
             if self.__es_operations:
                 self.__es_operations.update_elasticsearch_index(metadata=data, id=ticket_id, index=self.es_cro_index)
             for task_id in sub_tasks:
@@ -258,8 +259,8 @@ class MonitorTickets:
         This method trak the user tickets
         :return:
         """
-        for ticket_status in [self.NEW, self.REFINEMENT]:
-            self.__send_ticket_status_alerts(ticket_status=ticket_status, tickets=self.get_tickets(ticket_status=ticket_status))
+        self.__send_ticket_status_alerts(ticket_status=self.NEW, tickets=self.get_tickets(ticket_status=self.NEW))
+        self.__send_ticket_status_alerts(ticket_status=self.REFINEMENT, tickets=self.get_tickets(ticket_status=self.REFINEMENT))
         self.__track_in_progress_tickets(self.get_tickets(ticket_status=self.IN_PROGRESS))
 
     @logger_time_stamp
