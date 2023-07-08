@@ -206,7 +206,10 @@ class CostExplorerPayerBillings(CostBillingReports):
             if filtered_data:
                 for index_id, row in filtered_data.items():
                     account = row.get('Account')
-                    cost_usage_data[account][index_id][f'{tag_name.title()}Usage'] = round(float(row.get(tag_name)), self.DEFAULT_ROUND_DIGITS)
+                    if account in self.__replacement_account:
+                        account = self.__replacement_account[account]
+                    if account in cost_usage_data:
+                        cost_usage_data[account][index_id][f'{tag_name.title()}Usage'] = round(float(row.get(tag_name)), self.DEFAULT_ROUND_DIGITS)
 
     @logger_time_stamp
     def upload_data_elastic_search(self, linked_account_usage: dict):

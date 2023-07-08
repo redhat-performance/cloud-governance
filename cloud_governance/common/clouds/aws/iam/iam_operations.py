@@ -10,6 +10,7 @@ class IAMOperations:
     def __init__(self, iam_client=None):
         self.iam_client = iam_client if iam_client else boto3.client('iam')
         self.utils = Utils()
+        self.__sts_client = sts_client = boto3.client('sts')
 
     def get_user_tags(self, username: str):
         """
@@ -62,3 +63,12 @@ class IAMOperations:
         for user in users:
             iam_users.append(user.get('UserName'))
         return iam_users
+
+    def get_aws_account_id_name(self):
+        """
+        This method returns the aws account_id
+        :return:
+        """
+        response = self.__sts_client.get_caller_identity()
+        account_id = response['Account']
+        return account_id

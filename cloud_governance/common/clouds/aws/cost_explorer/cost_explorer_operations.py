@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 import boto3
 
+from cloud_governance.common.logger.init_logger import logger
+
 
 class CostExplorerOperations:
     """
@@ -82,6 +84,32 @@ class CostExplorerOperations:
                         data[key_index_id].update({'Account': account, 'index_id': index_id})
         return data
 
+    def get_filter_data(self, ce_data: list, tag_name: str = '', group_by: bool = True):
+        """
+        This method filter the cost_explorer_data
+        :param group_by:
+        :param tag_name:
+        :param ce_data:
+        :return:
+        """
+        user_cost_response = {}
+        if group_by:
+            for data in ce_data:
+                for cost_group in data.get('Groups'):
+                    user = cost_group.get('Keys')[0].split('$')[-1]
+                    user = user if user else 'REFUND'
+                    user_cost = float(cost_group.get('Metrics').get('UnblendedCost').get('Amount'))
+                    if user in user_cost_response:
+                        user_cost_response[user]['Cost'] += user_cost
+                    else:
+                        user_cost_response[user] = {tag_name: user, 'Cost': user_cost}
+            return list(user_cost_response.values())
+        else:
+            total_cost = 0
+            for data in ce_data:
+                total_cost += float(data.get('Total').get('UnblendedCost').get('Amount'))
+            return total_cost
+
     def get_cost_by_tags(self, tag: str, granularity: str = 'DAILY', cost_metric: str = 'UnblendedCost',
                          start_date: str = '', end_date: str = '', **kwargs):
         """
@@ -114,24 +142,32 @@ class CostExplorerOperations:
         @param kwargs:
         @return:
         """
-        if self.FILTER in kwargs and not kwargs.get('Filter'):
-            kwargs.pop('Filter')
-        usage_cost = {}
-        response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
-            'Start': start_date,
-            'End': end_date
-        }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
-        usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
-        usage_cost['ResultsByTime'] = response.get('ResultsByTime')
-        usage_cost['DimensionValueAttributes'] = response.get('DimensionValueAttributes')
-        while response.get('NextPageToken'):
+        try:
+            if self.FILTER in kwargs and not kwargs.get('Filter'):
+                kwargs.pop('Filter')
+            usage_cost = {}
             response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
                 'Start': start_date,
                 'End': end_date
-            }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
-            usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
-            usage_cost['DimensionValueAttributes'].extend(response.get('DimensionValueAttributes'))
-        return usage_cost
+            }, Granularity=granularity, Metrics=[cost_metric], **kwargs)
+            usage_cost['GroupDefinitions'] = response.get('GroupDefinitions')
+            usage_cost['ResultsByTime'] = response.get('ResultsByTime')
+            usage_cost['DimensionValueAttributes'] = response.get('DimensionValueAttributes')
+            while response.get('NextPageToken'):
+                response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
+                    'Start': start_date,
+                    'End': end_date
+                }, Granularity=granularity, Metrics=[cost_metric], NextPageToken=response.get('NextPageToken'), **kwargs)
+                usage_cost['ResultsByTime'].extend(response.get('ResultsByTime'))
+                usage_cost['DimensionValueAttributes'].extend(response.get('DimensionValueAttributes'))
+            return usage_cost
+        except Exception as err:
+            logger.error(err)
+            return {
+                'ResultsByTime': [],
+                'DimensionValueAttributes': [],
+                'GroupDefinitions': [],
+            }
 
     def get_cost_forecast(self, start_date: str, end_date: str, granularity: str, cost_metric: str, **kwargs):
         """
@@ -142,11 +178,15 @@ class CostExplorerOperations:
         @param cost_metric:
         @return:
         """
-        return self.cost_explorer_client.get_cost_forecast(
-            TimePeriod={
-                'Start': start_date,
-                'End': end_date
-            },
-            Granularity=granularity,
-            Metric=cost_metric, **kwargs
-        )
+        try:
+            return self.cost_explorer_client.get_cost_forecast(
+                TimePeriod={
+                    'Start': start_date,
+                    'End': end_date
+                },
+                Granularity=granularity,
+                Metric=cost_metric, **kwargs
+            )
+        except Exception as err:
+            logger.error(err)
+            return {'Total': {'Amount': 0}, 'ForecastResultsByTime': []}

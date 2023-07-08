@@ -1,0 +1,26 @@
+{% set style="border-collapse:collapse;border:2px solid black;padding: 10px" %}
+<div>
+    <table style="{{style}}" width="auto">
+        <thead>
+            <tr style="{{style}}">
+                {% for keys in keys_list %}
+                    <th style="{{style}}">{{keys}}</th>
+                {% endfor  %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for user, region_list in resources_list.items() %}
+                {% for region_name, resources_list in region_list.items() %}
+                    {% for resources in resources_list %}
+                        {% set _ = resources.update({'User': user, 'Region': region_name}) %}
+                        <tr style="{{style}}">
+                        {% for key in keys_list %}
+                            <td style="{{style}}">{{resources[key]}}</td>
+                        {% endfor  %}
+                        </tr>
+                    {% endfor  %}
+                {% endfor  %}
+            {% endfor  %}
+        </tbody>
+    </table>
+</div>

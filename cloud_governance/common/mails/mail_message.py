@@ -1,5 +1,8 @@
+import os.path
+
+from jinja2 import Environment, FileSystemLoader
+
 from cloud_governance.common.ldap.ldap_search import LdapSearch
-from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -16,8 +19,14 @@ class MailMessage:
         self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
         self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
         self.__public_cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
+        self.__portal = self.__environment_variables_dict.get('CRO_PORTAL', '')
+        self.__cro_duration_days = self.__environment_variables_dict.get('CRO_DURATION_DAYS')
+        self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
+        self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
+        self.__templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+        self.env_loader = Environment(loader=FileSystemLoader(self.__templates_path))
 
-    def get_user_display_name(self, user_name: str):
+    def get_user_ldap_details(self, user_name: str):
         """
         This method return user details from ldap
         :param user_name:
@@ -245,54 +254,124 @@ Cloud-governance Team""".strip()
         """.strip()
         return subject, body
 
-    def get_long_run_alert(self, days: int, user: str, jira_id: str):
+    def cro_monitor_alert_message(self, days: int, user: str, ticket_id: str):
         """
-        This method return the LongRun, second Alert Message
+        This method return the CRO Alert Message
+        :param days:
+        :param user:
+        :param ticket_id:
+        :return:
         """
-        subject = f'Cloud LongRun Alert: Expiring in {days} days'
+        ticket_id = ticket_id.split('-')[-1]
+        subject = f'[Action required] Cloud Resources Budget request Ticket Expiring in {days} days'
+        user_display_name = self.get_user_ldap_details(user_name=user)
         body = f"""
                 <div>
-                <p>Hi {user},</p>
+                    <p>Hi {user_display_name},</p>
                 </div>
                 <div>
-                    <p>This is a message to alert you that in {days} days, the cloud request is expiring.</p>
-                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
-                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target="_blank">{jira_id}</a></p>
-                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
+                    <p>You project budget request ( TicketId: {ticket_id} ) will be expired in {days} days.</p>
+                    <p>You can extend the project duration in the following url {self.__portal} or terminate the instances</p>
+                    <p>Visit the <a href="{self.__portal}">wiki page</a> to get more information</p>
                 </div>
-                <div style="color:gray" class="footer">
-                    <address>
-                        --<br/>
-                        Best Regards,<br/>
-                        Cloud-governance Team<br/>
-                    </address>
-                </div>
+                {self.FOOTER}
 """.strip()
         return subject, body
 
-    def get_long_run_expire_alert(self, user: str, jira_id: str):
+    def cro_cost_over_usage(self, **kwargs):
         """
-        This method return the LongRun, Expire Alert Message
+        This method returns the subject, body for cost over usage
+        :param kwargs:
+        :return:
         """
-        subject = f'LongRun Alert: Expired'
+        cloud_name = kwargs.get('CloudName', 'NA').upper()
+        over_usage_cost = kwargs.get('OverUsageCost', 'NA')
+        full_name = kwargs.get('FullName', '')
+        if not full_name:
+            full_name = kwargs.get('to')
+        user_cost = round(kwargs.get('Cost', 0), 3)
+        subject = f' [Action required]: Cloud Resources Open Budget Request'
+        if user_cost > over_usage_cost:
+            message = f"it's over $ {over_usage_cost}."
+        else:
+            message = f"it may over $ {over_usage_cost} in next few days."
         body = f"""
-                <div>
-                <p>Hi {user},</p>
-                </div>
-                <div>
-                    <p>This is a message to alert you that the cloud long run request is expired.</p>
-                    <p>Please take an action. If you are not using the instances Terminate the instances.</p>
-                    <p>Refer to the Jira issue: <a href="https://issues.redhat.com/browse/{jira_id}" target=="_blank">{jira_id}</a></p>
-                    <p>Visit the <a href="https://clouds.perfdept.aws.rhperfscale.org:5000/wiki/clouds">wiki page</a> to get more information</p>
-                </div>
-                <div style="color:gray" class="footer">
-                    <address>
-                        --<br/>
-                        Best Regards,<br/>
-                        Cloud-governance Team<br/>
-                    </address>
-                </div>
-        """.strip()
+        <div>
+        Hi {full_name},
+        </div><br/>
+        <div>
+            Your {cloud_name} cost usage in the last {self.__cro_duration_days} days is $ {user_cost} and {message}<br/>
+            You must open the project ticket in the following <a href="{self.__portal}">Link</a>.<br />
+            After submitting a ticket, you must add Tag (TicketId:#) to every active resource that is related to the project ticket.<br/>
+            
+            If you have any questions, please let us know in slack channel #perf-dept-public-clouds
+        <div><br/><br/>
+        {self.FOOTER}
+"""
+        return subject, body
+
+    def cro_request_for_manager_approval(self, manager: str, request_user: str, cloud_name: str, ticket_id: str, description: dict, **kwargs):
+        """
+        This method returns the message for manager, regarding user approval
+        :param description:
+        :param ticket_id:
+        :param manager:
+        :param request_user:
+        :param cloud_name:
+        :return:
+        """
+        subject = '[Action required]: Cloud Resources Budget Request Approval'
+        manager_full_name = self.get_user_ldap_details(user_name=manager)
+        user_full_name = self.get_user_ldap_details(user_name=request_user)
+        ticket_id = ticket_id.split('-')[-1]
+        context = {'manager': manager, 'manager_full_name': manager_full_name, 'user_full_name': user_full_name,
+                   'ticket_id': ticket_id, 'portal': self.__portal, 'request_user': request_user, 'description': description,
+                   'footer': self.FOOTER}
+        template_loader = self.env_loader.get_template('cro_request_for_manager_approval.j2')
+        context['extra_message'] = kwargs.get('extra_message', '')
+        body = template_loader.render(context)
+        return subject, body
+
+    def cro_send_user_alert_to_add_tags(self, user: str, ticket_ids: list):
+        """
+        This method return the subject, body for adding tags
+        :param user:
+        :param ticket_ids:
+        :return:
+        """
+        subject = '[Action required]: Add TicketId tag'
+        ticket_ids = "\n".join([f"<li>{val}</li>" for idx, val in enumerate(ticket_ids)])
+        user_display_name = self.get_user_ldap_details(user_name=user)
+        body = f"""
+        <div>Hi {user_display_name},</div>
+        <p>You have the following <b>Approved</b> JIRA Ticket-Ids</p>
+        <ul>{ticket_ids}</ul><br />
+        Currently, there are several instances running over budget, kindly review and tag instances with TicketId: #</p>
+        <br />Please find the below attached document.<br />
+        </div><br />
+        {self.FOOTER}
+        """
+        return subject, body
+
+    def cro_send_closed_alert(self, user: str, es_data: dict, ticket_id: str):
+        """
+        This method send cro ticket close alert
+        :param user:
+        :param es_data:
+        :param ticket_id:
+        :return:
+        """
+        subject = 'Closing Cloud Budget Request ticket'
+        ticket_id = ticket_id.split('-')[-1]
+        user_full_name = self.get_user_ldap_details(user_name=user)
+        body = f"""
+        <div>Hi {user_full_name},</div><br />
+            <div>
+            Your cloud budget request ( TicketId: {ticket_id} ) duration expired and the ticket auto closed.<br />
+            You can find the summary in <a href="{self.__portal}/wiki/clouds">Portal</a>.<br />
+            </div><br /><br/>
+        {self.FOOTER}
+        """
         return subject, body
 
     def filter_resources_on_days(self, resources: dict):
@@ -315,24 +394,47 @@ Cloud-governance Team""".strip()
         :param resources:
         :return:
         """
-        html_table_format = '<table width="auto" border="2" style="border-collapse: collapse;padding: 10px;border: 2px solid black;">'
-        html_style_value = "border-collapse: collapse;padding: 10px;border: 2px solid black;"
-        html_style = f'style="{html_style_value}"'
-        html_style_color = f'style="color:red;{html_style_value}"'
-        td_left, td_right = f'<td align="left" {html_style}>', '</td>'
-        td_left_color = f'<td align="left" {html_style_color}>'
-        th_left, th_right = f'<th align="left" {html_style}>', '</th>'
-        tr_left, tr_right = f'<tr {html_style}>', '</tr>'
+        style = """
+                    <style>
+                    #customers {
+                    font-family: Verdana, Helvetica, sans-serif;
+                    border-collapse: collapse;
+                    width: 100%;
+                    }
+
+                    #customers td, #customers th {
+                    border: 2px solid #000;
+                    padding: 8px;
+                    align: left;
+                    }
+
+                    #customers tr:nth-child(even){background-color: #dddddd;}
+
+                    #customers tr:hover {background-color: #B9D9B7;}
+
+                    #customers th {
+                    padding-top: 12px;
+                    padding-bottom: 12px;
+                    text-align: left;
+                    background-color: #04AA6D;
+                    color: white;
+                    }
+                    </style>
+                """
+        html_table_format = f"""{style}<table id="customers">"""
         thead_values = ['Policy', 'Region', 'ResourceId', 'Name', 'Action', 'DeletedDay']
-        html_table_format += '<thead>' + tr_left + ''.join([f'{th_left}{value}{th_right}' for value in thead_values]) + f'{tr_right}</thead><tbody>'
+        th_elements = ''.join([f'<th>{value}</th>' for value in thead_values])
+        html_table_format += f'<thead><tr>{th_elements}</tr></thead><tbody>'
         for days, resource_data in resources.items():
             resource_data = sorted(resource_data, key=lambda item: (item.get('Policy'), item.get('Region')))
             for resource in resource_data:
-                td_data = [resource.get(th_value) for th_value in thead_values]
-                if 'Deleted' == resource.get('Action'):
-                    html_table_format += f"""{tr_left }{''.join([f'{td_left_color}{value}{td_right}' for value in td_data])}{tr_right}"""
-                else:
-                    html_table_format += f"""{tr_left}{''.join([f'{td_left}{value}{td_right}' for value in td_data])}{tr_right}"""
+                html_table_format += '<tr>'
+                for th_value in thead_values:
+                    if 'Deleted' == resource.get(th_value):
+                        html_table_format += f"<td>{resource.get(th_value)} &#128465;</td>"
+                    else:
+                        html_table_format += f"""<td>{resource.get(th_value)}</td>"""
+                html_table_format += '</tr>'
         html_table_format += '</tbody></table>'
         return html_table_format
 
@@ -343,7 +445,7 @@ Cloud-governance Team""".strip()
         :param user_resources:
         :return:
         """
-        display_name = self.get_user_display_name(user_name=user)
+        display_name = self.get_user_ldap_details(user_name=user)
         resources_by_days = self.filter_resources_on_days(resources=user_resources)
         table_data = self.get_data_in_html_table_format(resources=resources_by_days)
         display_name = display_name if display_name else user

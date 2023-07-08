@@ -1,0 +1,18 @@
+<div>Hi {{manager_full_name}},</div><br />
+{%if extra_message %}<div>{{extra_message}}</div>{%endif%}<br>
+    <div>
+        {{user_full_name}} is waiting for your project cloud budget approval<br />
+        Please approve the request in the following url <a href="{{portal}}">{{portal}}</a><br />
+        <h3>TicketId: <a href="https://issues.redhat.com/browse/CLGOVN-{{ticket_id}}" target="_blank">{{ticket_id}}</a></h3>
+    </div><br />
+    Description of the New Request
+    <div>
+        {% for key, value in description.items() %}
+          {{key}}: {{value}}<br />
+       {% endfor %}</pre><br />
+    </div>
+    If you are not able to approve from the site. <br />
+    Please click here to send mail approve, <a href = "mailto:manager-action@aws.rhperfscale.org?cc={{request_user}}@redhat.com&Subject=Approved;{{ticket_id}}&Body=Approved, Run your project by tagging TicketId:{{ticket_id}} to your resources">Approve</a> request or
+    <a href = "mailto:manager-action@aws.rhperfscale.org?cc={{request_user}}@redhat.com&subject=Reject;{{ticket_id}}&Body=Rejected, Please refer to your manager {{manager}}">Reject</a> Request.<br/>
+    Note: Highly recommend to use site for approving requests<br />
+{{footer}}

@@ -1,5 +1,3 @@
 include cloud_governance/policy/*.yml
 include iam/cloud/azure/CloudGovernanceCostManagement.json
-
-
-
+include cloud_governance/common/mails/templates/cro_request_for_manager_approval.j2

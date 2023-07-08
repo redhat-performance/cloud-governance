@@ -18,7 +18,7 @@ class LdapSearch:
         """
         try:
             manager_id = manager_data.replace('=', ':').split(',')[0].split(':')[-1]
-            manager_details = self.get_details(user_name=manager_id)
+            manager_details = self.__get_details(user_name=manager_id)
             return str(manager_details.get('cn')[0], 'UTF-8'), manager_id
         except Exception as err:
             return []
@@ -34,11 +34,13 @@ class LdapSearch:
             manager_name, manager_id = self.__get_manager_name(manager_data=str(data['manager'][0], 'UTF-8'))
             user_data['managerName'] = manager_name
             user_data['managerId'] = manager_id
+            user_data['ManagerName'] = manager_name
+            user_data['ManagerId'] = manager_id
             return user_data
         except Exception as err:
             return []
 
-    def get_details(self, user_name: str):
+    def __get_details(self, user_name: str):
         """
         This method get the user data from ldap
         @param user_name:
@@ -64,5 +66,5 @@ class LdapSearch:
         @param user_name:
         @return:
         """
-        user_data = self.get_details(user_name=user_name)
+        user_data = self.__get_details(user_name=user_name)
         return self.__organise_user_details(data=user_data)

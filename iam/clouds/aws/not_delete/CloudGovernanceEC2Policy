@@ -33,6 +33,7 @@
                 "ec2:DescribeAddresses",
                 "ec2:DescribeInstances",
                 "ec2:DescribeTags",
+                "ec2:DescribeVpcPeeringConnections",
                 "ec2:DescribeRegions",
                 "ec2:DescribeDhcpOptions",
                 "ec2:DescribeNatGateways",
@@ -44,7 +45,10 @@
                 "ec2:DescribeNetworkInterfaces",
                 "ec2:DescribeVpcs",
                 "ec2:DescribeVolumes",
+                "ec2:DescribeInstanceTypes",
+                "ec2:createVpc",
                 "ec2:DescribeVpcEndpoints",
+                "ec2:DeleteVpc",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeNetworkAcls",
                 "ec2:DescribeRouteTables"

@@ -22,7 +22,10 @@ pipeline {
         JIRA_TOKEN = credentials('JIRA_TOKEN')
         JIRA_QUEUE = credentials('JIRA_QUEUE')
         CLOUD_RESOURCE_ORCHESTRATION_INDEX = credentials('cloud-resource-orchestration-index')
-
+        CRO_REPLACED_USERNAMES = credentials('cloud_governance_cro_replaces_usernames')
+        CRO_PORTAL = credentials('cloud_governance_cro_portal')
+        CRO_COST_OVER_USAGE = credentials('cloud_governance_cro_cost_over_usage')
+        CRO_ES_INDEX = credentials('cloud_governance_cro_es_index')
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }
@@ -34,17 +37,17 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q quay.io/athiru/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Upload ElasticSearch') {
+        stage('Run the CloudResourceOrchestration') {
             steps {
                 sh 'python3 jenkins/cloud_resource_orchestration/run_cloud_resource_orchestration.py'
             }
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q quay.io/athiru/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/athiru/cloud-governance 2> /dev/null); fi'''
                  deleteDir()
             }
         }
