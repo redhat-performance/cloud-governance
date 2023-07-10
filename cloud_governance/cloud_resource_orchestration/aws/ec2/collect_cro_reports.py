@@ -252,14 +252,61 @@ class CollectCROReports:
             if source_data.get('account_name').lower() in self.__account_name.lower():
                 ticket_opened_date = datetime.strptime(source_data.get('ticket_opened_date'), "%Y-%m-%d")
                 duration = int(source_data.get('duration', 0))
-                user_project = source_data.get('project')
                 group_by_tag_name = self.COST_EXPLORER_TAGS[self.TICKET_ID_KEY]
                 user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=ticket_opened_date)
-                user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), forecast=True, duration=duration)
-                update_data = {'actual_cost': user_cost, 'forecast': user_forecast, 'timestamp': datetime.utcnow(), f'TotalCurrentUsage-{datetime.utcnow().year}': total_account_cost}
+                user_daily_cost = eval(source_data.get('user_daily_cost', "{}"))
+                user_name = source_data.get('user')
+                ce_user_daily_report = self.__get_user_daily_usage_report(days=4, group_by_tag_value=ticket_id,
+                                                                          group_by_tag_name=group_by_tag_name,
+                                                                          user_name=user_name)
+                user_daily_cost.update(ce_user_daily_report)
+                user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name,
+                                                        group_by_tag_value=ticket_id, requested_date=datetime.utcnow(),
+                                                        forecast=True, duration=duration)
+                update_data = {'actual_cost': user_cost, 'forecast': user_forecast, 'timestamp': datetime.utcnow(),
+                               f'TotalCurrentUsage-{datetime.utcnow().year}': total_account_cost,
+                               'user_daily_cost': str(user_daily_cost)}
                 if not source_data.get(self.ALLOCATED_BUDGET):
                     update_data[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
                 self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, metadata=update_data, id=ticket_id)
+
+    def __get_user_daily_usage_report(self, days: int, group_by_tag_name: str, group_by_tag_value: str, user_name: str):
+        """
+        This method returns the users daily report from last X days
+        :param days:
+        :return:
+        """
+        user_daily_usage_report = {}
+        self.__get_user_usage_by_granularity(tag_name=group_by_tag_name, tag_value=group_by_tag_value,
+                                             days=days,
+                                             result_back_data=user_daily_usage_report)
+        self.__get_user_usage_by_granularity(tag_name='User', tag_value=user_name,
+                                             days=days, result_back_data=user_daily_usage_report)
+        return user_daily_usage_report
+
+    def __get_user_usage_by_granularity(self, result_back_data: dict, tag_name: str, days: int, tag_value):
+        """
+        This method returns the organized input of the usage_reports
+        :param result_back_data:
+        :param tag_name:
+        :param days:
+        :param tag_value:
+        :return:
+        """
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=days)
+        cost_explorer_object = self.__cost_over_usage.get_cost_explorer_operations()
+        ce_daily_usage = cost_explorer_object.get_cost_by_tags(tag=tag_name,
+                                                               granularity='DAILY',
+                                                               start_date=str(start_date),
+                                                               end_date=str(end_date),
+                                                               Filter={'Tags': {'Key': tag_name, 'Values': [tag_value]}})
+        filtered_ce_daily_usage = cost_explorer_object.get_ce_report_filter_data(ce_daily_usage,
+                                                                                 tag_name=tag_name)
+        for index_id, daily_cost in filtered_ce_daily_usage.items():
+            start_date = daily_cost.get('start_date')
+            usage = round(float(daily_cost.get(tag_name)), self.DEFAULT_ROUND_DIGITS)
+            result_back_data.setdefault(start_date, {}).update({tag_name: usage })
 
     @typeguard.typechecked
     @logger_time_stamp
