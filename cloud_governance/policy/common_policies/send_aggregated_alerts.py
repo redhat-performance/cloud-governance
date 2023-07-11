@@ -145,9 +145,10 @@ class SendAggregatedAlerts:
         for user, user_policy_data in policy_agg_users_list.items():
             handler.setLevel(logging.WARN)
             agg_policy_data = self.__get_policy_agg_data(user_policy_data=user_policy_data)
-            handler.setLevel(logging.INFO)
-            subject, body = self.__mail_message.get_agg_policies_mail_message(user=user, user_resources=agg_policy_data)
-            self.__postfix.send_email_postfix(subject=subject, content=body, to=user, cc=[], mime_type='html')
+            if agg_policy_data:
+                handler.setLevel(logging.INFO)
+                subject, body = self.__mail_message.get_agg_policies_mail_message(user=user, user_resources=agg_policy_data)
+                self.__postfix.send_email_postfix(subject=subject, content=body, to=user, cc=[], mime_type='html')
 
     @logger_time_stamp
     def run(self):
