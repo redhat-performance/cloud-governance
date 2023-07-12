@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     message = "Something went wrong check your es_data"
     es_operations = ESOperations()
     email_body = ""
-    subject = "Daily Report of long running instances in Perf&Scale AWS Accounts"
+    subject = "Cloud Report: Long running instances in the Perf&Scale AWS Accounts"
     for account in aws_accounts:
         current_date = str(datetime.utcnow().date())
         index_id = f"{account}-{current_date}"
