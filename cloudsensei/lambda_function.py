@@ -187,7 +187,7 @@ def lambda_handler(event, context):
     extra_message = ''
     ec2_operations = EC2Operations()
     account_name = ec2_operations.get_account_alias_name()
-    process_data = ProcessData(subject=f'Daily Report @{account_name} has following long running instances')
+    process_data = ProcessData(subject=f'Daily Cloud Report: Long running instances in the @{account_name} account')
     if os.environ.get("SLACK_API_TOKEN"):
         slack_blocks = ec2_operations.organize_message_to_send_slack(ec2_operations.get_resources())
         code, message = process_data.post_message_in_slack(slack_blocks=slack_blocks, account_name=account_name)
