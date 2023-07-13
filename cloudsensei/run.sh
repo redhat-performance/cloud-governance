@@ -2,10 +2,15 @@ PROJECT_NAME="CloudSensei"
 SUCCESS_OUTPUT_PATH="/dev/null"
 ERROR_LOG="$(mktemp -d)/stderr.log"
 
-source env.conf
-export $(cut -d= -f1 env.conf)
+source ./env.sh
+
 
 action="$1"
+
+if [ -d "./terraform/.terraform" ]; then
+  echo "Deleting the existing .terraform folder"
+  rm -rf "./terraform/.terraform"
+fi
 
 if [ "$action" = "deploy"  ]; then
    echo "Clearing if previously created zip file"
@@ -17,8 +22,8 @@ if [ "$action" = "deploy"  ]; then
     fi
 
     pip install --upgrade pip
-    pip install --target ./package -r requirements.txt > $SUCCESS_OUTPUT_PATH
-    pushd package
+    pip install --target ./package -r ./requirements.txt > $SUCCESS_OUTPUT_PATH
+    pushd ./package
     zip -r ../$PROJECT_NAME.zip . > $SUCCESS_OUTPUT_PATH
     popd
     zip -g $PROJECT_NAME.zip lambda_function.py > $SUCCESS_OUTPUT_PATH
@@ -27,12 +32,12 @@ if [ "$action" = "deploy"  ]; then
     zip -g $PROJECT_NAME.zip es_operations.py > $SUCCESS_OUTPUT_PATH
     zip -g $PROJECT_NAME.zip send_email.py > $SUCCESS_OUTPUT_PATH
 
-  pushd terraform
+  pushd ./terraform
   echo "#############################"
   echo "Creating the lambda lambda_function using terraform"
   if [ -n "$ACCOUNT_ID" ]; then
     echo "Generating jinja files and tfvars file"
-    python Template.py
+    python ./Template.py
     echo "Completed Generating tfvars file and jinja file"
     if command -v terraform; then
       if [ -s "$ERROR_LOG" ]; then
@@ -40,6 +45,7 @@ if [ "$action" = "deploy"  ]; then
           echo "Removed the stderr file if present"
       fi
       terraform init 1> $SUCCESS_OUTPUT_PATH
+      terraform state pull
       terraform apply -var-file="./input_vars.tfvars" -auto-approve 2> "$ERROR_LOG"
       if [[ -s "$ERROR_LOG" ]]; then
         cat $ERROR_LOG
@@ -57,12 +63,13 @@ if [ "$action" = "deploy"  ]; then
   echo "#############################"
   popd
 else
-  pushd terraform
+  pushd ./terraform
   if [ "$action" = "destroy" ]; then
     echo "Generating jinja files and tfvars file"
-    python Template.py
+    python ./Template.py
     echo "Completed Generating tfvars file and jinja file"
      terraform init 1> $SUCCESS_OUTPUT_PATH
+     terraform state pull
      terraform destroy -var-file="./input_vars.tfvars" -auto-approve
   else
     echo "Invalid argument passed, supported only deploy, destroy"
