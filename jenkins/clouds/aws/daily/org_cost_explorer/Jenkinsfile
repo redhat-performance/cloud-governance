@@ -17,6 +17,11 @@ pipeline {
         COST_CENTER_OWNER = credentials('cloud-governance-cost-center-owner')
         REPLACE_ACCOUNT_NAME = credentials('cloud-governance-replace-account-names')
         PAYER_SUPPORT_FEE_CREDIT = credentials('cloud-governance-aws-payer-support-fee-credit')
+        AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT = credentials('AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT')
+        AWS_ACCESS_KEY_ID_ATHIRUMA_BOT = credentials('AWS_ACCESS_KEY_ID_ATHIRUMA_BOT')
+        S3_RESULTS_PATH = credentials('S3_RESULTS_PATH')
+        ATHENA_DATABASE_NAME = credentials('ATHENA_DATABASE_NAME')
+        ATHENA_TABLE_NAME = credentials('ATHENA_TABLE_NAME')
 
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
@@ -32,7 +37,7 @@ pipeline {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Upload ElasticSearch') {
+        stage('Run the AWS Cost Reports') {
             steps {
                 sh 'python3 jenkins/clouds/aws/daily/org_cost_explorer/run_org_upload_es.py'
             }
