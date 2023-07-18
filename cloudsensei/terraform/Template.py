@@ -10,6 +10,7 @@ def inject_variables():
     """
     account_id = os.environ.get('ACCOUNT_ID', 1)
     aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    s3_bucket_name = os.environ.get('S3_BUCKET')
     if account_id:
         with open('CloudSenseiLambdaPolicy.j2') as file:
             template_loader = Template(file.read())
@@ -17,6 +18,12 @@ def inject_variables():
                 write_file.write(template_loader.render({'ACCOUNT_ID': account_id, 'AWS_DEFAULT_REGION': aws_region}))
     else:
         print("AccountId is missing")
+    if s3_bucket_name:
+        with open('backend.j2') as backend_file:
+            template_loader = Template(backend_file.read())
+            with open('./backend.tf', 'w') as backend_write_file:
+                backend_write_file.write(template_loader.render({'AWS_DEFAULT_REGION': aws_region,
+                                                                 'S3_BUCKET_NAME': s3_bucket_name}))
     resource_days = os.environ.get('RESOURCE_DAYS', '7')
     slack_api_token = os.environ.get('slack_api_token', '')
     slack_channel_name = os.environ.get('SLACK_CHANNEL_NAME', '')
