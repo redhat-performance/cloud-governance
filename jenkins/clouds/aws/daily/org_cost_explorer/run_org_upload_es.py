@@ -13,12 +13,12 @@ COST_CENTER_OWNER = os.environ['COST_CENTER_OWNER']
 REPLACE_ACCOUNT_NAME = os.environ['REPLACE_ACCOUNT_NAME']
 PAYER_SUPPORT_FEE_CREDIT = os.environ['PAYER_SUPPORT_FEE_CREDIT']
 AWS_ACCESS_KEY_ID_ATHIRUMA_BOT = os.environ['AWS_ACCESS_KEY_ID_ATHIRUMA_BOT']
-AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT']
+AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT']
 S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
 
-print("Updating the Org level cost billing reports")
+os.system('echo "Updating the Org level cost billing reports"')
 
 # Cost Explorer upload to ElasticSearch
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
@@ -35,8 +35,9 @@ os.system(f"""podman run --rm --name cloud-governance -e policy="cost_explorer_p
 
 os.system('echo "Run the Spot Analysis report over the account using AWS Athena"')
 os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
--e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_ATHIRUMA_BOT}" -e AWS_SECRET_ACCESS_KEY=" \
-{AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" \
+-e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_ATHIRUMA_BOT}" \
+-e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT}" \
+-e es_host="{ES_HOST}" -e es_port="{ES_PORT}" \
 -e es_index="cloud-governance-clouds-billing-reports" \
 -e S3_RESULTS_PATH="{S3_RESULTS_PATH}" \
 -e ATHENA_DATABASE_NAME="{ATHENA_DATABASE_NAME}" \
