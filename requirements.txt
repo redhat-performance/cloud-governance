@@ -4,8 +4,8 @@ azure-identity==1.12.0
 azure-mgmt-billing==6.0.0
 azure-mgmt-costmanagement==3.0.0
 azure-mgmt-subscription==3.1.1
-boto3==1.26.1
-botocore==1.29.1
+boto3==1.26.4
+botocore==1.29.4
 elasticsearch==7.11.0
 elasticsearch-dsl==7.4.0
 google-api-python-client==2.57.0
@@ -17,6 +17,7 @@ ibm_platform_services==0.27.0
 myst-parser==0.17.0
 oauthlib~=3.1.1
 pandas
+PyAthena[Pandas]==3.0.5
 PyGitHub==1.55
 python-ldap==3.4.2
 requests==2.31.0

@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import time
 import pandas as pd
+from elasticsearch.helpers import bulk
+
 from cloud_governance.main.environment_variables import environment_variables
 
 from elasticsearch_dsl import Search
@@ -23,12 +25,13 @@ class ElasticSearchOperations:
     # max search results
     MAX_SEARCH_RESULTS = 1000
     MIN_SEARCH_RESULTS = 100
+    DEFAULT_ES_BULK_LIMIT = 5000
 
-    def __init__(self, es_host: str, es_port: str, region: str = '', bucket: str = '', logs_bucket_key: str = '',
+    def __init__(self, es_host: str = None, es_port: str = None, region: str = '', bucket: str = '', logs_bucket_key: str = '',
                  timeout: int = 2000):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
-        self.__es_host = es_host
-        self.__es_port = es_port
+        self.__es_host = es_host if es_host else self.__environment_variables_dict.get('es_host')
+        self.__es_port = es_port if es_port else self.__environment_variables_dict.get('es_port')
         self.__region = region
         self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
         self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
@@ -282,3 +285,32 @@ class ElasticSearchOperations:
         except Exception as err:
             es_data = {}
         return es_data
+
+    def upload_data_in_bulk(self, data_items: list, index: str, **kwargs):
+        """
+        This method uploads the data using the bulk api
+        :param index:
+        :param data_items:
+        :return:
+        """
+        total_uploaded = 0
+        failed_items = 0
+        for i in range(0, len(data_items), self.DEFAULT_ES_BULK_LIMIT):
+            bulk_items = data_items[i: i + self.DEFAULT_ES_BULK_LIMIT]
+            for item in bulk_items:
+                if kwargs.get('id'):
+                    item['_id'] = item.get(kwargs.get('id'))
+                if not item.get('timestamp'):
+                    item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")
+                item['_index'] = index
+                item['AccountId'] = str(item.get('AccountId'))
+                item['Policy'] = self.__environment_variables_dict.get('policy')
+            response = bulk(self.__es, bulk_items)
+            if response:
+                total_uploaded += len(bulk_items)
+            else:
+                failed_items += len(bulk_items)
+        if total_uploaded > 0:
+            logger.info(f"✅️ {total_uploaded} is uploaded to the elastic search index: {index}")
+        if failed_items > 0:
+            logger.error(f"❌ {failed_items} is not uploaded to the elasticsearch index: {index}")

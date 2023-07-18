@@ -44,8 +44,8 @@ setup(
         'azure-mgmt-billing==6.0.0',  # azure billing management
         'azure-mgmt-costmanagement==3.0.0',  # azure cost management
         'azure-mgmt-subscription==3.1.1',  # azure subscriptions
-        'boto3==1.26.1',  # required by c7n 0.9.14
-        'botocore==1.29.1',  # required by c7n 0.9.14
+        'boto3==1.26.4',  # required by c7n 0.9.14
+        'botocore==1.29.4',  # required by c7n 0.9.14
         'elasticsearch-dsl==7.4.0',
         'elasticsearch==7.11.0',  # depend on elasticsearch server
         'google-api-python-client==2.57.0',  # google drive
@@ -57,6 +57,7 @@ setup(
         'myst-parser==0.17.0',  # readthedocs
         'oauthlib~=3.1.1',  # required by jira
         'pandas',  # latest: aggregate ec2/ebs cluster data
+        'PyAthena[Pandas]==3.0.5',  # AWS Athena package
         'PyGitHub==1.55',  # gitleaks
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'requests==2.31.0',  # rest api & lambda
