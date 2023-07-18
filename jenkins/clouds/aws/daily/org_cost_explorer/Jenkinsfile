@@ -17,7 +17,7 @@ pipeline {
         COST_CENTER_OWNER = credentials('cloud-governance-cost-center-owner')
         REPLACE_ACCOUNT_NAME = credentials('cloud-governance-replace-account-names')
         PAYER_SUPPORT_FEE_CREDIT = credentials('cloud-governance-aws-payer-support-fee-credit')
-        AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT = credentials('AWS_SECRET_ACCESS_KEY_DELETE_ATHIRUMA_BOT')
+        AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = credentials('AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT')
         AWS_ACCESS_KEY_ID_ATHIRUMA_BOT = credentials('AWS_ACCESS_KEY_ID_ATHIRUMA_BOT')
         S3_RESULTS_PATH = credentials('S3_RESULTS_PATH')
         ATHENA_DATABASE_NAME = credentials('ATHENA_DATABASE_NAME')
