@@ -214,7 +214,7 @@ class TagUser:
             tags.extend(self.get_user_details_from_ldap(user_name=username))
             filter_tags = self.__filter_tags_user_tags(user_tags, tags)
             if filter_tags:
-                # self.iam_client.tag_user(UserName=username, Tags=filter_tags)
+                self.iam_client.tag_user(UserName=username, Tags=filter_tags)
                 logger.info(f'Username :: {username} {filter_tags}')
                 return True
         except Exception as err:
