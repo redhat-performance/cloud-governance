@@ -274,10 +274,14 @@ class TagClusterResources(TagClusterOperations):
                                             if not self.__check_user_in_username_tags(user_tags):
                                                 try:
                                                     user = self.iam_client.get_user(UserName=username)['User']
-                                                    username = self.cloudtrail.get_username_by_instance_id_and_time(
+                                                    temp_username = self.cloudtrail.get_username_by_instance_id_and_time(
                                                         start_time=user.get('CreateDate'), resource_id=username,
                                                         resource_type='AWS::IAM::User')
-                                                    user_tags = self.iam_operations.get_user_tags(username=username)
+                                                    if temp_username:
+                                                        add_tags.append({'Key': 'User', 'Value': temp_username})
+                                                        user_tags = self.iam_operations.get_user_tags(username=temp_username)
+                                                    else:
+                                                        add_tags.append({'Key': 'User', 'Value': username})
                                                 except:
                                                     add_tags.append({'Key': 'User', 'Value': username})
                                             if user_tags:
