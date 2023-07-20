@@ -1,4 +1,5 @@
 import csv
+import os.path
 import re
 from ast import literal_eval
 
@@ -77,6 +78,7 @@ class TagUser:
                     else:
                         file.write(' , ')
                 file.write('\n')
+            logger.info(f'Generated the file: {self.file_name}')
 
     def generate_user_csv(self):
         """
@@ -89,7 +91,7 @@ class TagUser:
         tag_values = {}
         for user in users:
             user_name = user.get('UserName')
-            if '-' not in user_name:
+            if user_name.count('-') <= 3:
                 user_tags = self.IAMOperations.get_user_tags(username=user_name)
                 tag_values[user_name] = {}
                 for tag in user_tags:
@@ -105,8 +107,6 @@ class TagUser:
                         break
         tag_keys = list(sorted(tag_keys))
         self.__write_into_csv_file(tag_keys=tag_keys, tag_values=tag_values)
-        with open(self.file_name) as file:
-            logger.info(file.read())
 
     def __filter_tags_user_tags(self, user_tags: list, append_tags: list):
         """
@@ -121,8 +121,7 @@ class TagUser:
                 found = False
                 for user_tag in user_tags:
                     if user_tag.get('Key').strip() == append_tag.get('Key').strip():
-                        if user_tag.get('Value').strip() == append_tag.get('Value').strip():
-                            found = True
+                        found = True
                 if not found:
                     add_tags.append(append_tag)
         else:
@@ -176,30 +175,55 @@ class TagUser:
         """
         count = 0
         updated_usernames = []
-        with open(self.file_name) as file:
-            csvreader = csv.reader(file)
-            header = next(csvreader)
-            rows = []
-            for row in csvreader:
-                rows.append(row)
-            json_data = self.__get_json_data(header, rows)
-            for key, tags in json_data.items():
-                try:
-                    user_tags = self.IAMOperations.get_user_tags(username=key)
-                    tags.append({'Key': 'User', 'Value': key})
-                    tags.extend(self.get_user_details_from_ldap(user_name=key))
-                    filter_tags = self.__filter_tags_user_tags(user_tags, tags)
-                    if filter_tags:
-                        self.iam_client.tag_user(UserName=key, Tags=filter_tags)
-                        logger.info(f'Username :: {key} {filter_tags}')
+        if os.path.exists(self.file_name):
+            with open(self.file_name) as file:
+                csvreader = csv.reader(file)
+                header = next(csvreader)
+                rows = []
+                for row in csvreader:
+                    rows.append(row)
+                json_data = self.__get_json_data(header, rows)
+                for key, tags in json_data.items():
+                    if self.tag_iam_user_tags(username=key, tags=tags):
                         updated_usernames.append(key)
                         count += 1
-                except Exception as err:
-                    logger.info(err)
+        else:
+            users_list = self.get_detail_resource_list(func_name=self.iam_client.list_users, input_tag='Users',
+                                                       check_tag='Marker')
+            for user in users_list:
+                username = user.get('UserName')
+                if username.count('-') <= 3:  # assumed if username contains 3 hyphens, it is cluster user
+                    if self.tag_iam_user_tags(username=username):
+                        updated_usernames.append(username)
+                        count += 1
         logger.info(f'Updated Tags of IAM Users = {count} :: Usernames {updated_usernames}')
         return count
 
-    def __format_tags(self, username: str, headers: list):
+    def tag_iam_user_tags(self, username: str, tags: list = None):
+        """
+        This method tags the IAM User tags
+        :param tags:
+        :param username:
+        :return:
+        """
+        try:
+            if not tags:
+                tags = []
+            user_tags = self.IAMOperations.get_user_tags(username=username)
+            tags.append({'Key': 'User', 'Value': username})
+            tags.extend(self.get_user_details_from_ldap(user_name=username))
+            filter_tags = self.__filter_tags_user_tags(user_tags, tags)
+            if filter_tags:
+                # self.iam_client.tag_user(UserName=username, Tags=filter_tags)
+                logger.info(f'Username :: {username} {filter_tags}')
+                return True
+        except Exception as err:
+            logger.error(err)
+        return False
+
+    def __format_tags(self, username: str, headers: list = None):
+        if not headers:
+            headers = ['User']
         tags = {'User': username}
         user_tags = self.IAMOperations.get_user_tags(username=username)
         for user_tag in user_tags:
@@ -212,19 +236,32 @@ class TagUser:
         This method removes IAM user if not in the IAM list
         @return:
         """
-        iam_file = pd.read_csv(self.file_name)
-        iam_users = [user['UserName'] for user in self.IAMOperations.get_users()]
-        csv_iam_users = list(iam_file['User'])
-        for index, user in enumerate(csv_iam_users):
-            if user not in iam_users:
-                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
-                                                           sheet_name=self.__sheet_name, row_number=index + 1)
-                logger.info(f'removed user {user}')
+        self.__google_drive_operations.create_work_sheet(gsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name)
+        iam_users = [user['UserName'] for user in
+                     self.get_detail_resource_list(func_name=self.iam_client.list_users, input_tag='Users',
+                                                   check_tag='Marker') if user['UserName'].count('-') <= 3]
+        csv_iam_users = []
+        iam_file = pd.DataFrame(columns=['User', "Project"])
+        if os.path.exists(self.file_name):
+            iam_file = pd.read_csv(self.file_name)
+            if not iam_file.empty:
+                csv_iam_users = list(iam_file['User'])
+                for index, user in enumerate(csv_iam_users):
+                    if user not in iam_users:
+                        self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
+                                                                   sheet_name=self.__sheet_name, row_number=index + 1)
+                        logger.info(f'removed user {user}')
+            else:
+                iam_file = pd.DataFrame(columns=['User'])
         append_data = []
         for user in iam_users:
-            if '-' not in user:
+            if user.count('-') <= 3:
                 if user not in csv_iam_users:
-                    tags = self.__format_tags(username=user, headers=list(iam_file.columns))
+                    if not iam_file.empty:
+                        tags = self.__format_tags(username=user, headers=list(iam_file.columns))
+                    else:
+                        append_data.append(['User'])
+                        tags = self.__format_tags(username=user)
                     df2 = pd.DataFrame.from_dict([tags])
                     iam_file = pd.concat([iam_file, df2], ignore_index=True)
                     iam_file = iam_file.fillna('')
