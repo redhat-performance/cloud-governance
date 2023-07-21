@@ -54,10 +54,13 @@ class EnvironmentVariables:
                                                                         'unused_nat_gateway',
                                                                         'zombie_snapshots', 'skipped_resources',
                                                                         'monthly_report']
+        es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
+        if self._environment_variables_dict['policy'] in self._environment_variables_dict['cost_policies']:
+            es_index = 'cloud-governance-global-cost-billing-index'
 
         # AWS env vars
         self._environment_variables_dict['resource_name'] = EnvironmentVariables.get_env('resource_name', '')
@@ -119,7 +122,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['upload_data_es'] = EnvironmentVariables.get_env('upload_data_es', '')
         self._environment_variables_dict['es_host'] = EnvironmentVariables.get_env('es_host', '')
         self._environment_variables_dict['es_port'] = EnvironmentVariables.get_env('es_port', '')
-        self._environment_variables_dict['es_index'] = EnvironmentVariables.get_env('es_index', '')
+        self._environment_variables_dict['es_index'] = EnvironmentVariables.get_env('es_index', es_index)
         self._environment_variables_dict['es_doc_type'] = EnvironmentVariables.get_env('es_doc_type', '')
         self._environment_variables_dict['ES_TIMEOUT'] = EnvironmentVariables.get_env('ES_TIMEOUT', 2000)
 

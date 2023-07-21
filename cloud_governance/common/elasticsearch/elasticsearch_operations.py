@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 import time
 import pandas as pd
@@ -34,8 +35,10 @@ class ElasticSearchOperations:
         self.__es_port = es_port if es_port else self.__environment_variables_dict.get('es_port')
         self.__region = region
         self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
-        self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
-
+        try:
+            self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
+        except:
+            pass
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
         """
@@ -134,7 +137,8 @@ class ElasticSearchOperations:
         # utcnow - solve timestamp issue
         if not data.get('timestamp'):
             data['timestamp'] = datetime.utcnow()  # datetime.now()
-        data['policy'] = self.__environment_variables_dict.get('policy')
+        if 'policy' not in data:
+            data['policy'] = self.__environment_variables_dict.get('policy')
         # Upload data to elastic search server
         try:
             if isinstance(data, dict):  # JSON Object
@@ -314,3 +318,10 @@ class ElasticSearchOperations:
             logger.info(f"✅️ {total_uploaded} is uploaded to the elastic search index: {index}")
         if failed_items > 0:
             logger.error(f"❌ {failed_items} is not uploaded to the elasticsearch index: {index}")
+
+    def check_elastic_search_connection(self):
+        """
+        This method returns boolean value on elasticsearch connection
+        :return:
+        """
+        return self.__es.ping()
