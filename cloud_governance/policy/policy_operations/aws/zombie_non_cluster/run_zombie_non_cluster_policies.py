@@ -9,6 +9,7 @@ from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
+from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -53,6 +54,8 @@ class NonClusterZombiePolicy:
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
         self._es_upload = ElasticUpload()
         self.resource_pricing = ResourcesPricing()
+        self._es_operations = ElasticSearchOperations()
+        self._es_index = self.__environment_variables_dict.get('es_index')
 
     def set_dryrun(self, value: str):
         self._dry_run = value
