@@ -38,7 +38,7 @@ class ElasticSearchOperations:
         try:
             self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
         except:
-            pass
+            self.__es = None
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
         """
@@ -324,4 +324,6 @@ class ElasticSearchOperations:
         This method returns boolean value on elasticsearch connection
         :return:
         """
-        return self.__es.ping()
+        if self.__es:
+            return self.__es.ping()
+        return False
