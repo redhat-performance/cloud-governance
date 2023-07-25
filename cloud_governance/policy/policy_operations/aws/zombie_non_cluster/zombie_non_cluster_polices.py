@@ -34,7 +34,7 @@ class ZombieNonClusterPolicies(NonClusterZombiePolicy):
                                 policy_dict['region_name'] = self._region
                                 policy_dict['account'] = self._account
                                 self._es_operations.upload_to_elasticsearch(data=policy_dict, index=self._es_index)
-                            logger.info(f'Uploaded the pilicy results to elasticsearch index: {self._es_index}')
+                            logger.info(f'Uploaded the policy results to elasticsearch index: {self._es_index}')
                         else:
                             logger.error(f'No data to upload on @{self._account}  at {datetime.utcnow()}')
                     else:

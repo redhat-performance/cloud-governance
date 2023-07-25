@@ -72,7 +72,10 @@ class EC2Stop(NonClusterZombiePolicy):
                             ec2_types[instance_id] = resource.get('InstanceType')
                             block_device_mappings[instance_id] = resource.get('BlockDeviceMappings')
                         stopped_instances.append({
+                            'policy': self._policy,
                             'ResourceId': resource.get('InstanceId'),
+                            'StoppedDays': days,
+                            'StoppedDate': str(resource.get('UsageOperationUpdateTime')),
                             'Name': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
                             'User': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'),
                             'LaunchTime': str(resource.get('LaunchTime')),
