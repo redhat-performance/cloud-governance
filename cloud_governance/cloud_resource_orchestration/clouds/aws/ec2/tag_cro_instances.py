@@ -74,8 +74,9 @@ class TagCROInstances:
             extended_duration = int(self.jira_operations.get_issue_sub_tasks_duration(ticket_id=ticket_id))
             duration += extended_duration
             estimated_cost = float(ticket_description.get('CostEstimation'))
-            extended_estimated_cost = self.jira_operations.get_issue_sub_tasks_cost_estimation(ticket_id=ticket_id)
-            estimated_cost += extended_estimated_cost
+            budget_extend_ticket_ids = self.jira_operations.get_budget_extend_tickets(ticket_id=ticket_id, ticket_state='closed')
+            extended_budget = self.jira_operations.get_total_extend_budget(sub_ticket_ids=budget_extend_ticket_ids)
+            estimated_cost = int(estimated_cost) + int(extended_budget)
             manager_approved = ticket_description.get('ApprovedManager')
             if not manager_approved:
                 manager_approved = ticket_description.get('ManagerApprovalAddress')

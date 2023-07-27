@@ -219,7 +219,8 @@ class ElasticSearchOperations:
 
     @typechecked()
     def fetch_data_by_es_query(self, es_index: str, query: dict = None, start_datetime: datetime = None,
-                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = '', search_size: int = 100, limit_to_size: bool = False):
+                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = '', search_size: int = 100, limit_to_size: bool = False,
+                               filter_path: str = ''):
         """
         This method fetches the data in between range, if you need aggregation results pass you own query with aggegation
         @param es_index:
@@ -230,6 +231,7 @@ class ElasticSearchOperations:
         @param group_by:
         @param search_size:
         @param limit_to_size: limit to size
+        @param filter_path:
         @return:
         """
         es_data = []
@@ -238,7 +240,7 @@ class ElasticSearchOperations:
                 if start_datetime and end_datetime:
                     query = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
             if query:
-                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h')
+                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h', filter_path=filter_path)
                 if result_agg:
                     es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
                 else:

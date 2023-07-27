@@ -5,6 +5,9 @@ from datetime import datetime
 
 import typeguard
 
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
+from cloud_governance.common.jira.jira_exceptions import JiraExceptions
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 from cloud_governance.common.jira.jira import Jira
@@ -223,3 +226,101 @@ class JiraOperations:
                 description['TicketOpenedDate'] = datetime.strptime(issue.get('fields').get('created').split('.')[0], "%Y-%m-%dT%H:%M:%S")
                 ticket_ids[ticket_id] = description
         return ticket_ids
+
+    def __check_ticket_state(self, ticket_state: str):
+        """
+        This method checks ticket_state present in the JIRA_TRANSITION_IDS
+        :param ticket_state:
+        :return:
+        """
+        if ticket_state.upper() not in self.JIRA_TRANSITION_IDS.keys():
+            raise JiraExceptions(f'UnDefined value {ticket_state}, accepted values {self.JIRA_TRANSITION_IDS.keys()}')
+        return True
+
+    def __get_ids_from_sub_task_data(self, sub_tasks_data: list, ticket_state: str, check_summary: str):
+        """
+        This method subtasks id list by specific condition on summary
+        :param ticket_state:
+        :param check_summary:
+        :param sub_tasks_data:
+        :return:
+        """
+        sub_tasks_ids = []
+        if sub_tasks_data:
+            for sub_task in sub_tasks_data:
+                summary = sub_task.get('fields', {}).get('summary')
+                if summary and check_summary in summary:
+                    fields = sub_task.get('fields', {})
+                    status = fields.get('status', {}).get('name').replace(' ', '')
+                    if string_equal_ignore_case(ticket_state, status):
+                        sub_tasks_ids.append(sub_task.get('key').split('-')[-1])
+        return sub_tasks_ids
+
+    def get_all_subtasks_ticket_ids(self, ticket_id: str, ticket_state: str, check_summary: str = ''):
+        """
+        This method returns all the sub-tasks ids based on check_summary
+        check_string will be validated against
+        :param ticket_id:
+        :param ticket_state:
+        :param check_summary:
+        :return:
+        """
+        if self.__check_ticket_state(ticket_state=ticket_state):
+            ticket_id = ticket_id.split("-")[-1]
+            jira_data = self.get_issue(ticket_id=ticket_id)
+            sub_tasks_ids = []
+            if jira_data:
+                sub_tasks = jira_data.get('fields', {}).get('subtasks', {})
+                if sub_tasks:
+                    sub_tasks_ids = self.__get_ids_from_sub_task_data(sub_tasks_data=sub_tasks,
+                                                                      ticket_state=ticket_state,
+                                                                      check_summary=check_summary)
+                else:
+                    logger.warn(f'No sub-tasks found for the TicketId: {ticket_id}')
+            return sub_tasks_ids
+
+    def get_budget_extend_tickets(self, ticket_id: str, ticket_state: str):
+        """
+        This method returns the budget extension tickets of ticket_id
+        :return:
+        """
+        check_summary = 'Budget Extension'
+        return self.get_all_subtasks_ticket_ids(ticket_id=ticket_id, ticket_state=ticket_state,
+                                                check_summary=check_summary)
+
+    def get_duration_extend_tickets(self, ticket_id: str, ticket_state: str):
+        """
+        This method returns the duration extension tickets of ticket_id
+        :return:
+        """
+        check_summary = 'Duration Extension'
+        return self.get_all_subtasks_ticket_ids(ticket_id=ticket_id, ticket_state=ticket_state,
+                                                check_summary=check_summary)
+
+    def get_total_extend_budget(self, sub_ticket_ids: list):
+        """
+        This method return total budget for extension
+        :param sub_ticket_ids:
+        :return:
+        """
+        total_budget_to_extend = 0
+        for sub_ticket_id in sub_ticket_ids:
+            description = self.get_issue_description(ticket_id=sub_ticket_id, sub_task=True)
+            extended_budget = int(description.get('Budget', 0))
+            if extended_budget == 0:
+                extended_budget = int(description.get('CostEstimation', 0))
+            total_budget_to_extend += extended_budget
+        return total_budget_to_extend
+
+    def get_total_extend_duration(self, sub_ticket_ids: list):
+        """
+        This method returns the total duration for extension
+        :param sub_ticket_ids:
+        :return:
+        """
+        total_duration = 0
+        for sub_ticket_id in sub_ticket_ids:
+            description = self.get_issue_description(ticket_id=sub_ticket_id, sub_task=True)
+            total_duration += int(description.get('Days', 0))
+        return total_duration
+

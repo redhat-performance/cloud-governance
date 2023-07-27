@@ -1,5 +1,4 @@
-
-from cloud_governance.cloud_resource_orchestration.aws.ec2.run_cro import RunCRO
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.run_cro import RunCRO
 from cloud_governance.common.jira.jira import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables

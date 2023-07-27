@@ -8,18 +8,21 @@ import boto3
 import typeguard
 from jinja2 import Environment, FileSystemLoader
 
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.aws_tagging_operations import AWSTaggingOperations
+from cloud_governance.cloud_resource_orchestration.common.abstract_monitor_tickets import AbstractMonitorTickets
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import get_tag_value_by_name
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
-from cloud_governance.common.logger.init_logger import handler
+from cloud_governance.common.logger.init_logger import handler, logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.main.environment_variables import environment_variables
 
 
-class MonitorTickets:
+class AWSMonitorTickets(AbstractMonitorTickets):
     """This method monitor the Jira Tickets"""
 
     NEW = 'New'
@@ -32,6 +35,7 @@ class MonitorTickets:
     DEFAULT_ROUND_DIGITS: int = 3
 
     def __init__(self, region_name: str = ''):
+        super().__init__()
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__cro_resource_tag_name = self.__environment_variables_dict.get('CRO_RESOURCE_TAG_NAME')
         self.__jira_operations = JiraOperations()
@@ -77,7 +81,7 @@ class MonitorTickets:
             for ticket_id, description in tickets.items():
                 ticket_id = ticket_id.split('-')[-1]
                 if self.__account in description.get('AccountName'):
-                    if not self.__es_operations.verify_elastic_index_doc_id(index=self.es_cro_index, doc_id=ticket_id) or ticket_id == '130':
+                    if not self.__es_operations.verify_elastic_index_doc_id(index=self.es_cro_index, doc_id=ticket_id):
                         if ticket_status == self.REFINEMENT:
                             ticket_status = 'manager-approved'
                         source = {'cloud_name': description.get('CloudName'), 'account_name': description.get('AccountName').replace('OPENSHIFT-', ''),
@@ -126,112 +130,6 @@ class MonitorTickets:
 
     @typeguard.typechecked
     @logger_time_stamp
-    def __track_in_progress_tickets(self, tickets: dict):
-        """
-        This method track the in-progress tickets
-        :param tickets:
-        :return:
-        """
-        current_date = datetime.now().date()
-        for ticket_id, description in tickets.items():
-            if self.__account in description.get('AccountName'):
-                ticket_id = ticket_id.split('-')[-1]
-                es_id_data = self.__es_operations.get_es_data_by_id(id=ticket_id, index=self.es_cro_index).get('_source')
-                if es_id_data:
-                    ticket_opened_date = description.get('TicketOpenedDate').date()
-                    self.__region_name = description.get('Region')
-                    ticket_monitoring_days = (current_date - ticket_opened_date).days
-                    duration = int(es_id_data.get('duration'))
-                    remaining_duration = duration - ticket_monitoring_days
-                    handler.setLevel(logging.WARN)
-                    es_data_change = self.verify_es_instances_state(es_data=es_id_data)
-                    if es_data_change:
-                        self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id, metadata=es_id_data)
-                    self.__alert_in_progress_ticket_users(ticket_id=ticket_id, es_id_data=es_id_data, remaining_duration=remaining_duration)
-                    handler.setLevel(logging.INFO)
-
-    @typeguard.typechecked
-    @logger_time_stamp
-    def __tag_extend_instances(self, sub_tasks: list, ticket_id: str, duration: int, sub_task_count: int, estimated_cost: float):
-        """
-        This method extend the duration if the user opened expand ticket
-        :param sub_tasks:
-        :param ticket_id:
-        :param duration:
-        :param sub_task_count:
-        :param estimated_cost:
-        :return:
-        """
-        ticket_id = ticket_id.split('-')[-1]
-        local_ec2_operations = EC2Operations(region=self.__region_name)
-        local_ec2_client = boto3.client('ec2', region_name=self.__region_name)
-        filters = {'Filters': [{'Name': f'tag:{self.__cro_resource_tag_name}', 'Values': [ticket_id]}]}
-        extend_duration = 0
-        for task_id in sub_tasks:
-            description = self.__jira_operations.get_issue_description(ticket_id=task_id, sub_task=True)
-            extend_duration += int(description.get('Days'))
-        if extend_duration > 0:
-            instance_ids = local_ec2_operations.get_ec2_instance_ids(**filters)
-            duration += extend_duration
-            tags = [{'Key': 'Duration', 'Value': str(duration)}]
-            local_ec2_operations.tag_ec2_resources(client_method=local_ec2_client.create_tags, resource_ids=instance_ids, tags=tags)
-            data = {'duration': duration, 'timestamp': datetime.utcnow(), 'sub_tasks': len(sub_tasks) + sub_task_count,
-                    'estimated_cost': round(estimated_cost, self.DEFAULT_ROUND_DIGITS)}
-            if self.__es_operations:
-                self.__es_operations.update_elasticsearch_index(metadata=data, id=ticket_id, index=self.es_cro_index)
-            for task_id in sub_tasks:
-                self.__jira_operations.move_issue_state(ticket_id=task_id, state='closed')
-
-    @typeguard.typechecked
-    @logger_time_stamp
-    def __alert_in_progress_ticket_users(self, ticket_id: str, es_id_data: dict, remaining_duration: int):
-        """
-        This method alert the in-progress alert users
-        :param ticket_id:
-        :param es_id_data:
-        :param remaining_duration:
-        :return:
-        """
-        subject = body = None
-        user, cc = es_id_data.get('user_cro'), self.__default_admins
-        cc.append(es_id_data.get('approved_manager'))
-        ticket_extended = False
-        if remaining_duration <= self.FIRST_CRO_ALERT:
-            sub_tasks = self.__jira_operations.get_ticket_id_sub_tasks(ticket_id=ticket_id)
-            if sub_tasks:
-                duration = es_id_data.get('duration')
-                estimated_cost = float(es_id_data.get('estimated_cost'))
-                sub_task_count = es_id_data.get('sub_tasks', 0)
-                self.__tag_extend_instances(sub_tasks=sub_tasks, ticket_id=ticket_id, duration=duration, sub_task_count=sub_task_count, estimated_cost=estimated_cost)
-                ticket_extended = True
-        if remaining_duration == self.FIRST_CRO_ALERT:
-            subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=self.FIRST_CRO_ALERT, ticket_id=ticket_id)
-        elif remaining_duration == self.SECOND_CRO_ALERT:
-            subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=self.SECOND_CRO_ALERT, ticket_id=ticket_id)
-        else:
-            if not ticket_extended:
-                if remaining_duration <= self.CLOSE_JIRA_TICKET:
-                    self.__update_ticket_elastic_data(ticket_id=ticket_id, es_id_data=es_id_data)
-                    subject, body = self.__mail_message.cro_send_closed_alert(user, es_id_data, ticket_id)
-        if subject and body:
-            self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html')
-
-    @typeguard.typechecked
-    @logger_time_stamp
-    def __update_ticket_elastic_data(self, ticket_id: str, es_id_data: dict):
-        """
-        This method update the ticket data in elastic_search
-        :param ticket_id:
-        :param es_id_data:
-        :return:
-        """
-        self.__jira_operations.move_issue_state(ticket_id, state='CLOSED')
-        data = {'timestamp': datetime.utcnow(), 'ticket_id_state': 'closed'}
-        es_id_data.update(data)
-        self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id, metadata=es_id_data)
-
-    @typeguard.typechecked
-    @logger_time_stamp
     def verify_es_instances_state(self, es_data: dict):
         """
         This method verify the state of the es_instances
@@ -261,12 +159,61 @@ class MonitorTickets:
         """
         self.__send_ticket_status_alerts(ticket_status=self.NEW, tickets=self.get_tickets(ticket_status=self.NEW))
         self.__send_ticket_status_alerts(ticket_status=self.REFINEMENT, tickets=self.get_tickets(ticket_status=self.REFINEMENT))
-        self.__track_in_progress_tickets(self.get_tickets(ticket_status=self.IN_PROGRESS))
+
+    def update_budget_tag_to_resources(self, region_name: str, ticket_id: str, updated_budget: int):
+        """
+        This method updates the budget to the aws resources which have the tag TicketId: #
+        :param region_name:
+        :param ticket_id:
+        :param updated_budget:
+        :return:
+        """
+        tag_to_be_updated = 'EstimatedCost'
+        tagging_operations = AWSTaggingOperations(region_name=region_name)
+        resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
+        if resources_list_to_update:
+            resource_arn_list = []
+            previous_cost = 0
+            for resource in resources_list_to_update:
+                resource_arn_list.append(resource.get('ResourceARN'))
+                if previous_cost == 0:
+                    previous_cost = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
+            updated_budget += int(float(previous_cost))
+            update_tags_dict = {tag_to_be_updated: str(updated_budget)}
+            tagging_operations.tag_resources_list(resources_list=resource_arn_list,
+                                                  update_tags_dict=update_tags_dict)
+        else:
+            logger.info('No AWS resources to update the costs')
+
+    def update_duration_tag_to_resources(self, region_name: str, ticket_id: str, updated_duration: int):
+        """
+        This method updates the budget to cloud resources
+        :param region_name:
+        :param ticket_id:
+        :param updated_duration:
+        :return:
+        """
+        tag_to_be_updated = 'Duration'
+        tagging_operations = AWSTaggingOperations(region_name=region_name)
+        resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
+        if resources_list_to_update:
+            resource_arn_list = []
+            previous_duration = 0
+            for resource in resources_list_to_update:
+                resource_arn_list.append(resource.get('ResourceARN'))
+                if previous_duration == 0:
+                    previous_duration = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
+            updated_duration += int(float(previous_duration))
+            update_tags_dict = {tag_to_be_updated: str(updated_duration)}
+            tagging_operations.tag_resources_list(resources_list=resource_arn_list, update_tags_dict=update_tags_dict)
+        else:
+            logger.info('No AWS resources to update the costs')
 
     @logger_time_stamp
     def run(self):
         """
         This method run all methods of jira tickets monitoring
         :return:
-        """
+        # """
         self.__track_tickets()
+        self.monitor_tickets()
