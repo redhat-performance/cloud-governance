@@ -20,7 +20,7 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 
 class NonClusterZombiePolicy:
 
-    DAYS_TO_DELETE_RESOURCE = 7
+    DAYS_TO_DELETE_RESOURCE = environment_variables.environment_variables_dict.get('DAYS_TO_DELETE_RESOURCE')
     DAYS_TO_NOTIFY_ADMINS = 6
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAILY_HOURS = 24

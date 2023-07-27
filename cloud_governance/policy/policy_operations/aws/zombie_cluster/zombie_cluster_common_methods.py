@@ -15,7 +15,7 @@ from cloud_governance.main.environment_variables import environment_variables
 
 class ZombieClusterCommonMethods:
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
-    DAYS_TO_DELETE_RESOURCE = 7
+    DAYS_TO_DELETE_RESOURCE = environment_variables.environment_variables_dict.get('DAYS_TO_DELETE_RESOURCE')
 
     def __init__(self, region: str, force_delete: bool = False):
         self.__environment_variables_dict = environment_variables.environment_variables_dict

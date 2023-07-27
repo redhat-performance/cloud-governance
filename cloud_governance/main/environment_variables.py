@@ -76,6 +76,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['service_type'] = EnvironmentVariables.get_env('service_type', '')
         self._environment_variables_dict['TABLE_NAME'] = EnvironmentVariables.get_env('TABLE_NAME', '')
         self._environment_variables_dict['REPLACE_ACCOUNT_NAME'] = EnvironmentVariables.get_env('REPLACE_ACCOUNT_NAME', '{}')
+        self._environment_variables_dict['DAYS_TO_DELETE_RESOURCE'] = int(EnvironmentVariables.get_env('DAYS_TO_DELETE_RESOURCE', '7'))
 
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
@@ -209,6 +210,8 @@ class EnvironmentVariables:
             int(EnvironmentVariables.get_env('DEFAULT_ROUND_DIGITS', '3'))
         self._environment_variables_dict['ATHENA_DATABASE_NAME'] = EnvironmentVariables.get_env('ATHENA_DATABASE_NAME', '')
         self._environment_variables_dict['ATHENA_TABLE_NAME'] = EnvironmentVariables.get_env('ATHENA_TABLE_NAME', '')
+
+
 
 
     @staticmethod
