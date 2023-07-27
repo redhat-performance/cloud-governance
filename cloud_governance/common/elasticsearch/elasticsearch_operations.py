@@ -35,10 +35,12 @@ class ElasticSearchOperations:
         self.__es_port = es_port if es_port else self.__environment_variables_dict.get('es_port')
         self.__region = region
         self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
+        self.__account = self.__environment_variables_dict.get('account')
         try:
             self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
         except:
             self.__es = None
+
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
         """
@@ -121,7 +123,7 @@ class ElasticSearchOperations:
         """
         This method is upload json data into elasticsearch
         :param index: index name to be stored in elasticsearch
-        :param data: data must me in dictionary i.e. {'key': 'value'}
+        :param data: data must be in dictionary i.e. {'key': 'value'}
         :param doc_type:
         :param es_add_items:
         :return:
@@ -140,6 +142,8 @@ class ElasticSearchOperations:
         if 'policy' not in data:
             data['policy'] = self.__environment_variables_dict.get('policy')
         # Upload data to elastic search server
+        if 'account' not in map(str.lower, data.keys()):
+            data['account'] = self.__account
         try:
             if isinstance(data, dict):  # JSON Object
                 self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
