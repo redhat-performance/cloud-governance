@@ -1,0 +1,51 @@
+name: AWS EC2 Pricing
+
+on:
+  # Run Nightly
+  schedule:
+    - cron: '0 4 * * *' # run nightly at 4 AM UTC/ 0 AM EDT
+  workflow_dispatch:
+
+jobs:
+  aws_ec2_pricing:
+    name: AWS EC2 pricing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install boto3
+
+      - name: Generate AWS EC2 Pricing
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
+          OUTPUT_PATH: ${{ github.workspace }}/clouds_data_ware_house/cloud_resource_orchestration/clouds/aws/ec2
+        run: python $OUTPUT_PATH/generate_ec2_pricing.py
+
+      - name: Check for changes in AWS EC2 pricing
+        id: check_changes
+        run: |
+          git diff --quiet || echo "::set-output name=changes::true"
+
+      - name: commit AWS EC2 pricing files
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git checkout main
+          git config --global user.email ${{ secrets.EMAIL }}
+          git config --global user.name  ${{ secrets.USER_NAME }}
+          git add $GITHUB_WORKSPACE/clouds_data_ware_house/cloud_resource_orchestration/clouds/aws/ec2/ec2_on_demand_price.json
+          git add $GITHUB_WORKSPACE/clouds_data_ware_house/cloud_resource_orchestration/clouds/aws/ec2/ec2_spot_price.json
+          git commit -m "Update ec2 price json files"
+
+          # Pull the latest changes from the remote main branch
+          git pull origin main
+
+          # Push the changes to the remote main branch
+          git push
