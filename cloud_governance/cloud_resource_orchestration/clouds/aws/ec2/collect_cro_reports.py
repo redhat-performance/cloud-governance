@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 import typeguard
 
-from cloud_governance.cloud_resource_orchestration.aws.ec2.cost_over_usage import CostOverUsage
-from cloud_governance.cloud_resource_orchestration.aws.ec2.monitor_tickets import MonitorTickets
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.cost_over_usage import CostOverUsage
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.aws_monitor_tickets import AWSMonitorTickets
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
 from cloud_governance.common.logger.init_logger import handler
@@ -170,7 +170,7 @@ class CollectCROReports:
                 else:
                     if instance.get('instance_plan', '').lower() == 'ondemand':
                         source['total_ondemand'] = source.get('total_ondemand', 0) + 1
-        MonitorTickets().verify_es_instances_state(es_data=source)
+        AWSMonitorTickets().verify_es_instances_state(es_data=source)
         if datetime.strptime(source.get('timestamp'), "%Y-%m-%dT%H:%M:%S.%f").date() != datetime.now().date():
             source['monitored_days'] = (datetime.utcnow().date() - source.get('ticket_opened_date')).days
         source['total_instances'] = len(source.get('instances', self.ZERO))

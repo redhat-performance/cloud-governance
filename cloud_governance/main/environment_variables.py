@@ -203,6 +203,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['EMAIL_CC'] = literal_eval(EnvironmentVariables.get_env('EMAIL_CC', "[]"))
         self._environment_variables_dict['MANAGER_ESCALATION_DAYS'] = int(EnvironmentVariables.get_env('MANAGER_ESCALATION_DAYS', '3'))
         self._environment_variables_dict['GLOBAL_CLOUD_ADMIN'] = EnvironmentVariables.get_env('GLOBAL_CLOUD_ADMIN', 'natashba')
+        self._environment_variables_dict['TICKET_OVER_USAGE_LIMIT'] = int(EnvironmentVariables.get_env('TICKET_OVER_USAGE_LIMIT', '80'))
 
         #  AWS Athena
         self._environment_variables_dict['S3_RESULTS_PATH'] = EnvironmentVariables.get_env('S3_RESULTS_PATH', '')

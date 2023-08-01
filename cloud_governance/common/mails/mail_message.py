@@ -353,11 +353,10 @@ Cloud-governance Team""".strip()
         """
         return subject, body
 
-    def cro_send_closed_alert(self, user: str, es_data: dict, ticket_id: str):
+    def cro_send_closed_alert(self, user: str, ticket_id: str):
         """
         This method send cro ticket close alert
         :param user:
-        :param es_data:
         :param ticket_id:
         :return:
         """
@@ -390,7 +389,7 @@ Cloud-governance Team""".strip()
 
     def get_data_in_html_table_format(self, resources: dict):
         """
-        This method return user policy alerts in HTML table format
+        This method returns user policy alerts in HTML table format
         :param resources:
         :return:
         """
@@ -440,7 +439,7 @@ Cloud-governance Team""".strip()
 
     def get_agg_policies_mail_message(self, user: str, user_resources: dict):
         """
-        This method return the message for the aggregated alert of all policies
+        This method returns the message for the aggregated alert of all policies
         :param user:
         :param user_resources:
         :return:
@@ -462,4 +461,43 @@ Cloud-governance Team""".strip()
         <p>{self.RESTRICTION}</p>
         {self.FOOTER}
 """
+        return subject, body
+
+    def cro_monitor_budget_remain_alert(self, ticket_id: str, budget: int, user: str, used_budget: int, remain_budget: int):
+        """
+        This method returns subject, body for the budget remain alert
+        :param ticket_id:
+        :param budget:
+        :param user:
+        :param used_budget:
+        :param remain_budget:
+        :return:
+        """
+        ticket_id = ticket_id.split('-')[-1]
+        subject = f'[Action required] Cloud Resources Budget Remain'
+        user_display_name = self.get_user_ldap_details(user_name=user)
+        template_loader = self.env_loader.get_template('cro_monitor_budget_remain_alert.j2')
+        context = {'name': user_display_name, 'ticket_id': ticket_id, 'portal': self.__portal,
+                   'budget': budget, 'used_budget': used_budget, 'remain_budget': remain_budget, 'footer': self.FOOTER}
+        body = template_loader.render(context)
+        return subject, body
+
+    def cro_monitor_budget_remain_high_alert(self, ticket_id: str, budget: int, user: str, used_budget: int, remain_budget: int):
+        """
+        This method returns subject, body for the budget completed high alert
+        :param ticket_id:
+        :param budget:
+        :param user:
+        :param used_budget:
+        :param remain_budget:
+        :return:
+        """
+        ticket_id = ticket_id.split('-')[-1]
+        subject = f'[Action required] Cloud Resources Budget Remain'
+        user_display_name = self.get_user_ldap_details(user_name=user)
+        template_loader = self.env_loader.get_template('cro_monitor_budget_remain_high_alert.j2')
+        context = {'name': user_display_name, 'ticket_id': ticket_id, 'portal': self.__portal,
+                   'budget': budget, 'used_budget': used_budget, 'remain_budget': remain_budget,
+                   'footer': self.FOOTER}
+        body = template_loader.render(context)
         return subject, body

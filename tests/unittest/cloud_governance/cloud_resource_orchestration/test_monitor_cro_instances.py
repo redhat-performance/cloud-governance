@@ -1,8 +1,8 @@
 import boto3
 from moto import mock_ec2, mock_iam, mock_cloudtrail
 
-from cloud_governance.cloud_resource_orchestration.aws.ec2.monitor_cro_instances import MonitorCROInstances
-from cloud_governance.cloud_resource_orchestration.aws.ec2.tag_cro_instances import TagCROInstances
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.monitor_cro_instances import MonitorCROInstances
+from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.tag_cro_instances import TagCROInstances
 from cloud_governance.main.environment_variables import environment_variables
 from tests.unittest.cloud_governance.cloud_resource_orchestration.mocks.mock_jira import mock_jira
 

@@ -642,3 +642,17 @@ class EC2Operations:
         """
         ignore_tag = 'TicketId'
         return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True, ignore_tag=ignore_tag)
+
+    def describe_tags(self, **kwargs):
+        """
+        This method returns the all tags in aws region
+        :param kwargs:
+        :return:
+        """
+        tags_list = []
+        ec2_service_tags = self.ec2_client.describe_tags(**kwargs)
+        tags_list.extend(ec2_service_tags.get('Tags', []))
+        while ec2_service_tags.get('NextToken'):
+            ec2_service_tags = self.ec2_client.describe_tags(NextToken=ec2_service_tags.get('NextToken'), **kwargs)
+            tags_list.extend(ec2_service_tags.get('Tags', []))
+        return tags_list
