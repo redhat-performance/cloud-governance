@@ -35,6 +35,8 @@ class EbsUnattached(NonClusterZombiePolicy):
                                                                                  end_time=self._end_date,
                                                                                  optional_event_name=['CreateVolume',
                                                                                                       'CreateTags'])
+                    if not last_detached_time:
+                        last_detached_time = self._start_date
                     if last_detached_time:
                         last_detached_days = self._calculate_days(create_date=last_detached_time)
                         ebs_cost = self.resource_pricing.get_ebs_cost(volume_type=volume.get('VolumeType'), volume_size=volume.get('Size'), hours=(self.DAILY_HOURS * last_detached_days))

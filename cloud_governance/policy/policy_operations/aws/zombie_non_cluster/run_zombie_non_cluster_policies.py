@@ -221,7 +221,10 @@ class NonClusterZombiePolicy:
         @param tags:
         @return:
         """
-        last_used_day = self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')
+        if self._dry_run == 'no':
+            last_used_day = self._get_tag_name_from_tags(tags=tags, tag_name='DryRunNoDays')
+        else:
+            last_used_day = self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')
         if not last_used_day:
             last_used_day = 1
         else:
@@ -287,8 +290,16 @@ class NonClusterZombiePolicy:
         @return:
         """
         if left_out_days < 7 or self._dry_run == 'yes' or self._get_policy_value(tags=tags) in ('NOTDELETE', 'SKIP'):
-            if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay') or resource_left_out:
-                tags = self._update_tag_value(tags=tags, tag_name='LastUsedDay', tag_value=str(left_out_days))
+            if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')\
+                    or self._get_tag_name_from_tags(tags=tags, tag_name='DryRunNoDays')\
+                    or resource_left_out:
+                if self._dry_run == 'no':
+                    tags = self._update_tag_value(tags=tags, tag_name='DryRunNoDays', tag_value=str(left_out_days))
+                else:
+                    tags = self._update_tag_value(tags=tags, tag_name='LastUsedDay', tag_value=str(left_out_days))
+                if left_out_days == 0:
+                    tags = self._update_tag_value(tags=tags, tag_name='DryRunNoDays', tag_value=str(left_out_days))
+                    tags = self._update_tag_value(tags=tags, tag_name='LastUsedDay', tag_value=str(left_out_days))
                 try:
                     if self._policy == 's3_inactive':
                         self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
