@@ -163,7 +163,8 @@ class AbstractMonitorTickets(ABC):
                     self.__close_and_update_ticket_data_in_es(ticket_id=ticket_id)
                     subject, body = self.__mail_message.cro_send_closed_alert(user, ticket_id)
         if subject and body:
-            self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html')
+            self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
+                                              message_type='duration_exceeded_alert')
 
     @typeguard.typechecked
     @logger_time_stamp
@@ -188,12 +189,13 @@ class AbstractMonitorTickets(ABC):
                                                                                     used_budget=used_budget,
                                                                                     remain_budget=remaining_budget)
         elif remaining_budget <= 0:
-            subject, body = self.__mail_message.cro_monitor_budget_remain_alert(user=user, budget=budget,
-                                                                                ticket_id=ticket_id,
-                                                                                used_budget=used_budget,
-                                                                                remain_budget=remaining_budget)
+            subject, body = self.__mail_message.cro_monitor_budget_remain_high_alert(user=user, budget=budget,
+                                                                                     ticket_id=ticket_id,
+                                                                                     used_budget=used_budget,
+                                                                                     remain_budget=remaining_budget)
         if subject and body:
-            self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html')
+            self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
+                                              message_type='budget_exceed_alert')
 
     @logger_time_stamp
     def _monitor_in_progress_tickets(self):
@@ -212,9 +214,6 @@ class AbstractMonitorTickets(ABC):
                 used_budget = int(source_data.get('actual_cost', 0))
                 ticket_start_date = datetime.strptime(source_data.get('ticket_opened_date'), DATE_FORMAT).date()
                 completed_duration = (datetime.utcnow().date() - ticket_start_date).days
-                if ticket_id == '200':
-                    completed_duration = 25
-                    used_budget = 9
                 self._monitor_ticket_budget(ticket_id=ticket_id, region_name=region_name, budget=budget,
                                             used_budget=used_budget,
                                             user_cro=source_data.get('user_cro'),

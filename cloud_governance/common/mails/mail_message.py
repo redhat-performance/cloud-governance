@@ -495,6 +495,8 @@ Cloud-governance Team""".strip()
         ticket_id = ticket_id.split('-')[-1]
         subject = f'[Action required] Cloud Resources Budget Remain'
         user_display_name = self.get_user_ldap_details(user_name=user)
+        if remain_budget < 0:
+            remain_budget *= -1
         template_loader = self.env_loader.get_template('cro_monitor_budget_remain_high_alert.j2')
         context = {'name': user_display_name, 'ticket_id': ticket_id, 'portal': self.__portal,
                    'budget': budget, 'used_budget': used_budget, 'remain_budget': remain_budget,
