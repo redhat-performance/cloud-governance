@@ -1,0 +1,63 @@
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        access_key = credentials('appeng-aws-access-key-id')
+        secret_key = credentials('appeng-aws-secret-key-id')
+        s3_bucket = credentials('appeng-s3-bucket')
+        account_name = "appeng"
+        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        ES_HOST = credentials('haim-cloud-governance-elasticsearch-url')
+        ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Policies the Cost Policies') {
+            steps {
+                 sh 'python3 jenkins/poc/haim/common/run_cost_policies.py'
+            }
+        }
+        stage('Run Policies the Daily polices') {
+            steps {
+                 sh 'python3 jenkins/poc/haim/common/run_policies.py'
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}"
+            }
+          }
+    }
+}
