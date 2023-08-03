@@ -1,8 +1,12 @@
+import json
 import logging
+from ast import literal_eval
 from datetime import datetime, timedelta
 
 import typeguard
 
+from cloud_governance.cloud_resource_orchestration.utils.constant_variables import DATE_FORMAT
+from cloud_governance.cloud_resource_orchestration.utils.elastic_search_queries import ElasticSearchQueries
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -48,6 +52,7 @@ class CostOverUsage:
         self.es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
         self.__over_usage_threshold = self.OVER_USAGE_THRESHOLD * self.__over_usage_amount
         self.__ec2_operations = EC2Operations()
+        self.__elastic_search_queries = ElasticSearchQueries(cro_duration_days=self.__cro_duration_days)
 
     def get_cost_explorer_operations(self):
         return self.__ce_operations
@@ -189,6 +194,30 @@ class CostOverUsage:
                 total_active_ticket_cost += opened_ticket_cost
             return total_active_ticket_cost
 
+    def get_user_closed_ticket_costs(self, user_name: str):
+        """
+        This method returns the users closed tickets costs
+        :param user_name:
+        :return:
+        """
+        match_conditions = [{"term": {"user.keyword": user_name}},
+                            {"term": {"account_name.keyword": self.__aws_account.upper()}}
+                            ]
+        query = self.__elastic_search_queries.get_all_closed_tickets(match_conditions=match_conditions)
+        user_closed_tickets = self.es_operations.fetch_data_by_es_query(es_index=self.es_index_cro, query=query,
+                                                                        filter_path='hits.hits._source')
+        total_closed_ticket_cost = 0
+        for closed_ticket in user_closed_tickets:
+            total_used_cost = 0
+            user_daily_report = closed_ticket.get('_source', {}).get('user_daily_cost', '')
+            if user_daily_report:
+                user_daily_report = literal_eval(user_daily_report)
+                for date, user_cost in user_daily_report.items():
+                    if datetime.strptime(date, DATE_FORMAT) >= self.current_start_date:
+                        total_used_cost += int(user_cost.get('TicketId', 0))
+            total_closed_ticket_cost += total_used_cost
+        return total_closed_ticket_cost
+
     @logger_time_stamp
     def get_cost_over_usage_users(self):
         """
@@ -201,11 +230,12 @@ class CostOverUsage:
             user_name = str(user.get('User'))
             user_cost = round(user.get('Cost'), self.DEFAULT_ROUND_DIGITS)
             if user_cost >= (self.__over_usage_amount - self.__over_usage_threshold):
-                user_active_tickets_cost = self.get_user_active_ticket_costs(user_name=user_name)
+                user_active_tickets_cost = self.get_user_active_ticket_costs(user_name=user_name.lower())
+                user_closed_tickets_cost = self.get_user_closed_ticket_costs(user_name=user_name.lower())
                 if not user_active_tickets_cost:
                     over_usage_users.append(user)
                 else:
-                    user_cost_without_active_ticket = user_cost - user_active_tickets_cost
+                    user_cost_without_active_ticket = user_cost - user_active_tickets_cost - user_closed_tickets_cost
                     if user_cost_without_active_ticket > self.__over_usage_amount:
                         user['Cost'] = user_cost_without_active_ticket
                         over_usage_users.append(user)
