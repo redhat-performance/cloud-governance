@@ -244,7 +244,7 @@ class ElasticSearchOperations:
                 if result_agg:
                     es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
                 else:
-                    if response.get('hits').get('hits'):
+                    if response.get('hits', {}).get('hits'):
                         es_data.extend(response.get('hits').get('hits'))
                     if not limit_to_size:
                         scroll_id = response.get('_scroll_id')
