@@ -48,9 +48,9 @@ pipeline {
                     def account = ['appeng', 'fsi-partners']
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
+                        sh 'echo "Hello World"'
                     }
                 }
-                 sh 'echo "Hello World"'
             }
         }
         stage('Finalize Cleanup') {
