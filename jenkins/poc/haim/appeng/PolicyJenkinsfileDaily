@@ -39,7 +39,7 @@ pipeline {
         }
         stage('Run Policies the Cost Policies') {
             steps {
-                 sh 'python3 jenkins/poc/haim/common/run_cost_policies.py'
+                 sh 'echo "Hello World"'
             }
         }
         stage('Run Policies the Daily polices') {
