@@ -45,7 +45,7 @@ pipeline {
         stage('Run Policies the Daily polices') {
             steps {
                  script {
-                    def account = ['APPENG']
+                    def account = ['appeng']
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
                         env.access_key = credentials("${account[i]}-aws-access-key-id")
