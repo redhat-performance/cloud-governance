@@ -52,7 +52,7 @@ pipeline {
                         env.secret_key = "SECRET_KEY_${account[i]}"
                         env.s3_bucket = "S3_BUCKET_${account[i]}"
                         account_name = "${account[i]}"
-                        sh 'python3 jenkins/poc/haim/common/run_policies.py'
+                        sh 'echo $account_name && python3 jenkins/poc/haim/common/run_policies.py'
                     }
                 }
             }
