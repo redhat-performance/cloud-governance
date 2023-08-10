@@ -52,7 +52,7 @@ pipeline {
                         env.SECRET_KEY = "${account[i]}_SECRET_KEY"
                         env.S3_BUCKET = "${account[i]}_S3_BUCKET"
                         env.ACCOUNT_NAME = "${account[i]}"
-                        sh '$ACCESS_KEY'
+                        sh 'echo $ACCESS_KEY'
                     }
                 }
             }
