@@ -48,7 +48,7 @@ pipeline {
                     def account = ['appeng', 'fsi-partners']
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
-                        env.ACCESS_KEY_APPENG = credentials(${account[i]}'-aws-access-key-id')
+                        env.ACCESS_KEY_APPENG = credentials("${account[i]}-aws-access-key-id")
                         sh 'echo $ACCESS_KEY_APPENG'
                     }
                 }
