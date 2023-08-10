@@ -48,7 +48,7 @@ pipeline {
                     def account = ['APPENG']
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
-                        env.access_key = "${ACCESS_KEY_${account[i]}}"
+                        env.access_key = credentials("${account[i]}-aws-access-key-id")
                         SECRET_KEY = "env.${account[i]}_SECRET_KEY"
                         S3_BUCKET = "env.${account[i]}_S3_BUCKET"
                         ACCOUNT_NAME = "${account[i]}"
