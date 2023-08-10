@@ -39,7 +39,17 @@ pipeline {
         }
         stage('Run Policies the Cost Policies') {
             steps {
-                 sh 'echo "Hello World"'
+                 script {
+                    def account = ['appeng']
+                    for (int i = 0; i < account.size(); ++i) {
+                        echo "Testing the ACCESS_KEY_${account[i]} browser"
+                        env.access_key = "ACCESS_KEY_${account[i]}"
+                        env.secret_key = "SECRET_KEY_${account[i]}"
+                        env.s3_bucket = "S3_BUCKET_${account[i]}"
+                        env.account_name = "${account[i]}"
+                        sh 'python3 jenkins/poc/haim/common/run_cost_policies.py'
+                    }
+                }
             }
         }
         stage('Run Policies the Daily polices') {
@@ -52,7 +62,7 @@ pipeline {
                         env.secret_key = "SECRET_KEY_${account[i]}"
                         env.s3_bucket = "S3_BUCKET_${account[i]}"
                         env.account_name = "${account[i]}"
-                        sh 'echo $account_name && python3 jenkins/poc/haim/common/run_policies.py'
+                        sh 'python3 jenkins/poc/haim/common/run_policies.py'
                     }
                 }
             }
