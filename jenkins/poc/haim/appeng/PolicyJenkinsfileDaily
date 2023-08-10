@@ -49,9 +49,9 @@ pipeline {
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
                         env.access_key = "ACCESS_KEY_${account[i]}"
-                        env.SECRET_KEY = "SECRET_KEY_${account[i]}"
-                        env.S3_BUCKET = "S3_BUCKET_${account[i]}"
-                        ACCOUNT_NAME = "${account[i]}"
+                        env.secret_key = "SECRET_KEY_${account[i]}"
+                        env.s3_bucket = "S3_BUCKET_${account[i]}"
+                        account_name = "${account[i]}"
                         sh 'python3 jenkins/poc/haim/common/run_policies.py'
                     }
                 }
