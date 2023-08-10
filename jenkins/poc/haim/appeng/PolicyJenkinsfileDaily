@@ -46,7 +46,7 @@ pipeline {
             steps {
                  script {
                     def account = ['appeng', 'fsi-partners']
-                    for (int i = 0; i < browsers.size(); ++i) {
+                    for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ${account[i]} browser"
                     }
                 }
