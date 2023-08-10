@@ -10,6 +10,14 @@ pipeline {
         }
     }
     environment {
+        ACCESS_KEY_APPENG = credentials('appeng-aws-access-key-id')
+        SECRET_KEY_APPENG = credentials('appeng-aws-secret-key-id')
+        S3_BUCKET_APPENG = credentials('appeng-s3-bucket')
+        ACCESS_KEY_FSI_PARTNERS = credentials('appeng-aws-access-key-id')
+        SECRET_KEY_FSI_PARTNERS = credentials('appeng-aws-secret-key-id')
+        S3_BUCKET_FSI_PARTNERS = credentials('appeng-s3-bucket')
+        ACCOUNT_NAME_APPENG = "appeng"
+        ACCOUNT_NAME_FSI_PARTNERS = "appeng"
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
