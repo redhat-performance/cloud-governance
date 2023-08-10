@@ -44,7 +44,7 @@ pipeline {
                         env.SECRET_KEY = credentials("${account[i]}-aws-secret-key-id")
                         env.S3_BUCKET = credentials("${account[i]}-s3-bucket")
                         env.ACCOUNT_NAME = "${account[i]}"
-                        sh 'python3 jenkins/poc/haim/common/run_policies.py'
+                        sh 'echo $ACCESS_KEY'
                     }
                 }
             }
