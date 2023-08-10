@@ -10,14 +10,6 @@ pipeline {
         }
     }
     environment {
-        ACCESS_KEY_APPENG = credentials('appeng-aws-access-key-id')
-        SECRET_KEY_APPENG = credentials('appeng-aws-secret-key-id')
-        S3_BUCKET_APPENG = credentials('appeng-s3-bucket')
-        ACCESS_KEY_FSI_PARTNERS = credentials('appeng-aws-access-key-id')
-        SECRET_KEY_FSI_PARTNERS = credentials('appeng-aws-secret-key-id')
-        S3_BUCKET_FSI_PARTNERS = credentials('appeng-s3-bucket')
-        ACCOUNT_NAME_APPENG = "appeng"
-        ACCOUNT_NAME_FSI_PARTNERS = "appeng"
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
@@ -45,11 +37,14 @@ pipeline {
         stage('Run Policies the Daily polices') {
             steps {
                  script {
-                    def account = ['appeng', 'fsi-partners']
+                    def account = ['appeng']
                     for (int i = 0; i < account.size(); ++i) {
                         echo "Testing the ACCESS_KEY_${account[i]} browser"
-                        env.ACCESS_KEY_APPENG = credentials("${account[i]}-aws-access-key-id")
-                        sh 'echo $ACCESS_KEY_APPENG'
+                        env.ACCESS_KEY = credentials("${account[i]}-aws-access-key-id")
+                        env.SECRET_KEY = credentials("${account[i]}-aws-secret-key-id")
+                        env.S3_BUCKET = credentials("${account[i]}-s3-bucket")
+                        env.ACCOUNT_NAME = "${account[i]}"
+                        sh 'echo $ACCESS_KEY'
                     }
                 }
             }
