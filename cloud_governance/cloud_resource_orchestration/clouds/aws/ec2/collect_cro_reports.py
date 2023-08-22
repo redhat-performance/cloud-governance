@@ -190,6 +190,18 @@ class CollectCROReports:
             source[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
         return source
 
+    def __check_value_in_es(self, tag_key: str, tag_value: str, ticket_id: str):
+        """
+        This method returns the bool on comparing the es tag_key value and tag_value
+        :param tag_key:
+        :param tag_value:
+        :param ticket_id:
+        :return:
+        """
+        es_data = self.__cost_over_usage.es_operations.get_es_data_by_id(index=self.__es_index_cro, id=ticket_id)
+        es_tag_value = es_data.get('_source', {}).get(tag_key.lower(), '').lower()
+        return es_tag_value == tag_value
+
     @typeguard.typechecked
     @logger_time_stamp
     def __upload_cro_report_to_es(self, monitor_data: dict):
@@ -213,13 +225,14 @@ class CollectCROReports:
             user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
             cost_estimation = float(instance_data[self.ZERO].get('estimated_cost', self.ZERO))
             if self.__cost_over_usage.es_operations.verify_elastic_index_doc_id(index=self.__cost_over_usage.es_index_cro, doc_id=ticket_id):
-                es_data = self.__cost_over_usage.es_operations.get_es_data_by_id(id=ticket_id, index=self.__cost_over_usage.es_index_cro)
-                es_data['_source']['ticket_opened_date'] = ticket_opened_date.date()
-                es_data['_source']['forecast'] = user_forecast
-                es_data['_source']['user'] = user
-                source = self.__prepare_update_es_data(source=es_data.get('_source'), instance_data=instance_data, cost_estimation=cost_estimation, user_cost=user_cost)
-                self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=source)
-                upload_data[ticket_id] = source
+                if self.__check_value_in_es(tag_key='ticket_id_state', tag_value='in-progress', ticket_id=ticket_id):
+                    es_data = self.__cost_over_usage.es_operations.get_es_data_by_id(id=ticket_id, index=self.__cost_over_usage.es_index_cro)
+                    es_data['_source']['ticket_opened_date'] = ticket_opened_date.date()
+                    es_data['_source']['forecast'] = user_forecast
+                    es_data['_source']['user'] = user
+                    source = self.__prepare_update_es_data(source=es_data.get('_source'), instance_data=instance_data, cost_estimation=cost_estimation, user_cost=user_cost)
+                    self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=source)
+                    upload_data[ticket_id] = source
             else:
                 if ticket_id not in upload_data:
                     source = self.prepare_instance_data(instance_data=instance_data, ticket_id=ticket_id, cost_estimation=cost_estimation, user=user,  user_cost=user_cost, ticket_opened_date=ticket_opened_date)
