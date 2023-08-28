@@ -2,11 +2,20 @@
     <p>Hi {{name}},</p>
 </div>
 <div>
-    <p>You completed $ {{used_budget}} / $ {{budget}} of budget till today of the TicketId: {{ticket_id}}.
-    Remaining budget will be $ {{remain_budget}}.</p>
-    <p>Open the budget extension if further needed.</p>
-    <p>This ticket will be closed, if the budget will exceeds 110%.</p>
-    <p>You can extend the budget <a href="{{portal}}/extend/budget">here</a>.</p>
-    <p>Visit the <a href="{self.__portal}/wiki/clouds">wiki page</a> to get more information</p>
+    <p>Summary of you budget request TicketId: {{ ticket_id }}</p>
+    <ul>
+        <li>Budget: <b>${{ budget }}</b></li>
+        <li>Spending: <b>${{ used_budget }}</b></li>
+        <li>Remaining: <b>${{ remain_budget }}</b></li>
+    </ul>
+    <p>If you want to keep using this allocation, please extend the budget:</p>
+    <ul>
+        <li>Click <a href="{{portal}}/extend/budget">here</a> to open Budget extend page</li>
+        <li>Fill the details, and select the TicketId: {{ ticket_id }}</li>
+        <li>Enter the amount and description of the why you need extension.</li>
+        <li>Then click on submit</li>
+    </ul>
+    <p>If you don't need to use this allocation anymore, you can ignore this email. Please don't forgot to terminate the resources,<br/>
+    You won't receive additional emails <b>as long as the allocation cost does not increase</b>.</p>
 </div>
 {{footer}}
