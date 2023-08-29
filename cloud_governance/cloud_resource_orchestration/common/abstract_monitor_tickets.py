@@ -149,22 +149,24 @@ class AbstractMonitorTickets(ABC):
         user, cc = kwargs.get('user_cro'), self.__default_admins
         cc.append(kwargs.get('approved_manager'))
         remaining_duration = duration - completed_duration
-        ticket_extended = False
         subject = body = None
         if remaining_duration <= FIRST_CRO_ALERT:
             ticket_extended = self.extend_ticket_duration(ticket_id=ticket_id, region_name=region_name)
-            if not ticket_extended and remaining_duration == FIRST_CRO_ALERT:
-                subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=FIRST_CRO_ALERT, ticket_id=ticket_id)
-        elif remaining_duration == SECOND_CRO_ALERT:
-            subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=SECOND_CRO_ALERT, ticket_id=ticket_id)
-        else:
             if not ticket_extended:
-                if remaining_duration <= CLOSE_JIRA_TICKET:
-                    self.__close_and_update_ticket_data_in_es(ticket_id=ticket_id)
-                    subject, body = self.__mail_message.cro_send_closed_alert(user, ticket_id)
+                if remaining_duration == FIRST_CRO_ALERT:
+                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=FIRST_CRO_ALERT, ticket_id=ticket_id)
+                    message_type = 'first_duration_alert'
+                elif remaining_duration == SECOND_CRO_ALERT:
+                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=SECOND_CRO_ALERT, ticket_id=ticket_id)
+                    message_type = 'second_duration_alert'
+                else:
+                    if remaining_duration <= CLOSE_JIRA_TICKET:
+                        self.__close_and_update_ticket_data_in_es(ticket_id=ticket_id)
+                        subject, body = self.__mail_message.cro_send_closed_alert(user, ticket_id)
+                        message_type = 'ticket_closed_alert'
         if subject and body:
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
-                                              message_type='duration_exceeded_alert')
+                                              message_type=message_type)
 
     @typeguard.typechecked
     @logger_time_stamp
