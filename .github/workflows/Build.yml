@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 concurrency:
-  group: merge-queue
+  group: build_queue
   cancel-in-progress: false
 
 jobs:
