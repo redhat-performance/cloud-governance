@@ -1,8 +1,7 @@
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/cloud-governance.svg)](https://pypi.org/project/cloud-governance/)
 [![Container Repository on Quay](https://quay.io/repository/projectquay/quay/status "Container Repository on Quay")](https://quay.io/repository/ebattat/cloud-governance?tab=tags)
-[![Actions Status](https://github.com/redhat-performance/cloud-governance/workflows/Build/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)
-[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
+[![Actions Status](https://github.com/redhat-performance/cloud-governance/actions/workflows/Build.yml/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/cloud-governance/badge/?version=latest)](https://cloud-governance.readthedocs.io/en/latest/?badge=latest)
 [![python](https://img.shields.io/pypi/pyversions/cloud-governance.svg?color=%2334D058)](https://pypi.org/project/cloud-governance)
 [![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
@@ -35,7 +34,7 @@ This tool support the following policies:
 * [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Get the inactive/empty buckets and delete them after 7 days.
 * [empty_roles](cloud_governance/policy/aws/empty_roles.py): Get empty roles and delete it after 7 days.
 * [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Get the zombie snapshots and delete it after 7 days.
-* [nat_gateway_unused](cloud_governance/policy/aws/unused_nat_gateway.py): Get the unused nat gateways and deletes it after 7 days.
+* [unused_nat_gateway](cloud_governance/policy/aws/unused_nat_gateway.py): Get the unused nat gateways and deletes it after 7 days.
 * gitleaks: scan Github repository git leak (security scan)  
 * [cost_over_usage](cloud_governance/policy/aws/cost_over_usage.py): send mail to aws user if over usage cost
 
@@ -137,7 +136,7 @@ sudo podman run --rm --name cloud-governance -e policy="ec2_idle" -e AWS_ACCESS_
 # policy=ec2_run
 sudo podman run --rm --name cloud-governance -e policy="ec2_run" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"
 
-# select policy ['ec2_stop', 's3_inactive', 'empty_roles', 'ip_unattached', 'nat_gateway_unused', 'zombie_snapshots']
+# select policy ['ec2_stop', 's3_inactive', 'empty_roles', 'ip_unattached', 'unused_nat_gateway', 'zombie_snapshots']
 sudo podman run --rm --name cloud-governance -e policy="policy" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes"  -e log_level="INFO" "quay.io/ebattat/cloud-governance"
 
 # policy=ebs_unattached
