@@ -168,22 +168,25 @@ class AWSMonitorTickets(AbstractMonitorTickets):
         :param updated_budget:
         :return:
         """
-        tag_to_be_updated = 'EstimatedCost'
-        tagging_operations = AWSTaggingOperations(region_name=region_name)
-        resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
-        if resources_list_to_update:
-            resource_arn_list = []
-            previous_cost = 0
-            for resource in resources_list_to_update:
-                resource_arn_list.append(resource.get('ResourceARN'))
-                if previous_cost == 0:
-                    previous_cost = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
-            updated_budget += int(float(previous_cost))
-            update_tags_dict = {tag_to_be_updated: str(updated_budget)}
-            tagging_operations.tag_resources_list(resources_list=resource_arn_list,
-                                                  update_tags_dict=update_tags_dict)
-        else:
-            logger.info('No AWS resources to update the costs')
+        try:
+            tag_to_be_updated = 'EstimatedCost'
+            tagging_operations = AWSTaggingOperations(region_name=region_name)
+            resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
+            if resources_list_to_update:
+                resource_arn_list = []
+                previous_cost = 0
+                for resource in resources_list_to_update:
+                    resource_arn_list.append(resource.get('ResourceARN'))
+                    if previous_cost == 0:
+                        previous_cost = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
+                updated_budget += int(float(previous_cost))
+                update_tags_dict = {tag_to_be_updated: str(updated_budget)}
+                tagging_operations.tag_resources_list(resources_list=resource_arn_list,
+                                                      update_tags_dict=update_tags_dict)
+            else:
+                logger.info('No AWS resources to update the costs')
+        except Exception as err:
+            logger.error(err)
 
     def update_duration_tag_to_resources(self, region_name: str, ticket_id: str, updated_duration: int):
         """
@@ -193,21 +196,24 @@ class AWSMonitorTickets(AbstractMonitorTickets):
         :param updated_duration:
         :return:
         """
-        tag_to_be_updated = 'Duration'
-        tagging_operations = AWSTaggingOperations(region_name=region_name)
-        resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
-        if resources_list_to_update:
-            resource_arn_list = []
-            previous_duration = 0
-            for resource in resources_list_to_update:
-                resource_arn_list.append(resource.get('ResourceARN'))
-                if previous_duration == 0:
-                    previous_duration = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
-            updated_duration += int(float(previous_duration))
-            update_tags_dict = {tag_to_be_updated: str(updated_duration)}
-            tagging_operations.tag_resources_list(resources_list=resource_arn_list, update_tags_dict=update_tags_dict)
-        else:
-            logger.info('No AWS resources to update the costs')
+        try:
+            tag_to_be_updated = 'Duration'
+            tagging_operations = AWSTaggingOperations(region_name=region_name)
+            resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
+            if resources_list_to_update:
+                resource_arn_list = []
+                previous_duration = 0
+                for resource in resources_list_to_update:
+                    resource_arn_list.append(resource.get('ResourceARN'))
+                    if previous_duration == 0:
+                        previous_duration = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
+                updated_duration += int(float(previous_duration))
+                update_tags_dict = {tag_to_be_updated: str(updated_duration)}
+                tagging_operations.tag_resources_list(resources_list=resource_arn_list, update_tags_dict=update_tags_dict)
+            else:
+                logger.info('No AWS resources to update the costs')
+        except Exception as err:
+            logger.error(err)
 
     @logger_time_stamp
     def run(self):
