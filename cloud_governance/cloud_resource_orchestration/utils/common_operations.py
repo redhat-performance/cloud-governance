@@ -1,3 +1,4 @@
+from cloud_governance.main.environment_variables import environment_variables
 
 
 def string_equal_ignore_case(value1: str, value2: str, *args) -> bool:
@@ -40,3 +41,18 @@ def get_tag_value_by_name(tags: list, tag_name: str) -> str:
         if string_equal_ignore_case(key, tag_name):
             return value
     return ''
+
+
+def get_ldap_user_data(user: str, tag_name: str):
+    """
+    This method returns the ldap user tag_name
+    :param user:
+    :param tag_name:
+    :return:
+    """
+    from cloud_governance.common.ldap.ldap_search import LdapSearch
+    ldap_search = LdapSearch(ldap_host_name=environment_variables.environment_variables_dict.get('LDAP_HOST_NAME', ''))
+    user_details = ldap_search.get_user_details(user)
+    if user_details:
+        return user_details.get(tag_name)
+    return 'NA'

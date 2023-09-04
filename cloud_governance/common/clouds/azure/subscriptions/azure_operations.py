@@ -27,7 +27,7 @@ class AzureOperations:
 
     def __get_subscription_id(self):
         """
-        This methods return the subscription ID
+        This method returns the subscription ID
         @return:
         """
         subscription_list = self.__subscription_client.subscriptions.list()

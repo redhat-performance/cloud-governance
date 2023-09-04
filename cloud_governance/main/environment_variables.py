@@ -91,6 +91,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
         self._environment_variables_dict['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
+        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env('AZURE_SUBSCRIPTION_ID', '')
         if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID']\
                 and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'

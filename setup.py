@@ -68,7 +68,9 @@ setup(
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
         'urllib3==1.26.7',  # required by jira
-
+        'azure-mgmt-resource==23.0.1',
+        'azure-mgmt-compute==30.1.0',
+        'azure-mgmt-network==25.0.0'
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
