@@ -29,6 +29,7 @@ class EbsUnattached(NonClusterZombiePolicy):
                 volume_id = volume.get('VolumeId')
                 launch_days = self._calculate_days(create_date=volume.get('CreateTime'))
                 if launch_days >= self.DAYS_TO_DELETE_RESOURCE:
+                    ebs_not_used = False
                     last_detached_time = self._cloudtrail.get_last_time_accessed(resource_id=volume_id,
                                                                                  event_name='DetachVolume',
                                                                                  start_time=self._start_date,
@@ -38,6 +39,7 @@ class EbsUnattached(NonClusterZombiePolicy):
                     if not last_detached_time:
                         last_detached_time = self._start_date
                     if last_detached_time:
+                        ebs_not_used = True
                         last_detached_days = self._calculate_days(create_date=last_detached_time)
                         ebs_cost = self.resource_pricing.get_ebs_cost(volume_type=volume.get('VolumeType'), volume_size=volume.get('Size'), hours=(self.DAILY_HOURS * last_detached_days))
                         delta_cost = 0
@@ -46,18 +48,23 @@ class EbsUnattached(NonClusterZombiePolicy):
                         else:
                             if last_detached_days == self.DAYS_TO_DELETE_RESOURCE:
                                 delta_cost = self.resource_pricing.get_ebs_cost(volume_type=volume.get('VolumeType'), volume_size=volume.get('Size'), hours=(self.DAILY_HOURS * (self.DAYS_TO_DELETE_RESOURCE - self.DAYS_TO_NOTIFY_ADMINS)))
+                        unused_days = self._get_resource_last_used_days(tags=volume.get('Tags'))
                         unattached_volumes = self._check_resource_and_delete(resource_name='EBS Volume',
                                                                              resource_id='VolumeId',
                                                                              resource_type='CreateVolume',
                                                                              resource=volume,
-                                                                             empty_days=last_detached_days,
+                                                                             empty_days=unused_days,
                                                                              days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE,
                                                                              extra_purse=ebs_cost, delta_cost=delta_cost)
                         if unattached_volumes:
                             unattached_volumes_data.append({'ResourceId': volume.get('VolumeId'),
                                                             'Name': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Name'),
                                                             'User': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='User'),
-                                                            'Days': str(last_detached_days),
+                                                            'Days': str(unused_days),
                                                             'Skip': self._get_tag_name_from_tags(tags=volume.get('Tags'), tag_name='Policy')
                                                             })
+                    else:
+                        unused_days = 0
+                    self._update_resource_tags(resource_id=volume.get('VolumeId'), tags=volume.get('Tags'),
+                                               left_out_days=unused_days, resource_left_out=ebs_not_used)
         return unattached_volumes_data
