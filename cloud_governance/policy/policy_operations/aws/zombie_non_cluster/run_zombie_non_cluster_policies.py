@@ -289,7 +289,7 @@ class NonClusterZombiePolicy:
         This method update the tags in aws
         @return:
         """
-        if left_out_days < 7 or self._dry_run == 'yes' or self._get_policy_value(tags=tags) in ('NOTDELETE', 'SKIP'):
+        if left_out_days < self.DAYS_TO_DELETE_RESOURCE or self._dry_run == 'yes' or self._get_policy_value(tags=tags) in ('NOTDELETE', 'SKIP'):
             if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')\
                     or self._get_tag_name_from_tags(tags=tags, tag_name='DryRunNoDays')\
                     or resource_left_out:
