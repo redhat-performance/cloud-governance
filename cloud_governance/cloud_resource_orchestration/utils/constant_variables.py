@@ -12,3 +12,5 @@ SECOND_CRO_ALERT: int = 3
 CLOSE_JIRA_TICKET: int = 0
 DEFAULT_ROUND_DIGITS: int = 3
 DATE_FORMAT: str = '%Y-%m-%d'
+DURATION = 'Duration'
+TICKET_ID = 'TicketId'

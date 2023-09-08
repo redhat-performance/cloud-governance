@@ -1,4 +1,6 @@
-from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.tag_cro_resources import TagCROInstances
+from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.monitor_cro_resources import \
+    MonitorCROResources
+from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.tag_cro_resources import TagCROResources
 
 
 class AzureRunCro:
@@ -11,7 +13,8 @@ class AzureRunCro:
         This method run the azure resources in specified region or all regions
         :return:
         """
-        TagCROInstances().run()
+        TagCROResources().run()
+        monitored_resources = MonitorCROResources().run()
 
     def __start_cro(self):
         """

@@ -42,3 +42,15 @@ class CommonOperations:
                 if string_equal_ignore_case(key, tag_name):
                     return value
         return ''
+
+    def _get_resource_group_name_from_resource_id(self, resource_id: str):
+        """
+        This method returns the resource_group from resource_id
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        id_list = resource_id.split('/')
+        key_values = {id_list[i].lower(): id_list[i+1] for i in range(0, len(id_list) - 1)}
+        return key_values.get('resourcegroups').lower()
