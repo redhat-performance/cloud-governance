@@ -2,8 +2,9 @@
 import os
 from ast import literal_eval
 
-policies_in_action = ['ebs_unattached', 'ip_unattached', 'zombie_snapshots', 'unused_nat_gateway', 's3_inactive', 'empty_roles']
-policies_not_in_action = ['ec2_stop', 'ec2_idle', 'zombie_cluster_resource']
+policies_in_action = []
+policies_not_in_action = ['ec2_stop', 'ec2_idle', 'zombie_cluster_resource', 'ebs_unattached', 'ip_unattached',
+                          'zombie_snapshots', 'unused_nat_gateway', 's3_inactive', 'empty_roles']
 
 access_key = os.environ['access_key']
 secret_key = os.environ['secret_key']
@@ -38,6 +39,9 @@ for region in regions:
             os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="{account_name}" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{s3_bucket}/{LOGS}/{region}" -e DAYS_TO_DELETE_RESOURCE="{days_to_delete_resource}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
         elif policy not in ('empty_roles', 's3_inactive'):
             os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="{account_name}" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{s3_bucket}/{LOGS}/{region}" -e DAYS_TO_DELETE_RESOURCE="{days_to_delete_resource}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+        if policy == 'zombie_cluster_resource':
+            os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="{account_name}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_doc_type="{es_doc_type}" -e bucket="{s3_bucket}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
 
 os.system(f"""echo "Running the tag_iam_user" """)
 os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
