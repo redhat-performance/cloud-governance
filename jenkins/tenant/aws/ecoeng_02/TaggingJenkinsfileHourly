@@ -1,0 +1,62 @@
+account = ['appeng', 'fsi-partner', 'fsi-ecosystem']
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        account_name = "appeng"
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Tagging Cluster & Non-Cluster') {
+            steps {
+                 script {
+                    for (int i = 0; i < account.size(); ++i) {
+                        echo "Running for account ${account[i].toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account[i]}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account[i]}-aws-secret-key-id", variable: 'secret_key'),
+                                        string(credentialsId: "${account[i]}-s3-bucket", variable: 's3_bucket')]) {
+                        env.account_name = "${account[i]}"
+                        sh 'python3 jenkins/poc/haim/common/run_tagging.py'
+                                        }
+                    }
+                }
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}"
+            }
+          }
+    }
+}
