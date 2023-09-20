@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import typeguard
 
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.cost_over_usage import CostOverUsage
-from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.aws_monitor_tickets import AWSMonitorTickets
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
 from cloud_governance.common.logger.init_logger import handler
@@ -114,6 +113,15 @@ class CollectCROReports:
         :param ticket_opened_date:
         :return: dict data
         """
+        instance_meta_data = []
+        cluster_names = []
+        for data in instance_data:
+            if type(data.get('instance_data')) is not list:
+                instance_meta_data.append(data.get('instance_data'))
+            else:
+                instance_meta_data.extend(data.get('instance_data'))
+            if data.get('cluster_name'):
+                cluster_names.append(data.get('cluster_name'))
         return {
             'cloud_name': self.__public_cloud_name.upper(),
             'account_name': self.__account_name,
@@ -124,22 +132,15 @@ class CollectCROReports:
             'ticket_id': ticket_id,
             'ticket_id_state': 'in-progress',
             'estimated_cost': cost_estimation,
-            'total_instances': len(instance_data),
-            'monitored_days': (datetime.utcnow().date() - ticket_opened_date.date()).days,
             'ticket_opened_date': ticket_opened_date.date(),
             'duration': int(instance_data[self.ZERO].get('duration')),
             'approved_manager': instance_data[self.ZERO].get('approved_manager'),
             'user_manager': instance_data[self.ZERO].get('manager'),
             'project': instance_data[self.ZERO].get('project'),
             'owner': instance_data[self.ZERO].get('owner'),
-            'total_spots': len([instance for instance in instance_data if instance.get('instance_plan').lower() == 'spot']),
-            'total_ondemand': len([instance for instance in instance_data if instance.get('instance_plan').lower() == 'ondemand']),
             self.ALLOCATED_BUDGET: self.get_account_budget_from_payer_ce_report(),
-            'instances': [f"{instance.get('instance_name')}, {instance.get('instance_id')}, "
-                          f"{instance.get('instance_plan')}, "
-                          f"{instance.get('instance_type')}, "
-                          f"{instance.get('instance_state')}, {instance.get('instance_running_days')}" for instance in instance_data],
-            'instance_types': [instance.get('instance_type') for instance in instance_data]
+            'instance_data': instance_meta_data,
+            'cluster_names': cluster_names,
         }
 
     @typeguard.typechecked
@@ -153,27 +154,17 @@ class CollectCROReports:
         :param cost_estimation:
         :return: dict data
         """
+        es_instance_data = source.get('instance_data', [])
+        es_cluster_names = source.get('cluster_names', [])
         for instance in instance_data:
-            index = [idx for idx, es_instance in enumerate(source.get('instances', [])) if instance.get('instance_id') in es_instance]
-            running_days = instance.get('instance_running_days')
-            if index:
-                source['instances'][index[self.ZERO]] = f"{instance.get('instance_name')}, {instance.get('instance_id')}, " \
-                                                f"{instance.get('instance_plan')}, {instance.get('instance_type')}, " \
-                                                f"{instance.get('instance_state')}, {running_days}"
-            else:
-                source.setdefault('instances', []).append(f"{instance.get('instance_name')}, {instance.get('instance_id')}, "
-                                                          f"{instance.get('instance_plan')}, {instance.get('instance_type')}, "
-                                                          f"{instance.get('instance_state')}, {running_days}")
-                source.setdefault('instance_types', []).append(instance.get('instance_type'))
-                if instance.get('instance_plan', '').lower() == 'spot':
-                    source['total_spots'] = source.get('total_spots', 0) + 1
-                else:
-                    if instance.get('instance_plan', '').lower() == 'ondemand':
-                        source['total_ondemand'] = source.get('total_ondemand', 0) + 1
-        AWSMonitorTickets().verify_es_instances_state(es_data=source)
-        if datetime.strptime(source.get('timestamp'), "%Y-%m-%dT%H:%M:%S.%f").date() != datetime.now().date():
-            source['monitored_days'] = (datetime.utcnow().date() - source.get('ticket_opened_date')).days
-        source['total_instances'] = len(source.get('instances', self.ZERO))
+            instance_meta_data = instance.get('instance_data')
+            if instance.get('cluster_name') and instance.get('cluster_name') not in es_cluster_names:
+                source.setdefault('cluster_name', []).append(instance.get('cluster_name'))
+            if type(instance_meta_data) is not list:
+                instance_meta_data = [instance.get('instance_data')]
+            for data in instance_meta_data:
+                if data not in es_instance_data:
+                    source.setdefault('instance_data', []).append(data)
         source['duration'] = int(instance_data[self.ZERO].get('duration'))
         source['estimated_cost'] = round(cost_estimation, self.DEFAULT_ROUND_DIGITS)
         source['actual_cost'] = user_cost
@@ -212,20 +203,20 @@ class CollectCROReports:
         """
         upload_data = {}
         for ticket_id, instance_data in monitor_data.items():
-            ticket_id = ticket_id.split('-')[-1]
-            user = instance_data[self.ZERO].get('user')
-            user_project = instance_data[self.ZERO].get('project')
-            issue_description = self.jira_operations.get_issue_description(ticket_id=ticket_id, state='ANY')
-            ticket_opened_date = issue_description.get('TicketOpenedDate')
-            group_by_tag_name = self.COST_EXPLORER_TAGS[self.TICKET_ID_KEY]
-            user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id,
-                                                requested_date=ticket_opened_date,
-                                                extra_filter_key_values={'Project': user_project})
-            duration = int(instance_data[self.ZERO].get('duration', 0))
-            user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
-            cost_estimation = float(instance_data[self.ZERO].get('estimated_cost', self.ZERO))
-            if self.__cost_over_usage.es_operations.verify_elastic_index_doc_id(index=self.__cost_over_usage.es_index_cro, doc_id=ticket_id):
-                if self.__check_value_in_es(tag_key='ticket_id_state', tag_value='in-progress', ticket_id=ticket_id):
+            if not self.__check_value_in_es(tag_key='ticket_id_state', tag_value='in-progress', ticket_id=ticket_id):
+                ticket_id = ticket_id.split('-')[-1]
+                user = instance_data[self.ZERO].get('user')
+                user_project = instance_data[self.ZERO].get('project')
+                issue_description = self.jira_operations.get_issue_description(ticket_id=ticket_id, state='ANY')
+                ticket_opened_date = issue_description.get('TicketOpenedDate')
+                group_by_tag_name = self.COST_EXPLORER_TAGS[self.TICKET_ID_KEY]
+                user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id,
+                                                    requested_date=ticket_opened_date,
+                                                    extra_filter_key_values={'Project': user_project})
+                duration = int(instance_data[self.ZERO].get('duration', 0))
+                user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
+                cost_estimation = float(instance_data[self.ZERO].get('estimated_cost', self.ZERO))
+                if self.__cost_over_usage.es_operations.verify_elastic_index_doc_id(index=self.__cost_over_usage.es_index_cro, doc_id=ticket_id):
                     es_data = self.__cost_over_usage.es_operations.get_es_data_by_id(id=ticket_id, index=self.__cost_over_usage.es_index_cro)
                     es_data['_source']['ticket_opened_date'] = ticket_opened_date.date()
                     es_data['_source']['forecast'] = user_forecast
@@ -233,16 +224,16 @@ class CollectCROReports:
                     source = self.__prepare_update_es_data(source=es_data.get('_source'), instance_data=instance_data, cost_estimation=cost_estimation, user_cost=user_cost)
                     self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=source)
                     upload_data[ticket_id] = source
-            else:
-                if ticket_id not in upload_data:
-                    source = self.prepare_instance_data(instance_data=instance_data, ticket_id=ticket_id, cost_estimation=cost_estimation, user=user,  user_cost=user_cost, ticket_opened_date=ticket_opened_date)
-                    source['ticket_opened_date'] = ticket_opened_date.date()
-                    source['forecast'] = user_forecast
-                    source['user'] = user
-                    if not source.get(self.ALLOCATED_BUDGET):
-                        source[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
-                    self.__cost_over_usage.es_operations.upload_to_elasticsearch(index=self.__es_index_cro, data=source, id=ticket_id)
-                    upload_data[ticket_id] = source
+                else:
+                    if ticket_id not in upload_data:
+                        source = self.prepare_instance_data(instance_data=instance_data, ticket_id=ticket_id, cost_estimation=cost_estimation, user=user,  user_cost=user_cost, ticket_opened_date=ticket_opened_date)
+                        source['ticket_opened_date'] = ticket_opened_date.date()
+                        source['forecast'] = user_forecast
+                        source['user'] = user
+                        if not source.get(self.ALLOCATED_BUDGET):
+                            source[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
+                        self.__cost_over_usage.es_operations.upload_to_elasticsearch(index=self.__es_index_cro, data=source, id=ticket_id)
+                        upload_data[ticket_id] = source
         return upload_data
 
     @logger_time_stamp

@@ -1,16 +1,13 @@
 import json
-import logging
-import os
 import tempfile
 from datetime import datetime
 
-import boto3
 import typeguard
-from jinja2 import Environment, FileSystemLoader
 
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.aws_tagging_operations import AWSTaggingOperations
 from cloud_governance.cloud_resource_orchestration.common.abstract_monitor_tickets import AbstractMonitorTickets
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import get_tag_value_by_name
+from cloud_governance.common.clouds.aws.athena.pyathena_operations import PyAthenaOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
@@ -50,6 +47,10 @@ class AWSMonitorTickets(AbstractMonitorTickets):
         self.__manager_escalation_days = self.__environment_variables_dict.get('MANAGER_ESCALATION_DAYS')
         self.__ldap_search = LdapSearch(self.__environment_variables_dict.get('LDAP_HOST_NAME'))
         self.__global_admin_name = self.__environment_variables_dict.get('GLOBAL_CLOUD_ADMIN')
+        self.__database_name = self.__environment_variables_dict.get('ATHENA_DATABASE_NAME')
+        self.__table_name = self.__environment_variables_dict.get('ATHENA_TABLE_NAME')
+        self.__athena_account_access_key = self.__environment_variables_dict.get('ATHENA_ACCOUNT_ACCESS_KEY')
+        self.__athena_account_secret_key = self.__environment_variables_dict.get('ATHENA_ACCOUNT_SECRET_KEY')
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
         self.__ec2_operations = EC2Operations()
@@ -214,6 +215,56 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                 logger.info('No AWS resources to update the costs')
         except Exception as err:
             logger.error(err)
+
+    def update_cluster_cost(self):
+        """
+        This method updates the cluster cost.
+        :return:
+        :rtype:
+        """
+        in_progress_tickets = self._get_all_in_progress_tickets()
+        for ticket_data in in_progress_tickets:
+            source_data = ticket_data.get('_source')
+            if source_data:
+                ticket_id = source_data.get('ticket_id')
+                cluster_names = source_data.get('cluster_names', [])
+                if cluster_names:
+                    query = self.__prepare_athena_query_for_cluster_cost(names=cluster_names)
+                    pyathena_operations = PyAthenaOperations(aws_access_key_id=self.__athena_account_access_key,
+                                                             aws_secret_access_key=self.__athena_account_secret_key)
+                    response = pyathena_operations.execute_query(query_string=query)
+                    cluster_cost = {item.get('ClusterName'): item.get('UnblendedCost') for item in response}
+                    self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id,
+                                                                    metadata={
+                                                                        'cluster_cost': cluster_cost,
+                                                                        'timestamp': datetime.utcnow()
+                                                                    })
+
+    def __prepare_athena_query_for_cluster_cost(self, names: list):
+        """
+        This method returns the athena query to get results
+        :param names:
+        :type names:
+        :return:
+        :rtype:
+        """
+        query = ''
+        if names:
+            cluster_names = [f""" "resource_tags_user_name" LIKE '%{i}%' """ for i in names]
+            case_statement = "CASE"
+            for cluster_name in names:
+                case_statement += f"""\nWHEN resource_tags_user_name like '%{cluster_name}%' THEN '{cluster_name}' """
+            case_statement += "\nELSE resource_tags_user_name END as ClusterName"
+            query = f"""
+            SELECT 
+            line_item_usage_account_id as AccountId,
+            {case_statement},
+            ROUND(SUM(line_item_unblended_cost), 3) as UnblendedCost
+            FROM "{self.__database_name}"."{self.__table_name}"
+            where {"or ".join(cluster_names)}
+            group by 1, 2
+            """
+        return query
 
     @logger_time_stamp
     def run(self):
