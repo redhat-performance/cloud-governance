@@ -21,6 +21,11 @@ CRO_DEFAULT_ADMINS = ['athiruma', 'ebattat', 'natashba']
 CRO_PORTAL = os.environ['CRO_PORTAL']
 CRO_COST_OVER_USAGE = os.environ['CRO_COST_OVER_USAGE']
 CRO_ES_INDEX = os.environ['CRO_ES_INDEX']
+AWS_ACCESS_KEY_ID_ATHIRUMA_BOT = os.environ['AWS_ACCESS_KEY_ID_ATHIRUMA_BOT']
+AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT']
+S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
+ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
+ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
 
 es_index = CLOUD_RESOURCE_ORCHESTRATION_INDEX
 
@@ -36,7 +41,11 @@ os.system('echo Run CloudResourceOrchestration in pre active region')
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO', 'LDAP_HOST_NAME': LDAP_HOST_NAME,
                      'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME, 'JIRA_URL': JIRA_URL,
                      'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL, 'CRO_DEFAULT_ADMINS': CRO_DEFAULT_ADMINS, 'CRO_REPLACED_USERNAMES': CRO_REPLACED_USERNAMES,
-                     'CE_PAYER_INDEX': 'cloud-governance-clouds-billing-reports', 'RUN_ACTIVE_REGIONS': True, 'AWS_DEFAULT_REGION': 'us-east-1', 'AWS_MAX_ATTEMPTS': 5, 'AWS_RETRY_MODE': 'standard'}
+                     'CE_PAYER_INDEX': 'cloud-governance-clouds-billing-reports', 'RUN_ACTIVE_REGIONS': True, 'AWS_DEFAULT_REGION': 'us-east-1', 'AWS_MAX_ATTEMPTS': 5, 'AWS_RETRY_MODE': 'standard',
+                     'ATHENA_ACCOUNT_ACCESS_KEY': AWS_ACCESS_KEY_ID_ATHIRUMA_BOT, 'ATHENA_ACCOUNT_SECRET_KEY': AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT,
+                     'ATHENA_DATABASE_NAME': ATHENA_DATABASE_NAME, 'ATHENA_TABLE_NAME': ATHENA_TABLE_NAME,
+                     'S3_RESULTS_PATH': S3_RESULTS_PATH
+                     }
 #  Added the AWS_MAX_ATTEMPTS, AWS_RETRY_MODE to handle the RateLimit Exception in aws api calls using boto3
 # for more information on throttle api calls: https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html
 # AWS Default varibles https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#:~:text=to%20use%20this.-,AWS_MAX_ATTEMPTS,-The%20total%20number

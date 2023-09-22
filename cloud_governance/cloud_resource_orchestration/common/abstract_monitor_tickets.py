@@ -35,7 +35,7 @@ class AbstractMonitorTickets(ABC):
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
 
-    def __get_all_in_progress_tickets(self, account_name: str = '', cloud_name: str = '', fields: list = None):
+    def _get_all_in_progress_tickets(self, account_name: str = '', cloud_name: str = '', fields: list = None):
         """
         This method returns all in-progress tickets
         :param account_name:
@@ -74,6 +74,15 @@ class AbstractMonitorTickets(ABC):
         :param ticket_id:
         :param updated_duration:
         :return:
+        """
+        raise NotImplemented("This method is not implemented")
+
+    @abstractmethod
+    def update_cluster_cost(self):
+        """
+        This method updates the cluster cost.
+        :return:
+        :rtype:
         """
         raise NotImplemented("This method is not implemented")
 
@@ -205,7 +214,7 @@ class AbstractMonitorTickets(ABC):
         This method monitors in-progress tickets
         :return:
         """
-        in_progress_tickets_list = self.__get_all_in_progress_tickets()
+        in_progress_tickets_list = self._get_all_in_progress_tickets()
         for ticket_data in in_progress_tickets_list:
             source_data = ticket_data.get('_source')
             if source_data:
@@ -232,3 +241,4 @@ class AbstractMonitorTickets(ABC):
         :return:
         """
         self._monitor_in_progress_tickets()
+        self.update_cluster_cost()

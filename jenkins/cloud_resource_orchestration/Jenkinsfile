@@ -26,6 +26,11 @@ pipeline {
         CRO_PORTAL = credentials('cloud_governance_cro_portal')
         CRO_COST_OVER_USAGE = credentials('cloud_governance_cro_cost_over_usage')
         CRO_ES_INDEX = credentials('cloud_governance_cro_es_index')
+        AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = credentials('AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT')
+        AWS_ACCESS_KEY_ID_ATHIRUMA_BOT = credentials('AWS_ACCESS_KEY_ID_ATHIRUMA_BOT')
+        S3_RESULTS_PATH = credentials('S3_RESULTS_PATH')
+        ATHENA_DATABASE_NAME = credentials('ATHENA_DATABASE_NAME')
+        ATHENA_TABLE_NAME = credentials('ATHENA_TABLE_NAME')
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }

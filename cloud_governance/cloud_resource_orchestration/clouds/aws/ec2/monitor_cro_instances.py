@@ -1,5 +1,5 @@
-from datetime import datetime
 
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import check_name_and_get_key_from_tags
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
@@ -24,34 +24,60 @@ class MonitorCROInstances:
         """
         monitored_ticket_ids = {}
         filters = {'Filters': [{'Name': 'tag-key', 'Values': ['Duration']}]}
+        cluster_tickets = {}
         instances = self.__ec2_operations.get_ec2_instance_list(**filters)
         for resource in instances:
             tags = resource.get('Tags')
-            create_time = self.__ec2_operations.get_attached_time(volume_list=resource.get('BlockDeviceMappings'))
-            if not create_time:
-                create_time = resource.get('LaunchTime')
             ticket_id = self.__ec2_operations.get_tag_value_from_tags(tag_name=self.__cro_resource_tag_name, tags=tags)
-            running_days = (datetime.now().date() - create_time.date()).days
-            monitored_ticket_ids.setdefault(ticket_id, []).append({
-                'region_name': self.__region_name,
-                'ticket_id': ticket_id,
-                'instance_id': resource.get('InstanceId'),
-                'instance_create_time': create_time,
-                'instance_state': resource.get('State')['Name'],
-                'instance_type': resource.get('InstanceType'),
-                'instance_running_days': running_days,
-                'instance_plan': resource.get('InstanceLifecycle', 'ondemand'),
-                'user_cro': self.__ec2_operations.get_tag_value_from_tags(tag_name='UserCRO', tags=tags),
-                'user': self.__ec2_operations.get_tag_value_from_tags(tag_name='User', tags=tags),
-                'manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='Manager', tags=tags),
-                'approved_manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='ApprovedManager', tags=tags),
-                'owner': self.__ec2_operations.get_tag_value_from_tags(tag_name='Owner', tags=tags),
-                'project': self.__ec2_operations.get_tag_value_from_tags(tag_name='Project', tags=tags),
-                'instance_name': self.__ec2_operations.get_tag_value_from_tags(tag_name='Name', tags=tags),
-                'email': self.__ec2_operations.get_tag_value_from_tags(tag_name='Email', tags=tags),
-                'duration': self.__ec2_operations.get_tag_value_from_tags(tag_name='Duration', tags=tags, cast_type='int'),
-                'estimated_cost': self.__ec2_operations.get_tag_value_from_tags(tag_name='EstimatedCost', tags=tags, cast_type='float')
-            })
+            cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags, tag_name='kubernetes.io/cluster/')
+            hcp_key, hcp_name = check_name_and_get_key_from_tags(tags=tags, tag_name='api.openshift.com/name')
+            if hcp_name:
+                cluster_key = hcp_name
+            rosa, rosa_value = check_name_and_get_key_from_tags(tags=tags, tag_name='red-hat-clustertype')
+            if cluster_key:
+                cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}).setdefault('instance_data', []) \
+                    .append(f"{self.__ec2_operations.get_tag_value_from_tags(tag_name='Name', tags=tags)}: "
+                            f"{resource.get('InstanceId')}: {resource.get('InstanceLifecycle', 'ondemand')}: "
+                            f"{resource.get('InstanceType')}: {'rosa' if rosa else 'self'}")
+                cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}).setdefault('region_name', []).append(self.__region_name)
+                cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}). \
+                    update({
+                        'cluster_name': self.__ec2_operations.get_tag_value_from_tags(tag_name='api.openshift.com/name', tags=tags),
+                        'ticket_id': ticket_id,
+                        'user_cro': self.__ec2_operations.get_tag_value_from_tags(tag_name='UserCRO', tags=tags),
+                        'user': self.__ec2_operations.get_tag_value_from_tags(tag_name='User', tags=tags),
+                        'manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='Manager', tags=tags),
+                        'approved_manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='ApprovedManager', tags=tags),
+                        'owner': self.__ec2_operations.get_tag_value_from_tags(tag_name='Owner', tags=tags),
+                        'project': self.__ec2_operations.get_tag_value_from_tags(tag_name='Project', tags=tags),
+                        'email': self.__ec2_operations.get_tag_value_from_tags(tag_name='Email', tags=tags),
+                        'duration': self.__ec2_operations.get_tag_value_from_tags(tag_name='Duration', tags=tags, cast_type='int'),
+                        'estimated_cost': self.__ec2_operations.get_tag_value_from_tags(tag_name='EstimatedCost', tags=tags, cast_type='float')
+                })
+            else:
+                monitored_ticket_ids.setdefault(ticket_id, []).append({
+                    'instance_data': f"{self.__ec2_operations.get_tag_value_from_tags(tag_name='Name', tags=tags)}: "
+                                     f"{resource.get('InstanceId')}: {resource.get('InstanceLifecycle', 'ondemand')}: "
+                                     f"{resource.get('InstanceType')}",
+                    'region_name': self.__region_name,
+                    'ticket_id': ticket_id,
+                    'user_cro': self.__ec2_operations.get_tag_value_from_tags(tag_name='UserCRO', tags=tags),
+                    'user': self.__ec2_operations.get_tag_value_from_tags(tag_name='User', tags=tags),
+                    'manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='Manager', tags=tags),
+                    'approved_manager': self.__ec2_operations.get_tag_value_from_tags(tag_name='ApprovedManager',
+                                                                                      tags=tags),
+                    'owner': self.__ec2_operations.get_tag_value_from_tags(tag_name='Owner', tags=tags),
+                    'project': self.__ec2_operations.get_tag_value_from_tags(tag_name='Project', tags=tags),
+                    'email': self.__ec2_operations.get_tag_value_from_tags(tag_name='Email', tags=tags),
+                    'duration': self.__ec2_operations.get_tag_value_from_tags(tag_name='Duration', tags=tags,
+                                                                              cast_type='int'),
+                    'estimated_cost': self.__ec2_operations.get_tag_value_from_tags(tag_name='EstimatedCost', tags=tags,
+                                                                                    cast_type='float')
+                })
+        for ticket_id, cluster_data in cluster_tickets.items():
+            for cluster_id, cluster_values in cluster_data.items():
+                cluster_values['cluster_name'] = cluster_id.split('/')[-1]
+                monitored_ticket_ids[ticket_id].append(cluster_values)
         return monitored_ticket_ids
 
     @logger_time_stamp

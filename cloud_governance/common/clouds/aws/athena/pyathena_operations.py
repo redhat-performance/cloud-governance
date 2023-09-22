@@ -8,10 +8,15 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 class PyAthenaOperations(AbstractAthenaOperations):
 
-    def __init__(self):
+    def __init__(self, aws_access_key_id: str = None, aws_secret_access_key: str = None):
         super().__init__()
-        self.conn = connect(s3_staging_dir=self._get_s3_path(), region_name="us-east-1",
-                            cursor_class=PandasCursor).cursor()
+        if aws_secret_access_key and aws_secret_access_key:
+            self.conn = connect(s3_staging_dir=self._get_s3_path(), region_name="us-east-1",
+                                cursor_class=PandasCursor, aws_access_key_id=aws_access_key_id,
+                                aws_secret_access_key=aws_secret_access_key).cursor()
+        else:
+            self.conn = connect(s3_staging_dir=self._get_s3_path(), region_name="us-east-1",
+                                cursor_class=PandasCursor).cursor()
 
     @typeguard.typechecked
     @logger_time_stamp
