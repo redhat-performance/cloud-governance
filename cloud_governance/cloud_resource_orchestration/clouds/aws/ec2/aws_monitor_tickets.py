@@ -233,12 +233,13 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                     pyathena_operations = PyAthenaOperations(aws_access_key_id=self.__athena_account_access_key,
                                                              aws_secret_access_key=self.__athena_account_secret_key)
                     response = pyathena_operations.execute_query(query_string=query)
-                    cluster_cost = {item.get('ClusterName'): item.get('UnblendedCost') for item in response}
-                    self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id,
-                                                                    metadata={
-                                                                        'cluster_cost': cluster_cost,
-                                                                        'timestamp': datetime.utcnow()
-                                                                    })
+                    if response:
+                        cluster_cost = {item.get('ClusterName'): item.get('UnblendedCost') for item in response}
+                        self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id,
+                                                                        metadata={
+                                                                            'cluster_cost': cluster_cost,
+                                                                            'timestamp': datetime.utcnow()
+                                                                        })
 
     def __prepare_athena_query_for_cluster_cost(self, names: list):
         """
