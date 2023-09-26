@@ -42,7 +42,6 @@ class MonitorCROInstances:
                 cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}).setdefault('region_name', []).append(self.__region_name)
                 cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}). \
                     update({
-                        'cluster_name': self.__ec2_operations.get_tag_value_from_tags(tag_name='api.openshift.com/name', tags=tags),
                         'ticket_id': ticket_id,
                         'user_cro': self.__ec2_operations.get_tag_value_from_tags(tag_name='UserCRO', tags=tags),
                         'user': self.__ec2_operations.get_tag_value_from_tags(tag_name='User', tags=tags),
@@ -77,7 +76,7 @@ class MonitorCROInstances:
         for ticket_id, cluster_data in cluster_tickets.items():
             for cluster_id, cluster_values in cluster_data.items():
                 cluster_values['cluster_name'] = cluster_id.split('/')[-1]
-                monitored_ticket_ids[ticket_id].append(cluster_values)
+                monitored_ticket_ids.setdefault(ticket_id, []).append(cluster_values)
         return monitored_ticket_ids
 
     @logger_time_stamp

@@ -203,7 +203,7 @@ class CollectCROReports:
         """
         upload_data = {}
         for ticket_id, instance_data in monitor_data.items():
-            if not self.__check_value_in_es(tag_key='ticket_id_state', tag_value='in-progress', ticket_id=ticket_id):
+            if self.__check_value_in_es(tag_key='ticket_id_state', tag_value='in-progress', ticket_id=ticket_id):
                 ticket_id = ticket_id.split('-')[-1]
                 user = instance_data[self.ZERO].get('user')
                 user_project = instance_data[self.ZERO].get('project')
@@ -211,8 +211,7 @@ class CollectCROReports:
                 ticket_opened_date = issue_description.get('TicketOpenedDate')
                 group_by_tag_name = self.COST_EXPLORER_TAGS[self.TICKET_ID_KEY]
                 user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id,
-                                                    requested_date=ticket_opened_date,
-                                                    extra_filter_key_values={'Project': user_project})
+                                                    requested_date=ticket_opened_date)
                 duration = int(instance_data[self.ZERO].get('duration', 0))
                 user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
                 cost_estimation = float(instance_data[self.ZERO].get('estimated_cost', self.ZERO))
