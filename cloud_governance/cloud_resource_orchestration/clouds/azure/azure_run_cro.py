@@ -1,3 +1,4 @@
+from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.cost_over_usage import CostOverUsage
 from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.monitor_cro_resources import \
     MonitorCROResources
 from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.tag_cro_resources import TagCROResources
@@ -13,6 +14,7 @@ class AzureRunCro:
         This method run the azure resources in specified region or all regions
         :return:
         """
+        CostOverUsage().run()
         TagCROResources().run()
         monitored_resources = MonitorCROResources().run()
 
