@@ -159,12 +159,13 @@ class CollectCROReports:
         for instance in instance_data:
             instance_meta_data = instance.get('instance_data')
             if instance.get('cluster_name') and instance.get('cluster_name') not in es_cluster_names:
-                source.setdefault('cluster_name', []).append(instance.get('cluster_name'))
+                source.setdefault('cluster_names', []).append(instance.get('cluster_name'))
             if type(instance_meta_data) is not list:
                 instance_meta_data = [instance.get('instance_data')]
             for data in instance_meta_data:
                 if data not in es_instance_data:
                     source.setdefault('instance_data', []).append(data)
+        source['cluster_names'] = list(set(source.get('cluster_names', [])))
         source['duration'] = int(instance_data[self.ZERO].get('duration'))
         source['estimated_cost'] = round(cost_estimation, self.DEFAULT_ROUND_DIGITS)
         source['actual_cost'] = user_cost
