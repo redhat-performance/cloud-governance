@@ -281,11 +281,8 @@ class DeleteEC2Resources:
                                         if ip_permission.get('UserIdGroupPairs'):
                                             for user_id_group_pair in ip_permission.get('UserIdGroupPairs'):
                                                 if user_id_group_pair.get('GroupId') == resource_id:
-                                                    ingress_rule = {'FromPort': ip_permission.get('FromPort'), 'IpProtocol': ip_permission.get('IpProtocol'), 'IpRanges': ip_permission.get('IpRanges'),
-                                                                    'Ipv6Ranges': ip_permission.get('Ipv6Ranges'), 'PrefixListIds': ip_permission.get('PrefixListIds'),
-                                                                    'ToPort': ip_permission.get('ToPort'), 'UserIdGroupPairs': [user_id_group_pair]}
-                                                    self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ingress_rule])
-                                                    logger.info(f'Removed the Ingress rules of Security Group {resource_id} from {ingress_rule}')
+                                                    self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ip_permission])
+                                                    logger.info(f'Removed the Ingress rules of Security Group {resource_id} from {vpc_security_group.get("GroupId")}')
             network_interfaces = self.ec2_operations.get_network_interface()
             network_interface_ids = self.__get_cluster_references(resource_id=vpc_id, resource_list=network_interfaces,
                                                                   input_resource_id='VpcId',
