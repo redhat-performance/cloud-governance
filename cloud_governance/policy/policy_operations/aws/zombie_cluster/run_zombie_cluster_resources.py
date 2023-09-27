@@ -96,8 +96,6 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
             func_resource_list = __get_resource_list(region, delete, resource, cluster_tag, resource_name, service_type)
         else:
             func_resource_list = __get_resource_list(region, delete, resource, cluster_tag, resource_name, service_type)
-        logger.info(
-            "Skip Deleting the following resource due to Dependencies:\n zombie_cluster_security_group, zombie_cluster_vpc, zombie_cluster_route_table, zombie_cluster_internet_gateway, zombie_cluster_dhcp_option")
     else:
         action = 'Scan'
         if resource:
