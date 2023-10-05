@@ -3,6 +3,7 @@ from azure.mgmt.billing import BillingManagementClient
 from azure.mgmt.costmanagement import CostManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -30,12 +31,15 @@ class AzureOperations:
         This method returns the subscription ID
         @return:
         """
-        subscription_list = self.__subscription_client.subscriptions.list()
-        for subscription in subscription_list:
-            data_dict = subscription.as_dict()
-            subscription_id = data_dict.get('subscription_id')
-            account_name = data_dict.get('display_name').split()[0]
-            return subscription_id, account_name
+        try:
+            subscription_list = self.__subscription_client.subscriptions.list()
+            for subscription in subscription_list:
+                data_dict = subscription.as_dict()
+                subscription_id = data_dict.get('subscription_id')
+                account_name = data_dict.get('display_name').split()[0]
+                return subscription_id, account_name
+        except Exception as err:
+            logger.error(err)
         return '', ''
 
     def get_billing_profiles(self):
