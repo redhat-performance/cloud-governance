@@ -178,6 +178,10 @@ class NonClusterZombiePolicy:
                     resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self._ldap.get_user_details(user_name=to)
+                email_id = self._get_tag_name_from_tags(tags=tags, tag_name='Email')
+                if not ldap_data and email_id:
+                    to = email_id.split('@')[0]
+                    ldap_data = self._ldap.get_user_details(user_name=to)
                 cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com'] if self.__manager_email_alert else []
                 name = to
                 if ldap_data:
