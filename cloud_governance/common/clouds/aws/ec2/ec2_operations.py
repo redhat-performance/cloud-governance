@@ -533,7 +533,7 @@ class EC2Operations:
                 if key == tag_name.lower():
                     if cast_type:
                         if cast_type == 'int':
-                            return int(tag.get('Value').strip())
+                            return int(tag.get('Value').split()[0].strip())
                         elif cast_type == 'float':
                             return float(tag.get('Value').strip())
                         else:

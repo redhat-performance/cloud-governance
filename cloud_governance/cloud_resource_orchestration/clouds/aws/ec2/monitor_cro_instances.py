@@ -39,9 +39,9 @@ class MonitorCROInstances:
                     .append(f"{self.__ec2_operations.get_tag_value_from_tags(tag_name='Name', tags=tags)}: "
                             f"{resource.get('InstanceId')}: {resource.get('InstanceLifecycle', 'ondemand')}: "
                             f"{resource.get('InstanceType')}: {'rosa' if rosa else 'self'}")
-                cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}).setdefault('region_name', []).append(self.__region_name)
                 cluster_tickets.setdefault(ticket_id, {}).setdefault(cluster_key, {}). \
                     update({
+                        'region_name': self.__region_name,
                         'ticket_id': ticket_id,
                         'user_cro': self.__ec2_operations.get_tag_value_from_tags(tag_name='UserCRO', tags=tags),
                         'user': self.__ec2_operations.get_tag_value_from_tags(tag_name='User', tags=tags),

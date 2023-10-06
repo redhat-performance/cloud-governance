@@ -229,6 +229,8 @@ class AbstractMonitorTickets(ABC):
             if source_data:
                 ticket_id = source_data.get('ticket_id')
                 region_name = source_data.get('region_name', '')
+                if type(region_name) is list:
+                    region_name = list(set(region_name))[0]
                 budget = int(source_data.get('estimated_cost', 0))
                 duration = int(source_data.get('duration', 0))
                 used_budget = int(source_data.get('actual_cost', 0))
