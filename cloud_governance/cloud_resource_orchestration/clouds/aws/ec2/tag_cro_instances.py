@@ -123,7 +123,8 @@ class TagCROInstances:
             ticket_id = self.__ec2_operations.get_tag_value_from_tags(tags=resource.get('Tags'), tag_name=self.__cro_resource_tag_name) if resource.get('Tags') else None
             if ticket_id:
                 duration = self.__ec2_operations.get_tag_value_from_tags(tags=resource.get('Tags'), tag_name='Duration')
-                if not duration:
+                cost_estimation = self.__ec2_operations.get_tag_value_from_tags(tags=resource.get('Tags'), tag_name='EstimatedCost')
+                if not duration or not cost_estimation:
                     volume_ids = self.__get_instance_volumes(resource.get('BlockDeviceMappings'))
                     if self.__tag_ticket_id_attach_instance(ticket_id=ticket_id, instance_id=instance_id, volume_ids=volume_ids, user=user):
                         ticket_id_instances.setdefault(ticket_id, []).append(instance_id)
