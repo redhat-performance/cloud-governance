@@ -30,9 +30,11 @@ class CommonOperations:
             pass
         return iterator_list
 
-    def check_tag_name(self, tags: Optional[dict], tag_name: str):
+    def check_tag_name(self, tags: Optional[dict], tag_name: str, cast_type: str = 'str'):
         """
         This method checks tag is present and return its value
+        :param cast_type:
+        :type cast_type:
         :param tags:
         :param tag_name:
         :return:
@@ -40,8 +42,27 @@ class CommonOperations:
         if tags:
             for key, value in tags.items():
                 if string_equal_ignore_case(key, tag_name):
-                    return value
+                    return self.__convert_cast_type(value=str(value), type_cast=cast_type)
         return ''
+
+    def __convert_cast_type(self, type_cast: str, value: str):
+        """
+        This method returns the type conversion value
+        :param type_cast:
+        :type type_cast:
+        :param value:
+        :type value:
+        :return:
+        :rtype:
+        """
+        if type_cast == 'str':
+            return str(value)
+        elif type_cast == 'int':
+            return int(value)
+        elif type_cast == 'float':
+            return float(value)
+        else:
+            return str(value)
 
     def _get_resource_group_name_from_resource_id(self, resource_id: str):
         """

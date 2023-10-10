@@ -20,7 +20,7 @@ from cloud_governance.main.environment_variables import environment_variables
 
 class CostOverUsage:
     """
-    This class will monitors the cost explorer reports and sends alert to the user if they exceed specified amount
+    This class monitors the cost explorer reports and sends alert to the user if they exceed specified amount
     """
 
     DEFAULT_ROUND_DIGITS = 3
