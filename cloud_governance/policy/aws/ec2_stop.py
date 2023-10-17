@@ -110,8 +110,12 @@ class EC2Stop(NonClusterZombiePolicy):
         try:
             special_user_mails = self._literal_eval(self._special_user_mails)
             user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
+            email_id = self._get_tag_name_from_tags(tags=tags, tag_name='Email')
             to = user if user not in special_user_mails else special_user_mails[user]
             ldap_data = self._ldap.get_user_details(user_name=to)
+            if not ldap_data and email_id:
+                to = email_id.split('@')[0]
+                ldap_data = self._ldap.get_user_details(user_name=to)
             cc = []
             subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type, extra_purse=kwargs.get('stop_cost'))
             if not kwargs.get('admins'):
