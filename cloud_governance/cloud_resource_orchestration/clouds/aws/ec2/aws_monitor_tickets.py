@@ -129,29 +129,6 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                                 filename.flush()
                                 self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html', filename=filename.name)
 
-    @typeguard.typechecked
-    @logger_time_stamp
-    def verify_es_instances_state(self, es_data: dict):
-        """
-        This method verify the state of the es_instances
-        :param es_data:
-        :return:
-        """
-        instance_ids = [resource.split(',')[1].strip() for resource in es_data.get('instances', []) if 'terminated' not in resource]
-        es_data_change = False
-        if instance_ids:
-            local_ec2_operations = EC2Operations(region=self.__region_name)
-            instances = local_ec2_operations.get_ec2_instance_ids(Filters=[{'Name': 'instance-id', 'Values': instance_ids}])
-            instance_ids = list(set(instance_ids) - set(instances))
-            for idx, resource in enumerate(es_data.get('instances')):
-                resource_data = resource.split(',')
-                instance_id = resource_data[1].strip()
-                if instance_id in instance_ids:
-                    es_data_change = True
-                    resource_data[4] = 'terminated'
-                    es_data['instances'][idx] = ', '.join(resource_data)
-        return es_data_change
-
     @logger_time_stamp
     def __track_tickets(self):
         """

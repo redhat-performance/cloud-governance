@@ -15,12 +15,12 @@ class ResourceGroupOperations(CommonOperations):
         self.__resource_client = ResourceManagementClient(self._default_creds, subscription_id=self._subscription_id)
 
     @logger_time_stamp
-    def get_all_resource_groups(self) -> [ResourceGroup]:
+    def get_all_resource_groups(self, **kwargs) -> [ResourceGroup]:
         """
         This method returns all resource groups present in azure subscription
         :return:
         """
-        resource_groups_object: ItemPaged = self.__resource_client.resource_groups.list()
+        resource_groups_object: ItemPaged = self.__resource_client.resource_groups.list(**kwargs)
         resource_groups_list = self._item_paged_iterator(item_paged_object=resource_groups_object)
         return resource_groups_list
 

@@ -4,7 +4,7 @@ import time
 
 import pytz
 from azure.core.exceptions import HttpResponseError
-from azure.mgmt.costmanagement.models import QueryDataset, QueryAggregation, QueryTimePeriod, QueryGrouping
+from azure.mgmt.costmanagement.models import QueryTimePeriod
 
 from cloud_governance.common.clouds.azure.subscriptions.azure_operations import AzureOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -27,20 +27,23 @@ class CostManagementOperations:
         :return:
         :rtype:
         """
-        filter_tags = []
-        if tags:
-            for key, value in tags.items():
-                filter_tags.append({'name': key, "operator": "In", 'values': [value]})
-        filter_grouping = []
-        if grouping:
-            for group in grouping:
-                filter_grouping.append({"name": group.lower(), "type": "TagKey"})
         query_dataset = {"aggregation": {"totalCost": {"name": "Cost", "function": "Sum"}},
                          "granularity": granularity,
                          }
-        if filter_tags:
-            query_dataset['filter'] = {"tags": filter_tags}
-        if filter_grouping:
+        if tags:
+            filter_tags = {}
+            if len(tags) > 2:
+                for key, value in tags.items():
+                    and_filter = {'tags': {'name': key.lower(), "operator": "In", 'values': [value.lower()]}}
+                    filter_tags.setdefault('and', []).append(and_filter)
+            else:
+                for key, value in tags.items():
+                    filter_tags = {'tags': {'name': key.lower(), "operator": "In", 'values': [value.lower()]}}
+            query_dataset['filter'] = filter_tags
+        if grouping:
+            filter_grouping = []
+            for group in grouping:
+                filter_grouping.append({"name": group.lower(), "type": "TagKey"})
             query_dataset['grouping'] = filter_grouping
         return query_dataset
 
@@ -58,7 +61,6 @@ class CostManagementOperations:
         :param kwargs:
         :return:
         """
-
         try:
             if not start_date and not end_date:
                 end_date = datetime.datetime.now(pytz.UTC)
@@ -126,19 +128,54 @@ class CostManagementOperations:
             logger.error(err)
         return []
 
-    def get_filter_data(self, cost_data: dict):
+    def get_filter_data(self, cost_data: dict, tag_name: str = 'User'):
         """
         This method returns the cost data in dict format
+        :param tag_name:
+        :type tag_name:
         :param cost_data:
         :type cost_data:
         :return:
         :rtype:
         """
+        output_list = self.get_prettify_data(cost_data)
+        users_list = {}
+        for item in output_list:
+            tag_value = item.get('TagValue')
+            if tag_value not in users_list:
+                users_list[tag_value] = {}
+                users_list[tag_value]['Cost'] = item.get('Cost')
+            else:
+                users_list[tag_value]['Cost'] = users_list[tag_value]['Cost'] + item.get('Cost')
+        users_cost = []
+        for value, cost in users_list.items():
+            users_cost.append({'User': value, 'Cost': cost.get('Cost')})
+        return users_cost
+
+    def get_prettify_data(self, cost_data: dict):
+        """
+        This method returns the prettify data
+        :param cost_data:
+        :type cost_data:
+        :return:
+        :rtype:
+        """
+        columns = cost_data.get('columns')
+        columns_data = [column.get('name') for column in columns]
         rows = cost_data.get('rows')
-        output_dict = {}
-        for row in rows:
-            output_dict[row[3]] = output_dict.get(row[3], 0) + row[0]
-        users_list = []
-        for user, cost in output_dict.items():
-            users_list.append({'User': user, 'Cost': cost})
-        return users_list
+        rows_data = [dict(zip(columns_data, row)) for row in rows]
+        return rows_data
+
+    def get_total_cost(self, cost_data: dict):
+        """
+        This method returns the total cost of the data dict
+        :param cost_data:
+        :type cost_data:
+        :return:
+        :rtype:
+        """
+        output_list = self.get_prettify_data(cost_data)
+        total_sum = 0
+        for item in output_list:
+            total_sum += item.get('Cost')
+        return total_sum

@@ -60,6 +60,7 @@ class TagCROResources(AbstractResource):
         This method list the instances and tag the instances which have the tag TicketId
         :return:
         """
+        ticket_id_instances = {}
         for resource_group in self._resource_groups:
             name = resource_group.name
             resource_group_tags = resource_group.tags
@@ -84,6 +85,7 @@ class TagCROResources(AbstractResource):
                 for resource in resources_list:
                     resource_ids.append(resource.id)
                 self.__tag_ticket_id_found_resources(resource_ids=resource_ids, ticket_id=found_tag_value)
+                ticket_id_instances.setdefault(found_tag_value, []).append(resource_ids)
 
     def run(self):
         """=-

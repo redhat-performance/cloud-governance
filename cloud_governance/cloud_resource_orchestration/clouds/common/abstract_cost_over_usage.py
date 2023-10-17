@@ -44,9 +44,9 @@ class AbstractCostOverUsage(ABC):
 
     @typeguard.typechecked
     @logger_time_stamp
-    def _get_monthly_user_es_cost_data(self, tag_name: str = 'User', start_date: datetime = None,
-                                       end_date: datetime = None, extra_matches: any = None,
-                                       granularity: str = 'MONTHLY', extra_operation: str = 'And'):
+    def get_monthly_user_es_cost_data(self, tag_name: str = 'User', start_date: datetime = None,
+                                      end_date: datetime = None, extra_matches: any = None,
+                                      granularity: str = 'MONTHLY', extra_operation: str = 'And', **kwargs):
         """
         This method gets the user cost from the es-data
         :param tag_name: by default User
@@ -60,7 +60,7 @@ class AbstractCostOverUsage(ABC):
         start_date, end_date = self.__get_start_end_dates(start_date=start_date, end_date=end_date)
         return self._get_cost_based_on_tag(start_date=str(start_date), end_date=str(end_date), tag_name=tag_name,
                                            granularity=granularity, extra_filters=extra_matches,
-                                           extra_operation=extra_operation)
+                                           extra_operation=extra_operation, **kwargs)
 
     def _get_forecast_cost_data(self, tag_name: str = 'User', start_date: datetime = None, end_date: datetime = None,
                                extra_matches: any = None, granularity: str = 'MONTHLY', extra_operation: str = 'And'):
@@ -168,7 +168,7 @@ class AbstractCostOverUsage(ABC):
         :return:
         """
         over_usage_users = []
-        current_month_users = self._get_monthly_user_es_cost_data()
+        current_month_users = self.get_monthly_user_es_cost_data()
         for user in current_month_users:
             user_name = str(user.get('User'))
             user_cost = round(user.get('Cost'), DEFAULT_ROUND_DIGITS)
@@ -224,5 +224,5 @@ class AbstractCostOverUsage(ABC):
 
     @abstractmethod
     def _get_cost_based_on_tag(self, start_date: str, end_date: str, tag_name: str, extra_filters: any = None,
-                               extra_operation: str = 'And', granularity: str = None, forecast: bool = False):
+                               extra_operation: str = 'And', granularity: str = None, forecast: bool = False, **kwargs):
         raise NotImplementedError

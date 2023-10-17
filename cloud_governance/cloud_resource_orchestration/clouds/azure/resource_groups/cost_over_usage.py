@@ -16,6 +16,14 @@ class CostOverUsage(AbstractCostOverUsage, ABC):
         self._subscription_id = self._environment_variables_dict.get('AZURE_SUBSCRIPTION_ID')
         self.__scope = f'subscriptions/{self._subscription_id}'
 
+    def get_cost_management_object(self):
+        """
+        This method returns the object of cost_mgmt
+        :return:
+        :rtype:
+        """
+        return self.__cost_mgmt_operations
+
     def _verify_active_resources(self, tag_name: str, tag_value: str) -> bool:
         """
         This method verifies any active virtual instances in all regions by tag_name, tag_value
@@ -35,7 +43,7 @@ class CostOverUsage(AbstractCostOverUsage, ABC):
         return False
 
     def _get_cost_based_on_tag(self, start_date: str, end_date: str, tag_name: str, extra_filters: any = None,
-                               extra_operation: str = 'And', granularity: str = None, forecast: bool = False):
+                               extra_operation: str = 'And', granularity: str = None, forecast: bool = False, **kwargs):
         """
         This method returns the cost results based on the tag_name
         :param start_date:
@@ -62,14 +70,14 @@ class CostOverUsage(AbstractCostOverUsage, ABC):
             results_by_time = self.__cost_mgmt_operations.get_forecast(start_date=start_date, end_date=end_date,
                                                                        granularity=granularity,
                                                                        grouping=['user'],
-                                                                       scope=self.__scope
+                                                                       scope=self.__scope, **kwargs
                                                                        )
         else:
             results_by_time = self.__cost_mgmt_operations.get_usage(scope=self.__scope, start_date=start_date,
-                                                                    end_date=end_date, grouping=['user'],
-                                                                    granularity=granularity)
+                                                                    end_date=end_date, grouping=[tag_name],
+                                                                    granularity=granularity, **kwargs)
 
-            response = self.__cost_mgmt_operations.get_filter_data(cost_data=results_by_time)
+            response = self.__cost_mgmt_operations.get_filter_data(cost_data=results_by_time, tag_name=tag_name)
             return response
         return {}
 
