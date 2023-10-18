@@ -17,7 +17,7 @@ class RunCRO:
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_operations = ElasticSearchOperations()
-        self.__account = self.__environment_variables_dict.get('account', '')
+        self.__account = self.__environment_variables_dict.get('account', '').lower()
         self.__cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
         self.__cro_object = CroObject(public_cloud_name=self.__cloud_name)
         self.__cost_over_usage = self.__cro_object.cost_over_usage()
@@ -34,10 +34,10 @@ class RunCRO:
         if not self.__es_operations.verify_elastic_index_doc_id(index=self.PERSISTENT_RUN_INDEX,
                                                                 doc_id=self.PERSISTENT_RUN_DOC_ID):
             self.__es_operations.upload_to_elasticsearch(index=self.PERSISTENT_RUN_INDEX, data={
-                f'last_run_{self.__account}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
+                f'last_run_{self.__account.lower()}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
         else:
             self.__es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX,
-                                                            metadata={f'last_run_{self.__account}': datetime.utcnow()},
+                                                            metadata={f'last_run_{self.__account.lower()}': datetime.utcnow()},
                                                             id=self.PERSISTENT_RUN_DOC_ID)
 
     @logger_time_stamp
