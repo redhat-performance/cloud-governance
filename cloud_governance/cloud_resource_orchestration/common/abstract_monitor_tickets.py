@@ -200,7 +200,7 @@ class AbstractMonitorTickets(ABC):
         remaining_budget = budget - used_budget
         threshold_budget = budget - (budget * (self.__ticket_over_usage_limit / 100))
         subject = body = None
-        if threshold_budget >= remaining_budget:
+        if threshold_budget >= remaining_budget > 0:
             ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
                                                          current_budget=budget)
             if not ticket_extended:
