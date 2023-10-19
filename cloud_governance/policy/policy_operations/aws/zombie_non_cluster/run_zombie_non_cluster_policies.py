@@ -305,7 +305,7 @@ class NonClusterZombiePolicy:
                         self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
                     elif self._policy == 'empty_roles':
                         self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
-                    elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots'):
+                    elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'ebs_unattached'):
                         self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
                 except Exception as err:
                     logger.info(f'Exception raised: {err}: {resource_id}')
