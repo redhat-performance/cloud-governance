@@ -53,7 +53,7 @@ class EnvironmentVariables:
                                                                         'empty_roles', 'ip_unattached',
                                                                         'unused_nat_gateway',
                                                                         'zombie_snapshots', 'skipped_resources',
-                                                                        'monthly_report']
+                                                                        'monthly_report', 'optimize_resources_report']
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
