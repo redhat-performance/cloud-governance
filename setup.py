@@ -38,7 +38,7 @@ setup(
     packages=find_packages(include=['cloud_governance', 'cloud_governance.*']),
 
     install_requires=[
-        'aiohttp==3.8.5',  # required by jira
+        'aiohttp==3.8.6',  # required by jira
         'attrs==21.4.0',  # readthedocs
         'azure-identity==1.12.0',  # azure identity
         'azure-mgmt-billing==6.0.0',  # azure billing management
