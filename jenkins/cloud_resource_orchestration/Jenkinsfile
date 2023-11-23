@@ -31,6 +31,11 @@ pipeline {
         S3_RESULTS_PATH = credentials('S3_RESULTS_PATH')
         ATHENA_DATABASE_NAME = credentials('ATHENA_DATABASE_NAME')
         ATHENA_TABLE_NAME = credentials('ATHENA_TABLE_NAME')
+        AZURE_CLIENT_SECRET = credentials('cloud-governance-azure-client-secret')
+        AZURE_TENANT_ID = credentials('cloud-governance-azure-tenant-id')
+        AZURE_ACCOUNT_ID = credentials('cloud-governance-azure-account-id')
+        AZURE_CLIENT_ID = credentials('cloud-governance-azure-client-id')
+        AZURE_SUBSCRIPTION_ID = credentials('cloud-governance-azure-subscription-id')
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }
