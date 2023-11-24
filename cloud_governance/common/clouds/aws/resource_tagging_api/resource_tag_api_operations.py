@@ -9,6 +9,7 @@ class ResourceTagAPIOperations:
     """
 
     PAGINATION_TOKEN = 'PaginationToken'
+    ARRAY_SIZE = 20
 
     def __init__(self, region_name: str):
         self.__client = boto3.client('resourcegroupstaggingapi', region_name=region_name)
@@ -41,8 +42,31 @@ class ResourceTagAPIOperations:
         :param update_tags_dict:  {key: value}
         :return:
         """
-        try:
-            self.__client.tag_resources(ResourceARNList=resource_arn_list, Tags=update_tags_dict)
-        except Exception as err:
-            logger.error(err)
-            raise err
+        chunked_array_list = [resource_arn_list[i:i + self.ARRAY_SIZE] for i in range(0, len(resource_arn_list),
+                                                                                      self.ARRAY_SIZE)]
+        for array_list in chunked_array_list:
+            try:
+                self.__client.tag_resources(ResourceARNList=array_list, Tags=update_tags_dict)
+                logger.info(f"Updated the tags of the resources: {array_list} by tags: {update_tags_dict}")
+            except Exception as err:
+                logger.error(err)
+
+    def tag_resources_by_tag_key_value(self, tags: dict, tag_key: str, tag_value: str = '', dry_run: str = 'yes'):
+        """
+        This method tags the resources based on tag_key and tag_value ( optional ) better to provide for easy filter
+        :param tags:
+        :type tags:
+        :param tag_key:
+        :type tag_key:
+        :param tag_value:
+        :type tag_value:
+        :return:
+        :rtype:
+        """
+        resources_arn = []
+        resources = self.get_resources(tag_name=tag_key, tag_value=tag_value)
+        for resource in resources:
+            resources_arn.append(resource.get('ResourceARN'))
+        if dry_run == 'no':
+            self.tag_resources(resource_arn_list=resources_arn, update_tags_dict=tags)
+        return resources_arn

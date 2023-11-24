@@ -23,7 +23,7 @@ from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.validate_zombies import ValidateZombies
 from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
-
+from cloud_governance.policy.policy_runners.aws_policy_runner import AWSPolicyRunner
 
 environment_variables_dict = environment_variables.environment_variables_dict
 log_level = environment_variables_dict.get('log_level', 'INFO').upper()
@@ -201,6 +201,11 @@ def main():
         if is_non_cluster_polices_runner:
             non_cluster_polices_runner = ZombieNonClusterPolicies()
 
+        aws_policy_runners = None
+        is_aws_policy_runner = policy in environment_variables_dict.get('AWS_POLICY_RUNNERS')
+        if is_aws_policy_runner:
+            aws_policy_runners = AWSPolicyRunner()
+
         ibm_classic_infrastructure_policy_runner = None
         is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
         if not is_tag_ibm_classic_infrastructure_runner:
@@ -229,6 +234,15 @@ def main():
             is_gcp_policy_runner = policy in environment_variables_dict.get('cost_policies')
             if is_gcp_policy_runner:
                 gcp_cost_policy_runner = GcpPolicyRunner()
+
+        @logger_time_stamp
+        def run_aws_policy_runners():
+            """
+            This method runs the aws policies
+            :return:
+            :rtype:
+            """
+            aws_policy_runners.run()
 
         @logger_time_stamp
         def run_non_cluster_polices_runner():
@@ -294,6 +308,8 @@ def main():
             run_azure_policy_runner()
         elif is_gcp_policy_runner:
             run_gcp_policy_runner()
+        elif is_aws_policy_runner:
+            run_aws_policy_runners()
         else:
             if not policy:
                 logger.exception(f'Missing Policy name: "{policy}"')

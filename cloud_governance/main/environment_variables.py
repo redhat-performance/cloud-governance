@@ -54,6 +54,10 @@ class EnvironmentVariables:
                                                                         'unused_nat_gateway',
                                                                         'zombie_snapshots', 'skipped_resources',
                                                                         'monthly_report']
+        self._environment_variables_dict['AWS_POLICY_RUNNERS'] = ['tag_cluster_resources']
+        self._environment_variables_dict['TAG_OPTIONAL_TAGS'] = EnvironmentVariables.get_boolean_from_environment('TAG_OPTIONAL_TAGS', False)
+        self._environment_variables_dict['OPTIONAL_TAGS'] = literal_eval(EnvironmentVariables.get_env('OPTIONAL_TAGS',
+                                                                                                      "['Owner', 'Manager', 'Project', 'Environment']"))
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
@@ -246,6 +250,8 @@ class EnvironmentVariables:
             account_alias = iam_client.list_account_aliases()['AccountAliases']
             if account_alias:
                 return account_alias[0].upper()
+            else:
+                return os.environ.get('account', '').upper()
         except:
             return os.environ.get('account', '').upper()
 
