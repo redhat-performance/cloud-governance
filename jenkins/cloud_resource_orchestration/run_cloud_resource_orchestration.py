@@ -77,15 +77,16 @@ AZURE_TENANT_ID = os.environ['AZURE_TENANT_ID']
 AZURE_CLIENT_ID = os.environ['AZURE_CLIENT_ID']
 AZURE_SUBSCRIPTION_ID = os.environ['AZURE_SUBSCRIPTION_ID']
 
-os.system("Running the azure cro")
+os.system("echo Running the Azure CRO")
 azure_cro_env = {
     'AZURE_ACCOUNT_ID': AZURE_ACCOUNT_ID, 'AZURE_CLIENT_ID': AZURE_CLIENT_ID,
     'AZURE_TENANT_ID': AZURE_TENANT_ID, 'AZURE_CLIENT_SECRET': AZURE_CLIENT_SECRET,
     'AZURE_SUBSCRIPTION_ID': AZURE_SUBSCRIPTION_ID,
-    'account': 'PERF&SCALE', 'PUBLIC_CLOUD_NAME': 'AZURE', 'CLOUD_RESOURCE_ORCHESTRATION': True
+    'account': 'PERF&SCALE', 'PUBLIC_CLOUD_NAME': 'AZURE', 'CLOUD_RESOURCE_ORCHESTRATION': True,
+    'EMAIL_ALERT': 'True'
 }
 azure_cro_env.update(common_env_vars)
-
+envs = list(map(combine_vars, azure_cro_env.items()))
 azure_cro = """ podman run --net="host" --rm --name cloud_resource_orchestration """
-azure_cro += f" -e {' -e '.join(azure_cro_env)}  quay.io/ebattat/cloud-governance:latest"
+azure_cro += f" -e {' -e '.join(envs)}  quay.io/ebattat/cloud-governance:latest"
 os.system(azure_cro)
