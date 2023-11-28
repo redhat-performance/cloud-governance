@@ -1,6 +1,8 @@
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.policy.policy_operations.aws.tag_cluster.remove_cluster_tags import RemoveClusterTags
-from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
+from cloud_governance.policy.aws.tag_cluster_resources import TagClusterResources
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import \
+    tag_non_cluster_resource
 
 
 def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, region: str = 'us-east-2', tag_operation: str = 'yes', cluster_only: bool = False):
@@ -15,42 +17,19 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         action = 'read'
         dry_run = 'yes'
-    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
-                                                input_tags=mandatory_tags, region=region, dry_run=dry_run, cluster_only=cluster_only)
-
-    func_resource_list = [tag_cluster_resources.cluster_instance,
-                          tag_cluster_resources.cluster_volume,
-                          tag_cluster_resources.cluster_ami,
-                          tag_cluster_resources.cluster_snapshot,
-                          tag_cluster_resources.cluster_network_interface,
-                          tag_cluster_resources.cluster_load_balancer,
-                          tag_cluster_resources.cluster_load_balancer_v2,
-                          tag_cluster_resources.cluster_dhcp_option,
-                          tag_cluster_resources.cluster_subnet,
-                          tag_cluster_resources.cluster_route_table,
-                          tag_cluster_resources.cluster_vpc_endpoint,
-                          tag_cluster_resources.cluster_nat_gateway,
-                          tag_cluster_resources.cluster_internet_gateway,
-                          tag_cluster_resources.cluster_security_group,
-                          tag_cluster_resources.cluster_elastic_ip,
-                          tag_cluster_resources.cluster_vpc,
-                          tag_cluster_resources.cluster_role,
-                          tag_cluster_resources.cluster_user,
-                          tag_cluster_resources.cluster_s3_bucket,
-                          ]
-    if cluster_only:
-        logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
-    else:
-        logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
-        logger.info(f"{action} 4 non-cluster resources in region {region}:")
-    if not cluster_name:
-        func_resource_list[0]()
-        func_resource_list = func_resource_list[1:-3]
-    else:
-        func_resource_list[0]()
-        func_resource_list = func_resource_list[1:]
-    for _, func in enumerate(func_resource_list):
-        func()
+    # if cluster_only:
+    #     logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
+    # else:
+    #     logger.info(f"{action} {len(func_resource_list)} cluster resources for cluster name '{cluster_name}' in region {region}:")
+    #     logger.info(f"{action} 4 non-cluster resources in region {region}:")
+    logger.info("Run the tagging on NonCluster Resources")
+    tag_non_cluster_resource(mandatory_tags=mandatory_tags, region=region, tag_operation=tag_operation)
+    logger.info("Run the tagging on Cluster Resources")
+    tag_cluster_resources = TagClusterResources()
+    tag_cluster_resources.run()
+        # func_resource_list = func_resource_list[1:]
+    # for _, func in enumerate(func_resource_list):
+    #     func()
 
 
 def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: dict, cluster_only: bool = False):
