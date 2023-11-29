@@ -336,6 +336,8 @@ class NonClusterZombiePolicy:
                     for attachment in volume.get('Attachments'):
                         attachment['AttachTime'] = attachment['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
                 volume['CreateTime'] = volume['CreateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                if 'Tags' in volume:
+                    del volume['Tags']
                 organize_data.append(volume)
         return organize_data
 
