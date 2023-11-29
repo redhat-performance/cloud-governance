@@ -56,6 +56,7 @@ policies.remove('cost_over_usage')
 policies.remove('monthly_report')
 policies.remove('cost_billing_reports')
 policies.remove('cost_explorer_payer_billings')
+policies.remove('spot_savings_analysis')
 
 for region in regions:
     for policy in policies:
