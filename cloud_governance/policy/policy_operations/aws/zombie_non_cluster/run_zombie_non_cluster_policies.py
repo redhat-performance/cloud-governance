@@ -319,26 +319,37 @@ class NonClusterZombiePolicy:
         organize_data = []
         if 'ec2' in self._policy:
             for instance in resources:
-                instance['LaunchTime'] = instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='Policy')
+                if not skip_policy:
+                    skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='Skip')
+                instance_data = {
+                    'ResourceId': instance.get('InstanceId'), 'InstanceId': instance.get('InstanceId'),
+                    'User': self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='User'),
+                    'Policy': skip_policy,
+                    'LaunchTime': instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    'InstanceType': instance.get('InstanceType'),
+                    'InstanceState': instance.get('State', {}).get('Name'),
+                    'StateTransitionReason': instance.get('StateTransitionReason')
+                }
                 for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
-                    instance['BlockDeviceMappings'][index]['Ebs']['AttachTime'] = device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-                for index, network_interface in enumerate(instance['NetworkInterfaces']):
-                    instance['NetworkInterfaces'][index]['Attachment']['AttachTime'] = network_interface['Attachment']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-                if instance.get('UsageOperationUpdateTime'):
-                    instance['UsageOperationUpdateTime'] = instance['UsageOperationUpdateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-                if instance.get('metrics'):
-                    for index, metric in enumerate(instance['metrics']):
-                        instance['metrics'][index]['Timestamps'] = [date.strftime("%Y-%m-%dT%H:%M:%S+00:00") for date in metric['Timestamps']]
-                organize_data.append(instance)
+                    instance_data.setdefault('DeviceMappings', [])\
+                        .append(device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"))
+                organize_data.append(instance_data)
         else:
             for volume in resources:
+                volume_data = {'ResourceId': volume.get('VolumeId'), 'Size': volume.get('Size'),
+                               'VolumeId': volume.get('VolumeId'),
+                               'VolumeState': volume.get('State'), 'Iops': volume.get('Iops'),
+                               'VolumeType': volume.get('VolumeType'),
+                               'User': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []), tag_name='User'),
+                               'Policy': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []), tag_name='Policy')}
                 if volume.get('Attachments'):
                     for attachment in volume.get('Attachments'):
-                        attachment['AttachTime'] = attachment['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-                volume['CreateTime'] = volume['CreateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
-                if 'Tags' in volume:
-                    del volume['Tags']
-                organize_data.append(volume)
+                        volume_data.update({
+                            'AttachTime': attachment['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                        })
+                volume_data.update({'CreateTime': volume['CreateTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00")})
+                organize_data.append(volume_data)
         return organize_data
 
     def get_ebs_cost(self, resource: any, resource_type: str, resource_hours: int):
