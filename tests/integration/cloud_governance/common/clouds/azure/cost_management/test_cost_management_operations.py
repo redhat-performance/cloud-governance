@@ -21,7 +21,8 @@ def test_get_usage():
                                                                granularity=granularity
                                                                )
         assert cost_usage_data
-    assert False
+    else:
+        assert False
 
 
 def test_get_forecast():
