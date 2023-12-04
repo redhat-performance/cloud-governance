@@ -8,6 +8,7 @@ from cloud_governance.common.clouds.azure.subscriptions.azure_operations import 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.google_drive.google_drive_operations import GoogleDriveOperations
 from cloud_governance.common.google_drive.upload_to_gsheet import UploadToGsheet
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -131,8 +132,8 @@ class CostBillingReports:
             cost_center = int(profile.get('display_name').split('(CC ')[-1].split(')')[0])
             self.__common_data['CostCenter'] = cost_center
             filters = {
-                'grouping': [QueryGrouping(type='Dimension', name='SubscriptionName'),
-                             QueryGrouping(type='Dimension', name='SubscriptionId')]
+                'grouping': [{'type':'Dimension', 'name': 'SubscriptionName'},
+                             {'type': 'Dimension', 'name': 'SubscriptionId'}]
             }
             usage_data = self.cost_mgmt_operations.get_usage(scope=scope, **filters)
             subscription_ids = []
@@ -142,8 +143,7 @@ class CostBillingReports:
                                          cost_billing_data=cost_billing_data)
             for subscription in subscription_ids:
                 query_filter = {
-                    'filter': QueryFilter(dimensions=QueryComparisonExpression(name='SubscriptionId', operator='in',
-                                                                               values=[subscription[0]]))}
+                    'filter': {'name': 'SubscriptionId', 'values': [subscription[0]]}}
                 forecast_data = self.cost_mgmt_operations.get_forecast(scope=scope, **query_filter)
                 if forecast_data and forecast_data.get('rows'):
                     self.get_data_from_costs(cost_data_rows=forecast_data.get('rows'),
@@ -161,12 +161,16 @@ class CostBillingReports:
         """
         cost_billing_data = {}
         if not self.__total_account:
-            usage_data = self.cost_mgmt_operations.get_usage(scope=self.azure_operations.scope)
-            forecast_data = self.cost_mgmt_operations.get_forecast(scope=self.azure_operations.scope)
-            if usage_data:
-                self.get_data_from_costs(cost_data_rows=usage_data.get('rows'), cost_data_columns=usage_data.get('columns'), cost_type='Actual', cost_billing_data=cost_billing_data)
-            if forecast_data:
-                self.get_data_from_costs(cost_data_rows=forecast_data.get('rows'), cost_data_columns=forecast_data.get('columns'), cost_type='Forecast', cost_billing_data=cost_billing_data, subscription_id=self.azure_operations.subscription_id)
+            scope = self.azure_operations.get_billing_profiles_list(subscription_id=self.azure_operations.subscription_id)
+            if scope:
+                usage_data = self.cost_mgmt_operations.get_usage(scope=scope)
+                forecast_data = self.cost_mgmt_operations.get_forecast(scope=self.azure_operations.scope)
+                if usage_data:
+                    self.get_data_from_costs(cost_data_rows=usage_data.get('rows'), cost_data_columns=usage_data.get('columns'), cost_type='Actual', cost_billing_data=cost_billing_data)
+                if forecast_data:
+                    self.get_data_from_costs(cost_data_rows=forecast_data.get('rows'), cost_data_columns=forecast_data.get('columns'), cost_type='Forecast', cost_billing_data=cost_billing_data, subscription_id=self.azure_operations.subscription_id)
+            else:
+                logger.warning(f"No billing scopes found in the subscription: {self.azure_operations.subscription_id}")
         else:
             cost_billing_data = self.get_total_billing_accounts()
         if cost_billing_data:

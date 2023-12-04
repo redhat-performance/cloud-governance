@@ -14,11 +14,14 @@ def test_get_usage():
     end_date = datetime.datetime.utcnow() - datetime.timedelta(days=2)
     start_date = end_date - datetime.timedelta(days=1)
     granularity = 'Daily'
-    cost_usage_data = cost_management_operations.get_usage(scope=cost_management_operations.azure_operations.scope,
-                                                           start_date=start_date, end_date=end_date,
-                                                           granularity=granularity
-                                                           )
-    assert cost_usage_data
+    scope = cost_management_operations.azure_operations.get_billing_profiles_list()[0]
+    if scope:
+        cost_usage_data = cost_management_operations.get_usage(scope=scope,
+                                                               start_date=start_date, end_date=end_date,
+                                                               granularity=granularity
+                                                               )
+        assert cost_usage_data
+    assert False
 
 
 def test_get_forecast():

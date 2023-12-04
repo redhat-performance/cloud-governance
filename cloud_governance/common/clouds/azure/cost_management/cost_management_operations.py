@@ -43,7 +43,10 @@ class CostManagementOperations:
         if grouping:
             filter_grouping = []
             for group in grouping:
-                filter_grouping.append({"name": group.lower(), "type": "TagKey"})
+                if isinstance(group, dict):
+                    filter_grouping.append({"name": group['name'], "type": group['type']})
+                else:
+                    filter_grouping.append({"name": group.lower(), "type": "TagKey"})
             query_dataset['grouping'] = filter_grouping
         return query_dataset
 
