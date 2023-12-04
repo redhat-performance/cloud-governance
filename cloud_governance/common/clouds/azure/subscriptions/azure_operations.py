@@ -49,6 +49,25 @@ class AzureOperations:
         response = self.billing_client.billing_profiles.list_by_billing_account(self.__account_id)
         return response
 
+    def get_billing_profiles_list(self, subscription_id: str = ''):
+        """
+        This method returns list of billing profiles
+        :param subscription_id:
+        :type subscription_id:
+        :return:
+        :rtype:
+        """
+        billing_profiles = []
+        responses = self.billing_client.billing_profiles.list_by_billing_account(self.__account_id)
+        for response in responses:
+            if subscription_id:
+                if subscription_id == response.subscriptionId:
+                    return response.id
+            else:
+                billing_profiles.append(response.id)
+        return billing_profiles
+
+
 
 
 
