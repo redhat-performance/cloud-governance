@@ -2,4 +2,5 @@
 
 Accounts:
 - appeng
-- partner
+- fsi-partner
+- fsi-ecosystem

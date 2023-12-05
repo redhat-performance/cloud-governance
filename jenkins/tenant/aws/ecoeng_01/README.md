@@ -3,4 +3,3 @@
 Accounts:
 - partnerlab
 - coreos-training
-- 
