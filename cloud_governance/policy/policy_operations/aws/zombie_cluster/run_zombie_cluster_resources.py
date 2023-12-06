@@ -1,6 +1,10 @@
+from datetime import datetime
 
 import typeguard
 
+from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
@@ -125,4 +129,18 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
     zombie_cluster_common_methods.send_mails_to_cluster_user(notify_data=notify_data, delete_data=delete_data,
                                                              cluster_data=cluster_data)
     zombie_result['all_cluster_data'] = {'count': len(set(all_cluster_data)), 'data': set(sorted(all_cluster_data))}
+    es_operations = ElasticSearchOperations()
+    if es_operations.check_elastic_search_connection():
+        environment_variables_dict = environment_variables.environment_variables_dict
+        es_index = environment_variables_dict.get('es_index')
+        account = environment_variables_dict.get('account', '')
+        if zombie_result:
+            zombie_result['region_name'] = region
+            zombie_result['account'] = account
+            es_operations.upload_to_elasticsearch(data=zombie_result.copy(), index=es_index)
+            logger.info(f'Uploaded the policy results to elasticsearch index: {es_index}')
+        else:
+            logger.error(f'No data to upload on @{account}  at {datetime.utcnow()}')
+    else:
+        logger.error('ElasticSearch host is not pingable, Please check ')
     return zombie_result
