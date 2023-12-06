@@ -28,8 +28,7 @@ os.system(f"echo Polices list: {policies_not_in_action}")
 for region in regions:
     for policy in policies_not_in_action:
         os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="{account_name}" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{s3_bucket}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        if policy == 'zombie_cluster_resource':
-            os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="{account_name}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_doc_type="{es_doc_type}" -e bucket="{s3_bucket}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
 
 os.system('echo "Running the CloudGovernance policies with dry_run=no" ')
 os.system(f"echo Polices list: {policies_in_action}")
@@ -39,8 +38,6 @@ for region in regions:
             os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="{account_name}" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{s3_bucket}/{LOGS}/{region}" -e DAYS_TO_DELETE_RESOURCE="{days_to_delete_resource}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
         elif policy not in ('empty_roles', 's3_inactive'):
             os.system(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e MANAGER_EMAIL_ALERT="False" -e EMAIL_ALERT="False" -e account="{account_name}" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e policy_output="s3://{s3_bucket}/{LOGS}/{region}" -e DAYS_TO_DELETE_RESOURCE="{days_to_delete_resource}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        if policy == 'zombie_cluster_resource':
-            os.system(f"""podman run --rm --name cloud-governance-poc-haim -e upload_data_es="upload_data_es" -e account="{account_name}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_doc_type="{es_doc_type}" -e bucket="{s3_bucket}" -e policy="{policy}" -e AWS_DEFAULT_REGION="{region}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
 
 os.system(f"""echo "Running the tag_iam_user" """)

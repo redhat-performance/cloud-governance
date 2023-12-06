@@ -48,14 +48,9 @@ pipeline {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Run Policies') {
+        stage('Run Policies, Upload ES and S3 bucket') {
             steps {
                  sh 'python3 jenkins/clouds/aws/daily/policies/run_policies.py'
-            }
-        }
-        stage('Upload ElasticSearch') {
-            steps {
-                sh 'python3 jenkins/clouds/aws/daily/policies/run_upload_es.py'
             }
         }
         stage('Finalize Cleanup') {
