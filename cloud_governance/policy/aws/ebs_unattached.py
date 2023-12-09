@@ -25,7 +25,7 @@ class EbsUnattached(NonClusterZombiePolicy):
         volumes = self._ec2_client.describe_volumes(Filters=[{'Name': 'status', 'Values': ['available']}])['Volumes']
         unattached_volumes_data = []
         for volume in volumes:
-            if not self._check_cluster_tag(tags=volume.get('Tags')) or self._get_policy_value(tags=volume.get('Tags')) not in ('NOTDELETE', 'SKIP'):
+            if not self._check_cluster_tag(tags=volume.get('Tags', [])) or self._get_policy_value(tags=volume.get('Tags')) not in ('NOTDELETE', 'SKIP'):
                 volume_id = volume.get('VolumeId')
                 launch_days = self._calculate_days(create_date=volume.get('CreateTime'))
                 if launch_days >= self.DAYS_TO_DELETE_RESOURCE:
