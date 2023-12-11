@@ -118,5 +118,5 @@ class SkippedResources(NonClusterZombiePolicy):
             self._es_upload.es_upload_data(items=resources_data, es_index=self.es_index)
         for resource in resources_data:
             if resource.get('timestamp'):
-                resource['timestamp'] = str(resource['timestamp'])
+                resource['timestamp'] = resource['timestamp']
         return resources_data

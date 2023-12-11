@@ -33,6 +33,7 @@ pipeline {
         USERS_MANAGER_MAILS = credentials('cloud-governance-users-managers-mails')
         REPLY_TO = credentials('cloud-governance-reply-to')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        ES_INDEX = credentials('cloud-governance-es-index')
 
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
