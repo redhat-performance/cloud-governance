@@ -48,8 +48,9 @@ class SendAggregatedAlerts:
         """
         responses = {}
         users = self.__environment_variables.get('KERBEROS_USERS')
-        for iam_user, kerberos_user in users.items():
-            responses[iam_user.lower()] = kerberos_user.lower()
+        if users:
+            for iam_user, kerberos_user in users.items():
+                responses[iam_user.lower()] = kerberos_user.lower()
         return responses
 
     def __get_users_agg_result(self, policy_result: list, agg_users_result: dict, policy_name: str, region: str):
@@ -81,11 +82,15 @@ class SendAggregatedAlerts:
         try:
             policy_save_path = f'{self.__bucket_key}/{region}/{policy}'
             bucket_path_file = self.__s3_operations.get_last_objects(bucket=self.__bucket_name, key_prefix=f'{policy_save_path}/{self.TODAY_DATE}')
-            policy_s3_response = self.__s3_operations.get_last_s3_policy_content(s3_file_path=bucket_path_file, file_name=self.FILE_NAME)
-            return json.loads(policy_s3_response) if policy_s3_response else []
+            if bucket_path_file:
+                policy_s3_response = self.__s3_operations.get_last_s3_policy_content(s3_file_path=bucket_path_file, file_name=self.FILE_NAME)
+                return json.loads(policy_s3_response) if policy_s3_response else []
+            else:
+                logger.warn(f"No file_path: {policy_save_path}/{self.TODAY_DATE} exists in s3 bucket")
         except ClientError as err:
             logger.info(err)
             return []
+        return []
 
     @logger_time_stamp
     def __get_policy_users_list(self):
