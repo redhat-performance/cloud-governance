@@ -58,6 +58,7 @@ policies.remove('monthly_report')
 policies.remove('cost_billing_reports')
 policies.remove('cost_explorer_payer_billings')
 policies.remove('spot_savings_analysis')
+policies.remove('optimize_resources_report')
 
 es_index_env_var = f'-e es_index={ES_INDEX}' if ES_INDEX else ''
 
@@ -113,8 +114,17 @@ for account in accounts:
     envs = list(map(combine_vars, account.items()))
     os.system(f"""podman run --rm --name cloud-governance --net="host" -e policy="send_aggregated_alerts" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -e DEFAULT_ADMINS="['athiruma']"   quay.io/ebattat/cloud-governance:latest""")
 
-# # Git-leaks run on GitHub not related to any aws account
+
+# Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
+
+os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-dept" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="psap" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-scale" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e es_host="{ES_HOST}"  -e es_index=""  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
+
+# # Git-leaks run on github not related to any aws account
 os.system("echo Run Git-leaks")
+
 region = 'us-east-1'
 policy = 'gitleaks'
 os.system(f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_PERF}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{BUCKET_PERF}/{LOGS}/$region" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")

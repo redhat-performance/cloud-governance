@@ -22,19 +22,23 @@ class ZombieNonClusterPolicies(NonClusterZombiePolicy):
         for cls in inspect.getmembers(zombie_non_cluster_policy_module, inspect.isclass):
             if self._policy.replace('_', '') == cls[0].lower():
                 response = cls[1]().run()
-                if isinstance(response, str):
-                    logger.info(f'key: {cls[0]}, Response: {response}')
-                else:
-                    if self._policy != 'skipped_resources':
+                if response:
+                    if isinstance(response, str):
+                        logger.info(f'key: {cls[0]}, Response: {response}')
+                    else:
                         logger.info(f'key: {cls[0]}, count: {len(response)}, {response}')
                         policy_result = response
 
                         if self._es_operations.check_elastic_search_connection():
                             if policy_result:
-                                for policy_dict in policy_result:
-                                    policy_dict['region_name'] = self._region
-                                    policy_dict['account'] = self._account
-                                    self._es_operations.upload_to_elasticsearch(data=policy_dict.copy(), index=self._es_index)
+                                if len(policy_result) > 500:
+                                    self._es_operations.upload_data_in_bulk(data_items=policy_result.copy(),
+                                                                            index=self._es_index)
+                                else:
+                                    for policy_dict in policy_result:
+                                        policy_dict['region_name'] = self._region
+                                        policy_dict['account'] = self._account
+                                        self._es_operations.upload_to_elasticsearch(data=policy_dict.copy(), index=self._es_index)
                                 logger.info(f'Uploaded the policy results to elasticsearch index: {self._es_index}')
                             else:
                                 logger.error(f'No data to upload on @{self._account}  at {datetime.utcnow()}')

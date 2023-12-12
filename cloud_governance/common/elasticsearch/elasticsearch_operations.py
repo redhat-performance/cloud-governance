@@ -311,10 +311,16 @@ class ElasticSearchOperations:
                 if kwargs.get('id'):
                     item['_id'] = item.get(kwargs.get('id'))
                 if not item.get('timestamp'):
-                    item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")
+                    if 'CurrentDate' in item:
+                        item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")
+                    else:
+                        item['timestamp'] = datetime.utcnow()
                 item['_index'] = index
-                item['AccountId'] = str(item.get('AccountId'))
-                item['Policy'] = self.__environment_variables_dict.get('policy')
+                if item.get('AccountId'):
+                    item['AccountId'] = str(item.get('AccountId'))
+                if 'account' not in item:
+                    item['account'] = self.__account
+                item['policy'] = self.__environment_variables_dict.get('policy')
             response = bulk(self.__es, bulk_items)
             if response:
                 total_uploaded += len(bulk_items)
