@@ -5,7 +5,7 @@ pipeline {
     }
     agent {
         docker {
-            label 'cloud-governance-worker'
+            label 'haim-cloud-governance-worker'
             image 'quay.io/athiru/centos-stream8-podman:latest'
             args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
@@ -15,6 +15,8 @@ pipeline {
         account_name = "appeng"
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
+        contact3 = "mmikhail@redhat.com"
+        contact4 = "matrujil@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -36,7 +38,7 @@ pipeline {
                                         string(credentialsId: "${account[i]}-aws-secret-key-id", variable: 'secret_key'),
                                         string(credentialsId: "${account[i]}-s3-bucket", variable: 's3_bucket')]) {
                         env.account_name = "${account[i]}"
-                        sh 'python3 jenkins/poc/haim/common/run_tagging.py'
+                        sh 'python3 jenkins/tenant/aws/common/run_tagging.py'
                                         }
                     }
                 }
@@ -55,7 +57,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}"
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
             }
           }
     }
