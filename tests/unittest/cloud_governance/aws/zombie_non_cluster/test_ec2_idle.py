@@ -3,6 +3,7 @@ import os
 import boto3
 from moto import mock_ec2, mock_cloudwatch
 
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.ec2_idle import EC2Idle
 
 AWS_DEFAULT_REGION = 'us-east-2'
@@ -36,6 +37,8 @@ def test_ec2_idle():
     This method check the instance is deleted or not
     @return:
     """
+    environment_variables.environment_variables_dict['policy'] = 'ec2_idle'
+    environment_variables.environment_variables_dict['dry_run'] = 'no'
     expected_result = 'stopped'
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     default_ami_id = 'ami-03cf127a'

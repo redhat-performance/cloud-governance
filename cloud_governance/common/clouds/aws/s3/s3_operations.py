@@ -242,7 +242,8 @@ class S3Operations:
                 date_key = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y/%m/%d")
                 key_prefix = f'{logs_bucket_key}/{policy}/{date_key}'
             objs = self.__s3_client.list_objects_v2(Bucket=bucket, Prefix=key_prefix)['Contents']
-        except:
+        except Exception as err:
+            print(err)
             return None
         get_last_modified_key = lambda obj: int(obj['LastModified'].strftime('%s'))
         full_path = [obj['Key'] for obj in sorted(objs, key=get_last_modified_key)][-1]
@@ -294,7 +295,7 @@ class S3Operations:
                 return True
         return False
 
-    def __get_s3_latest_policy_file(self, policy: str):
+    def __get_s3_latest_policy_file(self, policy: str, key_prefix: str = ''):
         """
         This method return latest policy logs
         @param policy:
@@ -302,9 +303,11 @@ class S3Operations:
         """
         return self.get_last_objects(bucket=self.__bucket,
                                      logs_bucket_key=f'{self.__logs_bucket_key}/{self.__region}',
+                                     key_prefix=key_prefix,
                                      policy=policy)
 
-    def get_last_s3_policy_content(self, policy: str = '', file_name: str = '', s3_file_path: str = None):
+    def get_last_s3_policy_content(self, policy: str = '', file_name: str = '', s3_file_path: str = None,
+                                   key_prefix: str = ''):
         """
         This method return last policy content
         @return:
@@ -312,8 +315,8 @@ class S3Operations:
         with tempfile.TemporaryDirectory() as temp_local_directory:
             local_file = temp_local_directory + '/' + file_name + '.gz'
             if not s3_file_path:
-                if self.__get_s3_latest_policy_file(policy=policy):
-                    s3_file_path = self.__get_s3_latest_policy_file(policy=policy)
+                if self.__get_s3_latest_policy_file(policy=policy, key_prefix=key_prefix):
+                    s3_file_path = self.__get_s3_latest_policy_file(policy=policy, key_prefix=key_prefix)
             self.download_file(bucket=self.__bucket,
                                key=str(s3_file_path),
                                download_file=file_name + '.gz',

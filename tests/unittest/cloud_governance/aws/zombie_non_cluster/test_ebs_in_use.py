@@ -4,6 +4,7 @@ import boto3
 from moto import mock_ec2, mock_s3
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.ebs_in_use import EbsInUse
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -15,7 +16,7 @@ def test_ebs_in_use():
     This method test in-use ebs volumes
     @return:
     """
-    os.environ['policy'] = 'ebs_in_use'
+    environment_variables.environment_variables_dict['policy'] = 'ebs_in_use'
     region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     ec2_client = boto3.client('ec2', region_name=region)
     volume_id = ec2_client.create_volume(Size=10, AvailabilityZone='us-east-1a')['VolumeId']
@@ -34,7 +35,7 @@ def test_ebs_in_use_s3_upload():
     This method test the data is upload t s3 or not
     @return:
     """
-    os.environ['policy'] = 'ebs_in_user'
+    environment_variables.environment_variables_dict['policy'] = 'ebs_in_use'
     region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     ec2_client = boto3.client('ec2', region_name=region)
     default_ami_id = 'ami-03cf127a'

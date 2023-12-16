@@ -656,3 +656,11 @@ class EC2Operations:
             ec2_service_tags = self.ec2_client.describe_tags(NextToken=ec2_service_tags.get('NextToken'), **kwargs)
             tags_list.extend(ec2_service_tags.get('Tags', []))
         return tags_list
+
+    def get_running_instance(self):
+        """
+        This method returns the EC2 running instances
+        :return:
+        :rtype:
+        """
+        return self.get_ec2_instance_list(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])

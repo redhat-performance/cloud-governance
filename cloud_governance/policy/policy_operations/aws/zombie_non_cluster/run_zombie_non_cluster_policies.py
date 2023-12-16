@@ -10,6 +10,7 @@ from cloud_governance.common.clouds.aws.price.resources_pricing import Resources
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from cloud_governance.common.helpers.aws.aws_cleanup_operations import AWSCleanUpOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -26,12 +27,14 @@ class NonClusterZombiePolicy:
     DAILY_HOURS = 24
 
     def __init__(self):
+        self._aws_cleanup_policies = AWSCleanUpOperations()
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._end_date = datetime.datetime.now()
         self._start_date = self._end_date - datetime.timedelta(days=self.DAYS_TO_DELETE_RESOURCE)
         self._account = self.__environment_variables_dict.get('account', '')
         self._dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
         self._region = self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
+        self._force_delete = self.__environment_variables_dict.get('FORCE_DELETE')
         self._policy = self.__environment_variables_dict.get('policy', '')
         self._policy_output = self.__environment_variables_dict.get('policy_output', '')
         self._ec2_client = boto3.client('ec2', region_name=self._region)
@@ -95,7 +98,6 @@ class NonClusterZombiePolicy:
             for tag in tags:
                 if tag.get('Key').strip().lower() == tag_name.lower():
                     return tag.get('Value').strip()
-            return ''
         return ''
 
     def _calculate_days(self, create_date: datetime):
@@ -103,7 +105,7 @@ class NonClusterZombiePolicy:
         This method returns the days
         @return:
         """
-        today = datetime.date.today()
+        today = datetime.datetime.utcnow().date()
         days = today - create_date.date()
         return days.days
 
@@ -326,7 +328,7 @@ class NonClusterZombiePolicy:
                     'ResourceId': instance.get('InstanceId'), 'InstanceId': instance.get('InstanceId'),
                     'User': self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='User'),
                     'Policy': skip_policy,
-                    'LaunchTime': instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    'LaunchTime': instance.get('LaunchTime').strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     'InstanceType': instance.get('InstanceType'),
                     'InstanceState': instance.get('State', {}).get('Name'),
                     'StateTransitionReason': instance.get('StateTransitionReason')
