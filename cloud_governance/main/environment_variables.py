@@ -184,6 +184,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
 
         # policies aggregate alert
+        self._environment_variables_dict['SAVE_TO_FILE_PATH'] = EnvironmentVariables.get_env('SAVE_TO_FILE_PATH', '')
         self._environment_variables_dict['BUCKET_NAME'] = EnvironmentVariables.get_env('BUCKET_NAME')
         self._environment_variables_dict['BUCKET_KEY'] = EnvironmentVariables.get_env('BUCKET_KEY')
         self._environment_variables_dict['MAIL_ALERT_DAYS'] = literal_eval(EnvironmentVariables.get_env('MAIL_ALERT_DAYS', '[]'))
