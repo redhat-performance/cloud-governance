@@ -181,7 +181,9 @@ def is_policy_aws():
     aws_access_key = environment_variables_dict.get('AWS_ACCESS_KEY_ID', '')
     aws_secret_key = environment_variables_dict.get('AWS_SECRET_ACCESS_KEY', '')
     public_cloud_name = environment_variables_dict.get('PUBLIC_CLOUD_NAME', '')
-    return (aws_access_key and aws_secret_key) or (public_cloud_name.lower() == 'aws')
+    if aws_secret_key and aws_access_key:
+        return True
+    return public_cloud_name.lower() == 'aws'
 
 
 @logger_time_stamp
