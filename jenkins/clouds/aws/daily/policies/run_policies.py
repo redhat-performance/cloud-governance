@@ -59,6 +59,7 @@ policies.remove('cost_billing_reports')
 policies.remove('cost_explorer_payer_billings')
 policies.remove('spot_savings_analysis')
 policies.remove('optimize_resources_report')
+policies.remove('ec2_run')
 
 es_index_env_var = f'-e es_index={ES_INDEX}' if ES_INDEX else ''
 
