@@ -271,7 +271,7 @@ Cloud-governance Team""".strip()
                 </div>
                 <div>
                     <p>You project budget request ( TicketId: {ticket_id} ) will be expired in {days} days.</p>
-                    <p>You can extend the project duration in the following url {self.__portal} or terminate the instances</p>
+                    <p>You can extend the project duration in the following url {self.__portal}/extend_duration or terminate the instances</p>
                     <p>Visit the <a href="{self.__portal}">wiki page</a> to get more information</p>
                 </div>
                 {self.FOOTER}
