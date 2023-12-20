@@ -48,6 +48,8 @@ class EnvironmentVariables:
         if not self._environment_variables_dict['AWS_DEFAULT_REGION']:
             self._environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
         self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
+        self._environment_variables_dict['AWS_ACCESS_KEY_ID'] = EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '')
+        self._environment_variables_dict['AWS_SECRET_ACCESS_KEY'] = EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', '')
         if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace('OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
