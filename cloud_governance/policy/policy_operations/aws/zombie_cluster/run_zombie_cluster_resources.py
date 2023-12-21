@@ -128,18 +128,23 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
             all_cluster_data.extend(resource_data_list)
     zombie_cluster_common_methods.send_mails_to_cluster_user(notify_data=notify_data, delete_data=delete_data,
                                                              cluster_data=cluster_data)
-    all_cluster_data = ['kubernetes.io/cluster/test']
-    zombie_result['all_cluster_data'] = {'count': len(set(all_cluster_data)), 'data': list(set(sorted(all_cluster_data)))}
+    zombie_cluster_result = {}
+    for cluster_data in all_cluster_data:
+        _, cluster_name = cluster_data.split(':', 1)
+        zombie_cluster_result[cluster_name] = zombie_cluster_result.get(cluster_name, 0) + 1
+    zombie_cluster_result = [{'ResourceId': key, 'ZombieClusterTag': key, 'ClusterResourcesCount': value}
+                             for key, value in zombie_cluster_result.items()]
     es_operations = ElasticSearchOperations()
     if es_operations.check_elastic_search_connection():
         environment_variables_dict = environment_variables.environment_variables_dict
         es_index = environment_variables_dict.get('es_index')
         account = environment_variables_dict.get('account', '')
-        if zombie_result.get('data'):
-            zombie_result['region_name'] = region
-            zombie_result['account'] = account
-            es_operations.upload_to_elasticsearch(data=zombie_result.copy(), index=es_index)
-            logger.info(f'Uploaded the policy results to elasticsearch index: {es_index}')
+        if zombie_cluster_result:
+            for zombie_cluster in zombie_cluster_result:
+                zombie_cluster['region_name'] = region
+                zombie_cluster['account'] = account
+                es_operations.upload_to_elasticsearch(data=zombie_cluster.copy(), index=es_index)
+                logger.info(f'Uploaded the policy results to elasticsearch index: {es_index}')
         else:
             logger.error(f'No data to upload on @{account}  at {datetime.utcnow()}')
     else:
