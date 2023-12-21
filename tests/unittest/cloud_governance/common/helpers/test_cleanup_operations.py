@@ -3,7 +3,7 @@ import datetime
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
 
-from cloud_governance.common.helpers.aws.aws_cleanup_operations import AWSCleanUpOperations
+from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -17,7 +17,7 @@ def test_verify_and_delete_resource_not_stopped():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
@@ -26,7 +26,7 @@ def test_verify_and_delete_resource_not_stopped():
                                         TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances',
                                                                                                             [])
     resource_id = resource[0].get('InstanceId')
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     clean_up_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
     assert not aws_cleanup_operations.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                              clean_up_days=clean_up_days)
@@ -43,7 +43,7 @@ def test_verify_and_delete_resource_stopped():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -55,7 +55,7 @@ def test_verify_and_delete_resource_stopped():
                                         TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances',
                                                                                                             [])
     resource_id = resource[0].get('InstanceId')
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     clean_up_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
     assert aws_cleanup_operations.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                              clean_up_days=clean_up_days)
@@ -72,7 +72,7 @@ def test_verify_and_delete_resource_skip():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -85,7 +85,7 @@ def test_verify_and_delete_resource_skip():
                                         TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances',
                                                                                                             [])
     resource_id = resource[0].get('InstanceId')
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     clean_up_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
     assert not aws_cleanup_operations.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                              clean_up_days=clean_up_days)

@@ -3,9 +3,8 @@ import typeguard
 from ast import literal_eval  # str to dict
 import boto3  # regions
 
-from cloud_governance.cloud_resource_orchestration.monitor.cloud_monitor import CloudMonitor
-from cloud_governance.main.aws_main_operations import AWSMainOperations
 from cloud_governance.main.main_common_operations import run_common_policies
+from cloud_governance.main.main_oerations.main_operations import MainOperations
 from cloud_governance.main.run_cloud_resource_orchestration import run_cloud_resource_orchestration
 from cloud_governance.policy.policy_operations.aws.cost_expenditure.cost_report_policies import CostReportPolicies
 from cloud_governance.policy.policy_operations.azure.azure_policy_runner import AzurePolicyRunner
@@ -206,10 +205,8 @@ def main():
     es_index = environment_variables_dict.get('es_index', '')
     es_doc_type = environment_variables_dict.get('es_doc_type', '')
     bucket = environment_variables_dict.get('bucket', '')
-    response = False
-    if is_policy_aws():
-        aws_main_operations = AWSMainOperations()
-        response = aws_main_operations.run()
+    main_operations = MainOperations()
+    response = main_operations.run()
     if not response:
         if environment_variables_dict.get('COMMON_POLICIES'):
             run_common_policies()

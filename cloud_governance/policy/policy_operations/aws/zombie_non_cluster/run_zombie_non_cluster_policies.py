@@ -10,7 +10,7 @@ from cloud_governance.common.clouds.aws.price.resources_pricing import Resources
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
-from cloud_governance.common.helpers.aws.aws_cleanup_operations import AWSCleanUpOperations
+from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -27,7 +27,7 @@ class NonClusterZombiePolicy:
     DAILY_HOURS = 24
 
     def __init__(self):
-        self._aws_cleanup_policies = AWSCleanUpOperations()
+        self._aws_cleanup_policies = AWSPolicyOperations()
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self._end_date = datetime.datetime.now()
         self._start_date = self._end_date - datetime.timedelta(days=self.DAYS_TO_DELETE_RESOURCE)

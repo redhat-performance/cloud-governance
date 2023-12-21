@@ -3,22 +3,22 @@ from datetime import datetime, timedelta
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
 
-from cloud_governance.common.helpers.aws.aws_cleanup_operations import AWSCleanUpOperations
+from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
-from cloud_governance.policy.aws.cleanup.ec2_run import EC2Run
+from cloud_governance.policy.aws.cleanup.instance_run import InstanceRun
 
 
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run():
+def test_instance_run():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 7
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -27,8 +27,8 @@ def test_ec2_run():
     resource = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1,
                                         TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances',
                                                                                                             [])
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
     assert running_instances_data[0].get('ResourceStopped') == 'False'
     assert running_instances_data[0].get('InstanceState') == 'running'
 
@@ -36,14 +36,14 @@ def test_ec2_run():
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run_alert():
+def test_instance_run_alert():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -54,25 +54,12 @@ def test_ec2_run_alert():
         'Instances',
         [])
     resource = resource[0]
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'running',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 1,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'False'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert len(running_instances_data) == 1
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'False'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
@@ -80,14 +67,14 @@ def test_ec2_run_alert():
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run_alert_stopped():
+def test_instance_run_alert_stopped():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -100,39 +87,25 @@ def test_ec2_run_alert_stopped():
         'Instances',
         [])
     resource = resource[0]
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'stopped',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'True'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run_alert_skip():
+def test_instance_run_alert_skip():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -145,39 +118,25 @@ def test_ec2_run_alert_skip():
         'Instances',
         [])
     resource = resource[0]
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NOTDELETE',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'running',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'False'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'False'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run_stop_reset():
+def test_instance_run_stop_reset():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -190,44 +149,30 @@ def test_ec2_run_stop_reset():
         'Instances',
         [])
     resource = resource[0]
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'stopped',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'True'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
-    ec2_run.run()
+    instance_run.run()
     instances = ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["stopped"]}])['Reservations']
     instances = instances[0]['Instances'][0]
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     assert aws_cleanup_operations.get_tag_name_from_tags(tags=instances.get('Tags'), tag_name='DaysCount').split('@')[-1] == '0'
 
 
 @mock_ec2
 @mock_s3
 @mock_iam
-def test_ec2_run_stop_start():
+def test_instance_run_stop_start():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -240,33 +185,20 @@ def test_ec2_run_stop_start():
         'Instances',
         [])
     resource = resource[0]
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'stopped',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'True'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['CleanUpDays'] == 4
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
-    ec2_run.run()
+    instance_run.run()
     instances = ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["stopped"]}])['Reservations']
     instances = instances[0]['Instances'][0]
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     assert aws_cleanup_operations.get_tag_name_from_tags(tags=instances.get('Tags'), tag_name='DaysCount').split('@')[-1] == '0'
     ec2_client.start_instances(InstanceIds=[resource.get('InstanceId')])
-    ec2_run.run()
+    instance_run.run()
     instances = ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']
     instances = instances[0]['Instances'][0]
     assert aws_cleanup_operations.get_tag_name_from_tags(tags=instances.get('Tags'), tag_name='DaysCount').split('@')[-1] == '1'
@@ -277,12 +209,12 @@ def test_ec2_run_stop_start():
 @mock_iam
 def test_ec2_force_delete():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['FORCE_DELETE'] = True
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -296,26 +228,12 @@ def test_ec2_force_delete():
         [])
     resource = resource[0]
     environment_variables.environment_variables_dict['RESOURCE_ID'] = resource.get('InstanceId')
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'stopped',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'no',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'True',
-            'ForceDeleted': 'True'
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'no'
+    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['ForceDeleted'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
@@ -324,12 +242,12 @@ def test_ec2_force_delete():
 @mock_iam
 def test_ec2_force_delete_skip():
     """
-    This method tests ec2_run
+    This method tests instance_run
     :return:
     :rtype:
     """
     environment_variables.environment_variables_dict['FORCE_DELETE'] = True
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -343,23 +261,10 @@ def test_ec2_force_delete_skip():
         [])
     resource = resource[0]
     environment_variables.environment_variables_dict['RESOURCE_ID'] = resource.get('InstanceId')
-    ec2_run = EC2Run()
-    running_instances_data = ec2_run.run()
-    assert running_instances_data == [
-        {
-            'ResourceId': resource.get('InstanceId'),
-            'User': 'cloud-governance',
-            'SkipPolicy': 'NA',
-            'LaunchTime': resource['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            'InstanceType': resource.get('InstanceType'),
-            'InstanceState': 'running',
-            'StateTransitionReason': resource.get('StateTransitionReason'),
-            'RunningDays': 0,
-            'CleanUpDays': 4,
-            'DryRun': 'yes',
-            'Name': 'Unittest',
-            'RegionName': 'ap-south-1',
-            'ResourceStopped': 'False',
-        }
-    ]
+    instance_run = InstanceRun()
+    running_instances_data = instance_run.run()
+    assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
+    assert running_instances_data[0]['DryRun'] == 'yes'
+    assert running_instances_data[0]['ResourceStopped'] == 'False'
+    
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1

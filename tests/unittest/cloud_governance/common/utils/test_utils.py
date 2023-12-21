@@ -19,3 +19,9 @@ def test_tag_aws_resources():
         resource_ids.append(instance_id)
     expected_res = common_utils.tag_aws_resources(ec2_client.create_tags, tags=[{'Key': 'User', 'Value': 'test'}], resource_ids=resource_ids)
     assert expected_res == 2
+
+
+def test_get_cloud_policies():
+    from cloud_governance.common.utils.utils import Utils
+    policies = Utils.get_cloud_policies(cloud_name='AWS', dir_dict=True)
+    assert 'instance_run' in policies['cleanup']
