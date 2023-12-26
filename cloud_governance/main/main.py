@@ -230,7 +230,7 @@ def main():
                 ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
 
             is_cost_explorer_policies_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') == 'AWS':
+            if environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AWS':
                 cost_explorer_policies_runner = None
                 is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
                 if is_cost_explorer_policies_runner:
