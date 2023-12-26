@@ -50,7 +50,9 @@ class EnvironmentVariables:
         self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
         self._environment_variables_dict['AWS_ACCESS_KEY_ID'] = EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '')
         self._environment_variables_dict['AWS_SECRET_ACCESS_KEY'] = EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', '')
-        if EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '') and EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', ''):
+        if self._environment_variables_dict['AWS_ACCESS_KEY_ID'] and \
+                self._environment_variables_dict['AWS_SECRET_ACCESS_KEY']:
+            self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AWS'
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace('OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
@@ -90,7 +92,6 @@ class EnvironmentVariables:
         self._environment_variables_dict['end_date'] = EnvironmentVariables.get_env('end_date', '')
         self._environment_variables_dict['granularity'] = EnvironmentVariables.get_env('granularity', 'DAILY')
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags', '{}')
-        self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', '')
 
         # AZURE Credentials
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
