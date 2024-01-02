@@ -112,7 +112,7 @@ accounts = [{'account': 'PERF-DEPT', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELE
             {'account': 'PSAP', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
             'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP, 'BUCKET_NAME': BUCKET_PSAP}]
 policies.remove('ebs_in_use')
-remove_polices = ['ec2_run', 'ebs_in_use', 'zombie_cluster_resource', 'ec2_idle', 'skipped_resources', 'ec2_stop']  # policies that will not aggregate
+remove_polices = ['instance_run', 'ebs_in_use', 'zombie_cluster_resource', 'ec2_idle', 'skipped_resources', 'ec2_stop']  # policies that will not aggregate
 policies = [policy.replace('_', '-') for policy in policies if policy not in remove_polices]
 common_input_vars = {'PUBLIC_CLOUD_NAME': 'AWS', 'BUCKET_KEY': 'logs', 'KERBEROS_USERS': f"{special_user_mails}", 'LDAP_HOST_NAME': f"{LDAP_HOST_NAME}", 'log_level': "INFO", 'MAIL_ALERT_DAYS': "[4, 6, 7]", 'POLICY_ACTIONS_DAYS': "[7]", 'POLICIES_TO_ALERT': policies, 'es_host': ES_HOST, 'es_port': ES_PORT}
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'

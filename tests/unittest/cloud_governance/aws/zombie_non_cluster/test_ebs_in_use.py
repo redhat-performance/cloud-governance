@@ -45,4 +45,4 @@ def test_ebs_in_use_s3_upload():
     policy_output = 's3://test-upload-data/test'
     s3operations = S3Operations(region_name='us-east-1')
     ebs_in_use = EbsInUse()
-    assert s3operations.save_results_to_s3(policy='ec2_run', policy_output=policy_output, policy_result=ebs_in_use.run()) is None
+    assert s3operations.save_results_to_s3(policy='ebs_in_use', policy_output=policy_output, policy_result=ebs_in_use.run()) is None
