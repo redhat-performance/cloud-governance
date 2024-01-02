@@ -144,6 +144,8 @@ class ElasticSearchOperations:
         # Upload data to elastic search server
         if 'account' not in map(str.lower, data.keys()):
             data['account'] = self.__account
+        if data.get('index-id'):
+            kwargs['id'] = data.get('index-id')
         try:
             if isinstance(data, dict):  # JSON Object
                 self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
@@ -310,6 +312,8 @@ class ElasticSearchOperations:
             for item in bulk_items:
                 if kwargs.get('id'):
                     item['_id'] = item.get(kwargs.get('id'))
+                if item.get('index-id'):
+                    item['_id'] = item.get('index-id')
                 if not item.get('timestamp'):
                     if 'CurrentDate' in item:
                         item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")

@@ -5,7 +5,7 @@ from typing import Union
 from cloud_governance.main.environment_variables import environment_variables
 
 
-class AbstractCleanUpOperations(ABC):
+class AbstractPolicyOperations(ABC):
 
     DAYS_TO_NOTIFY_ADMINS = 2
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
@@ -14,13 +14,27 @@ class AbstractCleanUpOperations(ABC):
 
     def __init__(self):
         self._environment_variables_dict = environment_variables.environment_variables_dict
+        self.account = self._environment_variables_dict.get('account')
         self._days_to_take_action = self._environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
         self._dry_run = self._environment_variables_dict.get('dry_run')
         self._policy = self._environment_variables_dict.get('policy')
         self._force_delete = self._environment_variables_dict.get('FORCE_DELETE')
         self._resource_id = self._environment_variables_dict.get('RESOURCE_ID')
 
-    @abstractmethod
+    def calculate_days(self, create_date: Union[datetime, str]):
+        """
+        This method returns the days
+        :param create_date:
+        :type create_date:
+        :return:
+        :rtype:
+        """
+        if isinstance(create_date, str):
+            create_date = datetime.strptime(create_date, "%Y-%M-%d")
+        today = datetime.utcnow().date()
+        days = today - create_date.date()
+        return days.days
+
     def get_clean_up_days_count(self, tags: Union[list, dict]):
         """
         This method returns the cleanup days count
@@ -29,7 +43,16 @@ class AbstractCleanUpOperations(ABC):
         :return:
         :rtype:
         """
-        raise NotImplementedError("This method is Not yet implemented")
+        if self._dry_run == 'yes':
+            return 0
+        last_used_day = self.get_tag_name_from_tags(tags=tags, tag_name='DaysCount')
+        if not last_used_day:
+            return 1
+        else:
+            date, days = last_used_day.split('@')
+            if date != str(self.CURRENT_DATE):
+                return int(days) + 1
+            return 1 if int(days) == 0 else int(days)
 
     @abstractmethod
     def get_tag_name_from_tags(self, tags: Union[list, dict], tag_name: str):
@@ -85,7 +108,7 @@ class AbstractCleanUpOperations(ABC):
         """
         raise NotImplementedError("This method is Not yet implemented")
 
-    def verify_and_delete_resource(self, resource_id: str, tags: list, clean_up_days: int,
+    def verify_and_delete_resource(self, resource_id: str, tags: Union[list, dict], clean_up_days: int,
                                    days_to_delete_resource: int = None, **kwargs):
         """
         This method verify and delete the resource by calculating the days
@@ -109,3 +132,27 @@ class AbstractCleanUpOperations(ABC):
                             self._delete_resource(resource_id=resource_id)
                             cleanup_resources = True
         return cleanup_resources
+
+    @abstractmethod
+    def _update_tag_value(self, tags: Union[list, dict], tag_name: str, tag_value: str):
+        """
+        This method returns the updated tag_list by adding the tag_name and tag_value to the tags
+        :param tags:
+        :type tags:
+        :param tag_name:
+        :type tag_name:
+        :param tag_value:
+        :type tag_value:
+        :return:
+        :rtype:
+        """
+        raise NotImplementedError("This method is Not yet implemented")
+
+    @abstractmethod
+    def _get_al_instances(self):
+        """
+        This method returns all the instances
+        :return:
+        :rtype:
+        """
+        raise NotImplementedError("This method not yet implemented")

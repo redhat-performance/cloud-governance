@@ -3,7 +3,7 @@ import datetime
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
 
-from cloud_governance.common.helpers.aws.aws_cleanup_operations import AWSCleanUpOperations
+from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -16,7 +16,7 @@ def test_get_tag_name_from_tags():
     :return:
     :rtype:
     """
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     tags = [{'Key': "Name", "Value": "Unittest"}]
     tag_value = aws_cleanup_operations.get_tag_name_from_tags(tags=tags, tag_name="Name")
     assert tag_value == "Unittest"
@@ -32,10 +32,10 @@ def test_get_clean_up_days_count():
     :rtype:
     """
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     tags = [{'Key': "Name", "Value": "Unittest"}]
     days_count = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
-    assert days_count == 1
+    assert days_count == 0
 
 
 @mock_ec2
@@ -48,11 +48,11 @@ def test_get_clean_up_days_count_already_exists():
     :rtype:
     """
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     mock_date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date()
     tags = [{'Key': "Name", "Value": "Unittest"}, {'Key': "DaysCount", "Value": f'{mock_date}@1'}]
     days_count = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
-    assert days_count == 2
+    assert days_count == 0
 
 
 @mock_ec2
@@ -65,11 +65,11 @@ def test_get_clean_up_days_count_already_updated_today():
     :rtype:
     """
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     mock_date = str(datetime.datetime.utcnow().date())
     tags = [{'Key': "Name", "Value": "Unittest"}, {'Key': "DaysCount", "Value": f'{mock_date}@1'}]
     days_count = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
-    assert days_count == 1
+    assert days_count == 0
 
 
 @mock_ec2
@@ -81,7 +81,7 @@ def test_get_skip_policy_value_policy_tag():
     :return:
     :rtype:
     """
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     tags = [{'Key': "Name", "Value": "Unittest"},
             {'Key': "Policy", "Value": "NotDelete"}]
     tag_value = aws_cleanup_operations.get_skip_policy_value(tags=tags)
@@ -97,7 +97,7 @@ def test_get_skip_policy_value_skip_tag():
     :return:
     :rtype:
     """
-    aws_cleanup_operations = AWSCleanUpOperations()
+    aws_cleanup_operations = AWSPolicyOperations()
     tags = [{'Key': "Name", "Value": "Unittest"},
             {'Key': "Skip", "Value": "NotDelete"}]
     tag_value = aws_cleanup_operations.get_skip_policy_value(tags=tags)
@@ -113,7 +113,7 @@ def test_delete_resource():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
@@ -122,7 +122,7 @@ def test_delete_resource():
                                         TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances', [])
     if resource:
         resource_id = resource[0].get('InstanceId')
-        aws_cleanup_operations = AWSCleanUpOperations()
+        aws_cleanup_operations = AWSPolicyOperations()
         aws_cleanup_operations._delete_resource(resource_id=resource_id)
         assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
@@ -136,7 +136,7 @@ def test_update_resource_day_count_tag():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
@@ -146,7 +146,7 @@ def test_update_resource_day_count_tag():
                                                                                                             [])
     if resource:
         resource_id = resource[0].get('InstanceId')
-        aws_cleanup_operations = AWSCleanUpOperations()
+        aws_cleanup_operations = AWSPolicyOperations()
         cleanup_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']
@@ -163,7 +163,7 @@ def test_update_resource_day_count_tag_exists_tag():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -176,7 +176,7 @@ def test_update_resource_day_count_tag_exists_tag():
                                                                                                             [])
     if resource:
         resource_id = resource[0].get('InstanceId')
-        aws_cleanup_operations = AWSCleanUpOperations()
+        aws_cleanup_operations = AWSPolicyOperations()
         cleanup_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']
@@ -193,7 +193,7 @@ def test_update_resource_day_count_tag_updated_tag_today():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'ec2_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -206,7 +206,7 @@ def test_update_resource_day_count_tag_updated_tag_today():
                                                                                                             [])
     if resource:
         resource_id = resource[0].get('InstanceId')
-        aws_cleanup_operations = AWSCleanUpOperations()
+        aws_cleanup_operations = AWSPolicyOperations()
         cleanup_days = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']

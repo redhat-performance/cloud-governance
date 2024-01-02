@@ -30,8 +30,10 @@ class UploadElasticSearch(AbstractUpload, ABC):
                         self._es_operations.upload_data_in_bulk(data_items=data.copy(), index=self._es_index)
                     else:
                         for policy_dict in data:
-                            policy_dict['region_name'] = self._region
-                            policy_dict['account'] = self._account
+                            if 'RegionName' not in policy_dict:
+                                policy_dict['RegionName'] = self._region
+                            if 'account' not in policy_dict:
+                                policy_dict['account'] = self._account
                             self._es_operations.upload_to_elasticsearch(data=policy_dict.copy(), index=self._es_index)
                     logger.info(f'Uploaded the policy results to elasticsearch index: {self._es_index}')
                 else:
