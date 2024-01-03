@@ -72,3 +72,27 @@ class ComputeOperations(CommonOperations):
         status = self.__compute_client.virtual_machines.begin_deallocate(resource_group_name=resource_group_name,
                                                                          vm_name=vm_name)
         return status.done()
+
+    # volumes -> disks
+    def get_all_disks(self):
+        """
+        This method returns all the disks
+        :return:
+        :rtype:
+        """
+        paged_volumes = self.__compute_client.disks.list()
+        return self._item_paged_iterator(item_paged_object=paged_volumes, as_dict=True)
+
+    def delete_disk(self, resource_id: str):
+        """
+        This method deletes the disk
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        id_key_pairs = self.get_id_dict_data(resource_id)
+        resource_group_name = id_key_pairs.get('resourcegroups')
+        disk_name = id_key_pairs.get('disks')
+        status = self.__compute_client.disks.begin_delete(resource_group_name=resource_group_name, disk_name=disk_name)
+        return status.done()

@@ -15,6 +15,7 @@ def test_instance_run():
     :return:
     :rtype:
     """
+    environment_variables.environment_variables_dict['dry_run'] = 'yes'
     vm1 = MockVirtualMachine(tags={'User': 'mock'})
     mock_azure = MockAzure(vms=[vm1])
     mock_virtual_machines = Mock()

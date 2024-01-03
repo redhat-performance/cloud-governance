@@ -43,6 +43,8 @@ class AzurePolicyOperations(AbstractPolicyOperations):
             if self._policy == 'instance_run':
                 action = "Stopped"
                 self.compute_operations.stop_vm(resource_id=resource_id)
+            elif self._policy == 'unattached_volume':
+                self.compute_operations.delete_disk(resource_id=resource_id)
             logger.info(f'{self._policy} {action}: {resource_id}')
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
@@ -50,7 +52,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
     def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: dict):
         tags = self._update_tag_value(tags=tags, tag_name='DaysCount', tag_value=str(cleanup_days))
         try:
-            if self._policy == 'instance_run':
+            if self._policy in ['instance_run', 'unattached_volume']:
                 self.resource_group_operations.creates_or_updates_tags(resource_id=resource_id, tags=tags)
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
@@ -63,6 +65,8 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         @param tag_value:
         @return:
         """
+        if not tags:
+            tags = {}
         if self._dry_run == "yes":
             tag_value = 0
         tag_value = f'{self.CURRENT_DATE}@{tag_value}'
@@ -92,3 +96,12 @@ class AzurePolicyOperations(AbstractPolicyOperations):
 
     def run_policy_operations(self):
         raise NotImplementedError("This method needs to be implemented")
+
+    def _get_all_volumes(self) -> list:
+        """
+        This method returns the volumes by state
+        :return:
+        :rtype:
+        """
+        volumes = self.compute_operations.get_all_disks()
+        return volumes

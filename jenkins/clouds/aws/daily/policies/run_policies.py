@@ -60,6 +60,7 @@ policies.remove('cost_explorer_payer_billings')
 policies.remove('spot_savings_analysis')
 policies.remove('optimize_resources_report')
 policies.remove('instance_run')
+policies.remove('unattached_volume')
 
 es_index_env_var = f'-e es_index={ES_INDEX}' if ES_INDEX else ''
 
@@ -91,10 +92,12 @@ for region in regions:
                 os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e MANAGER_EMAIL_ALERT="False" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
                 os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
+
+for new_policy in ['instance_run', 'unattached_volume']:
 # Run the EC2 run policy
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="instance_run" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e RUN_ACTIVE_REGIONS="True" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e MANAGER_EMAIL_ALERT="False" -e policy="instance_run" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="instance_run" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e RUN_ACTIVE_REGIONS="True" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e MANAGER_EMAIL_ALERT="False" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
 
 
@@ -112,6 +115,7 @@ accounts = [{'account': 'PERF-DEPT', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELE
             {'account': 'PSAP', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
             'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP, 'BUCKET_NAME': BUCKET_PSAP}]
 policies.remove('ebs_in_use')
+policies.append('unattached_volume')
 remove_polices = ['instance_run', 'ebs_in_use', 'zombie_cluster_resource', 'ec2_idle', 'skipped_resources', 'ec2_stop']  # policies that will not aggregate
 policies = [policy.replace('_', '-') for policy in policies if policy not in remove_polices]
 common_input_vars = {'PUBLIC_CLOUD_NAME': 'AWS', 'BUCKET_KEY': 'logs', 'KERBEROS_USERS': f"{special_user_mails}", 'LDAP_HOST_NAME': f"{LDAP_HOST_NAME}", 'log_level': "INFO", 'MAIL_ALERT_DAYS': "[4, 6, 7]", 'POLICY_ACTIONS_DAYS': "[7]", 'POLICIES_TO_ALERT': policies, 'es_host': ES_HOST, 'es_port': ES_PORT}
@@ -126,7 +130,7 @@ for account in accounts:
 
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-dept" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="psap" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-scale" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e es_host="{ES_HOST}"  -e es_index=""  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-scale" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
 
 # # Git-leaks run on github not related to any aws account

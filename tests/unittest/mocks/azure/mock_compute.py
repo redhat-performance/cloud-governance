@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from azure.core.paging import ItemPaged
+from azure.mgmt.compute.v2023_01_02.models import Disk, DiskSku
 from azure.mgmt.compute.v2023_03_01.models import VirtualMachine, HardwareProfile, VirtualMachineInstanceView, \
     InstanceViewStatus
 
@@ -17,6 +18,17 @@ class MockVirtualMachine(VirtualMachine):
         self.id = f'/subscriptions/{uuid.uuid1()}/resourceGroups/mock/providers/Microsoft.Compute/virtualMachines/mock-machine'
 
 
+class MockDisk(Disk):
+
+    def __init__(self, disk_state: str, disk_size_gb: int,  tags: dict = {}, location: str = 'mock', **kwargs: any):
+        super().__init__(location=location)
+        self.tags = tags if tags else {}
+        self.name = 'mock_disk'
+        self.sku = DiskSku(name='Standard_LRS', tier='Standard')
+        self.disk_state = disk_state
+        self.disk_size_gb = disk_size_gb
+
+
 class MockVirtualMachineInstanceView(VirtualMachineInstanceView):
 
     def __init__(self, status1: str = "Unknown", status2: str = 'Vm Running'):
@@ -29,20 +41,24 @@ class MockVirtualMachineInstanceView(VirtualMachineInstanceView):
 
 class CustomItemPaged(ItemPaged):
 
-    def __init__(self, vms_list: list = None):
+    def __init__(self, resource_list: list = None):
         super().__init__()
-        self._page_iterator = iter(vms_list if vms_list else [])
+        self._page_iterator = iter(resource_list if resource_list else [])
 
 
 class MockAzure:
 
-    def __init__(self, vms: list = None, status1: str = "Unknown", status2: str = 'Vm Running'):
+    def __init__(self, vms: list = None, disks: list = [], status1: str = "Unknown", status2: str = 'Vm Running'):
         self.vms = vms if vms else []
         self.status1 = status1
         self.status2 = status2
+        self.disks = disks if disks else []
 
     def mock_list_all(self, *args, **kwargs):
-        return CustomItemPaged(vms_list=self.vms)
+        return CustomItemPaged(resource_list=self.vms)
 
     def mock_instance_view(self, *args, **kwargs):
         return MockVirtualMachineInstanceView(status1=self.status1, status2=self.status2)
+
+    def mock_list_disks(self, *args, **kwargs):
+        return CustomItemPaged(resource_list=self.disks)
