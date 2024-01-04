@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Union
 
+from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -20,6 +21,7 @@ class AbstractPolicyOperations(ABC):
         self._policy = self._environment_variables_dict.get('policy')
         self._force_delete = self._environment_variables_dict.get('FORCE_DELETE')
         self._resource_id = self._environment_variables_dict.get('RESOURCE_ID')
+        self._es_upload = ElasticUpload()
 
     def calculate_days(self, create_date: Union[datetime, str]):
         """
@@ -149,10 +151,59 @@ class AbstractPolicyOperations(ABC):
         raise NotImplementedError("This method is Not yet implemented")
 
     @abstractmethod
-    def _get_al_instances(self):
+    def _get_all_instances(self):
         """
         This method returns all the instances
         :return:
         :rtype:
         """
         raise NotImplementedError("This method not yet implemented")
+
+    def _get_es_schema(self, resource_id: str, user: str, skip_policy: str, cleanup_days: int, dry_run: str,
+                       name: str, region: str, cleanup_result: str, resource_action: str, cloud_name: str,
+                       resource_state: str, resource_type: str, **kwargs):
+        """
+        This method returns the es schema data format
+        :return:
+        :rtype:
+        """
+        current_date = datetime.utcnow().date()
+        resource_data = {
+            'ResourceId': resource_id,
+            'User': user,
+            'SkipPolicy': skip_policy,
+            'ResourceType': resource_type,
+            'ResourceState': resource_state,
+            'CleanUpDays': cleanup_days,
+            'DryRun': dry_run,
+            'Name': name,
+            'RegionName': region,
+            f'Resource{resource_action}': cleanup_result,
+            'PublicCloud': cloud_name,
+            'index-id': f'{current_date}-{cloud_name.lower()}-{self.account.lower()}-{region.lower()}-{resource_id}-{resource_state.lower()}'
+        }
+        if kwargs.get('launch_time'):
+            resource_data.update({'LaunchTime': kwargs.get('launch_time')})
+        if kwargs.get('running_days'):
+            resource_data.update({'RunningDays': kwargs.get('running_days')})
+        if kwargs.get('volume_size'):
+            resource_data.update({'VolumeSize': kwargs.get('volume_size')})
+
+        return resource_data
+
+    @abstractmethod
+    def run_policy_operations(self):
+        """
+        This method returns policy output
+        :return:
+        :rtype:
+        """
+        pass
+
+    def run(self):
+        """
+        This method starts the policy operations
+        :return:
+        :rtype:
+        """
+        return self.run_policy_operations()

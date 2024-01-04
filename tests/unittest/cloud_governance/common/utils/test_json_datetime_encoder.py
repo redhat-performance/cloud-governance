@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from cloud_governance.common.helpers.json_datetime_encoder import JsonDateTimeEncoder
+from cloud_governance.common.utils.json_datetime_encoder import JsonDateTimeEncoder
 
 
 def test_json_datetime_encoder():

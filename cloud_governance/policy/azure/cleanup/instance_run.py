@@ -1,11 +1,39 @@
-from cloud_governance.common.helpers.azure.azure_policy_operations import AzurePolicyOperations
-from cloud_governance.policy.abstract_policies.cleanup.abstractinstance_run import AbstractInstanceRun
+from datetime import datetime
+
+from cloud_governance.policy.helpers.azure.azure_policy_operations import AzurePolicyOperations
 
 
-class InstanceRun(AbstractInstanceRun, AzurePolicyOperations):
+class InstanceRun(AzurePolicyOperations):
+
+    INSTANCE_TYPES_ES_INDEX = "cloud-governance-instance-types"
+    RESOURCE_ACTION = "Stopped"
 
     def __init__(self):
         super().__init__()
+
+    def _upload_instance_type_count_to_elastic_search(self):
+        """
+        This method uploads the instance type count to elasticsearch
+        :return:
+        :rtype:
+        """
+        instance_types = self._update_instance_type_count()
+        account = self.account
+        current_day = datetime.utcnow()
+        es_instance_types_data = []
+        for region, instance_types in instance_types.items():
+            for instance_type, instance_type_count in instance_types.items():
+                es_instance_types_data.append({
+                    'instance_type': instance_type,
+                    'instance_count': instance_type_count,
+                    'timestamp': current_day,
+                    'region': region,
+                    'account': account,
+                    'PublicCloud': self._cloud_name,
+                    'index_id': f'{instance_type}-{self._cloud_name.lower()}-{account.lower()}-{region}-{str(current_day.date())}'
+                })
+        self._es_upload.es_upload_data(items=es_instance_types_data, es_index=self.INSTANCE_TYPES_ES_INDEX,
+                                       set_index='index_id')
 
     def _update_instance_type_count(self):
         """
@@ -13,7 +41,7 @@ class InstanceRun(AbstractInstanceRun, AzurePolicyOperations):
         :return: { region : {instance_type: instance_count} }
         :rtype: dict
         """
-        resources = self._get_al_instances()
+        resources = self._get_all_instances()
         instance_types = {}
         for resource in resources:
             vm_type = resource.hardware_profile.vm_size
@@ -43,13 +71,14 @@ class InstanceRun(AbstractInstanceRun, AzurePolicyOperations):
             status = 'Unknown Status'
         return status
 
-    def _instance_run(self):
+    def run_policy_operations(self):
         """
         This method returns the running vms in the AAzure cloud and stops based on the action
         :return:
         :rtype:
         """
-        vms_list = self._get_al_instances()
+        self._upload_instance_type_count_to_elastic_search()
+        vms_list = self._get_all_instances()
         running_vms = []
         for vm in vms_list:
             status = self.__get_instance_status(resource_id=vm.id, vm_name=vm.name)
@@ -59,16 +88,17 @@ class InstanceRun(AbstractInstanceRun, AzurePolicyOperations):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=vm.id, tags=tags,
                                                                  clean_up_days=cleanup_days)
-                resource_data = self._get_es_data_schema_format(
+                resource_data = self._get_es_schema(
                     resource_id=vm.name,
                     skip_policy=self.get_skip_policy_value(tags=tags),
                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                     launch_time=vm.time_created,
-                    instance_type=vm.hardware_profile.vm_size,
-                    instance_state=status if cleanup_result else 'Vm Stopped',
+                    resource_type=vm.hardware_profile.vm_size,
+                    resource_state=status if cleanup_result else 'Vm Stopped',
                     running_days=running_days, cleanup_days=cleanup_days,
                     dry_run=self._dry_run,
                     name=vm.name,
+                    resource_action=self.RESOURCE_ACTION,
                     region=vm.location, cleanup_result=str(cleanup_result),
                     cloud_name=self._cloud_name
                 )

@@ -1,5 +1,4 @@
 import datetime
-import json
 
 import boto3
 import tempfile
@@ -10,10 +9,8 @@ from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 # walk around for moto DeprecationWarning
 import warnings
 
-from cloud_governance.common.helpers.json_datetime_encoder import JsonDateTimeEncoder
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.main.main_oerations.main_operations import MainOperations
-from cloud_governance.policy.aws.cleanup.instance_run import AbstractInstanceRun
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
