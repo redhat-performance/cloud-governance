@@ -2,7 +2,7 @@ import json
 from typing import Union
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
-from cloud_governance.common.helpers.json_datetime_encoder import JsonDateTimeEncoder
+from cloud_governance.common.utils.json_datetime_encoder import JsonDateTimeEncoder
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.policy.policy_runners.common.abstract_upload import AbstractUpload
 

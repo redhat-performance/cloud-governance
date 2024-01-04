@@ -10,7 +10,7 @@ from cloud_governance.common.clouds.aws.price.resources_pricing import Resources
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
-from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage

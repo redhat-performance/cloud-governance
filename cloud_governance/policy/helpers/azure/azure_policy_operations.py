@@ -1,7 +1,7 @@
 
 from cloud_governance.common.clouds.azure.compute.compute_operations import ComputeOperations
 from cloud_governance.common.clouds.azure.compute.resource_group_operations import ResourceGroupOperations
-from cloud_governance.common.helpers.abstract_policy_operations import AbstractPolicyOperations
+from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.utils import Utils
 
@@ -82,10 +82,13 @@ class AzurePolicyOperations(AbstractPolicyOperations):
             tags.update({tag_name: tag_value})
         return tags
 
-    def _get_al_instances(self):
+    def _get_all_instances(self):
         """
         This method returns the all instances list
         :return:
         :rtype:
         """
         return self.compute_operations.get_all_instances()
+
+    def run_policy_operations(self):
+        raise NotImplementedError("This method needs to be implemented")

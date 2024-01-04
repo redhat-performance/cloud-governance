@@ -3,7 +3,7 @@ import datetime
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
 
-from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
 

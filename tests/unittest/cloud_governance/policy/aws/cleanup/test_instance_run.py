@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
 
-from cloud_governance.common.helpers.aws.aws_policy_operations import AWSPolicyOperations
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.instance_run import InstanceRun
 
@@ -30,7 +30,7 @@ def test_instance_run():
     instance_run = InstanceRun()
     running_instances_data = instance_run.run()
     assert running_instances_data[0].get('ResourceStopped') == 'False'
-    assert running_instances_data[0].get('InstanceState') == 'running'
+    assert running_instances_data[0].get('ResourceState') == 'running'
 
 
 @mock_ec2
