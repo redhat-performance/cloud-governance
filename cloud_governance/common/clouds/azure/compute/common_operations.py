@@ -14,7 +14,7 @@ class CommonOperations:
         self._default_creds = DefaultAzureCredential()
         self._subscription_id = self.__environment_variables_dict.get('AZURE_SUBSCRIPTION_ID')
 
-    def _item_paged_iterator(self, item_paged_object: ItemPaged):
+    def _item_paged_iterator(self, item_paged_object: ItemPaged, as_dict: bool = False):
         """
         This method iterates the paged object and return the list
         :param item_paged_object:
@@ -24,7 +24,10 @@ class CommonOperations:
         try:
             page_item = item_paged_object.next()
             while page_item:
-                iterator_list.append(page_item)
+                if as_dict:
+                    iterator_list.append(page_item.as_dict())
+                else:
+                    iterator_list.append(page_item)
                 page_item = item_paged_object.next()
         except StopIteration:
             pass

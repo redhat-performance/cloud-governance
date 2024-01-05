@@ -49,7 +49,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 self._s3_client.delete_bucket(Bucket=resource_id)
             elif self._policy == 'empty_roles':
                 self._iam_client.delete_role(RoleName=resource_id)
-            elif self._policy == 'ebs_unattached':
+            elif self._policy == 'unattached_volume':
                 self._ec2_client.delete_volume(VolumeId=resource_id)
             elif self._policy == 'ip_unattached':
                 self._ec2_client.release_address(AllocationId=resource_id)
@@ -124,7 +124,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
             elif self._policy == 'empty_roles':
                 self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
-            elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'ebs_unattached',
+            elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
                                   'instance_run'):
                 self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
         except Exception as err:
@@ -141,3 +141,12 @@ class AWSPolicyOperations(AbstractPolicyOperations):
 
     def run_policy_operations(self):
         raise NotImplementedError("This method needs to be implemented")
+
+    def _get_all_volumes(self, **kwargs) -> list:
+        """
+        This method returns the all volumes
+        :return:
+        :rtype:
+        """
+        volumes = self._ec2_operations.get_volumes(**kwargs)
+        return volumes

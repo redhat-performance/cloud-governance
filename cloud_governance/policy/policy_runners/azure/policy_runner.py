@@ -23,6 +23,7 @@ class PolicyRunner(AbstractPolicyRunner):
         if isinstance(response, str):
             logger.info(response)
         else:
+            logger.info(response)
             policy_result.extend(response)
             self._upload_elastic_search.upload(data=policy_result)
         return policy_result

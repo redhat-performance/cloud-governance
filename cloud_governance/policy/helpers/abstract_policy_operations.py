@@ -159,14 +159,22 @@ class AbstractPolicyOperations(ABC):
         """
         raise NotImplementedError("This method not yet implemented")
 
-    def _get_es_schema(self, resource_id: str, user: str, skip_policy: str, cleanup_days: int, dry_run: str,
-                       name: str, region: str, cleanup_result: str, resource_action: str, cloud_name: str,
-                       resource_state: str, resource_type: str, **kwargs):
+    @abstractmethod
+    def _get_all_volumes(self):
         """
-        This method returns the es schema data format
+        This method returns all the volumes
         :return:
         :rtype:
         """
+        raise NotImplementedError("This method not yet implemented")
+
+    # ES Schema format
+
+    def _get_es_schema(self, resource_id: str, user: str, skip_policy: str, cleanup_days: int, dry_run: str,
+                       name: str,
+                       region: str, cleanup_result: str, resource_action: str, cloud_name: str,
+                       resource_state: str,
+                       resource_type: str, **kwargs):
         current_date = datetime.utcnow().date()
         resource_data = {
             'ResourceId': resource_id,
