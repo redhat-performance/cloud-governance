@@ -1,4 +1,4 @@
-account = ['partnerlab', 'coreos-training']
+account = ['partnerlab']
 pipeline {
     options {
         disableConcurrentBuilds()

@@ -78,7 +78,8 @@ container_env_dict = {
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT,
-    "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO"
+    "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
+    'DAYS_TO_TAKE_ACTION': days_to_delete_resource
 }
 
 

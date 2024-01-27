@@ -1,6 +1,7 @@
 ### ecoeng_03
 
 Accounts:
+- coreos-training
 - industry-partners
 - special-projects
 - edgeinfra
