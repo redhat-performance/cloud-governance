@@ -150,3 +150,30 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         """
         volumes = self._ec2_operations.get_volumes(**kwargs)
         return volumes
+
+    def _get_active_cluster_ids(self):
+        """
+        This method returns the active cluster id's
+        :return:
+        :rtype:
+        """
+        active_instances = self._ec2_operations.get_ec2_instance_list()
+        cluster_ids = []
+        for instance in active_instances:
+            for tag in instance.get('Tags', []):
+                if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                    cluster_ids.append(tag.get('Key'))
+                    break
+        return cluster_ids
+
+    def _get_cluster_tag(self, tags: list):
+        """
+        This method returns the cluster_tag
+        :return:
+        :rtype:
+        """
+        if tags:
+            for tag in tags:
+                if tag.get('Key').startswith('kubernetes.io/cluster'):
+                    return tag.get('Key')
+        return ''

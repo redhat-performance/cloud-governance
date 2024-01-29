@@ -23,9 +23,11 @@ class AbstractPolicyOperations(ABC):
         self._resource_id = self._environment_variables_dict.get('RESOURCE_ID')
         self._es_upload = ElasticUpload()
 
-    def calculate_days(self, create_date: Union[datetime, str]):
+    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.utcnow()):
         """
         This method returns the days
+        :param start_date:
+        :type start_date:
         :param create_date:
         :type create_date:
         :return:
@@ -33,8 +35,10 @@ class AbstractPolicyOperations(ABC):
         """
         if isinstance(create_date, str):
             create_date = datetime.strptime(create_date, "%Y-%M-%d")
-        today = datetime.utcnow().date()
-        days = today - create_date.date()
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        start_date = start_date.date()
+        days = start_date - create_date.date()
         return days.days
 
     def get_clean_up_days_count(self, tags: Union[list, dict]):
