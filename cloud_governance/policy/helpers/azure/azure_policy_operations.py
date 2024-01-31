@@ -105,3 +105,31 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         """
         volumes = self.compute_operations.get_all_disks()
         return volumes
+
+    def _get_active_cluster_ids(self):
+        """
+        This method returns the active cluster id's
+        :return:
+        :rtype:
+        """
+        active_instances = self._get_all_instances()
+        cluster_ids = []
+        for vm in active_instances:
+            tags = vm.tags if vm.tags else {}
+            for key, value in tags.items():
+                if key.startswith('kubernetes.io/cluster'):
+                    cluster_ids.append(key)
+                    break
+        return cluster_ids
+
+    def _get_cluster_tag(self, tags: dict):
+        """
+        This method returns the cluster_tag
+        :return:
+        :rtype:
+        """
+        if tags:
+            for key, value in tags.items():
+                if key.startswith('kubernetes.io/cluster'):
+                    return key
+        return ''

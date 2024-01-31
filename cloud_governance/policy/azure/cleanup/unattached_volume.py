@@ -18,10 +18,12 @@ class UnattachedVolume(AzurePolicyOperations):
         """
         unattached_volumes = []
         available_volumes = self._get_all_volumes()
+        active_cluster_ids = self._get_active_cluster_ids()
         for volume in available_volumes:
             tags = volume.get('tags')
             cleanup_result = False
-            if Utils.equal_ignore_case(volume.get('disk_state'), 'Unattached'):
+            cluster_tag = self._get_cluster_tag(tags=tags)
+            if Utils.equal_ignore_case(volume.get('disk_state'), 'Unattached') and cluster_tag not in active_cluster_ids:
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(
                     resource_id=volume.get('id'), tags=tags,
