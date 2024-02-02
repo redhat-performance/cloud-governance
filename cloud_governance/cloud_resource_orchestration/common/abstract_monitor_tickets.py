@@ -209,7 +209,10 @@ class AbstractMonitorTickets(ABC):
                                                                                     used_budget=used_budget,
                                                                                     remain_budget=remaining_budget)
         elif remaining_budget <= 0:
-            subject, body = self.__mail_message.cro_monitor_budget_remain_high_alert(user=user, budget=budget,
+            ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
+                                                         current_budget=budget)
+            if not ticket_extended:
+                subject, body = self.__mail_message.cro_monitor_budget_remain_high_alert(user=user, budget=budget,
                                                                                      ticket_id=ticket_id,
                                                                                      used_budget=used_budget,
                                                                                      remain_budget=remaining_budget)
