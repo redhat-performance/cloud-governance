@@ -41,22 +41,10 @@ class ComputeOperations(CommonOperations):
         :return:
         :rtype:
         """
-        resource_group_name = self._get_resource_group_name_from_resource_id(resource_id=resource_id)
+        resource_group_name = self.get_resource_group_name_from_resource_id(resource_id=resource_id)
         virtual_machine = self.__compute_client.virtual_machines.instance_view(resource_group_name=resource_group_name,
                                                                                vm_name=vm_name)
         return virtual_machine.as_dict()
-
-    def get_id_dict_data(self, resource_id: str):
-        """
-        This method generates the vm id dictionary
-        :param resource_id:
-        :type resource_id:
-        :return:
-        :rtype:
-        """
-        pairs = resource_id.split('/')[1:]
-        key_pairs = {pairs[i].lower(): pairs[i + 1] for i in range(0, len(pairs), 2)}
-        return key_pairs
 
     def stop_vm(self, resource_id: str):
         """

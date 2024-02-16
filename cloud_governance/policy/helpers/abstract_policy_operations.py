@@ -192,6 +192,7 @@ class AbstractPolicyOperations(ABC):
             'RegionName': region,
             f'Resource{resource_action}': cleanup_result,
             'PublicCloud': cloud_name,
+            'ExpireDays': self._days_to_take_action,
             'index-id': f'{current_date}-{cloud_name.lower()}-{self.account.lower()}-{region.lower()}-{resource_id}-{resource_state.lower()}'
         }
         if kwargs.get('launch_time'):

@@ -1,52 +1,55 @@
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
 
-
-class IpUnattached(NonClusterZombiePolicy):
+class IpUnattached(AWSPolicyOperations):
     """
     Fetched the Unused elastic_ips( based on network interface Id) and delete it after 7 days of unused,
     alert user after 4 days of unused elastic_ip.
     """
 
+    RESOURCE_ACTION = "Delete"
+
     def __init__(self):
         super().__init__()
 
-    def run(self):
+    def run_policy_operations(self):
         """
-        This method returns zombie elastic_ip's and delete if dry_run no
-        @return:
+        This method returns the list of unattached IPV4 addresses
+        :return:
+        :rtype:
         """
         addresses = self._ec2_operations.get_elastic_ips()
-        zombie_addresses = []
+        active_cluster_ids = self._get_active_cluster_ids()
+        unattached_addresses = []
         for address in addresses:
-            ip_no_used = False
             tags = address.get('Tags', [])
-            if not self._check_cluster_tag(tags=tags) or self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+            cleanup_result = False
+            ip_not_used = False
+            resource_id = address.get('AllocationId')
+            cluster_tag = self._get_cluster_tag(tags=address.get('Tags'))
+            if cluster_tag not in active_cluster_ids:
                 if not address.get('NetworkInterfaceId'):
-                    ip_no_used = True
-                    unused_days = self._get_resource_last_used_days(tags=tags)
-                    eip_cost = self.resource_pricing.get_const_prices(resource_type='eip', hours=(self.DAILY_HOURS * unused_days))
-                    delta_cost = 0
-                    if unused_days == self.DAYS_TO_NOTIFY_ADMINS:
-                        delta_cost = self.resource_pricing.get_const_prices(resource_type='eip', hours=(self.DAILY_HOURS * (unused_days - self.DAYS_TO_TRIGGER_RESOURCE_MAIL)))
-                    else:
-                        if unused_days >= self.DAYS_TO_DELETE_RESOURCE:
-                            delta_cost = self.resource_pricing.get_const_prices(resource_type='eip', hours=(self.DAILY_HOURS * (unused_days - self.DAYS_TO_NOTIFY_ADMINS)))
-                    zombie_eip = self._check_resource_and_delete(resource_name='ElasticIp',
-                                                                 resource_id='AllocationId',
-                                                                 resource_type='AllocateAddress',
-                                                                 resource=address,
-                                                                 empty_days=unused_days,
-                                                                 days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags,
-                                                                 extra_purse=eip_cost, delta_cost=delta_cost)
-                    if zombie_eip:
-                        zombie_addresses.append({'ResourceId': address.get('AllocationId'),
-                                                 'Name': self._get_tag_name_from_tags(tags=tags),
-                                                 'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                                 'PublicIp': address.get('PublicIp'),
-                                                 'Skip': self._get_policy_value(tags=tags),
-                                                 'Days': unused_days})
+                    cleanup_days = self.get_clean_up_days_count(tags=tags)
+                    ip_not_used = True
+                    cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
+                                                                     clean_up_days=cleanup_days)
+                    resource_data = self._get_es_schema(resource_id=resource_id,
+                                                        user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                        skip_policy=self.get_skip_policy_value(tags=tags),
+                                                        cleanup_days=cleanup_days, dry_run=self._dry_run,
+                                                        name=self.get_tag_name_from_tags(tags=tags, tag_name='Name'),
+                                                        region=self._region,
+                                                        cleanup_result=str(cleanup_result),
+                                                        resource_action=self.RESOURCE_ACTION,
+                                                        cloud_name=self._cloud_name,
+                                                        resource_type='PublicIPv4',
+                                                        resource_state='disassociated' if not cleanup_result else "Deleted"
+                                                        )
+                    unattached_addresses.append(resource_data)
                 else:
-                    unused_days = 0
-                self._update_resource_tags(resource_id=address.get('AllocationId'), tags=tags, left_out_days=unused_days, resource_left_out=ip_no_used)
-        return zombie_addresses
+                    cleanup_days = 0
+                if not cleanup_result:
+                    if self.get_tag_name_from_tags(tags, tag_name='DaysCount') or ip_not_used:
+                        self.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
+
+        return unattached_addresses

@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
 
-from azure.core.paging import ItemPaged
 from azure.mgmt.compute.v2023_01_02.models import Disk, DiskSku
 from azure.mgmt.compute.v2023_03_01.models import VirtualMachine, HardwareProfile, VirtualMachineInstanceView, \
     InstanceViewStatus
+
+from tests.unittest.mocks.azure.common_operations import CustomItemPaged
 
 
 class MockVirtualMachine(VirtualMachine):
@@ -39,16 +40,9 @@ class MockVirtualMachineInstanceView(VirtualMachineInstanceView):
         ]
 
 
-class CustomItemPaged(ItemPaged):
-
-    def __init__(self, resource_list: list = None):
-        super().__init__()
-        self._page_iterator = iter(resource_list if resource_list else [])
-
-
 class MockAzure:
 
-    def __init__(self, vms: list = None, disks: list = [], status1: str = "Unknown", status2: str = 'Vm Running'):
+    def __init__(self, vms: list = None, disks: list = None, status1: str = "Unknown", status2: str = 'Vm Running'):
         self.vms = vms if vms else []
         self.status1 = status1
         self.status2 = status2

@@ -38,7 +38,8 @@ class MainOperations:
         policy_runner = self.get_policy_runner()
         for policy_type, policies in policies_list.items():
             # @Todo support for all the aws policies, currently supports ec2_run as urgent requirement
-            if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run"]:
+            if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run",
+                                                             "ip_unattached"]:
                 policy_runner.run(source=policy_type)
                 return True
         return False
