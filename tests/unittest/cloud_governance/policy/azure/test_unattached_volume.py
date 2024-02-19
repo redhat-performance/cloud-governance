@@ -4,7 +4,7 @@ from azure.mgmt.compute import ComputeManagementClient
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.azure.cleanup.unattached_volume import UnattachedVolume
-from tests.unittest.mocks.azure.mock_compute import MockDisk, MockAzure, MockVirtualMachine
+from tests.unittest.mocks.azure.mock_computes import MockDisk, MockAzure, MockVirtualMachine
 
 
 def test_unattached_volume_dry_run_yes_0_unattached():

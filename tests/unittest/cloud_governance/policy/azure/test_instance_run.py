@@ -6,7 +6,7 @@ from azure.mgmt.resource import ResourceManagementClient
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.azure.cleanup.instance_run import InstanceRun
-from tests.unittest.mocks.azure.mock_compute import MockVirtualMachine, MockAzure
+from tests.unittest.mocks.azure.mock_computes import MockVirtualMachine, MockAzure
 
 
 def test_instance_run():

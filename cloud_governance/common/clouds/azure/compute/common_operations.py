@@ -1,9 +1,10 @@
-from typing import Optional, Union
+from typing import Optional
 
 from azure.core.paging import ItemPaged
 from azure.identity import DefaultAzureCredential
 
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -67,7 +68,7 @@ class CommonOperations:
         else:
             return str(value)
 
-    def _get_resource_group_name_from_resource_id(self, resource_id: str):
+    def get_resource_group_name_from_resource_id(self, resource_id: str):
         """
         This method returns the resource_group from resource_id
         :param resource_id:
@@ -78,3 +79,15 @@ class CommonOperations:
         id_list = resource_id.split('/')
         key_values = {id_list[i].lower(): id_list[i+1] for i in range(0, len(id_list) - 1)}
         return key_values.get('resourcegroups').lower()
+
+    def get_id_dict_data(self, resource_id: str):
+        """
+        This method generates the vm id dictionary
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        pairs = resource_id.split('/')[1:]
+        key_pairs = {pairs[i].lower(): pairs[i + 1] for i in range(0, len(pairs), 2)}
+        return key_pairs
