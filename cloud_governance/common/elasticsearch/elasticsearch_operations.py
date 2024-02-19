@@ -38,7 +38,7 @@ class ElasticSearchOperations:
         self.__account = self.__environment_variables_dict.get('account')
         try:
             self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
-        except:
+        except Exception as err:
             self.__es = None
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
@@ -343,3 +343,25 @@ class ElasticSearchOperations:
         if self.__es:
             return self.__es.ping()
         return False
+
+    def post_query(self, query: dict, es_index: str, result_agg: bool = False):
+        """
+        This method returns the es data
+        :param result_agg:
+        :type result_agg:
+        :param query:
+        :type query:
+        :param es_index:
+        :type es_index:
+        :return:
+        :rtype:
+        """
+        try:
+            response = self.__es.search(index=es_index, body=query)
+            if result_agg:
+                return response.get('aggregations')
+            else:
+                return response.get('hits', {}).get('hits', {})
+        except Exception as err:
+            logger.error(err)
+            raise err

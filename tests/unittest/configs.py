@@ -20,3 +20,8 @@ RESOURCE_GROUP = 'unittest'
 SUB_ID = f'/subscription/{SUBSCRIPTION_ID}/resourceGroups/{RESOURCE_GROUP}'
 NETWORK_PROVIDER = f'providers/Microsoft.Network'
 COMPUTE_PROVIDER = 'providers/Microsoft.Compute'
+
+
+# ES
+ES_INDEX = 'test-unittest-index'
+TEST_INDEX_ID = 'test-unittest-index-01'
