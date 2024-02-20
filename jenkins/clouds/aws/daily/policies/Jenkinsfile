@@ -1,4 +1,8 @@
+account = ['perf-dept', 'perfscale', 'psap']
 pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
     agent {
         docker {
             label 'cloud-governance-worker'
@@ -7,41 +11,28 @@ pipeline {
         }
     }
     environment {
-        AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
-        AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
-        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
-        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
-        BUCKET_PERF = credentials('cloud-governance-bucket-perf')
-        AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
-        AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
-        AWS_ACCESS_KEY_ID_DELETE_PSAP = credentials('cloud-governance-aws-access-key-id-delete-psap')
-        AWS_SECRET_ACCESS_KEY_DELETE_PSAP = credentials('cloud-governance-aws-secret-access-key-delete-psap')
-        BUCKET_PSAP = credentials('cloud-governance-bucket-psap')
-        AWS_ACCESS_KEY_ID_RH_PERF = credentials('cloud-governance-aws-access-key-id-rh-perf')
-        AWS_SECRET_ACCESS_KEY_RH_PERF = credentials('cloud-governance-aws-secret-access-key-rh-perf')
-        BUCKET_RH_PERF = credentials('cloud-governance-bucket-rh-perf')
-        AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
-        AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
-        BUCKET_PERF_SCALE = credentials('cloud-governance-bucket-perf_scale')
-        ES_HOST = credentials('cloud-governance-es-host')
-        ES_PORT = credentials('cloud-governance-es-port')
-        GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
+        POLICIES_IN_ACTION = '["ec2_idle", "ec2_stop", "unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        ES_INDEX = credentials('cloud-governance-es-index')
+        GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         ACCOUNT_ADMIN = credentials('cloud-governance-account-admin')
         USERS_MANAGER_MAILS = credentials('cloud-governance-users-managers-mails')
         REPLY_TO = credentials('cloud-governance-reply-to')
-        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
-        ES_INDEX = credentials('cloud-governance-es-index')
-
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
+        // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
+        // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
+        // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
-          steps {
-            checkout scm
+           steps {
+                 checkout scm
            }
         }
         stage('Initial Cleanup') {
@@ -49,9 +40,19 @@ pipeline {
                  sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
             }
         }
-        stage('Run Policies, Upload ES and S3 bucket') {
+        stage('Run Daily Policies') {
             steps {
-                 sh 'python3 jenkins/clouds/aws/daily/policies/run_policies.py'
+                 script {
+                    for (int i = 0; i < account.size(); ++i) {
+                        echo "Running for account ${account[i].toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account[i]}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account[i]}-aws-secret-key-id", variable: 'secret_key'),
+                                        string(credentialsId: "${account[i]}-s3-bucket", variable: 's3_bucket')]) {
+                            env.account_name = "${account[i]}"
+                            sh 'python3 jenkins/clouds/aws/daily/policies/run_policies.py'
+                        }
+                    }
+                }
             }
         }
         stage('Finalize Cleanup') {
@@ -62,18 +63,13 @@ pipeline {
         }
     }
     post {
-       always {
-           deleteDir()
-       }
         failure {
               script {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,
-                subject: msg,
-                to: "${contact1}, ${contact2}"
+            """,subject: msg, to: "${contact1}, ${contact2}"
             }
-        }
+          }
     }
 }
