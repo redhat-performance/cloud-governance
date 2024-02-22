@@ -1,141 +1,139 @@
-
 import os
+from ast import literal_eval
 
-AWS_ACCESS_KEY_ID_PERF = os.environ['AWS_ACCESS_KEY_ID_PERF']
-AWS_SECRET_ACCESS_KEY_PERF = os.environ['AWS_SECRET_ACCESS_KEY_PERF']
-AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
-AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
-BUCKET_PERF = os.environ['BUCKET_PERF']
-AWS_ACCESS_KEY_ID_PSAP = os.environ['AWS_ACCESS_KEY_ID_PSAP']
-AWS_SECRET_ACCESS_KEY_PSAP = os.environ['AWS_SECRET_ACCESS_KEY_PSAP']
-AWS_ACCESS_KEY_ID_DELETE_PSAP = os.environ['AWS_ACCESS_KEY_ID_DELETE_PSAP']
-AWS_SECRET_ACCESS_KEY_DELETE_PSAP = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PSAP']
-BUCKET_PSAP = os.environ['BUCKET_PSAP']
-AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE']
-AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE']
-BUCKET_PERF_SCALE = os.environ['BUCKET_PERF_SCALE']
-AWS_ACCESS_KEY_ID_RH_PERF = os.environ['AWS_ACCESS_KEY_ID_RH_PERF']
-AWS_SECRET_ACCESS_KEY_RH_PERF = os.environ['AWS_SECRET_ACCESS_KEY_RH_PERF']
-BUCKET_RH_PERF = os.environ['BUCKET_RH_PERF']
-GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
-GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
-SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
+access_key = os.environ['access_key']
+secret_key = os.environ['secret_key']
+s3_bucket = os.environ['s3_bucket']
+account_name = os.environ['account_name']
+days_to_delete_resource = os.environ.get('days_to_delete_resource', 7)
+LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 REPLY_TO = os.environ['REPLY_TO']
 special_user_mails = os.environ['CLOUD_GOVERNANCE_SPECIAL_USER_MAILS']
 users_manager_mails = os.environ['USERS_MANAGER_MAILS']
+LOGS = os.environ.get('LOGS', 'logs')
 account_admin = os.environ['ACCOUNT_ADMIN']
-LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 ES_INDEX = os.environ.get('ES_INDEX')
+GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
+GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
-LOGS = os.environ.get('LOGS', 'logs')
 
-
-def get_policies(type: str = None):
+def get_policies(file_type: str = '.py', exclude_policies: list = None):
     """
     This method return a list of policies name without extension, that can filter by type
-    @return: list of policies name
+    @return: list of custodian policies name
     """
-    policies = []
-    policies_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'cloud_governance', 'policy', 'aws')
-    for (dirpath, dirnames, filenames) in os.walk(policies_path):
+    exclude_policies = [] if not exclude_policies else exclude_policies
+    custodian_policies = []
+    root_folder = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
+    policies_path = os.path.join(root_folder, 'cloud_governance', 'policy', 'aws')
+    for (_, _, filenames) in os.walk(policies_path):
         for filename in filenames:
-            if not filename.startswith('__') and (filename.endswith('.yml') or filename.endswith('.py')):
-                if not type:
-                    policies.append(os.path.splitext(filename)[0])
-                elif type and type in filename:
-                    policies.append(os.path.splitext(filename)[0])
-    return policies
+            if not filename.startswith('__') and filename.endswith(file_type):
+                if filename.split('.')[0] not in exclude_policies:
+                    if not file_type:
+                        custodian_policies.append(os.path.splitext(filename)[0])
+                    elif file_type and file_type in filename:
+                        custodian_policies.append(os.path.splitext(filename)[0])
+    return custodian_policies
 
 
-print('Run all policies pre active region')
-regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'eu-north-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'ca-central-1', 'sa-east-1', 'ap-southeast-1', 'ap-southeast-2', 'eu-central-1']
-policies = get_policies()
-policies.remove('cost_explorer')
-policies.remove('cost_over_usage')
-policies.remove('monthly_report')
-policies.remove('cost_billing_reports')
-policies.remove('cost_explorer_payer_billings')
-policies.remove('spot_savings_analysis')
-policies.remove('optimize_resources_report')
-policies.remove('instance_run')
-policies.remove('unattached_volume')
-
-es_index_env_var = f'-e es_index={ES_INDEX}' if ES_INDEX else ''
-
-for region in regions:
-    for policy in policies:
-        # Delete zombie cluster resource every night dry_run=no
-        if policy == 'zombie_cluster_resource':
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        # running policies dry_run=no per every region, ebs_unattached, ec2_stop, ip_unattached, ec2_idle, unused_nat_gateway, zombie_snapshots
-        elif policy in ('zombie_snapshots', 'ebs_unattached'):
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        elif policy in ('ec2_idle', 'ec2_stop'):
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        elif policy in ('unused_nat_gateway', 'ip_unattached'):
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e MANAGER_EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e MANAGER_EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        # running policies dry_run=no only one region, empty_roles, s3_inactive
-        elif policy in ('empty_roles', 's3_inactive') and region == 'us-east-1':
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e MANAGER_EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-            os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e MANAGER_EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="no" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var}  -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-        # running policies dry_run=yes per every region ebs_in_use, instance_run
-        else:
-            if policy not in ('empty_roles', 's3_inactive'):
-                os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-                os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e MANAGER_EMAIL_ALERT="False" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-                os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+exclude_global_cost_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
+                                'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
+                                'spot_savings_analysis']
+GLOBAL_POLICIES = ["s3_inactive", "empty_roles"]
+available_policies = get_policies(exclude_policies=exclude_global_cost_policies)
 
 
-for new_policy in ['instance_run', 'unattached_volume']:
-# Run the EC2 run policy
-    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-DEPT" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e RUN_ACTIVE_REGIONS="True" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PSAP" -e MANAGER_EMAIL_ALERT="False" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PSAP}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-    os.system(f"""podman run --rm --name cloud-governance --net="host" -e EMAIL_ALERT="False" -e account="PERF-SCALE" -e policy="{new_policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e RUN_ACTIVE_REGIONS="True" -e AWS_DEFAULT_REGION="{region}" -e dry_run="yes" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e special_user_mails="{special_user_mails}" -e account_admin="{account_admin}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {es_index_env_var} -e policy_output="s3://{BUCKET_PERF_SCALE}/{LOGS}/{region}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+# # available_policies: Run policies in dry_run="yes" mode
 
 
+def run_cmd(cmd: str):
+    """
+    This method runs the shell command
+    :param cmd:
+    :type cmd:
+    :return:
+    :rtype:
+    """
+    os.system(cmd)
+
+
+def get_container_cmd(env_dict: dict):
+    env_list = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_dict.items())))
+    container_name = "cloud-governance"
+    container_run_cmd = f"""
+podman run --rm --name "{container_name}" --net="host" {env_list}  quay.io/ebattat/cloud-governance:latest
+"""
+    return container_run_cmd
+
+
+policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
+if isinstance(policies_in_action, str):
+    policies_in_action = literal_eval(policies_in_action)
+policies_not_action = list(set(available_policies) - set(policies_in_action))
+
+regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'eu-north-1', 'eu-west-3', 'eu-west-2',
+           'eu-west-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'ca-central-1', 'sa-east-1',
+           'ap-southeast-1', 'ap-southeast-2', 'eu-central-1']
+
+es_doc_type = '_doc'
+
+container_env_dict = {
+    "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
+    "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
+    "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
+    "es_host": ES_HOST, "es_port": ES_PORT,
+    "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
+    'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'special_user_mails': f"{special_user_mails}",
+    'account_admin': f"{account_admin}"
+}
+
+
+def run_policies(policies: list, dry_run: str = 'yes'):
+    for region in regions:
+        container_env_dict.update(
+            {"policy_output": f"s3://{s3_bucket}/{LOGS}/{region}", "AWS_DEFAULT_REGION": region, 'dry_run': dry_run})
+        for policy in policies:
+            container_env_dict.update({"AWS_DEFAULT_REGION": region, 'policy': policy})
+            container_cmd = ''
+            if policy in ('empty_roles', 's3_inactive') and region == 'us-east-1':
+                container_cmd = get_container_cmd(container_env_dict)
+            else:
+                if policy not in ('empty_roles', 's3_inactive'):
+                    container_cmd = get_container_cmd(container_env_dict)
+            if container_cmd:
+                run_cmd(container_cmd)
+
+
+# Running the polices in dry_run=yes
+
+run_cmd(f"echo Running the cloud_governance policies with dry_run=yes")
+run_cmd(f"echo Polices list: {policies_not_action}")
+run_policies(policies=policies_not_action)
+
+
+# Running the polices in dry_run=no
+
+run_cmd('echo "Running the CloudGovernance policies with dry_run=no" ')
+run_cmd(f"echo Polices list: {policies_in_action}")
+run_policies(policies=policies_in_action, dry_run='no')
 
 # Update AWS IAM User tags from the spreadsheet
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e account="PERF-DEPT" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e account="PERF-SCALE" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance --net="host" -e account="PSAP" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" quay.io/ebattat/cloud-governance:latest""")
 
-
-# Send Policy alerts to users
-accounts = [{'account': 'PERF-DEPT', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF,
-            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF, 'BUCKET_NAME': BUCKET_PERF},
-            {'account': 'PERF-SCALE', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE,
-            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE, 'BUCKET_NAME': BUCKET_PERF_SCALE},
-            {'account': 'PSAP', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
-            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP, 'BUCKET_NAME': BUCKET_PSAP}]
-policies.remove('ebs_in_use')
-policies.append('unattached_volume')
-remove_polices = ['instance_run', 'ebs_in_use', 'zombie_cluster_resource', 'ec2_idle', 'skipped_resources', 'ec2_stop']  # policies that will not aggregate
-policies = [policy.replace('_', '-') for policy in policies if policy not in remove_polices]
-common_input_vars = {'PUBLIC_CLOUD_NAME': 'AWS', 'BUCKET_KEY': 'logs', 'KERBEROS_USERS': f"{special_user_mails}", 'LDAP_HOST_NAME': f"{LDAP_HOST_NAME}", 'log_level': "INFO", 'MAIL_ALERT_DAYS': "[4, 6, 7]", 'POLICY_ACTIONS_DAYS': "[7]", 'POLICIES_TO_ALERT': policies, 'es_host': ES_HOST, 'es_port': ES_PORT}
-combine_vars = lambda item: f'{item[0]}="{item[1]}"'
-common_envs = list(map(combine_vars, common_input_vars.items()))
-for account in accounts:
-    envs = list(map(combine_vars, account.items()))
-    os.system(f"""podman run --rm --name cloud-governance --net="host" -e policy="send_aggregated_alerts" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -e DEFAULT_ADMINS="['athiruma']"   quay.io/ebattat/cloud-governance:latest""")
-
+run_cmd(f"""echo "Running the tag_iam_user" """)
+run_cmd(f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
 # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
-os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-dept" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="psap" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PSAP}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PSAP}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-os.system(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="perf-scale" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+run_cmd(f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
 
-
-# # Git-leaks run on github not related to any aws account
-os.system("echo Run Git-leaks")
+# Git-leaks run on GitHub not related to any aws account
+run_cmd("echo Run Git-leaks")
 
 region = 'us-east-1'
 policy = 'gitleaks'
-os.system(f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_PERF}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{BUCKET_PERF}/{LOGS}/$region" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+run_cmd(f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{s3_bucket}/{LOGS}/$region" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
