@@ -1,16 +1,8 @@
 import json
-import logging
-import os
-import tempfile
 from datetime import date, datetime, timedelta
 
-import typeguard
-from botocore.exceptions import ClientError
-
-from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
-from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
-from cloud_governance.common.jira.jira import logger
-from cloud_governance.common.logger.init_logger import handler
+import pandas
+from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
@@ -22,138 +14,183 @@ class SendAggregatedAlerts:
     This class send alerts to users which conditions are not satisfied by the policies
     """
 
-    FILE_NAME = 'resources.json'
-    GLOBAL_REGION = 'us-east-1'
-    TODAY_DATE = str(date.today()).replace('-', '/')
-
     def __init__(self):
         self.__environment_variables = environment_variables.environment_variables_dict
-        self.__bucket_name = self.__environment_variables.get('BUCKET_NAME')
-        self.__bucket_key = self.__environment_variables.get('BUCKET_KEY')
-        self.__policies = self.__environment_variables.get('POLICIES_TO_ALERT')
-        self.__s3_operations = S3Operations(region_name='us-east-2', bucket=self.__bucket_name, logs_bucket_key=self.__bucket_key)
-        self.__active_regions = EC2Operations().get_active_regions()
-        self.__kerberos_users = self.__get_kerberos_users_for_iam_users()
-        self.__global_region_policies = ['s3-inactive', 'empty-roles']
-        self.__mail_alert_days = self.__environment_variables.get('MAIL_ALERT_DAYS')
-        self.__policy_action_days = self.__environment_variables.get('POLICY_ACTIONS_DAYS')
+        self.__days_to_delete_resource = int(self.__environment_variables.get('DAYS_TO_DELETE_RESOURCE'))
+        self.__mail_to = self.__environment_variables.get('EMAIL_TO')  # testing purposes
+        self.__mail_cc = self.__environment_variables.get('EMAIL_CC', [])
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
+        self.__es_operations = ElasticSearchOperations()
 
-    @logger_time_stamp
-    def __get_kerberos_users_for_iam_users(self):
+    def __get_es_data(self):
         """
-        This method returns the users which IAM users are not kerberos username
+        This method returns the current day policy data from the elastic_search database
         :return:
+        :rtype:
         """
-        responses = {}
-        users = self.__environment_variables.get('KERBEROS_USERS')
-        if users:
-            for iam_user, kerberos_user in users.items():
-                responses[iam_user.lower()] = kerberos_user.lower()
-        return responses
+        current_date = (datetime.utcnow().date() - timedelta(days=1)).__str__()
+        policy_es_index = self.__environment_variables.get('es_index')
+        account_name = (self.__environment_variables.get('account', '').upper()
+                        .replace('OPENSHIFT-', '')
+                        .replace('OPENSHIFT', '').strip())
+        query = {
+            "size": 10000,
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "account.keyword": {
+                                    "value": account_name
+                                }
+                            }
+                        }
+                    ],
+                    "must_not": [
+                        {
+                            "terms": {
+                                "policy.keyword": [
+                                    "ebs_in_use", "zombie_cluster_resource",
+                                    "instance_run", "cluster_run", "optimize_resource_report",
+                                    "optimize_resources_report", "skipped_resources"
+                                ]
+                            }
+                        }
+                    ],
+                    "filter": [
+                        {
+                            "range": {
+                                "timestamp": {
+                                    "format": "yyyy-MM-dd",
+                                    "lte": current_date,
+                                    "gte": current_date
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        records = self.__es_operations.post_query(query=query, es_index=policy_es_index)
+        return [record.get('_source') for record in records]
 
-    def __get_users_agg_result(self, policy_result: list, agg_users_result: dict, policy_name: str, region: str):
+    def __remove_duplicates(self, policy_es_data: list):
         """
-        This method returns the aggregated users resources list
-        :param agg_users_result:
-        :param policy_result:
+        This method removes the duplicate  data
         :return:
+        :rtype:
         """
-        if policy_result:
-            for response in policy_result:
-                if type(response) == dict:
-                    skip_policy = response.get('Skip')
-                    if skip_policy in ('NA', '', None):
-                        user = response.pop('User').lower()
-                        response['Region'] = region
-                        response['Policy'] = policy_name
-                        if user in self.__kerberos_users.keys():
-                            user = self.__kerberos_users.get(user)
-                        agg_users_result.setdefault(user, []).append(response)
+        if policy_es_data:
+            df = pandas.DataFrame(policy_es_data)
+            df.sort_values(inplace=True, by=['policy'])
+            df.fillna(value='', inplace=True)
+            df.drop_duplicates(subset='ResourceId', inplace=True)
+            return df.to_dict(orient="records")
+        return policy_es_data
 
-    def __get_policy_data_in_bucket(self, region: str, policy: str):
+    def __group_by_policy(self, policy_data: list):
         """
-        This method returns the policy data in s3 bucket
-        :param region:
-        :param policy:
-        :return:
-        """
-        try:
-            policy_save_path = f'{self.__bucket_key}/{region}/{policy}'
-            bucket_path_file = self.__s3_operations.get_last_objects(bucket=self.__bucket_name, key_prefix=f'{policy_save_path}/{self.TODAY_DATE}')
-            if bucket_path_file:
-                policy_s3_response = self.__s3_operations.get_last_s3_policy_content(s3_file_path=bucket_path_file, file_name=self.FILE_NAME)
-                return json.loads(policy_s3_response) if policy_s3_response else []
-            else:
-                logger.warn(f"No file_path: {policy_save_path}/{self.TODAY_DATE} exists in s3 bucket")
-        except ClientError as err:
-            logger.info(err)
-            return []
-        return []
-
-    @logger_time_stamp
-    def __get_policy_users_list(self):
-        """
-        This method gets the latest policy responses
-        :return:
-        """
-        agg_users_result = {}
-        for policy in self.__policies:
-            run_global_region = True if policy in self.__global_region_policies else False
-            for region in self.__active_regions:
-                if (region == self.GLOBAL_REGION and run_global_region) or not run_global_region:
-                    self.__get_users_agg_result(policy_result=self.__get_policy_data_in_bucket(region=region, policy=policy),
-                                                agg_users_result=agg_users_result, policy_name=policy, region=region)
-                if region == self.GLOBAL_REGION and run_global_region:
-                    break
-        return agg_users_result
-
-    def __get_policy_agg_data_by_region(self, policy_data: dict):
-        """
-        This method returns the policy data agg by region
+        This method returns the data grouped by policy
         :param policy_data:
+        :type policy_data:
         :return:
+        :rtype:
         """
-        agg_policy_region_result = {}
-        for policy_name, policy_region_data in policy_data.items():
-            agg_policy_region_result[policy_name] = {}
-            for region_data in policy_region_data:
-                region_name = region_data.get('Region').lower()
-                agg_policy_region_result[policy_name].setdefault(region_name, []).append(region_data)
-        return agg_policy_region_result
+        policy_group_data = {}
+        for record in policy_data:
+            policy_group_data.setdefault(record.get('policy', 'NA'), []).append(record)
+        policy_data_list = []
+        for _, values in policy_group_data.items():
+            policy_data_list.extend(values)
+        return policy_data_list
 
-    @logger_time_stamp
-    def __get_policy_agg_data(self, user_policy_data: list):
+    def __group_by_user(self, policy_data: list):
         """
-        This method returns the data agg by policy
-        :param user_policy_data:
+        This method returns the data grouped by user files
+        :param policy_data:
+        :type policy_data:
         :return:
+        :rtype:
         """
-        agg_policy_result = {}
-        for result in user_policy_data:
-            policy_name = result.get('Policy').lower()
-            days = int(result.get('Days', 0))
-            if days in self.__mail_alert_days or days in self.__policy_action_days:
-                result['Action'] = 'Deleted' if days in self.__policy_action_days else 'Monitoring'
-                result['DeletedDay'] = (datetime.now() + timedelta(days=self.__policy_action_days[0] - days)).date()
-                agg_policy_result.setdefault(policy_name, []).append(result)
-        return self.__get_policy_agg_data_by_region(policy_data=agg_policy_result)
+        user_data = {}
+        for record in policy_data:
+            user_data.setdefault(record.get('User', 'NA'), []).append(record)
+        return user_data
 
-    @logger_time_stamp
-    def __send_mail_alerts_to_users(self):
+    def __update_delete_days(self, policy_es_data: list):
         """
-        This method send mail alerts to users
+        This method returns the resource delete date
+        :param policy_es_data:
+        :type policy_es_data:
         :return:
+        :rtype:
         """
-        policy_agg_users_list = self.__get_policy_users_list()
-        for user, user_policy_data in policy_agg_users_list.items():
-            handler.setLevel(logging.WARN)
-            agg_policy_data = self.__get_policy_agg_data(user_policy_data=user_policy_data)
-            if agg_policy_data:
-                handler.setLevel(logging.INFO)
-                subject, body = self.__mail_message.get_agg_policies_mail_message(user=user, user_resources=agg_policy_data)
-                self.__postfix.send_email_postfix(subject=subject, content=body, to=user, cc=[], mime_type='html')
+        filtered_policy_es_data = []
+        for record in policy_es_data:
+            try:
+                days = record.get('ClusterResourcesCount')
+                if not days:
+                    days = record.get('CleanUpDays')
+                if not days:
+                    days = record.get('Days')
+                if not days:
+                    days = record.get('StoppedDays')
+                if days:
+                    days = int(days)
+                if not days:
+                    days = 0
+                alert_user = False
+                delete_date = ''
+                if self.__days_to_delete_resource - 5 == days:
+                    delete_date = (datetime.utcnow() + timedelta(days=5)).date()
+                    alert_user = True
+                elif days == self.__days_to_delete_resource - 3:
+                    delete_date = (datetime.utcnow() + timedelta(days=3)).date()
+                    alert_user = True
+                else:
+                    if days >= self.__days_to_delete_resource:
+                        delete_date = datetime.utcnow().date().__str__()
+                        if days > self.__days_to_delete_resource:
+                            if not record.get('Skip'):
+                                record['Skip'] = 'NA'
+                            if record.get('Skip') != 'NA':
+                                delete_date = 'skip_delete'
+                            else:
+                                delete_date = 'dry_run=yes'
+                        alert_user = True
+                if alert_user:
+                    if delete_date != 'skip_delete' and delete_date != 'dry_run=yes':
+                        record['DeleteDate'] = delete_date.__str__()
+                        if record.get('policy') in ['empty_roles', 's3_inactive']:
+                            record['RegionName'] = 'us-east-1'
+                        filtered_policy_es_data.append(record)
+            except Exception as err:
+                raise err
+        return filtered_policy_es_data
+
+    def __send_aggregate_email_by_es_data(self):
+        """
+        This method sends an alert using the elasticsearch data
+        :return:
+        :rtype:
+        """
+        policy_es_data = self.__get_es_data()
+        policy_es_data = self.__remove_duplicates(policy_es_data=policy_es_data)
+        policy_es_data = self.__update_delete_days(policy_es_data)
+        if self.__environment_variables.get('ADMIN_MAIL_LIST', ''):
+            to_mail_list = self.__environment_variables.get('ADMIN_MAIL_LIST', '')
+            group_by_policy = self.__group_by_policy(policy_data=policy_es_data)
+            if group_by_policy:
+                subject, body = self.__mail_message.get_policy_alert_message(policy_data=group_by_policy)
+                self.__postfix.send_email_postfix(subject=subject, content=body, to=to_mail_list, cc=[], mime_type='html')
+        else:
+            user_policy_data = self.__group_by_user(policy_data=policy_es_data)
+            for user, user_records in user_policy_data.items():
+                if user_records:
+                    subject, body = self.__mail_message.get_policy_alert_message(policy_data=user_records, user=user)
+                    self.__postfix.send_email_postfix(subject=subject, content=body, to=user, cc=[],
+                                                      mime_type='html')
 
     @logger_time_stamp
     def run(self):
@@ -161,4 +198,4 @@ class SendAggregatedAlerts:
         This method start the other methods
         :return:
         """
-        self.__send_mail_alerts_to_users()
+        self.__send_aggregate_email_by_es_data()

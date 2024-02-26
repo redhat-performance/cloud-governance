@@ -195,6 +195,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['DEFAULT_ADMINS'] = literal_eval(EnvironmentVariables.get_env('DEFAULT_ADMINS', '[]'))
         self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
         self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
+        self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
         if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch

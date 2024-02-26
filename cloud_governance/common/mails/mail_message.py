@@ -503,3 +503,19 @@ Cloud-governance Team""".strip()
                    'footer': self.FOOTER}
         body = template_loader.render(context)
         return subject, body
+
+    def get_policy_alert_message(self, policy_data: list, user: str = ''):
+        """
+        This method returns the policy alert message
+        :return:
+        :rtype:
+        """
+        if user:
+            display_name = self.get_user_ldap_details(user_name=user)
+            user = display_name if display_name else user
+        subject = f"Cloud Governance: {self.account} Policy Alerts"
+        template_loader = self.env_loader.get_template('policy_alert_agg_message.j2')
+        columns = ['User', 'PublicCloud', 'policy', 'RegionName', 'ResourceId', 'Name', 'DeleteDate']
+        context = {'records': policy_data, 'columns': columns, 'User': user, 'account': self.account, 'cloud_name': self.__public_cloud_name}
+        body = template_loader.render(context)
+        return subject, body

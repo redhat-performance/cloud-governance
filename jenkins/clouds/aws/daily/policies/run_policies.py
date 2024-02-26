@@ -18,6 +18,8 @@ ES_INDEX = os.environ.get('ES_INDEX')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
+CLOUD_GOVERNANCE_IMAGE = "quay.io/ebattat/cloud-governance:latest"
+ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):
@@ -137,3 +139,6 @@ run_cmd("echo Run Git-leaks")
 region = 'us-east-1'
 policy = 'gitleaks'
 run_cmd(f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{s3_bucket}/{LOGS}/$region" -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
+
+run_cmd(f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {CLOUD_GOVERNANCE_IMAGE}""")
