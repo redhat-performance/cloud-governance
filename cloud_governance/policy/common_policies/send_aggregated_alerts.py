@@ -72,7 +72,6 @@ class SendAggregatedAlerts:
                 }
             }
         }
-        # print(json.dumps(query, indent=4))
         records = self.__es_operations.post_query(query=query, es_index=policy_es_index)
         return [record.get('_source') for record in records]
 
@@ -156,15 +155,16 @@ class SendAggregatedAlerts:
                             if not record.get('Skip'):
                                 record['Skip'] = 'NA'
                             if record.get('Skip') != 'NA':
-                                delete_date = 'skip delete'
+                                delete_date = 'skip_delete'
                             else:
                                 delete_date = 'dry_run=yes'
                         alert_user = True
                 if alert_user:
-                    record['DeleteDate'] = delete_date.__str__()
-                    if record.get('policy') in ['empty_roles', 's3_inactive']:
-                        record['RegionName'] = 'us-east-1'
-                    filtered_policy_es_data.append(record)
+                    if delete_date != 'skip_delete' and delete_date != 'dry_run=yes':
+                        record['DeleteDate'] = delete_date.__str__()
+                        if record.get('policy') in ['empty_roles', 's3_inactive']:
+                            record['RegionName'] = 'us-east-1'
+                        filtered_policy_es_data.append(record)
             except Exception as err:
                 raise err
         return filtered_policy_es_data
@@ -178,11 +178,12 @@ class SendAggregatedAlerts:
         policy_es_data = self.__get_es_data()
         policy_es_data = self.__remove_duplicates(policy_es_data=policy_es_data)
         policy_es_data = self.__update_delete_days(policy_es_data)
-        if self.__environment_variables.get('ONLY_ADMINS', ''):
+        if self.__environment_variables.get('ADMIN_MAIL_LIST', ''):
+            to_mail_list = self.__environment_variables.get('ADMIN_MAIL_LIST', '')
             group_by_policy = self.__group_by_policy(policy_data=policy_es_data)
             if group_by_policy:
                 subject, body = self.__mail_message.get_policy_alert_message(policy_data=group_by_policy)
-                self.__postfix.send_email_postfix(subject=subject, content=body, to=self.__mail_to, cc=[], mime_type='html')
+                self.__postfix.send_email_postfix(subject=subject, content=body, to=to_mail_list, cc=[], mime_type='html')
         else:
             user_policy_data = self.__group_by_user(policy_data=policy_es_data)
             for user, user_records in user_policy_data.items():
