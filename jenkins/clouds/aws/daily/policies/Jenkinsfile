@@ -43,7 +43,7 @@ pipeline {
         stage('Run Daily Policies') {
             steps {
                  script {
-                    for (account in accounts_list.keySet() {
+                    for (account in accounts_list.keySet()) {
                         echo "Running for account ${account.toUpperCase()}"
                         withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
                                         string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
