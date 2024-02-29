@@ -1,0 +1,3 @@
+
+
+LOOK_BACK_DAYS = 30

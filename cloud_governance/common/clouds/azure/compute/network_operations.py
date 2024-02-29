@@ -1,6 +1,6 @@
 from azure.mgmt.network import NetworkManagementClient
 
-from cloud_governance.common.clouds.azure.compute.common_operations import CommonOperations
+from cloud_governance.common.clouds.azure.common.common_operations import CommonOperations
 from cloud_governance.common.utils.utils import Utils
 
 

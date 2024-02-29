@@ -70,7 +70,8 @@ setup(
         'urllib3==1.26.7',  # required by jira
         'azure-mgmt-resource==23.0.1',
         'azure-mgmt-compute==30.1.0',
-        'azure-mgmt-network==25.0.0'
+        'azure-mgmt-network==25.0.0',
+        'azure-mgmt-monitor==6.0.2'
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

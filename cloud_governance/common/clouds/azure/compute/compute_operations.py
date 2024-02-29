@@ -1,7 +1,7 @@
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.v2023_03_01.models import VirtualMachine
 
-from cloud_governance.common.clouds.azure.compute.common_operations import CommonOperations
+from cloud_governance.common.clouds.azure.common.common_operations import CommonOperations
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
