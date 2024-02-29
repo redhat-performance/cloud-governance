@@ -1,0 +1,84 @@
+<html>
+<head>
+    <style>
+        header{
+            margin-bottom: 10px;
+        }
+        footer{
+            margin-top: 10px;
+            color: gray;
+        }
+        .table-hover {
+            font-family: Verdana, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .table-hover td, .table-hover th {
+            border: 2px solid #000;
+            padding: 8px;
+            align-items: baseline;
+            color: black;
+        }
+
+        .table-hover th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #04AA6D;
+            color: white;
+        }
+        .bgcolor-red{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Hi {{ User }},
+    </header>
+    <section>
+        <div style="margin-bottom: 10px">
+            <p>You can find below your unused resources in the {{ cloud_name }} account ({{ account }}).</p>
+            <p>If you want to keep them, please add "Policy=Not_Delete" or "Policy=skip" tag for each resource</p>
+        </div>
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                        <th>{{ col | title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                    <tr>
+                    {% for col in columns %}
+                        {% if col == 'Action' %}
+                            {% if record['ResourceDelete'] == "True"  or record['ResourceStopped'] == "True" %}
+                                <td class="bgcolor-red">{{ "Deleted" }}</td>
+                            {% else %}
+                                <td>{{ "Alert" }}</td>
+                             {% endif %}
+                        {% else %}
+                            {% if col == 'PublicCloud' %}
+                                <td>{{ record[col] or 'AWS' }}</td>
+                            {% elif col == 'RegionName' %}
+                                <td>{{ record[col] or record['region_name'] }}</td>
+                            {% elif 'kubernetes.io/cluster' in record[col] %}
+                                <td>{{ record[col].split('/')[-1] }}</td>
+                            {% else %}
+                                <td>{{ record[col] or 'NA' }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <footer>
+        Thanks, <br />Cloud GovernanceTeam
+    </footer>
+</body>
+</html>

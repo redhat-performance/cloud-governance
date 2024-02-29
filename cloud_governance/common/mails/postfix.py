@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 
 # https://github.com/redhat-performance/quads/blob/master/quads/tools/postman.py
@@ -28,6 +29,8 @@ class Postfix:
 
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
+        self.__LDAP_HOST_NAME = self.__environment_variables_dict.get('LDAP_HOST_NAME')
+        self.__ldap_search = LdapSearch(ldap_host_name=self.__LDAP_HOST_NAME)
         self.reply_to = self.__environment_variables_dict.get('REPLY_TO', 'dev-null@redhat.com')
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
         self.__policy = self.__environment_variables_dict.get('policy', '')
@@ -36,7 +39,7 @@ class Postfix:
         self.__policy_output = self.__environment_variables_dict.get('policy_output', '')
         self.__default_admins = self.__environment_variables_dict.get('DEFAULT_ADMINS')
         self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT')
-        self.__mail_to = self.__environment_variables_dict.get('EMAIL_TO')  # testing purposes
+        self.__mail_to = self.__environment_variables_dict.get('EMAIL_TO')
         self.__mail_cc = self.__environment_variables_dict.get('EMAIL_CC')
         self.bucket_name, self.key = self.get_bucket_name()
         self.__es_index = 'cloud-governance-mail-messages'
@@ -62,6 +65,8 @@ class Postfix:
                 to = self.__mail_to
             if self.__mail_cc:
                 cc = self.__mail_cc
+            if not self.__ldap_search.get_user_details(user_name=to):
+                cc.append('athiruma@redhat.com')
             cc = [cc_user for cc_user in cc if to and to not in cc_user]
             cc = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
             msg = MIMEMultipart('alternative')
@@ -115,7 +120,7 @@ class Postfix:
                         if kwargs.get('extra_purse'):
                             data['extra_purse'] = round(kwargs['extra_purse'], 3)
                         if self.__es_host:
-                            self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+                            # self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                             logger.warn(f'Uploaded to es index: {self.__es_index}')
                         else:
                             logger.warn('Error missing the es_host')

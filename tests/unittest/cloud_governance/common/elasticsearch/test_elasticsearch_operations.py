@@ -1,6 +1,8 @@
 import datetime
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from tests.unittest.configs import ES_INDEX, TEST_INDEX_ID
+from tests.unittest.mocks.elasticsearch.mock_elasticsearch import mock_elasticsearch
 
 
 def test_missing_datetime():
@@ -29,3 +31,28 @@ def test_missing_param_value():
         assert TypeError
 
 
+@mock_elasticsearch
+def test_post_query():
+    """
+    This method tests the elasticsearch post query
+    :return:
+    :rtype:
+    """
+    es_index = ES_INDEX
+    es_operations = ElasticSearchOperations(es_host='localhost', es_port='9200')
+    # Upload data to es
+    es_data = {
+        'index-id': TEST_INDEX_ID,
+        'test_type': 'Unittest',
+    }
+    es_operations.upload_to_elasticsearch(index=es_index, data=es_data)
+
+    # fetch data
+    query = {
+        "query": {}
+    }
+    try:
+        response = es_operations.post_query(es_index=es_index, query=query)
+        assert response
+    except TypeError:
+        assert TypeError

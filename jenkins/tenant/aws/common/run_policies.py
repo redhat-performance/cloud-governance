@@ -60,6 +60,8 @@ ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
+ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
+CLOUD_GOVERNANCE_IMAGE = "quay.io/ebattat/cloud-governance:latest"
 
 policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
 if isinstance(policies_in_action, str):
@@ -110,3 +112,8 @@ run_policies(policies=policies_in_action, dry_run='no')
 
 run_cmd(f"""echo "Running the tag_iam_user" """)
 run_cmd(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
+
+
+# Run the AggMail
+
+run_cmd(f"""podman run --rm --name cloud-governance-haim --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {CLOUD_GOVERNANCE_IMAGE}""")

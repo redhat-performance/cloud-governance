@@ -21,3 +21,8 @@ SUB_ID = f'/subscription/{SUBSCRIPTION_ID}/resourceGroups/{RESOURCE_GROUP}'
 NETWORK_PROVIDER = f'providers/Microsoft.Network'
 COMPUTE_PROVIDER = 'providers/Microsoft.Compute'
 AZURE_RESOURCE_ID = f'{SUB_ID}/{COMPUTE_PROVIDER}/cloud-governance-unittest'
+
+
+# ES
+ES_INDEX = 'test-unittest-index'
+TEST_INDEX_ID = 'test-unittest-index-01'

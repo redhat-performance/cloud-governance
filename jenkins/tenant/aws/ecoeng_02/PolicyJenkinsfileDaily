@@ -1,4 +1,6 @@
-account = ['appeng', 'fsi-partner', 'fsi-ecosystem']
+accounts_list = ['appeng': "mmikhail@redhat.com, matrujil@redhat.com, babak@redhat.com",
+           'fsi-partner': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com",
+           'fsi-ecosystem': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com"]
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -39,12 +41,12 @@ pipeline {
         stage('Run Cost Policies') {
             steps {
                  script {
-                    for (int i = 0; i < account.size(); ++i) {
-                        echo "Running for account ${account[i].toUpperCase()}"
-                        withCredentials([string(credentialsId: "${account[i]}-aws-access-key-id", variable: 'access_key'),
-                                        string(credentialsId: "${account[i]}-aws-secret-key-id", variable: 'secret_key'),
-                                        string(credentialsId: "${account[i]}-s3-bucket", variable: 's3_bucket')]) {
-                        env.account_name = "${account[i]}"
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
+                                        string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
+                        env.account_name = "${account}"
                         sh 'python3 jenkins/tenant/aws/common/run_cost_policies.py'
                                         }
                     }
@@ -54,12 +56,13 @@ pipeline {
         stage('Run Daily Policies') {
             steps {
                  script {
-                    for (int i = 0; i < account.size(); ++i) {
-                        echo "Running for account ${account[i].toUpperCase()}"
-                        withCredentials([string(credentialsId: "${account[i]}-aws-access-key-id", variable: 'access_key'),
-                                        string(credentialsId: "${account[i]}-aws-secret-key-id", variable: 'secret_key'),
-                                        string(credentialsId: "${account[i]}-s3-bucket", variable: 's3_bucket')]) {
-                        env.account_name = "${account[i]}"
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
+                                        string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
+                        env.account_name = "${account}"
+                        env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
                         sh 'python3 jenkins/tenant/aws/common/run_policies.py'
                                         }
                     }
