@@ -54,7 +54,7 @@ setup(
         'google-cloud-bigquery==3.5.0',  # google cloud cost
         'google-cloud-billing==1.9.1',  # google cloud cost
         'ibm_platform_services==0.27.0',  # IBM Usage reports
-        'myst-parser==0.17.0',  # readthedocs
+        'myst-parser==1.0.0',  # readthedocs
         'oauthlib~=3.1.1',  # required by jira
         'pandas',  # latest: aggregate ec2/ebs cluster data
         'PyAthena[Pandas]==3.0.5',  # AWS Athena package
@@ -64,7 +64,7 @@ setup(
         'retry==0.9.2',
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
-        'sphinx==4.5.0',  # readthedocs
+        'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
         'urllib3==1.26.7',  # required by jira
