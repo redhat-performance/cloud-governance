@@ -97,13 +97,15 @@ class CostBillingReports:
             month = row.get('Month')
             cost_center, allocated_budget, years, owner = 0, 0, '', 'Others'
             project_budget_account_id = 0
+            budget_approved_account_name = ''
             for idx, _id in enumerate((row.get('folder_ids')+[row.get('ProjectId')])[::-1]):  # start from reverse [root, sub_child, child]
                 cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=_id, dir_path='/tmp')
                 if cost_center > 0:
                     project_budget_account_id = _id
+                    budget_approved_account_name = row.get(_id)
                     break
             parent_index = len(row.get("folder_ids"))
-            index = f'{project_budget_account_id}-{month}'
+            index = f'{project_budget_account_id}-{budget_approved_account_name}-{month}'
             if index in compress_gcp_data:
                 compress_gcp_data[index]['Actual'] = round(compress_gcp_data[index]['Actual'] + row.get('Actual'), 3)
                 compress_gcp_data[index]['Projects'].append({
@@ -128,8 +130,12 @@ class CostBillingReports:
                                      'Projects': [{'Project': row.get('Project'),
                                                    'Actual': round(row.get('Actual'), self.DEFAULT_ROUND_DIGITS),
                                                    'ProjectId': row.get('ProjectId')}],
-                                     'index_id': f"{row.get('start_date')}-{row.get(f'parent{parent_index}', 'NA').lower()}",
+                                     'index_id': f"{row.get('start_date')}-{project_budget_account_id}-{row.get(f'parent{parent_index}', 'NA').lower()}",
                                      'total_folders': parent_index}
+                if budget_approved_account_name:
+                    project_cost_data['Account'] = (f"{row.get(f'parent{parent_index}', 'NA')}/"
+                                                    f"{budget_approved_account_name}")
+                    project_cost_data['AccountId'] = f"{row.get(f'parent{parent_index}_id', 'NA')}/{project_budget_account_id}"
                 compress_gcp_data[index] = project_cost_data
         return self.__second_layer_filter(items=list(compress_gcp_data.values()))
 
@@ -239,7 +245,8 @@ class CostBillingReports:
         for idx, _id in enumerate(folder_ids):
             parent_folders.update({
                 f'parent{idx + 1}': folders_data[project_id].get(_id),
-                f'parent{idx + 1}_id': _id
+                f'parent{idx + 1}_id': _id,
+                f'{_id}': folders_data[project_id].get(_id),
             })
         return parent_folders
 
@@ -264,6 +271,7 @@ class CostBillingReports:
             agg_data[index] = {
                 'folder_name': parents_folders.get(f'parent{len(folder_ids)}', 'NA'),
                 'start_date': f'{bill_month[:4]}-{bill_month[4:]}-01',
+                f'{project_id}': f'{cst_row.get("project_name")}',
                 'Project': cst_row.get('project_name'), 'ProjectId': project_id, 'Actual': total_cost,
                 'Account': parents_folders.get('parent1', 'NA'), 'Forecast': 0, 'folder_ids': folder_ids, **parents_folders
             }
@@ -283,6 +291,7 @@ class CostBillingReports:
         forecast_data = self.__forecast_for_next_months(cost_data=collected_data)
         upload_data = collected_data + forecast_data
         self.elastic_upload.es_upload_data(items=upload_data, set_index='index_id')
+        return upload_data
 
     @logger_time_stamp
     def run(self):
@@ -290,4 +299,4 @@ class CostBillingReports:
         This method run the gcp cost explorer methods
         :return:
         """
-        self.__get_cost_and_upload()
+        return self.__get_cost_and_upload()
