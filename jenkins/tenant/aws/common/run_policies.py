@@ -56,6 +56,7 @@ account_name = os.environ['account_name']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 14)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
+ALERT_DRY_RUN = os.environ.get('ALERT_DRY_RUN', False)
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
@@ -81,7 +82,7 @@ container_env_dict = {
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
-    'DAYS_TO_TAKE_ACTION': days_to_delete_resource
+    'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN
 }
 
 

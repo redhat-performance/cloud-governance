@@ -152,6 +152,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['MAXIMUM_THRESHOLD'] = EnvironmentVariables.get_env('MAXIMUM_THRESHOLD', '')
         self._environment_variables_dict['to_mail'] = EnvironmentVariables.get_env('to_mail', '[]')
         self._environment_variables_dict['cc_mail'] = EnvironmentVariables.get_env('cc_mail', '[]')
+        self._environment_variables_dict['ALERT_DRY_RUN'] = (EnvironmentVariables.
+                                                             get_boolean_from_environment('ALERT_DRY_RUN', False))
 
         # Google Drive env vars
         self._environment_variables_dict['GOOGLE_APPLICATION_CREDENTIALS'] = EnvironmentVariables.get_env('GOOGLE_APPLICATION_CREDENTIALS', '')
