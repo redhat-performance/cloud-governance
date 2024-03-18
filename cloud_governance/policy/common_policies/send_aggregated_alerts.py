@@ -19,6 +19,7 @@ class SendAggregatedAlerts:
         self.__days_to_delete_resource = int(self.__environment_variables.get('DAYS_TO_DELETE_RESOURCE'))
         self.__mail_to = self.__environment_variables.get('EMAIL_TO')  # testing purposes
         self.__mail_cc = self.__environment_variables.get('EMAIL_CC', [])
+        self.__alert_dry_run = self.__environment_variables.get('ALERT_DRY_RUN')
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
         self.__es_operations = ElasticSearchOperations()
@@ -141,7 +142,11 @@ class SendAggregatedAlerts:
                 if not days:
                     days = 0
                 alert_user = False
-                delete_date = ''
+                delete_date = 'dry_run=yes'
+                if not record.get('Skip'):
+                    record['Skip'] = 'NA'
+                if record.get('Skip') != 'NA':
+                    delete_date = 'skip_delete'
                 if self.__days_to_delete_resource - 5 == days:
                     delete_date = (datetime.utcnow() + timedelta(days=5)).date()
                     alert_user = True
@@ -160,7 +165,7 @@ class SendAggregatedAlerts:
                                 delete_date = 'dry_run=yes'
                         alert_user = True
                 if alert_user:
-                    if delete_date != 'skip_delete' and delete_date != 'dry_run=yes':
+                    if delete_date != 'skip_delete' and (delete_date != 'dry_run=yes' and self.__alert_dry_run):
                         record['DeleteDate'] = delete_date.__str__()
                         if record.get('policy') in ['empty_roles', 's3_inactive']:
                             record['RegionName'] = 'us-east-1'

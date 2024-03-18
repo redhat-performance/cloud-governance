@@ -1,11 +1,11 @@
-accounts_list = ['coreos-training': "matt.dorn@redhat.com, babak@redhat.com",
-           'industry-partners': "",
-           'special-projects': "",
-           'edgeinfra': "",
-           'specialprojects-qe': "",
-           'ecoeng-sap': "",
-           'sysdeseng': "",
-           'verticals-ui': ""]
+accounts_list = ['coreos-training': "matt.dorn@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+           'industry-partners': "hhalbfin@redhat.com",
+           'special-projects': "hhalbfin@redhat.com",
+           'edgeinfra': "hhalbfin@redhat.com",
+           'specialprojects-qe': "hhalbfin@redhat.com",
+           'ecoeng-sap': "hhalbfin@redhat.com",
+           'sysdeseng': "hhalbfin@redhat.com",
+           'verticals-ui': "hhalbfin@redhat.com"]
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -23,6 +23,7 @@ pipeline {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         ES_HOST = credentials('haim-cloud-governance-elasticsearch-url')
         ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
+        ALERT_DRY_RUN = true
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
         contact3 = "mmikhail@redhat.com"
