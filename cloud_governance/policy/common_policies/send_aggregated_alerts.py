@@ -141,7 +141,7 @@ class SendAggregatedAlerts:
                     days = int(days)
                 if not days:
                     days = 0
-                alert_user = False
+                alert_user = True if self.__alert_dry_run else False
                 delete_date = 'dry_run=yes'
                 if not record.get('Skip'):
                     record['Skip'] = 'NA'
@@ -165,7 +165,7 @@ class SendAggregatedAlerts:
                                 delete_date = 'dry_run=yes'
                         alert_user = True
                 if alert_user:
-                    if delete_date != 'skip_delete' and (delete_date != 'dry_run=yes' and self.__alert_dry_run):
+                    if (delete_date != 'skip_delete' and delete_date != 'dry_run=yes') or self.__alert_dry_run:
                         record['DeleteDate'] = delete_date.__str__()
                         if record.get('policy') in ['empty_roles', 's3_inactive']:
                             record['RegionName'] = 'us-east-1'
