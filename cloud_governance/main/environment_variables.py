@@ -196,7 +196,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
         self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
         self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
-        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts']:
+        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch
         self._environment_variables_dict['CLOUD_RESOURCE_ORCHESTRATION'] = EnvironmentVariables.get_boolean_from_environment('CLOUD_RESOURCE_ORCHESTRATION', False)
@@ -223,6 +223,20 @@ class EnvironmentVariables:
         self._environment_variables_dict['ATHENA_TABLE_NAME'] = EnvironmentVariables.get_env('ATHENA_TABLE_NAME', '')
         self._environment_variables_dict['ATHENA_ACCOUNT_ACCESS_KEY'] = EnvironmentVariables.get_env('ATHENA_ACCOUNT_ACCESS_KEY', '')
         self._environment_variables_dict['ATHENA_ACCOUNT_SECRET_KEY'] = EnvironmentVariables.get_env('ATHENA_ACCOUNT_SECRET_KEY', '')
+
+        # Cloudability
+
+        self._environment_variables_dict['CLOUDABILITY_VIEW_ID'] = EnvironmentVariables.get_env('CLOUDABILITY_VIEW_ID', '')
+        self._environment_variables_dict['APPITO_ENVID'] = EnvironmentVariables.get_env('APPITO_ENVID', '')
+        self._environment_variables_dict['APPITO_KEY_SECRET'] = EnvironmentVariables.get_env('APPITO_KEY_SECRET', '')
+        self._environment_variables_dict['APPITO_KEY_ACCESS'] = EnvironmentVariables.get_env('APPITO_KEY_ACCESS', '')
+        self._environment_variables_dict['CLOUDABILITY_API'] = EnvironmentVariables.get_env('CLOUDABILITY_API', '')
+        self._environment_variables_dict['CLOUDABILITY_API_REPORTS_PATH'] = EnvironmentVariables.get_env('CLOUDABILITY_API_REPORTS_PATH', '')
+        self._environment_variables_dict['CLOUDABILITY_METRICS'] = EnvironmentVariables.get_env('CLOUDABILITY_METRICS', 'unblended_cost')
+        self._environment_variables_dict['CLOUDABILITY_DIMENSIONS'] = EnvironmentVariables.get_env('CLOUDABILITY_DIMENSIONS', 'date,category4,vendor_account_name,vendor_account_identifier,vendor')
+
+
+
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):

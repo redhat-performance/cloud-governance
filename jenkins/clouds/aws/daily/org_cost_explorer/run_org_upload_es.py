@@ -1,6 +1,4 @@
-
 import os
-
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
@@ -18,20 +16,33 @@ S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
 
+# Cloudability env variables
+
+CLOUDABILITY_API = os.environ['CLOUDABILITY_API']
+CLOUDABILITY_API_REPORTS_PATH = os.environ['CLOUDABILITY_API_REPORTS_PATH']
+CLOUDABILITY_METRICS = os.environ['CLOUDABILITY_METRICS']
+CLOUDABILITY_VIEW_ID = os.environ['CLOUDABILITY_VIEW_ID']
+APPITO_KEY_ACCESS = os.environ['APPITO_KEY_ACCESS']
+APPITO_KEY_SECRET = os.environ['APPITO_KEY_SECRET']
+APPITO_ENVID = os.environ['APPITO_ENVID']
+
+
 os.system('echo "Updating the Org level cost billing reports"')
 
 # Cost Explorer upload to ElasticSearch
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
 granularity = 'DAILY'  # DAILY/MONTHLY/HOURLY
 
-
-common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-global-cost-billing-reports', 'log_level': 'INFO', 'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS, 'COST_CENTER_OWNER': f"{COST_CENTER_OWNER}", 'REPLACE_ACCOUNT_NAME': REPLACE_ACCOUNT_NAME, 'PAYER_SUPPORT_FEE_CREDIT': PAYER_SUPPORT_FEE_CREDIT}
+common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-global-cost-billing-reports',
+                     'log_level': 'INFO', 'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS,
+                     'COST_CENTER_OWNER': f"{COST_CENTER_OWNER}", 'REPLACE_ACCOUNT_NAME': REPLACE_ACCOUNT_NAME,
+                     'PAYER_SUPPORT_FEE_CREDIT': PAYER_SUPPORT_FEE_CREDIT}
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 
 common_input_vars['es_index'] = 'cloud-governance-clouds-billing-reports'
 common_envs = list(map(combine_vars, common_input_vars.items()))
-os.system(f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" quay.io/ebattat/cloud-governance:latest""")
-
+os.system(
+    f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" quay.io/ebattat/cloud-governance:latest""")
 
 os.system('echo "Run the Spot Analysis report over the account using AWS Athena"')
 os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
@@ -43,3 +54,63 @@ os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_an
 -e ATHENA_DATABASE_NAME="{ATHENA_DATABASE_NAME}" \
 -e ATHENA_TABLE_NAME="{ATHENA_TABLE_NAME}" \
 quay.io/ebattat/cloud-governance:latest""")
+
+CLOUD_GOVERNANCE_IMAGE = "quay.io/ebattat/cloud-governance:latest"
+CONTAINER_NAME = "cloud-governance"
+COST_ES_INDEX = "cloud-governance-clouds-billing-reports"
+CLOUDABILITY_POLICY = 'cloudability_cost_reports'
+
+
+def run_shell_cmd(cmd: str):
+    """
+    This method run the shell command
+    :param cmd:
+    :type cmd:
+    :return:
+    :rtype:
+    """
+    os.system(cmd)
+
+
+def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = ''):
+    """
+    This method returns the shell command
+    :param mounted_volumes: 
+    :type mounted_volumes: 
+    :param env_variables:
+    :type env_variables:
+    :param policy:
+    :type policy:
+    :return:
+    :rtype:
+    """
+    inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
+    return (f'podman run --rm --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
+            f'{CLOUD_GOVERNANCE_IMAGE}')
+
+
+common_env_vars = {
+    'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': COST_ES_INDEX,
+    'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS,
+    'SPREADSHEET_ID': COST_SPREADSHEET_ID,
+}
+
+cloudability_env_vars = {
+    'CLOUDABILITY_API': CLOUDABILITY_API,
+    'CLOUDABILITY_API_REPORTS_PATH': CLOUDABILITY_API_REPORTS_PATH,
+    'CLOUDABILITY_METRICS': CLOUDABILITY_METRICS,
+    'CLOUDABILITY_VIEW_ID': CLOUDABILITY_VIEW_ID,
+    'APPITO_KEY_ACCESS': APPITO_KEY_ACCESS,
+    'APPITO_KEY_SECRET': APPITO_KEY_SECRET,
+    'APPITO_ENVID': APPITO_ENVID,
+}
+
+mounted_volumes = f" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS}"
+cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY, 
+                                              env_variables={
+                                                  **common_env_vars,
+                                                  **cloudability_env_vars
+                                              }, mounted_volumes=mounted_volumes)
+
+run_shell_cmd(f"echo Running the {CLOUDABILITY_POLICY}")
+run_shell_cmd(cloudability_run_command)
