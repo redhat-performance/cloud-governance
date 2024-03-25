@@ -2,6 +2,7 @@
 from cloud_governance.common.clouds.azure.compute.compute_operations import ComputeOperations
 from cloud_governance.common.clouds.azure.compute.network_operations import NetworkOperations
 from cloud_governance.common.clouds.azure.compute.resource_group_operations import ResourceGroupOperations
+from cloud_governance.common.clouds.azure.monitor.monitor_management_operations import MonitorManagementOperations
 from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.utils import Utils
@@ -14,6 +15,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         self.compute_operations = ComputeOperations()
         self.network_operations = NetworkOperations()
         self.resource_group_operations = ResourceGroupOperations()
+        self.monitor_operations = MonitorManagementOperations()
         super().__init__()
 
     def get_tag_name_from_tags(self, tags: dict, tag_name: str):
@@ -49,6 +51,8 @@ class AzurePolicyOperations(AbstractPolicyOperations):
                 self.compute_operations.delete_disk(resource_id=resource_id)
             elif self._policy == 'ip_unattached':
                 delete_status = self.network_operations.release_public_ip(resource_id=resource_id)
+            elif self._policy == 'unused_nat_gateway':
+                delete_status = self.network_operations.delete_nat_gateway(resource_id=resource_id)
             logger.info(f'{self._policy} {action}: {resource_id}')
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
@@ -56,7 +60,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
     def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: dict):
         tags = self._update_tag_value(tags=tags, tag_name='DaysCount', tag_value=str(cleanup_days))
         try:
-            if self._policy in ['instance_run', 'unattached_volume', 'ip_unattached']:
+            if self._policy in ['instance_run', 'unattached_volume', 'ip_unattached', 'unused_nat_gateway']:
                 self.resource_group_operations.creates_or_updates_tags(resource_id=resource_id, tags=tags)
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')

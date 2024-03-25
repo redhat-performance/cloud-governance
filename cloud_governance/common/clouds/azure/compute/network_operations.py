@@ -1,6 +1,8 @@
+from azure.core.exceptions import HttpResponseError
 from azure.mgmt.network import NetworkManagementClient
 
 from cloud_governance.common.clouds.azure.common.common_operations import CommonOperations
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.utils import Utils
 
 
@@ -57,7 +59,24 @@ class NetworkOperations(CommonOperations):
                     public_ipv4_network_interfaces.setdefault(public_ipv4_address_id, []).append(network_interface)
         return public_ipv4_network_interfaces
 
+    def describe_nat_gateways(self):
+        """
+        This method lists all the azure nat gateways
+        :return:
+        :rtype:
+        """
+        try:
+            nat_gateway_iter_object = self.__network_client.nat_gateways.list_all()
+            nat_gateways = self._item_paged_iterator(item_paged_object=nat_gateway_iter_object, as_dict=True)
+            return nat_gateways
+        except HttpResponseError as http_err:
+            logger.error(http_err)
+            raise http_err
+        except Exception as err:
+            raise err
+
     # delete operations
+
     def release_public_ip(self, resource_id: str):
         """
         This method releases the public ip
@@ -69,4 +88,19 @@ class NetworkOperations(CommonOperations):
         public_ip_address_name = id_key_pairs.get('publicipaddresses')
         status = self.__network_client.public_ip_addresses.begin_delete(resource_group_name=resource_group_name,
                                                                         public_ip_address_name=public_ip_address_name)
+        return status.done()
+
+    def delete_nat_gateway(self, resource_id: str):
+        """
+        This method deletes the NatGateway
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        id_key_pairs = self.get_id_dict_data(resource_id)
+        resource_group_name = id_key_pairs.get('resourcegroups')
+        nat_gateway_name = id_key_pairs.get('natgateways')
+        status = self.__network_client.nat_gateways.begin_delete(resource_group_name=resource_group_name,
+                                                                 nat_gateway_name=nat_gateway_name)
         return status.done()
