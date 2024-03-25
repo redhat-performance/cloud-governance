@@ -30,7 +30,7 @@ class SendAggregatedAlerts:
         :return:
         :rtype:
         """
-        current_date = (datetime.utcnow().date() - timedelta(days=1)).__str__()
+        current_date = (datetime.utcnow().date()).__str__()
         policy_es_index = self.__environment_variables.get('es_index')
         account_name = (self.__environment_variables.get('account', '').upper()
                         .replace('OPENSHIFT-', '')

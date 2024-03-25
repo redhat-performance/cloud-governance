@@ -257,6 +257,7 @@ class EnvironmentVariables:
             account_alias = iam_client.list_account_aliases()['AccountAliases']
             if account_alias:
                 return account_alias[0].upper()
+            return os.environ.get('account', '').upper()
         except:
             return os.environ.get('account', '').upper()
 
