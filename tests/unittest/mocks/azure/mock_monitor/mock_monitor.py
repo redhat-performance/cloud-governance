@@ -5,6 +5,7 @@ from unittest.mock import patch
 from azure.mgmt.monitor import MonitorManagementClient
 
 from tests.unittest.mocks.azure.mock_monitor.mock_activity_logs_operations import MockActivityLogsOperations
+from tests.unittest.mocks.azure.mock_monitor.mock_metric_operations import MockMetricOperations
 
 
 def mock_monitor(method):
@@ -21,7 +22,8 @@ def mock_monitor(method):
         @param kwargs:
         @return:
         """
-        with patch.object(MonitorManagementClient, 'activity_logs', MockActivityLogsOperations()):
+        with patch.object(MonitorManagementClient, 'activity_logs', MockActivityLogsOperations()), \
+                patch.object(MonitorManagementClient, 'metrics', MockMetricOperations()):
             result = method(*args, **kwargs)
         return result
 

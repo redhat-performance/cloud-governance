@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from azure.mgmt.network import NetworkManagementClient
 
+from tests.unittest.mocks.azure.mock_network.mock_nat_gateway_operations import MockNatGatewayOperations
 from tests.unittest.mocks.azure.mock_network.mock_network_interface_operations import MockNetworkInterfaceOperations
 from tests.unittest.mocks.azure.mock_network.mock_public_ip_address_operations import MockPublicIpAddressOperations
 
@@ -23,7 +24,8 @@ def mock_network(method):
         @return:
         """
         with patch.object(NetworkManagementClient, 'public_ip_addresses', MockPublicIpAddressOperations()), \
-             patch.object(NetworkManagementClient, 'network_interfaces', MockNetworkInterfaceOperations()):
+             patch.object(NetworkManagementClient, 'network_interfaces', MockNetworkInterfaceOperations()), \
+                patch.object(NetworkManagementClient, 'nat_gateways', MockNatGatewayOperations()):
             result = method(*args, **kwargs)
         return result
 
