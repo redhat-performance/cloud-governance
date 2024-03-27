@@ -58,3 +58,32 @@ class MonitorManagementOperations(CommonOperations):
             logger.error(http_error)
         except Exception as err:
             logger.error(err)
+
+    def get_resource_metrics(self, resource_id: str, metricnames: str, aggregation: str,
+                             timespan: str = None, interval: timedelta = timedelta(days=1), **kwargs):
+        """
+        This method returns the metrics object of individual resource
+        :param resource_id:
+        :type resource_id:
+        :param metricnames:
+        :type metricnames:
+        :param aggregation:
+        :type aggregation:
+        :param timespan:
+        :type timespan:
+        :param interval:
+        :type interval:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        if not timespan:
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=7)
+            timespan = f'{start_date}/{end_date}'
+        response = self.__monitor_client.metrics.list(resource_uri=resource_id, timespan=timespan,
+                                                      metricnames=metricnames, aggregation=aggregation,
+                                                      result_type='Data', interval=interval,
+                                                      **kwargs)
+        return response.as_dict()
