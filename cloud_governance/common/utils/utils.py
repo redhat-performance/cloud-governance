@@ -1,5 +1,6 @@
 
 import os
+import re
 
 
 class Utils:
@@ -49,3 +50,17 @@ class Utils:
         for val in args:
             equal = str1.lower() == val.lower() and equal
         return equal
+
+    @staticmethod
+    def convert_to_title_case(snake_case: str):
+        """
+        This method convert lower case to title case
+        ex: test_name => TestName
+            test-name => TestName
+        :param snake_case:
+        :type snake_case:
+        :return:
+        :rtype:
+        """
+        title_case = re.sub(r'(?:^|[_-])([a-z])', lambda match: match.group(1).upper(), snake_case)
+        return title_case

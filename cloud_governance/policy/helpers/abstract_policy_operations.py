@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Union
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
+from cloud_governance.common.elasticsearch.modals.policy_es_data import PolicyEsData
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -174,34 +175,15 @@ class AbstractPolicyOperations(ABC):
 
     # ES Schema format
 
-    def _get_es_schema(self, resource_id: str, user: str, skip_policy: str, cleanup_days: int, dry_run: str,
-                       name: str,
-                       region: str, cleanup_result: str, resource_action: str, cloud_name: str,
-                       resource_state: str,
-                       resource_type: str, **kwargs):
-        current_date = datetime.utcnow().date()
-        resource_data = {
-            'ResourceId': resource_id,
-            'User': user,
-            'SkipPolicy': skip_policy,
-            'ResourceType': resource_type,
-            'ResourceState': resource_state,
-            'CleanUpDays': cleanup_days,
-            'DryRun': dry_run,
-            'Name': name,
-            'RegionName': region,
-            f'Resource{resource_action}': cleanup_result,
-            'PublicCloud': cloud_name,
-            'ExpireDays': self._days_to_take_action,
-            'index-id': f'{current_date}-{cloud_name.lower()}-{self.account.lower()}-{region.lower()}-{resource_id}-{resource_state.lower()}'
-        }
-        if kwargs.get('launch_time'):
-            resource_data.update({'LaunchTime': kwargs.get('launch_time')})
-        if kwargs.get('running_days'):
-            resource_data.update({'RunningDays': kwargs.get('running_days')})
-        if kwargs.get('volume_size'):
-            resource_data.update({'VolumeSize': kwargs.get('volume_size')})
-
+    def _get_es_schema(self, **kwargs):
+        kwargs['action_days'] = self._days_to_take_action
+        kwargs['region_name'] = kwargs.pop('region', '')
+        kwargs['days_count'] = kwargs.pop('cleanup_days', 0)
+        kwargs['resource_action'] = kwargs.pop('cleanup_result', '')
+        kwargs['public_cloud'] = kwargs.pop('cloud_name', '')
+        kwargs['account'] = self.account
+        policy_es_data = PolicyEsData(**kwargs)
+        resource_data = policy_es_data.get_as_dict_title_case()
         return resource_data
 
     @abstractmethod

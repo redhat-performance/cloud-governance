@@ -23,7 +23,7 @@ def test_ip_unattached__verify_count_zero_dry_run_yes():
     addresses = ec2_client.describe_addresses()['Addresses']
     assert len(addresses) == 1
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 0
+    assert response[0]['DaysCount'] == 0
 
 
 @mock_ec2
@@ -43,7 +43,7 @@ def test_ip_unattached__verify_count_increased_dry_run_no():
     addresses = ec2_client.describe_addresses()['Addresses']
     assert len(addresses) == 1
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 1
+    assert response[0]['DaysCount'] == 1
 
 
 @mock_ec2
@@ -65,7 +65,7 @@ def test_ip_unattached__verify_not_delete_on_dry_run_yes():
     addresses = ec2_client.describe_addresses()['Addresses']
     assert len(addresses) == 1
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 0
+    assert response[0]['DaysCount'] == 0
 
 
 @mock_ec2
@@ -110,7 +110,7 @@ def test_ip_unattached__skips_delete_on_dry_run_no():
     addresses = ec2_client.describe_addresses()['Addresses']
     assert len(addresses) == 1
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 7
+    assert response[0]['DaysCount'] == 7
     assert response[0]['ResourceState'] == 'disassociated'
 
 
