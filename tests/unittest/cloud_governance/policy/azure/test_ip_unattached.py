@@ -129,7 +129,7 @@ def test_ip_unattached_dry_run_yes():
     ip_unattached = IpUnattached()
     response = ip_unattached.run()
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 0
+    assert response[0]['DaysCount'] == 0
 
 
 @mock_compute
@@ -148,7 +148,7 @@ def test_ip_unattached_dryrun_no():
     ip_unattached = IpUnattached()
     response = ip_unattached.run()
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 1
+    assert response[0]['DaysCount'] == 1
     assert response[0]['ResourceState'] == 'disassociated'
 
 
@@ -169,7 +169,7 @@ def test_ip_unattached_delete():
     ip_unattached = IpUnattached()
     response = ip_unattached.run()
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 7
+    assert response[0]['DaysCount'] == 7
     assert response[0]['ResourceState'] == 'Deleted'
 
 
@@ -190,7 +190,7 @@ def test_ip_unattached_skips_delete():
     ip_unattached = IpUnattached()
     response = ip_unattached.run()
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 7
+    assert response[0]['DaysCount'] == 7
     assert response[0]['ResourceState'] == 'disassociated'
 
 
@@ -211,5 +211,5 @@ def test_ip_unattached_set_counter_zero():
     ip_unattached = IpUnattached()
     response = ip_unattached.run()
     assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 0
+    assert response[0]['DaysCount'] == 0
     assert response[0]['ResourceState'] == 'disassociated'

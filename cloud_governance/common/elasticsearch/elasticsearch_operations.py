@@ -146,6 +146,8 @@ class ElasticSearchOperations:
             data['account'] = self.__account
         if data.get('index-id'):
             kwargs['id'] = data.get('index-id')
+        if data.get('IndexId'):
+            kwargs['id'] = data.get('IndexId')
         try:
             if isinstance(data, dict):  # JSON Object
                 self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)

@@ -25,3 +25,10 @@ def test_get_cloud_policies():
     from cloud_governance.common.utils.utils import Utils
     policies = Utils.get_cloud_policies(cloud_name='AWS', dir_dict=True)
     assert 'instance_run' in policies['cleanup']
+
+
+def test_convert_to_title_case():
+    from cloud_governance.common.utils.utils import Utils
+    assert 'TestSnakeCase' == Utils.convert_to_title_case(snake_case='test_snake_case')
+    assert 'TestSnakeCase' == Utils.convert_to_title_case(snake_case='test-snake-case')
+    assert 'TestSnakeCase' == Utils.convert_to_title_case(snake_case='test_snake-case')
