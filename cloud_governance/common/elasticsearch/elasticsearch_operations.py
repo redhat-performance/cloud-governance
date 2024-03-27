@@ -1,5 +1,4 @@
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import time
 import pandas as pd
 from elasticsearch.helpers import bulk
@@ -150,6 +149,8 @@ class ElasticSearchOperations:
             data['DryRun'] = self.__environment_variables_dict.get('dry_run')
         if 'CleanUpDays' not in data:
             data['CleanUpDays'] = self.__environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
+        if data.get('IndexId'):
+            kwargs['id'] = data.get('IndexId')
         try:
             if isinstance(data, dict):  # JSON Object
                 self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)

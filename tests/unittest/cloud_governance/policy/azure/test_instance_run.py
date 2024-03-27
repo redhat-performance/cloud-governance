@@ -27,7 +27,7 @@ def test_instance_run():
         assert len(response) == 1
         response = response[0]
         assert 'DryRun' in response.keys()
-        assert 'False' == response['ResourceStopped']
+        assert 'False' == response['ResourceAction']
 
 
 def test_instance_run_stop_false():
@@ -51,7 +51,7 @@ def test_instance_run_stop_false():
         assert len(response) == 1
         assert 'DryRun' in response[0].keys()
         assert 1 == response[0]['CleanUpDays']
-        assert 'False' == response[0]['ResourceStopped']
+        assert 'False' == response[0]['ResourceAction']
 
 
 def test_instance_run_stopped():
@@ -76,7 +76,7 @@ def test_instance_run_stopped():
         assert len(response) == 1
         assert 'DryRun' in response[0].keys()
         assert 1 == response[0]['CleanUpDays']
-        assert 'True' == response[0]['ResourceStopped']
+        assert 'True' == response[0]['ResourceAction']
 
 
 def test_instance_run_stopped_skip():
@@ -101,7 +101,7 @@ def test_instance_run_stopped_skip():
         assert 'DryRun' in response[0].keys()
         assert 'NOTDELETE' == response[0]['SkipPolicy'].upper()
         assert 1 == response[0]['CleanUpDays']
-        assert 'False' == response[0]['ResourceStopped']
+        assert 'False' == response[0]['ResourceAction']
 
 
 def test_instance_run_stopped_test_days():
@@ -131,7 +131,7 @@ def test_instance_run_stopped_test_days():
         assert 'DryRun' in response[0].keys()
         assert 2 == response[0]['CleanUpDays']
         assert 'NOTDELETE' == response[0]['SkipPolicy'].upper()
-        assert 'False' == response[0]['ResourceStopped']
+        assert 'False' == response[0]['ResourceAction']
 
 
 def test_instance_run_stopped_test_current_day():
@@ -159,9 +159,9 @@ def test_instance_run_stopped_test_current_day():
         response = instance_run.run()
         assert len(response) == 1
         assert 'DryRun' in response[0].keys()
-        assert 1 == response[0]['CleanUpDays']
+        assert 1 == response[0]['DaysCount']
         assert 'NOTDELETE' == response[0]['SkipPolicy'].upper()
-        assert 'False' == response[0]['ResourceStopped']
+        assert 'False' == response[0]['ResourceAction']
 
 
 def test_instance_run_vm_already_stopped():

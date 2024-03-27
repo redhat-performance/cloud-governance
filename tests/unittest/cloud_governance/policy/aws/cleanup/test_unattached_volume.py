@@ -34,7 +34,7 @@ def test_unattached_volume_dry_run_yes():
     response = volume_run.run()
     assert len(response) > 0
     response = response[0]
-    assert response.get('ResourceDelete') == 'False'
+    assert response.get('ResourceAction') == 'False'
     assert response.get('SkipPolicy') == 'NA'
 
 
@@ -51,7 +51,7 @@ def test_unattached_volume_dry_run_no():
     response = volume_run.run()
     assert len(response) > 0
     response = response[0]
-    assert response.get('ResourceDelete') == 'True'
+    assert response.get('ResourceAction') == 'True'
     assert response.get('SkipPolicy') == 'NA'
 
 
@@ -67,7 +67,7 @@ def test_unattached_volume_dry_run_no_7_days_action():
     response = volume_run.run()
     assert len(response) > 0
     response = response[0]
-    assert response.get('ResourceDelete') == 'False'
+    assert response.get('ResourceAction') == 'False'
     assert response.get('SkipPolicy') == 'NA'
 
 
@@ -87,7 +87,7 @@ def test_unattached_volume_dry_run_no_skip():
     response = volume_run.run()
     assert len(response) > 0
     response = response[0]
-    assert response.get('ResourceDelete') == 'False'
+    assert response.get('ResourceAction') == 'False'
     assert response.get('SkipPolicy') == 'NOTDELETE'
 
 

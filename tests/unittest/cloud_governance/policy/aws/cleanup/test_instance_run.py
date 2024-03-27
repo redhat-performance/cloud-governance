@@ -29,7 +29,7 @@ def test_instance_run():
                                                                                                             [])
     instance_run = InstanceRun()
     running_instances_data = instance_run.run()
-    assert running_instances_data[0].get('ResourceStopped') == 'False'
+    assert running_instances_data[0].get('ResourceAction') == 'False'
     assert running_instances_data[0].get('ResourceState') == 'running'
 
 
@@ -59,7 +59,7 @@ def test_instance_run_alert():
     assert len(running_instances_data) == 1
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'False'
+    assert running_instances_data[0]['ResourceAction'] == 'False'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
@@ -91,7 +91,7 @@ def test_instance_run_alert_stopped():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['ResourceAction'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
@@ -122,7 +122,7 @@ def test_instance_run_alert_skip():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'False'
+    assert running_instances_data[0]['ResourceAction'] == 'False'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
@@ -154,7 +154,7 @@ def test_instance_run_stop_reset():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['ResourceAction'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
     instance_run.run()
     instances = ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["stopped"]}])['Reservations']
@@ -191,7 +191,7 @@ def test_instance_run_stop_start():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['ResourceAction'] == 'True'
     assert running_instances_data[0]['CleanUpDays'] == 4
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
     instance_run.run()
@@ -235,7 +235,7 @@ def test_ec2_force_delete():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceStopped'] == 'True'
+    assert running_instances_data[0]['ResourceAction'] == 'True'
     assert running_instances_data[0]['ForceDeleted'] == 'True'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
@@ -269,6 +269,5 @@ def test_ec2_force_delete_skip():
     running_instances_data = instance_run.run()
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'yes'
-    assert running_instances_data[0]['ResourceStopped'] == 'False'
-
+    assert running_instances_data[0]['ResourceAction'] == 'False'
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
