@@ -7,3 +7,4 @@ PUBLIC_ACCOUNTS_COST_REPORTS = 'Accounts'
 
 
 DATE_FORMAT = "%Y-%m-%d"
+UNUSED_DAYS = 7

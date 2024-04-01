@@ -34,7 +34,7 @@ This tool support the following policies:
 * [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Get the inactive/empty buckets and delete them after 7 days.
 * [empty_roles](cloud_governance/policy/aws/empty_roles.py): Get empty roles and delete it after 7 days.
 * [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Get the zombie snapshots and delete it after 7 days.
-* [unused_nat_gateway](cloud_governance/policy/aws/unused_nat_gateway.py): Get the unused nat gateways and deletes it after 7 days.
+* [unused_nat_gateway](cloud_governance/policy/aws/cleanup/unused_nat_gateway.py): Get the unused nat gateways and deletes it after 7 days.
 * gitleaks: scan Github repository git leak (security scan)  
 * [cost_over_usage](cloud_governance/policy/aws/cost_over_usage.py): send mail to aws user if over usage cost
 
