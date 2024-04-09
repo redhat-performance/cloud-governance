@@ -13,7 +13,7 @@ pipeline {
     agent {
         docker {
             label 'haim-cloud-governance-worker'
-            image 'athiru/fedora38-podman:latest'
+            image 'quay.io/athiru/fedora38-podman:latest'
             args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
     }
