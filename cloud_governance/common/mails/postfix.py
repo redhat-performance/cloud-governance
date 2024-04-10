@@ -3,6 +3,7 @@ import smtplib
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Union, Optional
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -58,6 +59,48 @@ class Postfix:
             bucket_name = self.__policy_output
         return bucket_name, key
 
+    def split_emails(self, email_str: str):
+        """
+        This method split the mail list
+        :param email_str:
+        :type email_str:
+        :return:
+        :rtype:
+        """
+        splitter = "," if "," in email_str else " "
+        return [item.strip() for item in email_str.split(splitter)]
+
+    def prettify_to(self, to: Union[str, list]):
+        """
+        This method prettify to
+        :param to:
+        :type to:
+        :return:
+        :rtype:
+        """
+
+        if isinstance(to, str):
+            to = self.split_emails(email_str=to)
+        if isinstance(to, list):
+            return ','.join([item if '@redhat.com' in item else f'{item}@redhat.com' for item in to])
+        return to
+
+    def prettify_cc(self, cc: Union[str, list], to: str = ''):
+        """
+        This method prettify cc
+        :param to:
+        :type to:
+        :param cc:
+        :type cc:
+        :return:
+        :rtype:
+        """
+        if isinstance(cc, str):
+            cc = self.split_emails(email_str=cc)
+        cc_unique_values = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
+        to = self.prettify_to(to=to).split(',')
+        return ','.join(list(set(cc_unique_values) - set(to)))
+
     @logger_time_stamp
     def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
         if self.__email_alert:
@@ -67,19 +110,14 @@ class Postfix:
                 cc = self.__mail_cc
             if not self.__ldap_search.get_user_details(user_name=to):
                 cc.append('athiruma@redhat.com')
-            cc = [cc_user for cc_user in cc if to and to not in cc_user]
-            cc = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
             msg = MIMEMultipart('alternative')
             msg["Subject"] = subject
             msg["From"] = "%s <%s>" % (
                 'cloud-governance',
                 "@".join(["noreply-cloud-governance", 'redhat.com']),
             )
-            if isinstance(to, str):
-                msg["To"] = "@".join([to, 'redhat.com'])
-            elif isinstance(to, list):
-                msg["To"] = ", ".join(to)
-            msg["Cc"] = ",".join(cc)
+            msg["To"] = self.prettify_to(to)
+            msg["Cc"] = self.prettify_cc(cc=cc, to=to)
             # msg.add_header("Reply-To", self.reply_to)
             # msg.add_header("User-Agent", self.reply_to)
             if kwargs.get('filename'):
