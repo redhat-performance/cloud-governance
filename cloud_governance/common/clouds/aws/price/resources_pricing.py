@@ -1,5 +1,6 @@
 
 from cloud_governance.common.clouds.aws.price.price import AWSPrice
+from cloud_governance.common.utils.configs import DEFAULT_ROUND_DIGITS
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -21,7 +22,8 @@ class ResourcesPricing:
         This method returns the cost of ec2 instance types cost
         @return:
         """
-        cost = float(self._aws_pricing.get_price(instance=instance_type, os='Linux', region=self._aws_pricing.get_region_name(self.region)))
+        cost = float(self._aws_pricing.get_price(instance=instance_type, os='Linux',
+                                                 region=self._aws_pricing.get_region_name(self.region)))
         return cost * hours
 
     def get_ebs_cost(self, volume_size: int, volume_type: str, hours: float):
@@ -45,3 +47,27 @@ class ResourcesPricing:
         if resource_type == 'eip':
             return self.IP_HOURLY_COST * hours
 
+    def get_eip_unit_price(self):
+        """
+        This method returns the ElasticIp Price
+        :return:
+        :rtype:
+        """
+        return self.IP_HOURLY_COST
+
+    def get_nat_gateway_unit_price(self, region_name: str):
+        """
+        This method returns the unit price of NatGateway
+        :param region_name:
+        :type region_name:
+        :return:
+        :rtype:
+        """
+        service_code = 'AmazonEC2'
+        filter_dict = [
+            {"Field": "productFamily", "Value": "NAT Gateway", "Type": "TERM_MATCH"},
+            {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {"Field": "groupDescription", "Value": "Hourly charge for NAT Gateways", "Type": "TERM_MATCH"},
+        ]
+        unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
+        return round(unit_price, DEFAULT_ROUND_DIGITS)

@@ -172,6 +172,18 @@ class AbstractPolicyOperations(ABC):
         """
         raise NotImplementedError("This method not yet implemented")
 
+    def __current_savings_year(self, unit_price: float):
+        """
+        This method returns the savings this year
+        :param unit_price:
+        :type unit_price:
+        :return:
+        :rtype:
+        """
+        year_end_date = datetime.utcnow().date().replace(month=12, day=31)
+        total_days = (year_end_date - datetime.utcnow().date()).days + 1
+        return total_days * unit_price
+
     # ES Schema format
 
     def _get_es_schema(self, resource_id: str, user: str, skip_policy: str, cleanup_days: int, dry_run: str,
@@ -193,6 +205,8 @@ class AbstractPolicyOperations(ABC):
             f'Resource{resource_action}': cleanup_result,
             'PublicCloud': cloud_name,
             'ExpireDays': self._days_to_take_action,
+            'UnitPrice': kwargs.get('unit_price', 0),
+            'TotalYearlySavings': self.__current_savings_year(kwargs.get('unit_price', 0)),
             'index-id': f'{current_date}-{cloud_name.lower()}-{self.account.lower()}-{region.lower()}-{resource_id}-{resource_state.lower()}'
         }
         if kwargs.get('launch_time'):

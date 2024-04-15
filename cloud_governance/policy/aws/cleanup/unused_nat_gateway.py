@@ -58,6 +58,7 @@ class UnUsedNatGateway(AWSPolicyOperations):
         :return:
         :rtype:
         """
+        unit_price = self._resource_pricing.get_nat_gateway_unit_price(region_name=self._region)
         unused_nat_gateways = []
         nat_gateways = self._ec2_operations.get_nat_gateways()
         for nat_gateway in nat_gateways:
@@ -83,7 +84,8 @@ class UnUsedNatGateway(AWSPolicyOperations):
                                                         resource_action=self.RESOURCE_ACTION,
                                                         cloud_name=self._cloud_name,
                                                         resource_type='NatGateway',
-                                                        resource_state=nat_gateway.get('State')
+                                                        resource_state=nat_gateway.get('State'),
+                                                        unit_price=unit_price
                                                         if not cleanup_result else "Deleted")
                     unused_nat_gateways.append(resource_data)
             if not cleanup_result:
