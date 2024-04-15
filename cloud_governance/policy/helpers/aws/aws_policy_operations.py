@@ -3,6 +3,7 @@ import boto3
 
 from cloud_governance.common.clouds.aws.cloudwatch.cloudwatch_operations import CloudWatchOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -18,6 +19,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._ec2_client = boto3.client('ec2', region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
+        self._resource_pricing = ResourcesPricing()
         self._s3_client = boto3.client('s3')
         self._iam_client = boto3.client('iam')
 

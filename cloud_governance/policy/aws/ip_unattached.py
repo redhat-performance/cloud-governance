@@ -18,6 +18,7 @@ class IpUnattached(AWSPolicyOperations):
         :return:
         :rtype:
         """
+        unit_price = self._resource_pricing.get_eip_unit_price()
         addresses = self._ec2_operations.get_elastic_ips()
         active_cluster_ids = self._get_active_cluster_ids()
         unattached_addresses = []
@@ -43,6 +44,7 @@ class IpUnattached(AWSPolicyOperations):
                                                         resource_action=self.RESOURCE_ACTION,
                                                         cloud_name=self._cloud_name,
                                                         resource_type='PublicIPv4',
+                                                        unit_price=unit_price,
                                                         resource_state='disassociated' if not cleanup_result else "Deleted"
                                                         )
                     unattached_addresses.append(resource_data)

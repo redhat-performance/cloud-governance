@@ -6,6 +6,7 @@ import boto3
 import json
 from pkg_resources import resource_filename
 
+from cloud_governance.common.logger.init_logger import logger
 # Search product filter
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -123,3 +124,24 @@ class AWSPrice:
                 if item_data['VolumeType'] == 'sc1':
                     ebs_monthly_cost = self.get_ebs_cost(volume_type='sc1', region=self.region) * item_data['Size']
             return round(ebs_monthly_cost, 3)
+
+    def get_service_pricing(self, service_code: str, filter_list: list) -> float:
+        """
+        This method returns the price of the product by service
+        :param service_code:
+        :type service_code:
+        :param filter_list:
+        :type filter_list:
+        :return:
+        :rtype:
+        """
+        try:
+            data = self.__client.get_products(ServiceCode=service_code, Filters=filter_list)
+            od = json.loads(data['PriceList'][0])['terms']['OnDemand']
+            id1 = list(od)[0]
+            id2 = list(od[id1]['priceDimensions'])[0]
+            return float(od[id1]['priceDimensions'][id2]['pricePerUnit']['USD'])
+        except Exception as err:
+            print(err)
+            logger.error(err)
+            return 0
