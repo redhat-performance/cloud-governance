@@ -25,6 +25,7 @@ class CostExplorerPayerBillings(CostBillingReports):
 
     def __init__(self):
         super().__init__()
+        self.__savings_plan_list = None
         self.__aws_role = self._environment_variables_dict.get("AWS_ACCOUNT_ROLE")
         self.__access_key, self.__secret_key, self.__session = self.__get_sts_credentials()
         self.__ce_client = boto3.client('ce', aws_access_key_id=self.__access_key, aws_secret_access_key=self.__secret_key, aws_session_token=self.__session)
@@ -71,7 +72,7 @@ class CostExplorerPayerBillings(CostBillingReports):
                                 timestamp = datetime.datetime.strptime(start_time, '%Y-%m-%d')
                                 month = datetime.datetime.strftime(timestamp, "%Y %b")
                                 month_full_name = datetime.datetime.strftime(timestamp, "%B")
-                                payer_monthly_savings_plan = self.update_to_gsheet.get_monthly_spa(month_name=month_full_name, dir_path=self.__temporary_dir)
+                                payer_monthly_savings_plan = self.__savings_plan_list[start_time]
                                 budget = account_budget if start_time.split('-')[0] in years else 0
                                 index_id = f'{start_time}-{name}'
                                 upload_data = {tag: name, 'Actual': round(float(amount), self.DEFAULT_ROUND_DIGITS), 'start_date': start_time,
@@ -111,7 +112,7 @@ class CostExplorerPayerBillings(CostBillingReports):
             index = f'{start_date}-{account_id}'
             month_full_name = datetime.datetime.strftime(datetime.datetime.strptime(start_date, '%Y-%m-%d'), "%B")
             total_percentage = (cost / float(self.__monthly_cost_for_spa_calc.get(start_date)))
-            payer_monthly_savings_plan = self.update_to_gsheet.get_monthly_spa(month_name=month_full_name, dir_path=self.__temporary_dir)
+            payer_monthly_savings_plan = self.__savings_plan_list[start_date]
             if index in cost_usage_data[account]:
                 cost_usage_data[account][index]['Forecast'] = cost
                 cost_usage_data[account][index]['TotalPercentage'] = total_percentage
@@ -169,6 +170,7 @@ class CostExplorerPayerBillings(CostBillingReports):
     @logger_time_stamp
     def get_linked_accounts_usage(self):
         """This method get the linked accounts usage using cost center"""
+        self.__savings_plan_list = self.__savings_plan_operations.get_monthly_active_savings_plan_summary()
         cost_centers = self.get_cost_centers()
         cost_usage_data = {}
         start_date, end_date = self.get_date_ranges()

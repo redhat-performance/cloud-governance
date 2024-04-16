@@ -1,7 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import boto3
 from dateutil.relativedelta import relativedelta
+
+from cloud_governance.common.utils.configs import HOURS_IN_SECONDS, HOURS_IN_DAY
 
 
 class SavingsPlansOperations:
@@ -63,13 +65,15 @@ class SavingsPlansOperations:
                 responses.append(monthly_savings_data)
         return responses
 
-    def get_savings_plans_list(self, states: list = [], **kwargs):
+    def get_savings_plans_list(self, states: list = None, **kwargs):
         """
         This method returns the savings plans list
         :param states:
         :return:
         """
         results = {}
+        if not states:
+            states = ['active']
         kwargs.update({'states': states})
         if not kwargs.get('states'):
             kwargs.pop('states')
@@ -79,3 +83,50 @@ class SavingsPlansOperations:
             response = self.savings_plan_client.describe_savings_plans(**kwargs)
             results[self.SAVINGS_PLANS].append(response.get(self.SAVINGS_PLANS))
         return results[self.SAVINGS_PLANS]
+
+    def get_monthly_active_savings_plan_summary(self):
+        """
+        This method returns the monthly savings plans summary
+        :return:
+        :rtype:
+        """
+        savings_plans = self.get_savings_plans_list()
+        monthly_sp_sum = {}
+        for sp in savings_plans:
+            start_date = datetime.fromisoformat(sp.get('start')[:-1])
+            end_date = datetime.fromisoformat(sp.get('end')[:-1])
+            commitment = float(sp.get('commitment', 0))
+            monthly_commitments = self.__get_monthly_commitments(start_date=start_date, end_date=end_date,
+                                                                 commitment=commitment)
+            for month, monthly_commitment in monthly_commitments.items():
+                monthly_sp_sum[month] = monthly_sp_sum.get(month, 0) + monthly_commitment
+        return monthly_sp_sum
+
+    def __get_monthly_commitments(self, start_date: datetime, end_date: datetime, commitment: float):
+        """
+        This method split the date rages to months
+        :param start_date:
+        :type start_date:
+        :param end_date:
+        :type end_date:
+        :return:
+        :rtype:
+        """
+        current_month = start_date
+        monthly_ranges = {}
+        while current_month <= end_date:
+            month = current_month.month % 12 + 1
+            year = current_month.year
+            if current_month.month % 12 == 0:
+                year = current_month.year + 1
+                month = 1
+            end_of_month = current_month.replace(year=year, month=month, day=1) - timedelta(days=1)
+            end_of_month = min(end_of_month, end_date)
+            total_seconds = (end_of_month - current_month).total_seconds()
+            monthly_commitment = commitment * ((total_seconds / HOURS_IN_SECONDS) + HOURS_IN_DAY)
+            monthly_ranges[str(current_month.date().replace(day=1))] = monthly_commitment
+            if current_month.month == 12:
+                current_month = datetime(current_month.year + 1, 1, 1)
+            else:
+                current_month = datetime(current_month.year, current_month.month + 1, 1)
+        return monthly_ranges
