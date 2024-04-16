@@ -1,6 +1,6 @@
 ### ecoeng_02
 
 Accounts:
-- appeng
-- fsi-partner
-- fsi-ecosystem
+- appeng: mmikhail@redhat.com, matrujil@redhat.com, babak@redhat.com, hhalbfin@redhat.com
+- fsi-partner: mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com
+- fsi-ecosystem: mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com
