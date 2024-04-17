@@ -102,7 +102,7 @@ class EC2Operations:
         """
 
         divider = {"type": "divider"}
-        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'RunningDays', 'TicketId']
+        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'RunningDays']
         rows = []
         for user, region_list in resources_list.items():
             for region_name, resources_list in region_list.items():
@@ -126,7 +126,7 @@ class EC2Operations:
         :param resources_list:
         :return:
         """
-        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',  'RunningDays', 'TicketId']
+        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',  'RunningDays']
         with open('email_template.j2') as template:
             template = Template(template.read())
             body = template.render({'resources_list': resources_list, 'keys_list': keys_list})
