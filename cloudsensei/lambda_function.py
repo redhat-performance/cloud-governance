@@ -76,14 +76,14 @@ class EC2Operations:
                             elif tag_key == 'name':
                                 name = tag.get('Value')
                         if not skip and user:
-                        instance_details = {'InstanceId': resource.get('InstanceId'),
+                            instance_details = {'InstanceId': resource.get('InstanceId'),
                                             'Name': name, 'LaunchDate': str(launch_time),
                                             'RunningDays': f"{days} days", 'State': resource.get('State', {}).get('Name'),
                                             'InstanceType': resource.get('InstanceType')}
                         if ticket_tags:  # Add TicketId tags if available
                             instance_details['TicketId'] = ticket_tags
                         long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name, []).append(instance_details)
-    return long_running_instances_by_user
+        return long_running_instances_by_user
 
     def get_account_alias_name(self):
         """
