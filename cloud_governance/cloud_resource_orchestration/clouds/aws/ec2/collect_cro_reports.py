@@ -225,7 +225,7 @@ class CollectCROReports:
                     self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=source)
                     upload_data[ticket_id] = source
                 else:
-                    if self.__check_value_in_es(tag_key='ticket_id_state', tag_value='manager-approved', ticket_id=ticket_id):
+                    if self.__check_value_in_es(tag_key='ticket_id_state', tag_value='manager-approved', ticket_id=ticket_id) or issue_description.get('ApprovedManager') != '':
                         es_data['_source']['ticket_id_state'] = 'in-progress'
                         self.__cost_over_usage.es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=source)
                         upload_data[ticket_id] = source
