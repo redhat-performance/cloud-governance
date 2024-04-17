@@ -71,15 +71,19 @@ class EC2Operations:
                                 break
                             if tag_key == 'user':
                                 user = tag.get('Value')
+                            if tag_key == 'ticketid':
+                                ticket_tags = tag.get('Value')
                             elif tag_key == 'name':
                                 name = tag.get('Value')
                         if not skip and user:
-                            long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name, []).append(
-                                {'InstanceId': resource.get('InstanceId'),
-                                 'Name': name, 'LaunchDate': str(launch_time),
-                                 'RunningDays': f"{days} days", 'State': resource.get('State', {}).get('Name'),
-                                 'InstanceType': resource.get('InstanceType')})
-        return long_running_instances_by_user
+                        instance_details = {'InstanceId': resource.get('InstanceId'),
+                                            'Name': name, 'LaunchDate': str(launch_time),
+                                            'RunningDays': f"{days} days", 'State': resource.get('State', {}).get('Name'),
+                                            'InstanceType': resource.get('InstanceType')}
+                        if ticket_tags:  # Add TicketId tags if available
+                            instance_details['TicketId'] = ticket_tags
+                        long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name, []).append(instance_details)
+    return long_running_instances_by_user
 
     def get_account_alias_name(self):
         """
@@ -98,7 +102,7 @@ class EC2Operations:
         """
 
         divider = {"type": "divider"}
-        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'RunningDays']
+        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'RunningDays', 'TicketId']
         rows = []
         for user, region_list in resources_list.items():
             for region_name, resources_list in region_list.items():
@@ -122,7 +126,7 @@ class EC2Operations:
         :param resources_list:
         :return:
         """
-        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',  'RunningDays']
+        keys_list = ['User', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',  'RunningDays', 'TicketId']
         with open('email_template.j2') as template:
             template = Template(template.read())
             body = template.render({'resources_list': resources_list, 'keys_list': keys_list})
