@@ -5,6 +5,9 @@ from cloud_governance.common.clouds.aws.cloudwatch.cloudwatch_operations import 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.utils.configs import INSTANCE_IDLE_DAYS, DEFAULT_ROUND_DIGITS, TOTAL_BYTES_IN_KIB, \
+    EC2_NAMESPACE
+from cloud_governance.common.utils.utils import Utils
 from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
 
@@ -131,6 +134,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
                                   'instance_run'):
                 self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
+            elif self._policy == 'instance_idle':
+                self._ec2_client.stop_instances(InstanceIds=[resource_id])
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
 
@@ -181,3 +186,82 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 if tag.get('Key').startswith('kubernetes.io/cluster'):
                     return tag.get('Key')
         return ''
+
+    def __get_aggregation_metrics_value(self, metrics: list, aggregation: str):
+        """
+        This method calculate the average of the metrics
+        @param metrics:
+        @param aggregation:
+        @return:
+        """
+        metrics_result = 0
+        for metric in metrics:
+            metrics_values_sum = sum(metric['Values'])
+            if Utils.equal_ignore_case(aggregation, 'average'):
+                metrics_result += metrics_values_sum / len(metric['Values'])
+            elif Utils.equal_ignore_case(aggregation, 'sum'):
+                metrics_result += metrics_values_sum
+        return round(metrics_result, DEFAULT_ROUND_DIGITS)
+
+    def get_cpu_utilization_percentage_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS, **kwargs):
+        """
+        This method returns the average cpu utilization percentage
+        :param resource_id:
+        :type resource_id:
+        :param days:
+        :type days:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        metrics = self._cloudwatch.get_metric_data(start_time=start_date, end_time=end_date, resource_id=resource_id,
+                                                   resource_type='InstanceId', namespace=EC2_NAMESPACE,
+                                                   metric_names={'CPUUtilization': 'Percent'},
+                                                   statistic='Average')
+        average_cpu_metrics_value = self.__get_aggregation_metrics_value(metrics.get('MetricDataResults', []),
+                                                                         aggregation='average')
+        return average_cpu_metrics_value
+
+    def get_network_in_kib_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS, **kwargs):
+        """
+        This method returns the average network in bytes in KiB
+        :param resource_id:
+        :type resource_id:
+        :param days:
+        :type days:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        metrics = self._cloudwatch.get_metric_data(start_time=start_date, end_time=end_date, resource_id=resource_id,
+                                                   resource_type='InstanceId', namespace=EC2_NAMESPACE,
+                                                   metric_names={'NetworkIn': 'Bytes'},
+                                                   statistic='Average')
+        average_network_in_bytes = self.__get_aggregation_metrics_value(metrics.get('MetricDataResults', []),
+                                                                        aggregation='average')
+        return round(average_network_in_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)
+
+    def get_network_out_kib_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS, **kwargs):
+        """
+        This method returns the average network out bytes in KiB
+        :param resource_id:
+        :type resource_id:
+        :param days:
+        :type days:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        metrics = self._cloudwatch.get_metric_data(start_time=start_date, end_time=end_date, resource_id=resource_id,
+                                                   resource_type='InstanceId', namespace=EC2_NAMESPACE,
+                                                   metric_names={'NetworkOut': 'Bytes'},
+                                                   statistic='Average')
+        average_network_out_bytes = self.__get_aggregation_metrics_value(metrics.get('MetricDataResults', []),
+                                                                         aggregation='average')
+        return round(average_network_out_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)

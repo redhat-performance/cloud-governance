@@ -1,5 +1,7 @@
 
 import os
+from datetime import datetime, timedelta
+from typing import Union
 
 
 class Utils:
@@ -49,3 +51,82 @@ class Utils:
         for val in args:
             equal = str1.lower() == val.lower() and equal
         return equal
+
+    @staticmethod
+    def contains_ignore_case(string: str, str1: str):
+        """
+        This method check that
+        :param string:
+        :type string:
+        :param str1:
+        :type str1:
+        :return:
+        :rtype:
+        """
+        return str1.lower() in string
+
+    @staticmethod
+    def greater_than(val1: Union[int, float], val2: Union[int, float]) -> bool:
+        """
+        This method returns bool, on performing the greater on val1 to val2
+        :param val1:
+        :type val1:
+        :param val2:
+        :type val2:
+        :return:
+        :rtype:
+        """
+        return val1 > val2
+
+    @staticmethod
+    def greater_than_equal(val1: Union[int, float], val2: Union[int, float]) -> bool:
+        """
+        This method returns bool, on performing the greater equal on val1 to val2
+        :param val1:
+        :type val1:
+        :param val2:
+        :type val2:
+        :return:
+        :rtype:
+        """
+        return val1 >= val2
+
+    @staticmethod
+    def less_than(val1: Union[int, float], val2: Union[int, float]):
+        """
+        This method returns bool, on performing the less than operation on val1 to val2
+        :param val1:
+        :type val1:
+        :param val2:
+        :type val2:
+        :return:
+        :rtype:
+        """
+        return val1 < val2
+
+    @staticmethod
+    def less_than_equal(val1: Union[int, float], val2: Union[int, float]):
+        """
+        This method returns bool, on performing the less than equal operation on val1 to val2
+        :param val1:
+        :type val1:
+        :param val2:
+        :type val2:
+        :return:
+        :rtype:
+        """
+        return val1 <= val2
+
+    @staticmethod
+    def get_start_and_end_datetime(days: int) -> [datetime, datetime]:
+        """
+        This method returns the start and end datetime
+        :param days:
+        :type days:
+        :return:
+        :rtype:
+        """
+        days = 1 if days == 0 else days
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+        return start_date, end_date
