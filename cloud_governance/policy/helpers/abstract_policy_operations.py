@@ -182,7 +182,7 @@ class AbstractPolicyOperations(ABC):
         """
         year_end_date = datetime.utcnow().date().replace(month=12, day=31)
         total_days = (year_end_date - datetime.utcnow().date()).days + 1
-        return total_days * unit_price
+        return total_days * 24 * unit_price
 
     # ES Schema format
 

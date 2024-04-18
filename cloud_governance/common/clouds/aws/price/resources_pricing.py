@@ -71,3 +71,22 @@ class ResourcesPricing:
         ]
         unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
         return round(unit_price, DEFAULT_ROUND_DIGITS)
+
+    def get_ebs_unit_price(self, region_name: str, ebs_type: str):
+        """
+        This method returns the ebs_type unit price
+        :param region_name:
+        :type region_name:
+        :param ebs_type:
+        :type ebs_type:
+        :return:
+        :rtype:
+        """
+        service_code = 'AmazonEC2'
+        filter_dict = [
+            {"Field": "productFamily", "Value": "Storage", "Type": "TERM_MATCH"},
+            {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {"Field": "volumeApiName", "Value": ebs_type, "Type": "TERM_MATCH"},
+        ]
+        unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
+        return round(unit_price, DEFAULT_ROUND_DIGITS)
