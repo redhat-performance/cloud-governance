@@ -1,8 +1,11 @@
+import json
+from datetime import datetime, timedelta
 
 from cloud_governance.common.clouds.azure.compute.compute_operations import ComputeOperations
 from cloud_governance.common.clouds.azure.compute.network_operations import NetworkOperations
 from cloud_governance.common.clouds.azure.compute.resource_group_operations import ResourceGroupOperations
 from cloud_governance.common.clouds.azure.monitor.monitor_management_operations import MonitorManagementOperations
+from cloud_governance.common.utils.configs import INSTANCE_IDLE_DAYS, DEFAULT_ROUND_DIGITS, TOTAL_BYTES_IN_KIB
 from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.utils import Utils
@@ -44,11 +47,11 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         """
         action = "deleted"
         try:
-            if self._policy == 'instance_run':
+            if self._policy in ['instance_run', 'instance_idle']:
                 action = "Stopped"
-                self.compute_operations.stop_vm(resource_id=resource_id)
+                delete_status = self.compute_operations.stop_vm(resource_id=resource_id)
             elif self._policy == 'unattached_volume':
-                self.compute_operations.delete_disk(resource_id=resource_id)
+                delete_status = self.compute_operations.delete_disk(resource_id=resource_id)
             elif self._policy == 'ip_unattached':
                 delete_status = self.network_operations.release_public_ip(resource_id=resource_id)
             elif self._policy == 'unused_nat_gateway':
@@ -141,3 +144,105 @@ class AzurePolicyOperations(AbstractPolicyOperations):
                 if key.startswith('kubernetes.io/cluster'):
                     return key
         return ''
+
+    def _get_instance_status(self, resource_id: str, vm_name: str):
+        """
+        This method returns the VM status of the Virtual Machine
+        :param resource_id:
+        :type resource_id:
+        :param vm_name:
+        :type vm_name:
+        :return:
+        :rtype:
+        """
+        instance_statuses = self.compute_operations.get_instance_statuses(resource_id=resource_id, vm_name=vm_name)
+        statuses = instance_statuses.get('statuses', {})
+        if len(statuses) >= 2:
+            status = statuses[1].get('display_status', '').lower()
+        elif len(statuses) == 1:
+            status = statuses[0].get('display_status', '').lower()
+        else:
+            status = 'Unknown Status'
+        return status
+
+    def __get_aggregation_metrics_value(self, metrics: dict, aggregation: str):
+        """
+        This method returns the aggregation value of the metrics
+        :param metrics:
+        :type metrics:
+        :param aggregation:
+        :type aggregation:
+        :return:
+        :rtype:
+        """
+        total_metrics = 0
+        metric_aggregation_value = 0
+        for metric in metrics.get('value', []):
+            metrics_data = metric.get('timeseries', [])
+            if metrics_data:
+                total_metrics = len(metrics_data[0].get('data', []))
+                for metric_data in metrics_data[0].get('data', []):
+                    metric_aggregation_value += metric_data.get(aggregation)
+        if Utils.equal_ignore_case(aggregation, 'average'):
+            return round(metric_aggregation_value / total_metrics, DEFAULT_ROUND_DIGITS)
+        else:
+            return round(metric_aggregation_value, DEFAULT_ROUND_DIGITS)
+
+    def get_cpu_utilization_percentage_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS):
+        """
+        This method returns the cpu utilization percentage
+        :param days:
+        :type days:
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        timespan = f'{start_date}/{end_date}'
+        cpu_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
+                                                                   metricnames='Percentage CPU',
+                                                                   aggregation='Average',
+                                                                   timespan=timespan)
+        average_cpu_metrics_value = self.__get_aggregation_metrics_value(metrics=cpu_metrics, aggregation='average')
+        return average_cpu_metrics_value
+
+    def get_network_in_kib_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS):
+        """
+        This method returns the total Network In KiB
+        :param days:
+        :type days:
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        timespan = f'{start_date}/{end_date}'
+        network_in_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
+                                                                          metricnames='Network In Total',
+                                                                          aggregation='Average',
+                                                                          timespan=timespan)
+        average_network_in_bytes = self.__get_aggregation_metrics_value(metrics=network_in_metrics,
+                                                                        aggregation='average')
+        return round(average_network_in_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)
+
+    def get_network_out_kib_metric(self, resource_id: str, days: int = INSTANCE_IDLE_DAYS):
+        """
+        This method returns the total Network Out KiB
+        :param days:
+        :type days:
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        timespan = f'{start_date}/{end_date}'
+        network_out_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
+                                                                           metricnames='Network Out Total',
+                                                                           aggregation='Average',
+                                                                           timespan=timespan)
+        average_network_out_bytes = self.__get_aggregation_metrics_value(metrics=network_out_metrics,
+                                                                         aggregation='average')
+        return round(average_network_out_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)

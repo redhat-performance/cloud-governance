@@ -51,26 +51,6 @@ class InstanceRun(AzurePolicyOperations):
             )
         return instance_types
 
-    def __get_instance_status(self, resource_id: str, vm_name: str):
-        """
-        This method returns the VM status of the Virtual Machine
-        :param resource_id:
-        :type resource_id:
-        :param vm_name:
-        :type vm_name:
-        :return:
-        :rtype:
-        """
-        instance_statuses = self.compute_operations.get_instance_statuses(resource_id=resource_id, vm_name=vm_name)
-        statuses = instance_statuses.get('statuses', {})
-        if len(statuses) >= 2:
-            status = statuses[1].get('display_status', '').lower()
-        elif len(statuses) == 1:
-            status = statuses[0].get('display_status', '').lower()
-        else:
-            status = 'Unknown Status'
-        return status
-
     def run_policy_operations(self):
         """
         This method returns the running vms in the AAzure cloud and stops based on the action
@@ -81,7 +61,7 @@ class InstanceRun(AzurePolicyOperations):
         vms_list = self._get_all_instances()
         running_vms = []
         for vm in vms_list:
-            status = self.__get_instance_status(resource_id=vm.id, vm_name=vm.name)
+            status = self._get_instance_status(resource_id=vm.id, vm_name=vm.name)
             tags = vm.tags if vm.tags else {}
             if 'running' in status:
                 running_days = self.calculate_days(vm.time_created)

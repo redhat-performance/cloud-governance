@@ -6,13 +6,17 @@ import datetime
 DRY_RUN_YES = 'yes'
 DRY_RUN_NO = 'no'
 CURRENT_DATE = datetime.datetime.utcnow().date()
+CURRENT_DATE_TIME = datetime.datetime.utcnow()
+TEST_USER_NAME = 'unit-test'
 
 
 # AWS
 AWS_DEFAULT_REGION = 'us-west-2'
 DEFAULT_AMI_ID = 'ami-03cf127a'
 INSTANCE_TYPE = 't2.micro'
+INSTANCE_TYPE_T2_MICRO = 't2.micro'
 NAT_GATEWAY_NAMESPACE = 'AWS/NATGateway'
+EC2_NAMESPACE = 'AWS/EC2'
 
 
 # Azure

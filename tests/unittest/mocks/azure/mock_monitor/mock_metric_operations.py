@@ -22,10 +22,11 @@ class MockMetricOperations:
         name = {'value': name}
 
         metric = MockMetric(id=resource_id, type=type, name=name, unit=unit, timeseries=timeseries, **kwargs)
-        self.__metrics[resource_id] = MockResponse(timespan='', value=[metric])
+        self.__metrics.setdefault(resource_id, {}).update({unit: MockResponse(timespan='', value=[metric])})
         return metric
 
     def list(self, resource_uri: str, **kwargs):
-        return self.__metrics[resource_uri]
-
-
+        metricnames = kwargs.get('metricnames')
+        if metricnames:
+            return self.__metrics[resource_uri][metricnames]
+        raise Exception("metricnames not found")

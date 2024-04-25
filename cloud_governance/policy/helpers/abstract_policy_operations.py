@@ -3,6 +3,9 @@ from datetime import datetime
 from typing import Union
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
+from cloud_governance.common.utils.configs import INSTANCE_IDLE_CPU_PERCENTAGE, INSTANCE_IDLE_NETWORK_IN_KILO_BYTES, \
+    INSTANCE_IDLE_NETWORK_OUT_KILO_BYTES
+from cloud_governance.common.utils.utils import Utils
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -34,7 +37,7 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         if isinstance(create_date, str):
-            create_date = datetime.strptime(create_date, "%Y-%M-%d")
+            create_date = datetime.strptime(create_date.split('T')[0], "%Y-%M-%d")
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
         start_date = start_date.date()
@@ -234,3 +237,54 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         return self.run_policy_operations()
+
+    def verify_instance_idle(self, resource_id: str):
+        """
+        This method returns the metrics of the resource
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        cpu_percentage = self.get_cpu_utilization_percentage_metric(resource_id)
+        network_in_kilobytes = self.get_network_in_kib_metric(resource_id)
+        network_out_kilobytes = self.get_network_out_kib_metric(resource_id)
+        return Utils.less_than(cpu_percentage, INSTANCE_IDLE_CPU_PERCENTAGE) and \
+            Utils.less_than(network_in_kilobytes, INSTANCE_IDLE_NETWORK_IN_KILO_BYTES) and \
+            Utils.less_than(network_out_kilobytes, INSTANCE_IDLE_NETWORK_OUT_KILO_BYTES)
+
+    def get_cpu_utilization_percentage_metric(self, resource_id: str, **kwargs):
+        """
+        This method returns the cpu utilization percentage
+        :param resource_id:
+        :type resource_id:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        raise NotImplementedError("Not implemented error")
+
+    def get_network_in_kib_metric(self, resource_id: str, **kwargs):
+        """
+        This method returns the total Network In KiB
+        :param resource_id:
+        :type resource_id:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        raise NotImplementedError("Not implemented error")
+
+    def get_network_out_kib_metric(self, resource_id: str, **kwargs):
+        """
+        This method returns the total Network Out KiB
+        :param resource_id:
+        :type resource_id:
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
+        """
+        raise NotImplementedError("Not implemented error")
