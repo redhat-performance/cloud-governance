@@ -82,6 +82,7 @@ class CostExplorerPayerBillings(CostBillingReports):
                                                'Budget': round(budget / self.MONTHS, self.DEFAULT_ROUND_DIGITS), 'CostCenter': cost_center,
                                                'AllocatedBudget': budget,
                                                "Owner": owner,
+                                               'AmortizedSavingsPlan': payer_monthly_savings_plan,
                                                'SavingsPlanCost': (float(amount) / float(self.__monthly_cost_for_spa_calc.get(start_time))) * payer_monthly_savings_plan,
                                                'TotalPercentage': (float(amount) / float(self.__monthly_cost_for_spa_calc.get(start_time)))
                                                }
@@ -124,6 +125,7 @@ class CostExplorerPayerBillings(CostBillingReports):
                 data['Actual'] = 0
                 data['Forecast'] = cost
                 data['TotalPercentage'] = total_percentage
+                data['AmortizedSavingsPlan'] = payer_monthly_savings_plan
                 data['SavingsPlanCost'] = total_percentage * payer_monthly_savings_plan
                 data['PremiumSupportFee'] = total_percentage * (float(self.__monthly_cost_for_support_fee.get(start_date)) - (float(self.__monthly_cost_for_support_fee.get(start_date)) * self.__savings_discounts))
                 data['Account'] = account
