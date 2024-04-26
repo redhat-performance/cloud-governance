@@ -3,7 +3,7 @@ import os
 from ast import literal_eval
 
 policies_in_action = ['ebs_unattached', 'ip_unattached', 'zombie_snapshots', 'unused_nat_gateway', 's3_inactive', 'empty_roles']
-policies_not_in_action = ['ec2_stop', 'ec2_idle', 'zombie_cluster_resource']
+policies_not_in_action = ['ec2_stop', 'instance_idle', 'zombie_cluster_resource']
 
 access_key = os.environ['access_key']
 secret_key = os.environ['secret_key']

@@ -32,7 +32,7 @@ class MonthlyReport:
         """
         policy_descriptions = {
             'ec2_stop': 'Delete the stopped instances that are stopped for more than 30 days ',
-            'ec2_idle': 'stops the idle instances in the last 7 days.  ( CPU < 5%, Network < 5k )',
+            'instance_idle': 'stops the idle instances in the last 7 days.  ( CPU < 5%, Network < 5k )',
             'unattached_volume': 'Delete  unattached EBS volumes.',
             'ip_unattached': 'Delete all the elastic_ips that are unused',
             'unused_nat_gateway': ' Delete all unused nat gateways',

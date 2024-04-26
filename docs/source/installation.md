@@ -13,7 +13,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 ##### Policy name:
-(mandatory)policy=ec2_idle / ec2_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
+(mandatory)policy=instance_idle / ec2_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
 
 ##### Policy logs output
 (mandatory)policy_output=s3://redhat-cloud-governance/logs

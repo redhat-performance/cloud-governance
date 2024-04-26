@@ -56,7 +56,7 @@ class EnvironmentVariables:
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace('OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
-        self._environment_variables_dict['aws_non_cluster_policies'] = ['ec2_idle', 'ec2_stop', 'ebs_in_use',
+        self._environment_variables_dict['aws_non_cluster_policies'] = ['instance_idle', 'ec2_stop', 'ebs_in_use',
                                                                         'ebs_unattached', 's3_inactive',
                                                                         'empty_roles', 'ip_unattached',
                                                                         'unused_nat_gateway',
