@@ -21,7 +21,7 @@ This tool support the following policies:
 [AWS Polices](cloud_governance/policy/aws)
 
 * Real time Openshift Cluster cost, User cost
-* [instance_idle](cloud_governance/policy/aws/cleanup/ec2_idle.py): instance ec2 in last 7 days, cpu < 2% & network < 5mb.
+* [instance_idle](cloud_governance/policy/aws/cleanup/instance_idle.py): instance ec2 in last 7 days, cpu < 2% & network < 5mb.
 * [instance_run](cloud_governance/policy/aws/cleanup/instance_run.py): running ec2.
 * [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status.
 * [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes.
@@ -86,7 +86,7 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 ##### Policy name:
-(mandatory)policy=ec2_idle / instance_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
+(mandatory)policy=instance_idle / instance_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
 
 ##### Policy logs output
 (mandatory)policy_output=s3://redhat-cloud-governance/logs
@@ -130,8 +130,8 @@ GOOGLE_APPLICATION_CREDENTIALS=$pwd/service_account.json
 
 ## Run AWS Policy Using Podman 
 ```sh
-# policy=ec2_idle
-sudo podman run --rm --name cloud-governance -e policy="ec2_idle" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"
+# policy=instance_idle
+sudo podman run --rm --name cloud-governance -e policy="instance_idle" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"
 
 # policy=instance_run
 sudo podman run --rm --name cloud-governance -e policy="instance_run" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"

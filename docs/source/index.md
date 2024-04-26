@@ -10,7 +10,7 @@ This tool support the following policies:
 [AWS Polices](../../cloud_governance/policy/aws)
 
 * Real time Openshift Cluster cost, User cost
-* [ec2_idle](../../cloud_governance/policy/aws/cleanup/ec2_idle.py): idle ec2 in last 4 days, cpu < 2% & network < 5mb.
+* [instance_idle](../../cloud_governance/policy/aws/cleanup/instance_idle.py): idle ec2 in last 4 days, cpu < 2% & network < 5mb.
 * [ec2_run](../../cloud_governance/policy/aws/cleanup/instance_run.py): running ec2.
 * [ebs_unattached](../../cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status.
 * [ebs_in_use](../../cloud_governance/policy/aws/ebs_in_use.py): in use volumes.
