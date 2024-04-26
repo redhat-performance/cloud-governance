@@ -87,15 +87,16 @@ class EC2Stop(NonClusterZombiePolicy):
                     tag_specifications = [{'ResourceType': 'image', 'Tags': tags}]
                     if sign == ge:
                         tag_specifications.append({'ResourceType': 'snapshot', 'Tags': tags})
-                    try:
-                        ami_id = self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)['ImageId']
-                        delta_charge = self.get_ebs_cost(resource=block_device_mappings[instance_id], resource_type='ec2', resource_hours=(self.DAILY_HOURS * (self.DELETE_INSTANCE_DAYS-self.DAYS_TO_NOTIFY_ADMINS)))
-                        stop_cost = self.get_ebs_cost(resource=block_device_mappings[instance_id], resource_type='ec2', resource_hours=(self.DAILY_HOURS * days))
-                        self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id, ec2_type=ec2_types[instance_id], instance_id=instance_id, message_type='delete', stop_cost=stop_cost, delta_charge=delta_charge)
-                        self._ec2_client.terminate_instances(InstanceIds=[instance_id])
-                        logger.info(f'Deleted the instance: {instance_id}')
-                    except Exception as err:
-                        logger.info(err)
+                    # Commenting out termination code to reduce the risk of unintended terminations
+                    # try:
+                    #     ami_id = self._ec2_client.create_image(InstanceId=instance_id, Name=self._get_tag_name_from_tags(tags=tags), TagSpecifications=tag_specifications)['ImageId']
+                    #     delta_charge = self.get_ebs_cost(resource=block_device_mappings[instance_id], resource_type='ec2', resource_hours=(self.DAILY_HOURS * (self.DELETE_INSTANCE_DAYS-self.DAYS_TO_NOTIFY_ADMINS)))
+                    #     stop_cost = self.get_ebs_cost(resource=block_device_mappings[instance_id], resource_type='ec2', resource_hours=(self.DAILY_HOURS * days))
+                    #     self.__trigger_mail(tags=tags, stopped_time=stopped_time, days=days, resource_id=instance_id, image_id=ami_id, ec2_type=ec2_types[instance_id], instance_id=instance_id, message_type='delete', stop_cost=stop_cost, delta_charge=delta_charge)
+                    #     self._ec2_client.terminate_instances(InstanceIds=[instance_id])
+                    #     logger.info(f'Deleted the instance: {instance_id}')
+                    # except Exception as err:
+                    #     logger.info(err)
         return stopped_instances
 
     def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '', ec2_type: str = '', instance_id: str = '', **kwargs):
