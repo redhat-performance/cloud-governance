@@ -47,7 +47,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         """
         action = "deleted"
         try:
-            if self._policy in ['instance_run', 'instance_idle']:
+            if self._policy in ['instance_idle']:
                 action = "Stopped"
                 delete_status = self.compute_operations.stop_vm(resource_id=resource_id)
             elif self._policy == 'unattached_volume':
