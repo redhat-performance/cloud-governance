@@ -25,6 +25,7 @@ class AbstractPolicyOperations(ABC):
         self._force_delete = self._environment_variables_dict.get('FORCE_DELETE')
         self._resource_id = self._environment_variables_dict.get('RESOURCE_ID')
         self._es_upload = ElasticUpload()
+        self._shutdown_period = self._environment_variables_dict.get('SHUTDOWN_PERIOD')
 
     def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.utcnow()):
         """

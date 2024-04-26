@@ -63,7 +63,6 @@ def test_instance_run_alert():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
-
 @mock_ec2
 @mock_s3
 @mock_iam
@@ -74,6 +73,7 @@ def test_instance_run_alert_stopped():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
@@ -136,6 +136,7 @@ def test_instance_run_stop_reset():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
@@ -172,6 +173,7 @@ def test_instance_run_stop_start():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 2
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
@@ -214,6 +216,7 @@ def test_ec2_force_delete():
     :rtype:
     """
     environment_variables.environment_variables_dict['FORCE_DELETE'] = True
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
@@ -247,6 +250,7 @@ def test_ec2_force_delete_skip():
     :rtype:
     """
     environment_variables.environment_variables_dict['FORCE_DELETE'] = True
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
