@@ -37,6 +37,7 @@ def test_instance_run_stop_false():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     mock_virtual_machines = Mock()
@@ -60,6 +61,7 @@ def test_instance_run_stopped():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 0
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     mock_virtual_machines = Mock()
@@ -84,6 +86,7 @@ def test_instance_run_stopped_skip():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 0
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     mock_virtual_machines = Mock()
@@ -108,6 +111,7 @@ def test_instance_run_stopped_test_days():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date()
@@ -137,6 +141,7 @@ def test_instance_run_stopped_test_current_day():
     :rtype:
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     date = (datetime.datetime.utcnow()).date()
@@ -167,6 +172,7 @@ def test_instance_run_vm_already_stopped():
     """
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 3
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
+    environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     date = (datetime.datetime.utcnow()).date()
     mock_virtual_machines = Mock()

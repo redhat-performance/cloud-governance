@@ -61,12 +61,16 @@ class InstanceRun(AWSPolicyOperations):
         running_instances_data = []
         for instance in instances:
             tags = instance.get('Tags', [])
+            cleanup_result = False
             if instance.get('State', {}).get('Name') == 'running':
                 running_days = self.calculate_days(instance.get('LaunchTime'))
-                cleanup_days = self.get_clean_up_days_count(tags=tags)
-                cleanup_result = self.verify_and_delete_resource(
-                    resource_id=instance.get('InstanceId'), tags=tags,
-                    clean_up_days=cleanup_days)
+                if self._shutdown_period:
+                    cleanup_days = self.get_clean_up_days_count(tags=tags)
+                    cleanup_result = self.verify_and_delete_resource(
+                        resource_id=instance.get('InstanceId'), tags=tags,
+                        clean_up_days=cleanup_days)
+                else:
+                    cleanup_days = 0
                 resource_data = self._get_es_schema(
                     resource_id=instance.get('InstanceId'),
                     skip_policy=self.get_skip_policy_value(tags=tags),
@@ -81,12 +85,13 @@ class InstanceRun(AWSPolicyOperations):
                     region=self._region, cleanup_result=str(cleanup_result),
                     cloud_name=self._cloud_name,
                 )
-                if self._force_delete and self._dry_run == 'no':
+                if self._shutdown_period and self._force_delete and self._dry_run == 'no':
                     resource_data.update({'ForceDeleted': str(self._force_delete)})
                 running_instances_data.append(resource_data)
             else:
                 cleanup_days = 0
-            self.update_resource_day_count_tag(resource_id=instance.get('InstanceId'), cleanup_days=cleanup_days,
-                                               tags=tags)
+            if self._shutdown_period:
+                self.update_resource_day_count_tag(resource_id=instance.get('InstanceId'), cleanup_days=cleanup_days,
+                                                   tags=tags)
 
         return running_instances_data

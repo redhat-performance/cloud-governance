@@ -63,18 +63,22 @@ class InstanceRun(AzurePolicyOperations):
         for vm in vms_list:
             status = self._get_instance_status(resource_id=vm.id, vm_name=vm.name)
             tags = vm.tags if vm.tags else {}
+            cleanup_result = False
             if 'running' in status:
                 running_days = self.calculate_days(vm.time_created)
-                cleanup_days = self.get_clean_up_days_count(tags=tags)
-                cleanup_result = self.verify_and_delete_resource(resource_id=vm.id, tags=tags,
-                                                                 clean_up_days=cleanup_days)
+                if self._shutdown_period:
+                    cleanup_days = self.get_clean_up_days_count(tags=tags)
+                    cleanup_result = self.verify_and_delete_resource(resource_id=vm.id, tags=tags,
+                                                                     clean_up_days=cleanup_days)
+                else:
+                    cleanup_days = 0
                 resource_data = self._get_es_schema(
                     resource_id=vm.name,
                     skip_policy=self.get_skip_policy_value(tags=tags),
                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                     launch_time=vm.time_created,
                     resource_type=vm.hardware_profile.vm_size,
-                    resource_state=status if cleanup_result else 'Vm Stopped',
+                    resource_state=status if not cleanup_result else 'Vm Stopped',
                     running_days=running_days, cleanup_days=cleanup_days,
                     dry_run=self._dry_run,
                     name=vm.name,
@@ -82,10 +86,11 @@ class InstanceRun(AzurePolicyOperations):
                     region=vm.location, cleanup_result=str(cleanup_result),
                     cloud_name=self._cloud_name
                 )
-                if self._force_delete and self._dry_run == 'no':
+                if self._shutdown_period and self._force_delete and self._dry_run == 'no':
                     resource_data.update({'ForceDeleted': str(self._force_delete)})
                 running_vms.append(resource_data)
             else:
                 cleanup_days = 0
-            self.update_resource_day_count_tag(resource_id=vm.id, cleanup_days=cleanup_days, tags=tags)
+            if self._shutdown_period:
+                self.update_resource_day_count_tag(resource_id=vm.id, cleanup_days=cleanup_days, tags=tags)
         return running_vms

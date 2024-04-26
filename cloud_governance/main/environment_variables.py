@@ -125,7 +125,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['bucket'] = EnvironmentVariables.get_env('bucket', '')
         self._environment_variables_dict['file_path'] = EnvironmentVariables.get_env('file_path', '')
         self._environment_variables_dict['file_name'] = EnvironmentVariables.get_env('file_name', '')
-
+        self._environment_variables_dict['SHUTDOWN_PERIOD'] = EnvironmentVariables.get_boolean_from_environment('SHUTDOWN_PERIOD', False)
         # common elastic search vars
         self._environment_variables_dict['upload_data_elk'] = EnvironmentVariables.get_env('upload_data_elk', '')
         self._environment_variables_dict['upload_data_es'] = EnvironmentVariables.get_env('upload_data_es', '')
