@@ -61,19 +61,20 @@ class InstanceRun(AWSPolicyOperations):
         running_instances_data = []
         for instance in instances:
             tags = instance.get('Tags', [])
+            cleanup_result = False
             if instance.get('State', {}).get('Name') == 'running':
                 running_days = self.calculate_days(instance.get('LaunchTime'))
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
-                cleanup_result = self.verify_and_delete_resource(
-                    resource_id=instance.get('InstanceId'), tags=tags,
-                    clean_up_days=cleanup_days)
+                # cleanup_result = self.verify_and_delete_resource(
+                #     resource_id=instance.get('InstanceId'), tags=tags,
+                #     clean_up_days=cleanup_days)
                 resource_data = self._get_es_schema(
                     resource_id=instance.get('InstanceId'),
                     skip_policy=self.get_skip_policy_value(tags=tags),
                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                     launch_time=instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     resource_type=instance.get('InstanceType'),
-                    resource_state=instance.get('State', {}).get('Name') if not cleanup_result else 'stopped',
+                    resource_state=instance.get('State', {}).get('Name'),
                     resource_action=self.RESOURCE_ACTION,
                     running_days=running_days, cleanup_days=cleanup_days,
                     dry_run=self._dry_run,
@@ -86,7 +87,7 @@ class InstanceRun(AWSPolicyOperations):
                 running_instances_data.append(resource_data)
             else:
                 cleanup_days = 0
-            self.update_resource_day_count_tag(resource_id=instance.get('InstanceId'), cleanup_days=cleanup_days,
-                                               tags=tags)
+            # self.update_resource_day_count_tag(resource_id=instance.get('InstanceId'), cleanup_days=cleanup_days,
+            #                                    tags=tags)
 
         return running_instances_data

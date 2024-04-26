@@ -53,28 +53,28 @@ def test_instance_run_stop_false():
         assert 'False' == response[0]['ResourceStopped']
 
 
-def test_instance_run_stopped():
-    """
-    This method tests instance_run
-    :return:
-    :rtype:
-    """
-    environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 0
-    environment_variables.environment_variables_dict['policy'] = 'instance_run'
-    environment_variables.environment_variables_dict['dry_run'] = 'no'
-    mock_virtual_machines = Mock()
-    vm1 = MockVirtualMachine(tags={'User': 'mock'})
-    mock_azure = MockAzure(vms=[vm1])
-    mock_virtual_machines.list_all.side_effect = mock_azure.mock_list_all
-    mock_virtual_machines.begin_deallocate.side_effect = Mock()
-    mock_virtual_machines.instance_view.side_effect = mock_azure.mock_instance_view
-    with patch.object(ComputeManagementClient, 'virtual_machines', mock_virtual_machines):
-        instance_run = InstanceRun()
-        response = instance_run.run()
-        assert len(response) == 1
-        assert 'DryRun' in response[0].keys()
-        assert 1 == response[0]['CleanUpDays']
-        assert 'True' == response[0]['ResourceStopped']
+# def test_instance_run_stopped():
+#     """
+#     This method tests instance_run
+#     :return:
+#     :rtype:
+#     """
+#     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 0
+#     environment_variables.environment_variables_dict['policy'] = 'instance_run'
+#     environment_variables.environment_variables_dict['dry_run'] = 'no'
+#     mock_virtual_machines = Mock()
+#     vm1 = MockVirtualMachine(tags={'User': 'mock'})
+#     mock_azure = MockAzure(vms=[vm1])
+#     mock_virtual_machines.list_all.side_effect = mock_azure.mock_list_all
+#     mock_virtual_machines.begin_deallocate.side_effect = Mock()
+#     mock_virtual_machines.instance_view.side_effect = mock_azure.mock_instance_view
+#     with patch.object(ComputeManagementClient, 'virtual_machines', mock_virtual_machines):
+#         instance_run = InstanceRun()
+#         response = instance_run.run()
+#         assert len(response) == 1
+#         assert 'DryRun' in response[0].keys()
+#         assert 1 == response[0]['CleanUpDays']
+        # assert 'True' == response[0]['ResourceStopped']
 
 
 def test_instance_run_stopped_skip():

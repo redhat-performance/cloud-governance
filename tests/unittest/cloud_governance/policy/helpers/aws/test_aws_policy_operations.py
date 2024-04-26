@@ -113,18 +113,15 @@ def test_delete_resource():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'instance_run'
+    environment_variables.environment_variables_dict['policy'] = 'ip_unattached'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
-    default_ami_id = 'ami-03cf127a'
-    tags = [{'Key': 'User', 'Value': 'cloud-governance'}]
-    resource = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1,
-                                        TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}]).get('Instances', [])
-    if resource:
-        resource_id = resource[0].get('InstanceId')
+    ip_address = ec2_client.allocate_address(Domain='vpc')
+    if ip_address:
+        resource_id = ip_address.get('AllocationId')
         aws_cleanup_operations = AWSPolicyOperations()
         aws_cleanup_operations._delete_resource(resource_id=resource_id)
-        assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
+        assert len(ec2_client.describe_addresses()['Addresses']) == 0
 
 
 @mock_ec2
@@ -136,7 +133,7 @@ def test_update_resource_day_count_tag():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'instance_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
@@ -163,7 +160,7 @@ def test_update_resource_day_count_tag_exists_tag():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'instance_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
@@ -193,7 +190,7 @@ def test_update_resource_day_count_tag_updated_tag_today():
     :return:
     :rtype:
     """
-    environment_variables.environment_variables_dict['policy'] = 'instance_run'
+    environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'ap-south-1'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')

@@ -64,9 +64,6 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 self._ec2_client.delete_nat_gateway(NatGatewayId=resource_id)
             elif self._policy == 'zombie_snapshots':
                 self._ec2_client.delete_snapshot(SnapshotId=resource_id)
-            elif self._policy == 'instance_run':
-                self._ec2_client.stop_instances(InstanceIds=[resource_id])
-                action = "Stopped"
             logger.info(f'{self._policy} {action}: {resource_id}')
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
@@ -132,10 +129,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             elif self._policy == 'empty_roles':
                 self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
             elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
-                                  'instance_run'):
+                                  'instance_idle'):
                 self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
-            elif self._policy == 'instance_idle':
-                self._ec2_client.stop_instances(InstanceIds=[resource_id])
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
 

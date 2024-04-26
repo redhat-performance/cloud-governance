@@ -63,7 +63,8 @@ class AzurePolicyOperations(AbstractPolicyOperations):
     def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: dict):
         tags = self._update_tag_value(tags=tags, tag_name='DaysCount', tag_value=str(cleanup_days))
         try:
-            if self._policy in ['instance_run', 'unattached_volume', 'ip_unattached', 'unused_nat_gateway']:
+            if self._policy in ['instance_run', 'unattached_volume', 'ip_unattached', 'unused_nat_gateway',
+                                'instance_idle']:
                 self.resource_group_operations.creates_or_updates_tags(resource_id=resource_id, tags=tags)
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
