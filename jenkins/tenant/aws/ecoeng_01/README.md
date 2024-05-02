@@ -1,4 +1,7 @@
-### ecoeng_01
+### ecoeng_01 - dry_run=no
+
+**POLICIES_IN_ACTION** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
 
 Accounts:
-- partnerlab: matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com
+- **industry-partners**: "hhalbfin@redhat.com",
+- **verticals-ui**: "brotman@redhat.com, hhalbfin@redhat.com",
