@@ -1,4 +1,4 @@
-account = ['partnerlab']
+account = ['industry-partners', 'verticals-ui']
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -12,7 +12,6 @@ pipeline {
     }
     environment {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
-        account_name = "appeng"
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
         contact3 = "mmikhail@redhat.com"

@@ -1,4 +1,4 @@
-account = ['coreos-training', 'industry-partners', 'special-projects', 'edgeinfra', 'specialprojects-qe', 'ecoeng-sap', 'sysdeseng', 'verticals-ui']
+account = ['coreos-training', 'special-projects', 'edgeinfra', 'specialprojects-qe', 'ecoeng-sap', 'sysdeseng', 'partnerlab']
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -12,7 +12,6 @@ pipeline {
     }
     environment {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
-        account_name = "appeng"
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
         contact3 = "mmikhail@redhat.com"
