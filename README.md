@@ -1,4 +1,3 @@
-
 [![PyPI Latest Release](https://img.shields.io/pypi/v/cloud-governance.svg)](https://pypi.org/project/cloud-governance/)
 [![Container Repository on Quay](https://quay.io/repository/projectquay/quay/status "Container Repository on Quay")](https://quay.io/repository/ebattat/cloud-governance?tab=tags)
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/actions/workflows/Build.yml/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
@@ -6,14 +5,18 @@
 [![python](https://img.shields.io/pypi/pyversions/cloud-governance.svg?color=%2334D058)](https://pypi.org/project/cloud-governance)
 [![License](https://img.shields.io/pypi/l/cloud-governance.svg)](https://github.com/redhat-performance/cloud-governance/blob/main/LICENSE)
 
-
 # Cloud Governance
 
 ![](images/cloud_governance.png)
 
 ## What is it?
 
-**Cloud Governance** tool provides a lightweight and flexible framework for deploying cloud management policies focusing on cost optimize and security.
+**Cloud Governance** tool provides a lightweight and flexible framework for deploying cloud management policies focusing
+on cost optimize and security.
+We have implemented several pruning policies. \
+When monitoring the resources, we found that most of the cost leakage is from available volumes, unused NAT gateways,
+and unattached Public IPv4 addresses (Starting from February 2024, public IPv4 addresses are chargeable whether they are
+used or not).
 
 This tool support the following policies:
 [policy](cloud_governance/policy)
@@ -21,22 +24,52 @@ This tool support the following policies:
 [AWS Polices](cloud_governance/policy/aws)
 
 * Real time Openshift Cluster cost, User cost
-* [instance_idle](cloud_governance/policy/aws/cleanup/instance_idle.py): instance ec2 in last 7 days, cpu < 2% & network < 5mb.
-* [instance_run](cloud_governance/policy/aws/cleanup/instance_run.py): running ec2.
-* [ebs_unattached](cloud_governance/policy/aws/ebs_unattached.py): volumes that did not connect to instance, volume in available status.
-* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): in use volumes.
-* [tag_resources](cloud_governance/policy/policy_operations/aws/tag_cluster): Update cluster and non cluster resource tags fetching from the user tags or from the mandatory tags
-* [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Delete cluster's zombie resources
-* [tag_non_cluster](cloud_governance/policy/policy_operations/aws/tag_non_cluster): tag ec2 resources (instance, volume, ami, snapshot) by instance name
+* [instance_idle](cloud_governance/policy/aws/cleanup/instance_idle.py): Monitor the idle instances based on the
+  instance metrics for the last 7 days.
+    * CPU Percent < 2%
+    * Network < 5KiB
+* [instance_run](cloud_governance/policy/aws/cleanup/instance_run.py): List the running ec2 instances.
+* [unattached_volume](cloud_governance/policy/aws/cleanup/unattached_volume.py): Identify and remove the available EBS
+  volumes.
+* [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Identify the non-live cluster
+  resource and delete those resources by resolving dependency. We are deleting more than 20 cluster resources.
+    * Ebs, Snapshots, AMI, Load Balancer
+    * VPC, Subnets, Route tables, DHCP, Internet Gateway, NatGateway, Network Interface, ElasticIp, Network ACL,
+      Security Group, VPC Endpoint
+    * S3
+    * IAM User, IAM Role
+* [ip_unattached](cloud_governance/policy/aws/ip_unattached.py): Identify the unattached public IPv4 addresses.
+* [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Identify the snapshots, which are abandoned by
+  the AMI.
+* [unused_nat_gateway](cloud_governance/policy/aws/cleanup/unused_nat_gateway.py): Identify the unused NatGateway by
+  monitoring the active connection count.
+* [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Identify the empty s3 buckets, causing the resource quota
+  issues.
+* [empty_roles](cloud_governance/policy/aws/empty_roles.py): Identify the empty roles that do not have any attached
+  policies to them.
+* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): list in use volumes.
+* [tag_resources](cloud_governance/policy/policy_operations/aws/tag_cluster): Update cluster and non cluster resource
+  tags fetching from the user tags or from the mandatory tags
+* [tag_non_cluster](cloud_governance/policy/policy_operations/aws/tag_non_cluster): tag ec2 resources (instance, volume,
+  ami, snapshot) by instance name
 * [tag_iam_user](cloud_governance/policy/policy_operations/aws/tag_user): update the user tags from the csv file
 * [cost_explorer](cloud_governance/policy/aws/cost_explorer.py): Get data from cost explorer and upload to ElasticSearch
-* [ip_unattached](cloud_governance/policy/aws/ip_unattached.py): Get the unattached IP and delete it after 7 days.
-* [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Get the inactive/empty buckets and delete them after 7 days.
-* [empty_roles](cloud_governance/policy/aws/empty_roles.py): Get empty roles and delete it after 7 days.
-* [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Get the zombie snapshots and delete it after 7 days.
-* [unused_nat_gateway](cloud_governance/policy/aws/cleanup/unused_nat_gateway.py): Get the unused nat gateways and deletes it after 7 days.
-* gitleaks: scan Github repository git leak (security scan)  
+
+* gitleaks: scan GitHub repository git leak (security scan)
 * [cost_over_usage](cloud_governance/policy/aws/cost_over_usage.py): send mail to aws user if over usage cost
+
+[Azure policies](cloud_governance/policy/azure)
+
+* [instance_idle](cloud_governance/policy/azure/cleanup/instance_idle.py): Monitor the idle instances based on the
+  instance metrics.
+    * CPU Percent < 2%
+    * Network < 5KiB
+* [unattached_volume](cloud_governance/policy/azure/cleanup/unattached_volume.py): Identify and remove the available
+  disks.
+* [ip_unattached](cloud_governance/policy/azure/cleanup/ip_unattached.py): Identify the unattached public IPv4
+  addresses.
+* [unused_nat_gateway](cloud_governance/policy/azure/cleanup/unused_nat_gateway.py): Identify the unused NatGateway by
+  monitoring the active connection count.
 
 [IBM policies](cloud_governance/policy/ibm)
 
@@ -44,8 +77,7 @@ This tool support the following policies:
 * [tag_vm](cloud_governance/policy/ibm/tag_vm.py): Tga IBM Virtual Machines machines
 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
-   and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
-
+and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
 
 ![](images/cloud_governance1.png)
 ![](images/demo.gif)
@@ -53,14 +85,16 @@ This tool support the following policies:
 ![](images/cloud_governance2.png)
 
 Reference:
+
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance container image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
 * The cloud-governance readthedocs link is [ReadTheDocs](https://cloud-governance.readthedocs.io/en/latest/)
-![](images/cloud_governance3.png)
+  ![](images/cloud_governance3.png)
 
 _**Table of Contents**_
 
 <!-- TOC -->
+
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Run AWS Policy Using Podman](#run-aws-policy-using-podman)
@@ -74,6 +108,7 @@ _**Table of Contents**_
 ## Installation
 
 #### Download cloud-governance image from quay.io
+
 ```sh
 # Need to run it with root privileges
 sudo podman pull quay.io/ebattat/cloud-governance
@@ -86,35 +121,46 @@ sudo podman pull quay.io/ebattat/cloud-governance
 (mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 ##### Policy name:
-(mandatory)policy=instance_idle / instance_run / ebs_unattached / ebs_in_use / tag_cluster_resource / zombie_cluster_resource / tag_ec2_resource
+
+(mandatory)policy=instance_idle / instance_run / ebs_unattached / ebs_in_use / tag_cluster_resource /
+zombie_cluster_resource / tag_ec2_resource
 
 ##### Policy logs output
+
 (mandatory)policy_output=s3://redhat-cloud-governance/logs
 
 ##### Cluster or instance name:
+
 (mandatory policy:tag_cluster_resource)resource_name=ocs-test
 
 ##### Cluster or instance tags:
+
 (mandatory policy:tag_cluster_resource)mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
 
 ##### gitleaks
+
 (mandatory policy: gitleaks)git_access_token=$git_access_token
 (mandatory policy: gitleaks)git_repo=https://github.com/redhat-performance/cloud-governance
 (optional policy: gitleaks)several_repos=yes/no (default = no)
 
 ##### Choose a specific region or all for all the regions, default : us-east-2
+
 (optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
 
 ##### Choose dry run or not, default yes
+
 (optional)dry_run=yes/no (default = yes)
 
 ##### Choose log level, default INFO
+
 (optional)log_level=INFO (default = INFO)
 
 #### LDAP hostname to fetch mail records
+
 LDAP_HOST_NAME=ldap.example.com
 
 #### Enable Google Drive API in console and create Service account
+
 GOOGLE_APPLICATION_CREDENTIALS=$pwd/service_account.json
 
 # Configuration
@@ -122,13 +168,16 @@ GOOGLE_APPLICATION_CREDENTIALS=$pwd/service_account.json
 ### AWS Configuration
 
 #### Create a user and a bucket
-* Create user with IAM [iam](iam/clouds)
-* Create a logs bucket [create_bucket.sh](iam/cloud/aws/create_bucket.sh)
+
+* Create user with [IAM](iam/clouds)
+* Create a logs bucket [create_bucket.sh](iam/clouds/aws/create_bucket.sh)
 
 ### IBM Configuration
+
 * Create classic infrastructure API key
 
-## Run AWS Policy Using Podman 
+## Run AWS Policy Using Podman
+
 ```sh
 # policy=instance_idle
 sudo podman run --rm --name cloud-governance -e policy="instance_idle" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/ebattat/cloud-governance"
@@ -200,6 +249,7 @@ AWS Secret: [cloud_governance_secret.yaml](pod_yaml/cloud_governance_secret.yaml
 ## Pytest
 
 ##### Cloud-governance integration tests using pytest
+
 ```sh
 python3 -m venv governance
 source governance/bin/activate
@@ -216,6 +266,7 @@ rm -rf *governance*
 ## Post Installation
 
 #### Delete cloud-governance image
+
 ```sh
 sudo podman rmi quay.io/ebattat/cloud-governance
 ```
