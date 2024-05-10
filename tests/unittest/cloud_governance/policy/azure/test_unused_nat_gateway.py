@@ -4,10 +4,8 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.monitor import MonitorManagementClient
 from azure.mgmt.monitor.v2021_05_01.models import TimeSeriesElement, MetricValue
 from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.network.models import NetworkInterfaceIPConfiguration, PublicIPAddress, IPConfiguration
 
 from cloud_governance.main.environment_variables import environment_variables
-from cloud_governance.policy.azure.cleanup.ip_unattached import IpUnattached
 from cloud_governance.policy.azure.cleanup.unused_nat_gateway import UnUsedNatGateway
 from tests.unittest.configs import SUBSCRIPTION_ID, CURRENT_DATE, NAT_GATEWAY_NAME
 from tests.unittest.mocks.azure.mock_compute.mock_compute import mock_compute
