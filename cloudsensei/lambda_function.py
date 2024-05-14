@@ -64,6 +64,7 @@ class EC2Operations:
                     days = (current_datetime - launch_time).days
                     if days > self.__resource_days:
                         user = name = None
+                        ticket_tags = ''
                         for tag in resource.get('Tags', []):
                             tag_key = tag.get('Key').lower()
                             if tag_key.lower() == 'cloudsensei':
@@ -77,12 +78,15 @@ class EC2Operations:
                                 name = tag.get('Value')
                         if not skip and user:
                             instance_details = {'InstanceId': resource.get('InstanceId'),
-                                            'Name': name, 'LaunchDate': str(launch_time),
-                                            'RunningDays': f"{days} days", 'State': resource.get('State', {}).get('Name'),
-                                            'InstanceType': resource.get('InstanceType')}
+                                                'Name': name, 'LaunchDate': str(launch_time),
+                                                'RunningDays': f"{days} days",
+                                                'State': resource.get('State', {}).get('Name'),
+                                                'InstanceType': resource.get('InstanceType')}
                             if ticket_tags:  # Add TicketId tags if available
                                 instance_details['TicketId'] = ticket_tags
-                            long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name, []).append(instance_details)
+                            long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name,
+                                                                                                   []).append(
+                                instance_details)
         return long_running_instances_by_user
 
     def get_account_alias_name(self):
@@ -114,7 +118,8 @@ class EC2Operations:
                             "fields": [{"type": "mrkdwn", "text": f"{str(resources.get(item))}"} for item in keys_list],
                         })
             rows.append(divider)
-        item_blocks = [rows[i:i + self.SLACK_ITEM_SIZE] for i in range(0, len(rows), self.SLACK_ITEM_SIZE)]  # splitting because slack block allows only 50 items
+        item_blocks = [rows[i:i + self.SLACK_ITEM_SIZE] for i in
+                       range(0, len(rows), self.SLACK_ITEM_SIZE)]  # splitting because slack block allows only 50 items
         slack_message_block = []
         for block in item_blocks:
             slack_message_block.append(block)
@@ -126,7 +131,8 @@ class EC2Operations:
         :param resources_list:
         :return:
         """
-        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',  'RunningDays']
+        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',
+                     'RunningDays']
         with open('email_template.j2') as template:
             template = Template(template.read())
             body = template.render({'resources_list': resources_list, 'keys_list': keys_list})
