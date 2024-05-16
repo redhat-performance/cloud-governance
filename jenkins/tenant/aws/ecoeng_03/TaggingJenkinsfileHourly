@@ -1,5 +1,5 @@
-account = ['coreos-training', 'special-projects', 'edgeinfra', 'specialprojects-qe', 'ecoeng-sap', 'sysdeseng',
-           'partnerlab', 'appeng-sap', 'certification-pipeline', 'ecoengverticals-qe', 'emerge-partner', 'telco5g-ci']
+account = ['coreos-training',
+           'partnerlab', 'blueprints']
 pipeline {
     options {
         disableConcurrentBuilds()
