@@ -2,7 +2,6 @@ from cloud_governance.policy.helpers.azure.azure_policy_operations import AzureP
 
 
 class UnUsedNatGateway(AzurePolicyOperations):
-
     """
     This class performs the azure unused nat gateway operations
     """
@@ -12,6 +11,26 @@ class UnUsedNatGateway(AzurePolicyOperations):
     def __init__(self):
         super().__init__()
         self.__active_cluster_ids = self._get_active_cluster_ids()
+
+    def __check_nat_gateway_metrics(self, resource_id: str):
+        """
+        This method returns bool by verifying nat metrics
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        metrics_data = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
+                                                                    metricnames='SNATConnectionCount',
+                                                                    aggregation='Average')
+        if metrics_data.get('value'):
+            metrics_time_series_data = metrics_data.get('value', [])[0].get('timeseries', [])
+            if metrics_time_series_data:
+                for metric_time_frame in metrics_time_series_data:
+                    for data in metric_time_frame.get('data'):
+                        if data.get('average', 0) > 0:
+                            return False
+        return True
 
     def run_policy_operations(self):
         """
@@ -26,20 +45,7 @@ class UnUsedNatGateway(AzurePolicyOperations):
             cluster_tag = self._get_cluster_tag(tags=tags)
             cleanup_result = False
             if cluster_tag not in self.__active_cluster_ids:
-                metrics_data = self.monitor_operations.get_resource_metrics(resource_id=nat_gateway.get('id'),
-                                                                            metricnames='SNATConnectionCount',
-                                                                            aggregation='Average')
-                unused = False
-                if metrics_data.get('value'):
-                    metrics_time_series_data = metrics_data.get('value', [])[0].get('timeseries', [])
-                    if not metrics_time_series_data:
-                        unused = True
-                    else:
-                        for metric_time_frame in metrics_time_series_data:
-                            for data in metric_time_frame.get('data'):
-                                if data.get('average', 0) <= 0:
-                                    unused = True
-                if unused:
+                if self.__check_nat_gateway_metrics(resource_id=nat_gateway.get('id')):
                     cleanup_days = self.get_clean_up_days_count(tags=tags)
                     cleanup_result = self.verify_and_delete_resource(resource_id=nat_gateway.get('id'), tags=tags,
                                                                      clean_up_days=cleanup_days)
@@ -47,7 +53,8 @@ class UnUsedNatGateway(AzurePolicyOperations):
                                                         user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                                                         skip_policy=self.get_skip_policy_value(tags=tags),
                                                         cleanup_days=cleanup_days, dry_run=self._dry_run,
-                                                        name=nat_gateway.get('name'), region=nat_gateway.get('location'),
+                                                        name=nat_gateway.get('name'),
+                                                        region=nat_gateway.get('location'),
                                                         cleanup_result=str(cleanup_result),
                                                         resource_action=self.RESOURCE_ACTION,
                                                         cloud_name=self._cloud_name,
