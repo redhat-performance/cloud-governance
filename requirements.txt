@@ -24,7 +24,7 @@ pandas
 PyAthena[Pandas]==3.0.5
 PyGitHub==1.55
 python-ldap==3.4.2
-requests==2.31.0
+requests==2.32.0
 retry==0.9.2
 SoftLayer==6.0.0
 sphinx==5.0.0
