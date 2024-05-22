@@ -1,5 +1,15 @@
 accounts_list = ['industry-partners': "hhalbfin@redhat.com",
-                 'verticals-ui': "brotman@redhat.com, hhalbfin@redhat.com",]
+                 'certification-pipeline': "matt.dorn@redhat.com, mhillsma@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'ecoengverticals-qe': "augol@redhat.com, hhalbfin@redhat.com",
+                 'emerge-partner': "jsalomon@redhat.com, ltomasbo@redhat.com, hhalbfin@redhat.com",
+                 'telco5g-ci': "yjoseph@redhat.com, hhalbfin@redhat.com, sshnaidm@redhat.com",
+                 'ecoeng-sap': "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'sysdeseng': "scollier@redhat.com, hhalbfin@redhat.com, mavazque@redhat.com",
+                 'appeng-ai': "matrujil@redhat.com, mmikhail@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'verticals-ui': "brotman@redhat.com, hhalbfin@redhat.com",
+                 'special-projects': "chen.yosef@redhat.com, hhalbfin@redhat.com",
+                 'edgeinfra': "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com",
+                 'specialprojects-qe': "augol@redhat.com, hhalbfin@redhat.com"]
 pipeline {
     options {
         disableConcurrentBuilds()

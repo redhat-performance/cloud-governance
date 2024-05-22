@@ -5,14 +5,5 @@
 Accounts:
 
 - **coreos-training**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **special-projects**: "chen.yosef@redhat.com, hhalbfin@redhat.com"
-- **edgeinfra**: "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com"
-- **specialprojects-qe**: "augol@redhat.com, hhalbfin@redhat.com"
-- **ecoeng-sap**: "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **sysdeseng(ecoeng-telco)**: "scollier@redhat.com, hhalbfin@redhat.com"
 - **partnerlab**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **appeng-sap**: "matrujil@redhat.com, mmikhail@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **certification-pipeline**: "matt.dorn@redhat.com, mhillsma@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **ecoengverticals-qe**: "augol@redhat.com, hhalbfin@redhat.com"
-- **emerge-partner**: "jsalomon@redhat.com, ltomasbo@redhat.com, hhalbfin@redhat.com"
-- **telco5g-ci**: "yjoseph@redhat.com, hhalbfin@redhat.com"
+- **blueprints**: "abeekhof@redhat.com, hhalbfin@redhat.com"

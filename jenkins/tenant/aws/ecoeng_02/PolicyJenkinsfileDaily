@@ -1,5 +1,5 @@
 accounts_list = ['appeng': "mmikhail@redhat.com, matrujil@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
-                 'fsi-partner': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'fsi-partner': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, vbelouso@redhat.com, nnaamneh@redhat.com, ebattat@redhat.com, hhalbfin@redhat.com",
                  'fsi-ecosystem': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
                 ]
 pipeline {
