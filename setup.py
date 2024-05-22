@@ -60,7 +60,7 @@ setup(
         'PyAthena[Pandas]==3.0.5',  # AWS Athena package
         'PyGitHub==1.55',  # gitleaks
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
-        'requests==2.31.0',  # rest api & lambda
+        'requests==2.32.2',  # rest api & lambda
         'retry==0.9.2',
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
