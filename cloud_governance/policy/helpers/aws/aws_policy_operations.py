@@ -22,7 +22,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._s3_client = get_boto3_client('s3', region_name=self._region)
         self._iam_client = get_boto3_client('iam', region_name=self._region)
         self._rds_operations = RDSOperations(region_name=self._region)
-        self.__s3operations = S3Operations(region_name=self._region)
+        self._s3operations = S3Operations(region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
         self._resource_pricing = ResourcesPricing()
@@ -178,6 +178,23 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 if tag.get('Key', '').startswith('kubernetes.io/cluster'):
                     cluster_ids.append(tag.get('Key'))
                     break
+        return cluster_ids
+
+    def _get_global_active_cluster_ids(self):
+        """
+        This method returns the global active cluster ids
+        :return:
+        """
+        cluster_ids = []
+        active_regions = self._ec2_operations.get_active_regions()
+        for region in active_regions:
+            active_instances = self._ec2_operations.get_ec2_instance_list(
+                ec2_client=get_boto3_client('ec2', region_name=region))
+            for instance in active_instances:
+                for tag in instance.get('Tags', []):
+                    if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                        cluster_ids.append(tag.get('Key'))
+                        break
         return cluster_ids
 
     def _get_cluster_tag(self, tags: list):

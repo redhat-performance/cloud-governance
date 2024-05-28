@@ -9,6 +9,7 @@ from os import listdir
 from os.path import isfile, join
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
@@ -325,3 +326,64 @@ class S3Operations:
             os.system(f"gzip -d {local_file}")
             with open(os.path.join(temp_local_directory, file_name)) as f:
                 return f.read()
+
+    def list_buckets(self):
+        """
+        This method lists all buckets
+        :return:
+        """
+        try:
+            return self.__s3_client.list_buckets().get('Buckets', [])
+        except Exception as err:
+            return []
+
+    def get_bucket_tagging(self, bucket_name: str, **kwargs):
+        """
+        This method gets tags of buckets
+        :param bucket_name:
+        :return:
+        """
+        tags = []
+        try:
+            bucket_tags = self.__s3_client.get_bucket_tagging(Bucket=bucket_name, **kwargs)
+            tags = bucket_tags.get('TagSet', [])
+        except Exception as err:
+            logger.error(err)
+        return tags
+
+    def list_objects_v2(self, bucket_name: str, prefix: str = '', **kwargs):
+        """
+        This method lists all objects of a bucket
+        :param bucket_name:
+        :param prefix:
+        :return:
+        """
+        bucket_data = {}
+        try:
+            bucket_data = self.__s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix, **kwargs)
+        except Exception as err:
+            logger.error(err)
+        return bucket_data
+
+    def get_bucket_contents(self, bucket_name: str, **kwargs):
+        """
+        This method gets contents of a bucket
+        :param bucket_name:
+        :param kwargs:
+        :return:
+        """
+        bucket_data = self.list_objects_v2(bucket_name, **kwargs)
+        return bucket_data.get('Contents', [])
+
+    def get_bucket_location(self, bucket_name: str, **kwargs):
+        """
+        This method gets location of a bucket
+        :param bucket_name:
+        :param kwargs:
+        :return:
+        """
+        try:
+            return self.__s3_client.get_bucket_location(Bucket=bucket_name, **kwargs).get('LocationConstraint', self.__region)
+        except Exception as err:
+            logger.error(err)
+            return self.__region

@@ -1,58 +1,53 @@
 
-from botocore.exceptions import ClientError
-
-from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
-class S3Inactive(NonClusterZombiePolicy):
+class S3Inactive(AWSPolicyOperations):
     """
     This class sends an alert mail for empty bucket to the user after 4 days and delete after 7 days.
     """
 
+    RESOURCE_ACTION = 'Delete'
+
     def __init__(self):
         super().__init__()
+        self.__global_active_cluster_ids = self._get_global_active_cluster_ids()
 
-    def run(self):
+    def run_policy_operations(self):
         """
-        This method returns all Empty buckets and delete if dry_run no
-        @return:
-        """
-        return self.__delete_s3_inactive()
-
-    def __delete_s3_inactive(self):
-        """
-        This method delete the empty bucket more than 7 days
-        @return:
+        This method returns all Empty buckets
+        :return:
+        :rtype:
         """
         empty_buckets = []
-        buckets = self._s3_client.list_buckets()['Buckets']
-        for bucket in buckets:
-            bucket_empty = False
-            empty_days = 0
+        s3_buckets = self._s3operations.list_buckets()
+        for bucket in s3_buckets:
             bucket_name = bucket.get('Name')
-            try:
-                try:
-                    bucket_tags = self._s3_client.get_bucket_tagging(Bucket=bucket_name)
-                    tags = bucket_tags.get('TagSet')
-                except ClientError:
-                    tags = []
-                bucket_data = self._s3_client.list_objects_v2(Bucket=bucket_name)
-                if not bucket_data.get('Contents'):
-                    if not self._check_cluster_tag(tags=tags):
-                        if not self._get_tag_name_from_tags(tags=tags, tag_name='Name'):
-                            tags.append({'Key': 'Name', 'Value': bucket_name})
-                        empty_days = self._get_resource_last_used_days(tags=tags)
-                        bucket_empty = True
-                        if not self._get_tag_name_from_tags(tags=tags, tag_name='User'):
-                            region = self._s3_client.get_bucket_location(Bucket=bucket_name)['LocationConstraint']
-                            self._cloudtrail.set_cloudtrail(region_name=region)
-                        empty_bucket = self._check_resource_and_delete(resource_name='S3 Bucket', resource_id='Name', resource_type='CreateBucket', resource=bucket, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
-                        if empty_bucket:
-                            empty_buckets.append({'ResourceId': bucket.get('Name'), 'Name': bucket.get('Name'), 'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'), 'Date': str(bucket.get('CreationDate')), 'Days': str(empty_days), 'Skip': self._get_policy_value(tags=tags)})
-                else:
-                    empty_days = 0
-                self._update_resource_tags(resource_id=bucket_name, tags=tags, left_out_days=empty_days, resource_left_out=bucket_empty)
-            except Exception as err:
-                logger.info(f'{err}, {bucket.get("Name")}')
+            tags = self._s3operations.get_bucket_tagging(bucket_name)
+            cleanup_result = False
+            cluster_tag = self._get_cluster_tag(tags=tags)
+            cleanup_days = 0
+            s3_contents = self._s3operations.get_bucket_contents(bucket_name=bucket_name)
+            if cluster_tag not in self.__global_active_cluster_ids and len(s3_contents) == 0:
+                cleanup_days = self.get_clean_up_days_count(tags=tags)
+                cleanup_result = self.verify_and_delete_resource(resource_id=bucket_name, tags=tags,
+                                                                 clean_up_days=cleanup_days)
+                region = self._s3operations.get_bucket_location(bucket_name=bucket_name)
+                resource_data = self._get_es_schema(resource_id=bucket_name,
+                                                    user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                    skip_policy=self.get_skip_policy_value(tags=tags),
+                                                    cleanup_days=cleanup_days,
+                                                    dry_run=self._dry_run,
+                                                    name=bucket_name,
+                                                    region=region,
+                                                    cleanup_result=str(cleanup_result),
+                                                    resource_action=self.RESOURCE_ACTION,
+                                                    cloud_name=self._cloud_name,
+                                                    resource_type='EmptyBucket',
+                                                    resource_state="Empty",
+                                                    unit_price=0)
+                empty_buckets.append(resource_data)
+            if not cleanup_result:
+                self.update_resource_day_count_tag(resource_id=bucket_name, cleanup_days=cleanup_days, tags=tags)
+
         return empty_buckets
