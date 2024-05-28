@@ -39,7 +39,8 @@ class MainOperations:
         for policy_type, policies in policies_list.items():
             # @Todo support for all the aws policies, currently supports ec2_run as urgent requirement
             if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run",
-                                                             "ip_unattached", "unused_nat_gateway", "instance_idle"]:
+                                                             "ip_unattached", "unused_nat_gateway", "instance_idle",
+                                                             "zombie_snapshots"]:
                 source = policy_type
                 if Utils.equal_ignore_case(policy_type, self._public_cloud_name):
                     source = ''
