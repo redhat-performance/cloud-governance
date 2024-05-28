@@ -4,6 +4,7 @@ import boto3
 import typeguard
 from typing import Callable
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
@@ -21,9 +22,9 @@ class EC2Operations:
         Initializing the AWS resources
         """
         self.__environment_variables_dict = environment_variables.environment_variables_dict
-        self.elb1_client = boto3.client('elb', region_name=region)
-        self.elbv2_client = boto3.client('elbv2', region_name=region)
-        self.ec2_client = boto3.client('ec2', region_name=region)
+        self.elb1_client = get_boto3_client('elb', region_name=region)
+        self.elbv2_client = get_boto3_client('elbv2', region_name=region)
+        self.ec2_client = get_boto3_client('ec2', region_name=region)
         self.get_full_list = Utils().get_details_resource_list
         self.utils = Utils(region=region)
 

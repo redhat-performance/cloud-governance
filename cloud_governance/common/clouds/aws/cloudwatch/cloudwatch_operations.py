@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import boto3
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 
 
 class CloudWatchOperations:
@@ -12,7 +12,7 @@ class CloudWatchOperations:
 
     def __init__(self, region: str = 'us-east-2'):
         self._region = region
-        self.cloudwatch_client = boto3.client('cloudwatch', region_name=self._region)
+        self.cloudwatch_client = get_boto3_client('cloudwatch', region_name=self._region)
 
     def _create_metric_lists(self, resource_id: str, resource_type: str, namespace: str, metric_names: dict, statistic: str):
         """

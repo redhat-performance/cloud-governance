@@ -3,12 +3,12 @@ import gzip
 import json
 import os
 import tempfile
-import boto3
 import typeguard
 from botocore.exceptions import ClientError
 from os import listdir
 from os.path import isfile, join
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 
@@ -19,9 +19,9 @@ class S3Operations:
                  resource_file_name: str = "resources.json.gz", bucket: str = '', logs_bucket_key: str = ''):
         #  @Todo ask AWS support regarding about this issue
         if region_name == 'eu-south-1':
-            self.__s3_client = boto3.client('s3', region_name='us-east-1')
+            self.__s3_client = get_boto3_client('s3', region_name='us-east-1')
         else:
-            self.__s3_client = boto3.client('s3', region_name=region_name)
+            self.__s3_client = get_boto3_client('s3', region_name=region_name)
         self.__region = region_name
         self.__report_file_name = report_file_name
         self.__resource_file_name = resource_file_name

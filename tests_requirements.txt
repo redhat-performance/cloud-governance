@@ -7,7 +7,8 @@ azure-mgmt-subscription==3.1.1
 boto3==1.26.4
 elasticsearch==7.11.0
 elasticsearch-dsl==7.4.0
-moto==2.3.2
+freezegun==1.5.1
+moto==4.0.1
 oauthlib~=3.1.1
 pandas
 pytest

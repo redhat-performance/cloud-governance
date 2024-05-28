@@ -1,4 +1,3 @@
-
 from cloud_governance.common.utils.utils import Utils
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_runners.azure.policy_runner import PolicyRunner as AzurePolicyRunner
@@ -40,7 +39,7 @@ class MainOperations:
             # @Todo support for all the aws policies, currently supports ec2_run as urgent requirement
             if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run",
                                                              "ip_unattached", "unused_nat_gateway", "instance_idle",
-                                                             "zombie_snapshots"]:
+                                                             "zombie_snapshots", "database_idle"]:
                 source = policy_type
                 if Utils.equal_ignore_case(policy_type, self._public_cloud_name):
                     source = ''

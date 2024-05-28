@@ -81,3 +81,23 @@ class Utils:
                     co += 1
             return co
 
+    @staticmethod
+    @typeguard.typechecked
+    def iter_client_function(func_name: Callable, output_tag: str, iter_tag_name: str, **kwargs):
+        """
+        This method fetch all Items of the resource i.e: EC2, IAM
+        :param func_name:
+        :param output_tag:
+        :param iter_tag_name:
+        :return:
+        """
+        resource_list = []
+        resources = func_name(**kwargs)
+        resource_list.extend(resources[output_tag])
+        while iter_tag_name in resources.keys():
+            if iter_tag_name == 'NextToken':
+                resources = func_name(NextToken=resources[iter_tag_name], **kwargs)
+            elif iter_tag_name == 'Marker':
+                resources = func_name(Marker=resources[iter_tag_name], **kwargs)
+            resource_list.extend(resources[output_tag])
+        return resource_list

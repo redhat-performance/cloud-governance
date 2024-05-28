@@ -1,7 +1,6 @@
 import argparse
 import os
 
-import tempfile
 from ast import literal_eval
 
 import boto3
