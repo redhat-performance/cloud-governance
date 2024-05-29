@@ -1,4 +1,3 @@
-
 from cloud_governance.common.clouds.aws.price.price import AWSPrice
 from cloud_governance.common.utils.configs import DEFAULT_ROUND_DIGITS
 from cloud_governance.main.environment_variables import environment_variables
@@ -87,6 +86,16 @@ class ResourcesPricing:
             {"Field": "productFamily", "Value": "Storage", "Type": "TERM_MATCH"},
             {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
             {"Field": "volumeApiName", "Value": ebs_type, "Type": "TERM_MATCH"},
+        ]
+        unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
+        return round(unit_price, DEFAULT_ROUND_DIGITS)
+
+    def get_rds_price(self, region_name: str, instance_type: str):
+        service_code = 'AmazonRDS'
+        filter_dict = [
+            {"Field": "productFamily", "Value": "Database Instance", "Type": "TERM_MATCH"},
+            {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {"Field": "instanceType", "Value": instance_type, "Type": "TERM_MATCH"}
         ]
         unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
         return round(unit_price, DEFAULT_ROUND_DIGITS)

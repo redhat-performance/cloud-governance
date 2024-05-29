@@ -1,12 +1,12 @@
-
-import boto3
-
 from cloud_governance.common.clouds.aws.cloudwatch.cloudwatch_operations import CloudWatchOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
+from cloud_governance.common.clouds.aws.rds.rds_operations import RDSOperations
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
+from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.utils.configs import INSTANCE_IDLE_DAYS, DEFAULT_ROUND_DIGITS, TOTAL_BYTES_IN_KIB, \
-    EC2_NAMESPACE
+    EC2_NAMESPACE, CLOUDWATCH_METRICS_AVAILABLE_DAYS
 from cloud_governance.common.utils.utils import Utils
 from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -18,13 +18,14 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         super().__init__()
         self._region = self._environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
         self._cloud_name = 'AWS'
+        self._ec2_client = get_boto3_client(client='ec2', region_name=self._region)
+        self._s3_client = get_boto3_client('s3', region_name=self._region)
+        self._iam_client = get_boto3_client('iam', region_name=self._region)
+        self._rds_operations = RDSOperations(region_name=self._region)
         self.__s3operations = S3Operations(region_name=self._region)
-        self._ec2_client = boto3.client('ec2', region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
         self._resource_pricing = ResourcesPricing()
-        self._s3_client = boto3.client('s3')
-        self._iam_client = boto3.client('iam')
 
     def get_tag_name_from_tags(self, tags: list, tag_name: str) -> str:
         """
@@ -67,6 +68,9 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             elif self._policy == 'instance_run':
                 self._ec2_client.stop_instances(InstanceIds=[resource_id])
                 action = "Stopped"
+            elif self._policy == 'database_idle':
+                # @ Todo add the delete method after successful monitoring
+                return False
             logger.info(f'{self._policy} {action}: {resource_id}')
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
@@ -111,7 +115,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         tags = self.__remove_tag_key_aws(tags=tags)
         return tags
 
-    def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: list, force_tag_update: str = ''):
+    def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: list,
+                                      force_tag_update: str = ''):
         """
         This method updates the resource tags
         :param force_tag_update:
@@ -134,6 +139,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
                                   'instance_run', 'instance_idle'):
                 self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
+            elif self._policy == 'database_idle':
+                self._rds_operations.add_tags_to_resource(resource_arn=resource_id, tags=tags)
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
 
@@ -274,3 +281,25 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         for image in images:
             image_ids.append(image.get('ImageId'))
         return image_ids
+
+    def __get_db_connection_status(self, resource_id: str, days: int = CLOUDWATCH_METRICS_AVAILABLE_DAYS):
+        start_date, end_date = Utils.get_start_and_end_datetime(days=days)
+        metrics = self._cloudwatch.get_metric_data(resource_id=resource_id, start_time=start_date, end_time=end_date,
+                                                   resource_type='DBInstanceIdentifier',
+                                                   metric_names={'DatabaseConnections': 'Count'},
+                                                   namespace='AWS/RDS', statistic='Maximum'
+                                                   )
+        total_connections = self.__get_aggregation_metrics_value(metrics.get('MetricDataResults', []),
+                                                                 aggregation='sum')
+        return total_connections
+
+    def is_database_idle(self, resource_id: str):
+        """
+        This method returns bool on verifying the database connections
+        :param resource_id:
+        :type resource_id:
+        :return:
+        :rtype:
+        """
+        total_connections = self.__get_db_connection_status(resource_id)
+        return int(total_connections) == 0

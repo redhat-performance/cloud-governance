@@ -1,11 +1,10 @@
-
 from datetime import datetime
 from time import strftime
 
-import boto3
 import json
 from pkg_resources import resource_filename
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.logger.init_logger import logger
 # Search product filter
 from cloud_governance.main.environment_variables import environment_variables
@@ -29,7 +28,7 @@ class AWSPrice:
     def __init__(self, region_name: str = ''):
         # Use AWS Pricing API at US-East-1
         self.__environment_variables_dict = environment_variables.environment_variables_dict
-        self.__client = boto3.client('pricing', region_name='us-east-1')
+        self.__client = get_boto3_client('pricing', region_name='us-east-1')
         self.region = region_name if region_name else self.__environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-1')
 
     # Get current AWS price for an on-demand instance
