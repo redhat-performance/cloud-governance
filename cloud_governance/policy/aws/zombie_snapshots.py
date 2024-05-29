@@ -1,15 +1,18 @@
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
-class ZombieSnapshots(NonClusterZombiePolicy):
+class ZombieSnapshots(AWSPolicyOperations):
     """
     This class sends an alert mail for zombie snapshots ( AMI abandoned ) to the user after 4 days and delete after 7 days.
     """
 
+    RESOURCE_ACTION = 'Delete'
+
     def __init__(self):
         super().__init__()
+        self.__image_ids = self._get_ami_ids()
 
-    def _get_image_ids_from_description(self, snapshot_description: str):
+    def __get_image_ids_from_description(self, snapshot_description: str):
         """
         This method gets image Ids from snapshot description
         Two cases:
@@ -23,43 +26,52 @@ class ZombieSnapshots(NonClusterZombiePolicy):
             image_ids.append(f'ami-{image.split(" ")[0]}')
         return image_ids
 
+    def __is_zombie_snapshot(self, snapshot_description: str):
+        """
+        This method returns bool on verifying snapshots as zombie or not
+        :param snapshot_description:
+        :return:
+        """
+        zombie_snapshot = True
+        if snapshot_description:
+            snapshot_images = self.__get_image_ids_from_description(snapshot_description)
+            for snapshot_image in snapshot_images:
+                if snapshot_image in self.__image_ids:
+                    return False
+        return zombie_snapshot
+
     def run(self):
         """
-        This method returns all the zombie snapshots, delete if dry_run no
+        This method returns all the zombie snapshots and delete after x days
         @return:
         """
         snapshots = self._ec2_operations.get_snapshots()
         zombie_snapshots = []
-        image_ids = self._get_ami_ids()
         for snapshot in snapshots:
-            if not self._check_cluster_tag(tags=snapshot.get('Tags')):
-                if snapshot.get('Description'):
-                    snapshot_images = self._get_image_ids_from_description(snapshot.get('Description'))
-                    tags = snapshot.get('Tags')
-                    found = False
-                    for snapshot_image in snapshot_images:
-                        if snapshot_image in image_ids:
-                            found = True
-                    snapshot_id = snapshot.get('SnapshotId')
-                    if not found:
-                        unused_days = self._get_resource_last_used_days(tags=tags)
-                        zombie_snapshot = self._check_resource_and_delete(resource_name='Snapshot',
-                                                                          resource_id='SnapshotId',
-                                                                          resource_type='CreateSnapshot',
-                                                                          resource=snapshot,
-                                                                          empty_days=unused_days,
-                                                                          days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE,
-                                                                          tags=tags)
-                        if zombie_snapshot:
-                            zombie_snapshots.append({'ResourceId': snapshot.get('SnapshotId'),
-                                                     'Name': self._get_tag_name_from_tags(tags=tags),
-                                                     'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                                     'Size': f'{str(snapshot.get("VolumeSize"))}Gb',
-                                                     'Skip': self._get_policy_value(tags=snapshot.get('Tags')),
-                                                     'Days': str(unused_days)
-                            })
-                    else:
-                        unused_days = 0
-                    self._update_resource_tags(resource_id=snapshot_id, tags=tags, left_out_days=unused_days,
-                                               resource_left_out=not found)
+            tags = snapshot.get('Tags', [])
+            resource_id = snapshot.get('SnapshotId')
+            cleanup_result = False
+            cluster_tag = self._get_cluster_tag(tags=tags)
+            cleanup_days = 0
+            if not cluster_tag and self.__is_zombie_snapshot(snapshot.get('Description')):
+                cleanup_days = self.get_clean_up_days_count(tags=tags)
+                cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
+                                                                 clean_up_days=cleanup_days)
+                unit_price = 0
+                resource_data = self._get_es_schema(resource_id=resource_id,
+                                                    user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                    skip_policy=self.get_skip_policy_value(tags=tags),
+                                                    cleanup_days=cleanup_days, dry_run=self._dry_run,
+                                                    name=self.get_tag_name_from_tags(tags=tags, tag_name='Name'),
+                                                    region=self._region,
+                                                    cleanup_result=str(cleanup_result),
+                                                    resource_action=self.RESOURCE_ACTION,
+                                                    cloud_name=self._cloud_name,
+                                                    resource_type='Snapshot',
+                                                    volume_size=f"{snapshot.get('VolumeSize')} GB",
+                                                    unit_price=unit_price, resource_state='Backup' if not cleanup_result else "Deleted"
+                                                    )
+                zombie_snapshots.append(resource_data)
+            if not cleanup_result:
+                self.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         return zombie_snapshots

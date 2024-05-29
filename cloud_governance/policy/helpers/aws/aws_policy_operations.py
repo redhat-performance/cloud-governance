@@ -263,3 +263,14 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         average_network_out_bytes = self.__get_aggregation_metrics_value(metrics.get('MetricDataResults', []),
                                                                          aggregation='average')
         return round(average_network_out_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)
+
+    def _get_ami_ids(self):
+        """
+        This method returns all image ids
+        @return:
+        """
+        images = self._ec2_operations.get_images()
+        image_ids = []
+        for image in images:
+            image_ids.append(image.get('ImageId'))
+        return image_ids
