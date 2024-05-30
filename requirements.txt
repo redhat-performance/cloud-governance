@@ -31,4 +31,4 @@ sphinx==5.0.0
 sphinx-rtd-theme==1.0.0
 typing==3.7.4.3
 typeguard==2.13.3
-urllib3==1.26.7
+urllib3==1.26.18
