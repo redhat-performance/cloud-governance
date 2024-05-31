@@ -1,5 +1,6 @@
 from cloud_governance.common.clouds.aws.cloudwatch.cloudwatch_operations import CloudWatchOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.rds.rds_operations import RDSOperations
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
@@ -20,7 +21,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._cloud_name = 'AWS'
         self._ec2_client = get_boto3_client(client='ec2', region_name=self._region)
         self._s3_client = get_boto3_client('s3', region_name=self._region)
-        self._iam_client = get_boto3_client('iam', region_name=self._region)
+        self._iam_operations = IAMOperations()
         self._rds_operations = RDSOperations(region_name=self._region)
         self._s3operations = S3Operations(region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
@@ -56,7 +57,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             if self._policy == 's3_inactive':
                 self._s3_client.delete_bucket(Bucket=resource_id)
             elif self._policy == 'empty_roles':
-                self._iam_client.delete_role(RoleName=resource_id)
+                self._iam_operations.delete_role(role_name=resource_id)
             elif self._policy == 'unattached_volume':
                 self._ec2_client.delete_volume(VolumeId=resource_id)
             elif self._policy == 'ip_unattached':
@@ -135,7 +136,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             if self._policy == 's3_inactive':
                 self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
             elif self._policy == 'empty_roles':
-                self._iam_client.tag_role(RoleName=resource_id, Tags=tags)
+                self._iam_operations.tag_role(role_name=resource_id, tags=tags)
             elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
                                   'instance_run', 'instance_idle'):
                 self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)

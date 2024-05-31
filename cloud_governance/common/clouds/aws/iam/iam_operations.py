@@ -2,15 +2,21 @@ import os
 
 import boto3
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.clouds.aws.utils.utils import Utils
+from cloud_governance.common.logger.init_logger import logger
 
 
 class IAMOperations:
 
     def __init__(self, iam_client=None):
-        self.iam_client = iam_client if iam_client else boto3.client('iam')
+        self.iam_client = iam_client if iam_client else get_boto3_client('iam')
         self.utils = Utils()
-        self.__sts_client = sts_client = boto3.client('sts')
+        self.__sts_client = boto3.client('sts')
+
+    @property
+    def get_iam_client(self):
+        return self.iam_client
 
     def get_user_tags(self, username: str):
         """
@@ -72,3 +78,67 @@ class IAMOperations:
         response = self.__sts_client.get_caller_identity()
         account_id = response['Account']
         return account_id
+
+    def get_role(self, role_name: str):
+        """
+        This method returns the iam role data
+        :param role_name:
+        :return:
+        """
+        role_data = {}
+        try:
+            role_data = self.iam_client.get_role(RoleName=role_name).get('Role')
+        except Exception as err:
+            logger.error(err)
+        return role_data
+
+    def list_inline_role_policies(self, role_name: str):
+        """
+        This method returns the iam role inline policies
+        :param role_name:
+        :return:
+        """
+        role_policies = []
+        try:
+            role_policies = self.iam_client.list_role_policies(RoleName=role_name).get('PolicyNames', [])
+        except Exception as err:
+            logger.error(err)
+        return role_policies
+
+    def list_attached_role_policies(self, role_name: str):
+        """
+        This method returns the iam role attached policies
+        :param role_name:
+        :return:
+        """
+        attached_policies = []
+        try:
+            attached_policies = self.iam_client.list_attached_role_policies(RoleName=role_name).get('AttachedPolicies', [])
+        except Exception as err:
+            logger.error(err)
+        return attached_policies
+
+    def delete_role(self, role_name: str):
+        """
+        This method deletes the iam role
+        :param role_name:
+        :return:
+        """
+        try:
+            self.iam_client.delete_role(RoleName=role_name)
+            return True
+        except Exception as err:
+            raise err
+
+    def tag_role(self, role_name: str, tags: list):
+        """
+        This method tags the iam role
+        :param role_name:
+        :param tags:
+        :return:
+        """
+        try:
+            self.iam_client.tag_role(RoleName=role_name, Tags=tags)
+            return True
+        except Exception as err:
+            raise err

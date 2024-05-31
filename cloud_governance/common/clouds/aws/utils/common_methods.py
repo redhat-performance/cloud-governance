@@ -1,6 +1,7 @@
 import boto3
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.utils.configs import AWS_DEFAULT_GLOBAL_REGION
 
 
 def get_tag_value_from_tags(tags: list, tag_name: str, cast_type: str = 'str',
@@ -33,7 +34,7 @@ def get_tag_value_from_tags(tags: list, tag_name: str, cast_type: str = 'str',
     return default_value
 
 
-def get_boto3_client(client: str, region_name: str, **kwargs):
+def get_boto3_client(client: str, region_name: str = AWS_DEFAULT_GLOBAL_REGION, **kwargs):
     """
     This method initializes the aws boto3 client
     :param client:

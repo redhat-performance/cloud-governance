@@ -1,54 +1,54 @@
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
-class EmptyRoles(NonClusterZombiePolicy):
+class EmptyRoles(AWSPolicyOperations):
     """
     This class sends an alert mail for empty role to the user after 4 days and delete after 7 days.
     """
 
+    RESOURCE_ACTION = 'Delete'
+    IAM_GLOBAL_REGION = 'us-east-1'
+
     def __init__(self):
         super().__init__()
 
-    def run(self):
+    def run_policy_operations(self):
         """
-        This method returns all empty roles, delete if dry_run no
-        @return:
+        This method returns all Empty buckets
+        :return:
+        :rtype:
         """
-        return self.__delete_empty_roles()
-
-    def __delete_empty_roles(self):
-        """
-        This method deletes the role after 7 days of empty
-        @return:
-        """
-        zombie_roles = []
+        empty_roles = []
         roles = self._iam_operations.get_roles()
         for role in roles:
             role_name = role.get('RoleName')
-            try:
-                get_role = self._iam_client.get_role(RoleName=role.get('RoleName'))['Role']
-                tags = get_role.get('Tags', [])
-                if not self._check_cluster_tag(tags=tags):
-                    role_empty = False
-                    role_attached_policies = self._iam_client.list_attached_role_policies(RoleName=role_name)
-                    role_inline_policies = self._iam_client.list_role_policies(RoleName=role_name)
-                    if not role_inline_policies.get('PolicyNames') and not role_attached_policies.get('AttachedPolicies'):
-                        role_empty = True
-                        if not self._get_tag_name_from_tags(tags=tags, tag_name='Name'):
-                            tags.append({'Key': 'Name', 'Value': role_name})
-                        empty_days = self._get_resource_last_used_days(tags=tags)
-                        empty_role = self._check_resource_and_delete(resource_name='IAM Role', resource_id='RoleName', resource_type='CreateRole', resource=get_role, empty_days=empty_days, days_to_delete_resource=self.DAYS_TO_DELETE_RESOURCE, tags=tags)
-                        if empty_role:
-                            zombie_roles.append({
-                                'ResourceId': empty_role.get('RoleName'),
-                                'Name': empty_role.get('RoleName'),
-                                'User': self._get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                'Skip': self._get_policy_value(tags=tags),
-                                'Days': empty_days})
-                    else:
-                        empty_days = 0
-                    self._update_resource_tags(resource_id=role_name, tags=tags, left_out_days=empty_days, resource_left_out=role_empty)
-            except Exception as err:
-                logger.info(f'Error occur:{role_name}, {err}')
-        return zombie_roles
+            role_data = self._iam_operations.get_role(role_name=role_name)
+            tags = role_data.get('Tags', [])
+            cleanup_result = False
+            cluster_tag = self._get_cluster_tag(tags=tags)
+            cleanup_days = 0
+            inline_policies = self._iam_operations.list_inline_role_policies(role_name=role_name)
+            attached_policies = self._iam_operations.list_attached_role_policies(role_name=role_name)
+            if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0:
+                cleanup_days = self.get_clean_up_days_count(tags=tags)
+                cleanup_result = self.verify_and_delete_resource(resource_id=role_name, tags=tags,
+                                                                 clean_up_days=cleanup_days)
+                resource_data = self._get_es_schema(resource_id=role_name,
+                                                    user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                    skip_policy=self.get_skip_policy_value(tags=tags),
+                                                    cleanup_days=cleanup_days,
+                                                    dry_run=self._dry_run,
+                                                    name=role_name,
+                                                    region=self.IAM_GLOBAL_REGION,
+                                                    cleanup_result=str(cleanup_result),
+                                                    resource_action=self.RESOURCE_ACTION,
+                                                    cloud_name=self._cloud_name,
+                                                    resource_type='EmptyRole',
+                                                    resource_state="Empty",
+                                                    unit_price=0)
+                empty_roles.append(resource_data)
+            if not cleanup_result:
+                self.update_resource_day_count_tag(resource_id=role_name, cleanup_days=cleanup_days, tags=tags)
+
+        return empty_roles
