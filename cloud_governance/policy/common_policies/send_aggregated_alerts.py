@@ -1,5 +1,4 @@
-import json
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pandas
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -142,34 +141,33 @@ class SendAggregatedAlerts:
                 if not days:
                     days = 0
                 alert_user = True if self.__alert_dry_run else False
-                delete_date = 'dry_run=yes'
-                if not record.get('Skip'):
-                    record['Skip'] = 'NA'
-                if record.get('Skip') != 'NA':
+                dry_run = record.get('DryRun')
+                days_to_take_action = int(record.get('ExpireDays', self.__days_to_delete_resource))
+                if not record.get('SkipPolicy'):
+                    record['SkipPolicy'] = 'NA'
+                delete_date = ''
+                if record.get('SkipPolicy') != 'NA':
                     delete_date = 'skip_delete'
-                if self.__days_to_delete_resource - 5 == days:
+                if days_to_take_action - 5 == days:
                     delete_date = (datetime.utcnow() + timedelta(days=5)).date()
                     alert_user = True
-                elif days == self.__days_to_delete_resource - 3:
+                elif days == days_to_take_action - 3:
                     delete_date = (datetime.utcnow() + timedelta(days=3)).date()
                     alert_user = True
                 else:
-                    if days >= self.__days_to_delete_resource:
+                    if days >= days_to_take_action:
                         delete_date = datetime.utcnow().date().__str__()
-                        if days > self.__days_to_delete_resource:
-                            if not record.get('Skip'):
-                                record['Skip'] = 'NA'
-                            if record.get('Skip') != 'NA':
-                                delete_date = 'skip_delete'
-                            else:
-                                delete_date = 'dry_run=yes'
                         alert_user = True
-                if alert_user:
-                    if (delete_date != 'skip_delete' and delete_date != 'dry_run=yes') or self.__alert_dry_run:
-                        record['DeleteDate'] = delete_date.__str__()
-                        if record.get('policy') in ['empty_roles', 's3_inactive']:
-                            record['RegionName'] = 'us-east-1'
-                        filtered_policy_es_data.append(record)
+                if record.get('policy') in ['empty_roles', 's3_inactive']:
+                    record['RegionName'] = 'us-east-1'
+                if dry_run == 'yes':
+                    filtered_policy_es_data.append(record)
+                else:
+                    if alert_user:
+                        if delete_date != '' and delete_date != 'skip_delete' and dry_run == 'no':
+                            record['DeleteDate'] = delete_date.__str__()
+                            filtered_policy_es_data.append(record)
+
             except Exception as err:
                 raise err
         return filtered_policy_es_data
