@@ -146,6 +146,10 @@ class ElasticSearchOperations:
             data['account'] = self.__account
         if data.get('index-id'):
             kwargs['id'] = data.get('index-id')
+        if 'DryRun' not in data:
+            data['DryRun'] = self.__environment_variables_dict.get('dry_run')
+        if 'CleanUpDays' not in data:
+            data['CleanUpDays'] = self.__environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
         try:
             if isinstance(data, dict):  # JSON Object
                 self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
@@ -324,6 +328,10 @@ class ElasticSearchOperations:
                     item['AccountId'] = str(item.get('AccountId'))
                 if 'account' not in item:
                     item['account'] = self.__account
+                if 'DryRun' not in item:
+                    item['DryRun'] = self.__environment_variables_dict.get('dry_run')
+                if 'CleanUpDays' not in item:
+                    item['ExpireDays'] = self.__environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
                 item['policy'] = self.__environment_variables_dict.get('policy')
             response = bulk(self.__es, bulk_items)
             if response:
