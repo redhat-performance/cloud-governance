@@ -5,6 +5,7 @@ from cloud_governance.common.elasticsearch.elasticsearch_operations import Elast
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
+from cloud_governance.common.utils.utils import Utils
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -160,11 +161,12 @@ class SendAggregatedAlerts:
                         alert_user = True
                 if record.get('policy') in ['empty_roles', 's3_inactive']:
                     record['RegionName'] = 'us-east-1'
-                if dry_run == 'yes':
+                if Utils.equal_ignore_case(dry_run, 'yes'):
+                    record['DeleteDate'] = 'dry_run=yes'
                     filtered_policy_es_data.append(record)
                 else:
                     if alert_user:
-                        if delete_date != '' and delete_date != 'skip_delete' and dry_run == 'no':
+                        if delete_date != '' and delete_date != 'skip_delete' and Utils.equal_ignore_case(dry_run, 'no'):
                             record['DeleteDate'] = delete_date.__str__()
                             filtered_policy_es_data.append(record)
 
