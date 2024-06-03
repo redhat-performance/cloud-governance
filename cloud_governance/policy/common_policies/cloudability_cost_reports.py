@@ -112,7 +112,7 @@ class CloudabilityCostReports:
                 if Utils.equal_ignore_case(cloud_name, 'amazon'):
                     cloud_name = 'AWS'
                 month = datetime.datetime.strftime(timestamp, '%Y %b')
-                index_id = f"""{account.get('date')}-{account.get('vendor_account_name').lower()}"""
+                index_id = f"""cloudability-{account.get('date')}-{account.get('vendor_account_name').lower()}"""
 
                 if year in account.get('date'):
                     if index_id not in cost_reports:
@@ -124,7 +124,7 @@ class CloudabilityCostReports:
                             'start_date': account.get('date'),
                             'CloudName': cloud_name,
                             'Forecast': 0,
-                            'index_id': f"""{account.get('date')}-{account.get('vendor_account_name').lower()}""",
+                            'index_id': index_id,
                             'timestamp': timestamp,
                             'Month': month,
                             'Budget': round(account_budget / MONTHS, DEFAULT_ROUND_DIGITS),
@@ -133,8 +133,7 @@ class CloudabilityCostReports:
                             'filter_date': f'{account.get("date")}-{month.split()[-1]}'
                         })
                     else:
-                        cost_reports[index_id]['Actual'] += round(float(account.get('unblended_cost')),
-                                                                  DEFAULT_ROUND_DIGITS)
+                        cost_reports[index_id]['Actual'] += round(float(account.get('unblended_cost')), DEFAULT_ROUND_DIGITS)
         return list(cost_reports.values())
 
     def __next_twelve_months(self):
@@ -177,7 +176,7 @@ class CloudabilityCostReports:
                     m, y = m_y[0], m_y[1]
                     start_date = f'{y}-{m}-01'
                     timestamp = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-                    index_id = f'{start_date}-{data.get("Account").lower()}'
+                    index_id = f'cloudability-{start_date}-{data.get("Account").lower()}'
                     month = datetime.datetime.strftime(timestamp, "%Y %b")
                     forecast_cost_data.append({
                         **data,
