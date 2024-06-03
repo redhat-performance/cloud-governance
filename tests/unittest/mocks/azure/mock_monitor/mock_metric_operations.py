@@ -5,10 +5,10 @@ class MockMetric(Metric):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
 
 class MockResponse(Response):
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

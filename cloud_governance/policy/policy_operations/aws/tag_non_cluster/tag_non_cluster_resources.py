@@ -8,7 +8,7 @@ class TagNonClusterResources(NonClusterOperations):
     """
     This class update tags of Non-Cluster Resources
     """
-    
+
     SHORT_RESOURCE_ID = 5
     SHORT_RESOURCE_NAME = 3
     SHOT_SNAPSHOT_ID = 4

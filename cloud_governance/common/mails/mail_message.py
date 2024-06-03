@@ -95,7 +95,7 @@ Cloud-governance Team""".strip()
         body = f"""
 Hi {name},
 
-{self.__environment_variables_dict.get('account')} IAM User: {user} has missing tags 
+{self.__environment_variables_dict.get('account')} IAM User: {user} has missing tags
 Please add the tags in the spreadsheet: https://docs.google.com/spreadsheets/d/{spreadsheet_id}.
 If you already filled the tags, please ignore the mail.
 
@@ -113,7 +113,7 @@ Cloud-governance Team""".strip()
         subject = f'cloud-governance alert: last week cost over usage {usage_cost}$ per user'
         body = f"""
 Hi {name},
-Your AWS user:{user} in account:{self.__environment_variables_dict.get('account')} cost was {user_usage}$ in the last week. 
+Your AWS user:{user} in account:{self.__environment_variables_dict.get('account')} cost was {user_usage}$ in the last week.
 Please verify that you are using all the resources.
 Please verify that you are using all the resources in attached {user}_resource.json file.
 
@@ -234,7 +234,7 @@ Cloud-governance Team""".strip()
         <div class="greeting">
             <p>Hi,</p>
         </div>
-        
+
         <div class="body">
             <p>This following services were over limit</p>
             {data}
@@ -303,7 +303,7 @@ Cloud-governance Team""".strip()
             Your {cloud_name} cost usage in the last {self.__cro_duration_days} days is $ {user_cost} and {message}<br/>
             You must open the project ticket in the following <a href="{self.__portal}">Link</a>.<br />
             After submitting a ticket, you must add Tag (TicketId:#) to every active resource that is related to the project ticket.<br/>
-            
+
             If you have any questions, please let us know in slack channel #perf-dept-public-clouds
         <div><br/><br/>
         {self.FOOTER}

@@ -1,11 +1,11 @@
 # How to create a new user for cloud-governance
 1. Create a IAM policy CloudGovernanceDeletePolicy
-   1. Use [CloudGovernanceDeletePolicy.json](iam/clouds/aws/CloudGovernanceDeletePolicy.json) to create the policy 
+   1. Use [CloudGovernanceDeletePolicy.json](iam/clouds/aws/CloudGovernanceDeletePolicy.json) to create the policy
 2. Create **cloud-governance-user** and add the above created policy.
 3. Create s3 bucket to store policy results.
 
 # Adding jenkins slave
-1. Install java-11-jdk 
+1. Install java-11-jdk
     ```commandline
     sudo yum install java-11-openjdk-devel
     ```
@@ -14,7 +14,7 @@
     sudo dnf -y install dnf-plugins-core
     sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
     sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
-    sudo systemctl start docker   
+    sudo systemctl start docker
     ```
 3. Create Jenkins user
    ```commandline
@@ -73,7 +73,7 @@
        "AWS_SECRET_ACCESS_KEY" : "acees_secret",
        "BUCKET" : "bucket_name"
      }
-    } 
+    }
     ```
 2. Login into the jenkins console.
 3. Click on Manager Jenkins

@@ -58,7 +58,7 @@ class UpdateNATags:
         This return dict of resource and its tags
         :param keys:
         :param values:
-        :return: 
+        :return:
         """
         tags = {}
         for value in values:

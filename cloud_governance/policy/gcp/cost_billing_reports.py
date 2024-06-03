@@ -68,18 +68,18 @@ class CostBillingReports:
             second_year_month = current_month.strftime("%Y%m")
         logger.info(f'StartMonth: {first_year_month}, EndMonth: {second_year_month}')
         fetch_monthly_invoice_query = f"""
-                SELECT ifnull(project.ancestors[SAFE_OFFSET(1)].display_name, 'NA') as folder_name, 
+                SELECT ifnull(project.ancestors[SAFE_OFFSET(1)].display_name, 'NA') as folder_name,
                 ifnull(project.ancestry_numbers, 'NA') as folder_id, invoice.month, ifnull(project.id, 'GCP-refund/credit') as project_name, ifnull(project.number, '000000000000') as project_id,
                 (SUM(CAST(cost AS NUMERIC)) + SUM(IFNULL((SELECT SUM(CAST(c.amount AS NUMERIC))
                 FROM UNNEST(credits) AS c), 0))) AS total_cost
                 FROM `{self.__database_name}.{self.__table_name}`
                 where  invoice.month BETWEEN '{first_year_month}' AND '{second_year_month}'
                 GROUP BY 1, 2, 3, 4, 5
-                ORDER BY 3 
+                ORDER BY 3
                 """
         fetch_monthly_folders_query = f"""
                 SELECT TO_JSON_STRING(project.ancestors) as project_folders, project.number, invoice.month, ifnull(project.ancestry_numbers, 'NA') as folder_id
-                FROM `{self.__database_name}.{self.__table_name}` 
+                FROM `{self.__database_name}.{self.__table_name}`
                 where  invoice.month BETWEEN '{first_year_month}' AND '{second_year_month}' GROUP BY 1, 2, 3, 4 ORDER BY invoice.month
                 """
         return [fetch_monthly_invoice_query, fetch_monthly_folders_query]
