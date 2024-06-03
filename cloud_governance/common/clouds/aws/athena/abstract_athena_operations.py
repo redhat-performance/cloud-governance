@@ -29,4 +29,3 @@ class AbstractAthenaOperations(ABC):
         :return:
         """
         raise NotImplemented()
-

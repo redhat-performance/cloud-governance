@@ -61,9 +61,3 @@ def test_s3_zombie_bucket_delete():
     zombie_cluster_resources.zombie_cluster_s3_bucket()
     s3_operations = S3Operations(region_name='us-east-1')
     assert not s3_operations.find_bucket(bucket_name=BUCKET_NAME)
-
-
-
-
-
-

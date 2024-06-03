@@ -16,3 +16,4 @@ repos:
       - id: check-json
       - id: check-yaml
       - id: trailing-whitespace
+      - id: end-of-file-fixer

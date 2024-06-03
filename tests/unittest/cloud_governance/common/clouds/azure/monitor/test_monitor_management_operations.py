@@ -20,5 +20,3 @@ def test_monitor_management_operations__get_audit_records():
     monitor_operations = MonitorManagementOperations()
 
     assert len(monitor_operations.get_audit_records(resource_id=AZURE_RESOURCE_ID)) == 1
-
-

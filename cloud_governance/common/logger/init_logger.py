@@ -20,4 +20,3 @@ logger.addHandler(handler)
 
 # def get_pyperf_log_path():
 #     return f'{log_path}/py_perf.log'
-

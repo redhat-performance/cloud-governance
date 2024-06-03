@@ -60,7 +60,3 @@ class AzureMonitorTickets(AbstractMonitorTickets):
         :return:
         # """
         self.monitor_tickets()
-
-
-
-

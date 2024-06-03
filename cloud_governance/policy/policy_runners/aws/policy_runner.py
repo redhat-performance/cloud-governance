@@ -47,4 +47,3 @@ class PolicyRunner(AbstractPolicyRunner):
                     self._upload_elastic_search.upload(data=response)
                     upload_to_s3.upload(data=response)
         return policy_result
-

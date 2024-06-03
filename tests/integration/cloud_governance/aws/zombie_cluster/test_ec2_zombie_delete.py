@@ -44,4 +44,3 @@ def test_ec2_zombie_vpc_delete():
                                                       resource_name='zombie_cluster_vpc', force_delete=True)
     zombie_cluster_resources.zombie_cluster_vpc()
     assert not EC2Operations().find_vpc('kubernetes.io/cluster/integration-test-cluster')
-

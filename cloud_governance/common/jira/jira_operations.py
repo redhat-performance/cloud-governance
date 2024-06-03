@@ -323,4 +323,3 @@ class JiraOperations:
             description = self.get_issue_description(ticket_id=sub_ticket_id, sub_task=True)
             total_duration += int(description.get('Days', 0))
         return total_duration
-

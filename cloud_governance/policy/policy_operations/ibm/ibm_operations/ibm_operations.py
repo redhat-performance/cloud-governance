@@ -13,7 +13,3 @@ class IBMOperations:
         self._dry_run = self.__environment_variables_dict.get('dry_run', 'yes')
         self._policy = self.__environment_variables_dict.get('policy', '')
         self._tag_operation = self.__environment_variables_dict.get('tag_operation', 'read')
-
-
-
-

@@ -57,4 +57,3 @@ def tag_na_resources(file_name: str, file_path: str = '/tmp/', tag_operation: st
         update_na_tags.create_csv()
     elif tag_operation == 'update':
         update_na_tags.update_tags()
-

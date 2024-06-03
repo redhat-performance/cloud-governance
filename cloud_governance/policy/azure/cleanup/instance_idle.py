@@ -62,4 +62,3 @@ class InstanceIdle(AzurePolicyOperations):
                 self.update_resource_day_count_tag(resource_id=vm.get("id"), cleanup_days=cleanup_days,
                                                    tags=tags)
         return running_vms
-

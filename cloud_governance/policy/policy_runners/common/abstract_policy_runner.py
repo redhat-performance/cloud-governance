@@ -93,4 +93,3 @@ class AbstractPolicyRunner(ABC):
         if self._save_to_file_path:
             self.write_to_file(data=policy_result)
         return policy_result
-
