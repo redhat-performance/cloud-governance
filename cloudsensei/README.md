@@ -7,7 +7,7 @@ Eventually, CloudSensei will be flipped to work as a Slackbot, allowing users to
 
 ### How it works?
 To implement this functionality, CloudSensei utilizes AWS Lambda + EventBridge.
-The EventBridge Scheduler (CronJob) will run on every day 17:00hrs IST. 
+The EventBridge Scheduler (CronJob) will run on every day 17:00hrs IST.
 
 
 #### How to send Slack notifications on Slack?
@@ -24,7 +24,7 @@ The EventBridge Scheduler (CronJob) will run on every day 17:00hrs IST.
    1. Enter necessary fields and create app
 5. A Basic information tab will open, select options **Bots**.
 6. Click on **OAuth & Permissions** on left panel
-   1. Click on 
+   1. Click on
    2. Under the scopes, add only **Bots Token Scopes**
    3. Under the **OAuth Tokens for Your Workspace**, Submit **Install to Workspace** and allow access.
 

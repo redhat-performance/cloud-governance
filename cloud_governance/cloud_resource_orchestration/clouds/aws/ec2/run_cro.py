@@ -13,10 +13,10 @@ from cloud_governance.main.environment_variables import environment_variables
 
 
 class RunCRO:
-    
+
     PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.utcnow().date()}'
     PERSISTENT_RUN_INDEX = 'cloud_resource_orchestration_persistence_run'
-    
+
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.cro_cost_over_usage = CostOverUsage()

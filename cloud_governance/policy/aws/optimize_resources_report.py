@@ -68,8 +68,8 @@ class OptimizeResourcesReport:
     def __get_optimization_reports(self):
         """
         This method returns the report data
-        :return: 
-        :rtype: 
+        :return:
+        :rtype:
         """
         report_list = self.__support_operations.get_trusted_advisor_reports()
         optimize_resource_list = []
@@ -107,7 +107,7 @@ class OptimizeResourcesReport:
     def run(self):
         """
         This method start the report collection
-        :return: 
-        :rtype: 
+        :return:
+        :rtype:
         """
         return self.__get_optimization_reports()

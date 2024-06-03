@@ -37,18 +37,18 @@ class SpotSavingsAnalysis:
         current_month = current_date.month
         previous_month = current_month - 1 if current_month - 1 != 0 else 12
         query = f"""
-                SELECT 
-                date_format(line_item_usage_start_date, '%Y-%m-%d') as CurrentDate, 
+                SELECT
+                date_format(line_item_usage_start_date, '%Y-%m-%d') as CurrentDate,
                 date_format(bill_billing_period_start_date, '%Y-%m-%d') as  MonthStartDate,
-                line_item_usage_account_id as AccountId, 
+                line_item_usage_account_id as AccountId,
                 line_item_product_code as ProductCode,
-                product_region as Region, 
+                product_region as Region,
                 product_instance_type as InstanceType,
-                cost_category_cost_center as CostCenter, 
-                cost_category_o_us as CostCategory, 
+                cost_category_cost_center as CostCenter,
+                cost_category_o_us as CostCategory,
                 cost_category_organization as RHOrg,
                 ROUND(SUM(discount_total_discount), 3) as TotalDiscount,
-                ROUND(SUM(line_item_usage_amount), {self.__default_round_digits}) as UsageAmount, 
+                ROUND(SUM(line_item_usage_amount), {self.__default_round_digits}) as UsageAmount,
                 ROUND(SUM(line_item_unblended_cost + discount_total_discount), {self.__default_round_digits}) as UnblendedCost,
                 ROUND(SUM(pricing_public_on_demand_cost), {self.__default_round_digits}) as OnDemand,
                 ROUND(SUM(pricing_public_on_demand_cost - line_item_unblended_cost), {self.__default_round_digits}) as SpotSavings
@@ -57,9 +57,9 @@ class SpotSavingsAnalysis:
                 AND "line_item_resource_id" LIKE 'i-%'
                 AND "line_item_operation" LIKE 'RunInstance%'
                 AND "product_marketoption" = 'Spot'
-                AND month(bill_billing_period_start_date) in ({previous_month}, {current_month}) 
+                AND month(bill_billing_period_start_date) in ({previous_month}, {current_month})
                 AND year(bill_billing_period_start_date) = {year}
-                AND pricing_public_on_demand_cost <> 0 
+                AND pricing_public_on_demand_cost <> 0
                 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9 ORDER BY MonthStartDate desc
                 """
         return query

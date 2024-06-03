@@ -75,8 +75,8 @@ def run_shell_cmd(cmd: str):
 def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = ''):
     """
     This method returns the shell command
-    :param mounted_volumes: 
-    :type mounted_volumes: 
+    :param mounted_volumes:
+    :type mounted_volumes:
     :param env_variables:
     :type env_variables:
     :param policy:
@@ -106,7 +106,7 @@ cloudability_env_vars = {
 }
 
 mounted_volumes = f" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS}"
-cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY, 
+cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY,
                                               env_variables={
                                                   **common_env_vars,
                                                   **cloudability_env_vars

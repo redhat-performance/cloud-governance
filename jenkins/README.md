@@ -28,7 +28,7 @@ useradd jenkins -U -s /bin/bash
 ```
 Set password
 ```commandline
-passwd jenkins 
+passwd jenkins
 ```
 ex: test123
 
@@ -85,7 +85,7 @@ docker-compose -f docker_compose_file_path up -d
 docker-compose -f docker_compose_file_path down
 ```
 
-#### Using the podman 
+#### Using the podman
 
 create elasticsearch & grafana local persistence Directories
 
@@ -101,7 +101,7 @@ chmod 777 $CLOUD_GOVERNANCE_PATH/elasticsearch
 ```
 
 ```commandline
-# Run the containers in pods 
+# Run the containers in pods
 podman play kube file.yml
 # Delete the containers in pods
 podman play kube --down file.yml
@@ -137,6 +137,6 @@ Goto IAM Services to create policy and user
    "AWS_SECRET_ACCESS_KEY" : "acees_secret",
    "BUCKET" : "bucket_name"
  }
-} 
+}
 ```
 

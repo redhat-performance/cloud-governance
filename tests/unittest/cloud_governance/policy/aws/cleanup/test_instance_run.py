@@ -270,5 +270,5 @@ def test_ec2_force_delete_skip():
     assert running_instances_data[0]['ResourceId'] == resource.get('InstanceId')
     assert running_instances_data[0]['DryRun'] == 'yes'
     assert running_instances_data[0]['ResourceStopped'] == 'False'
-    
+
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1

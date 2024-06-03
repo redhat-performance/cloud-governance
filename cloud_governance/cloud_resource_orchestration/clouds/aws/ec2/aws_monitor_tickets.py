@@ -234,7 +234,7 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                 case_statement += f"""\nWHEN resource_tags_user_name like '%{cluster_name}%' THEN '{cluster_name}' """
             case_statement += "\nELSE resource_tags_user_name END as ClusterName"
             query = f"""
-            SELECT 
+            SELECT
             line_item_usage_account_id as AccountId,
             {case_statement},
             ROUND(SUM(line_item_unblended_cost), 3) as UnblendedCost
