@@ -24,4 +24,3 @@ def test_query_list():
     gcp_account = GoogleAccount()
     result_year_month = gcp_account.query_list([fetch_query])[0][0].get('month')
     assert result_year_month == year_month
-

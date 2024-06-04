@@ -212,4 +212,3 @@ def test_update_resource_day_count_tag_updated_tag_today():
         instances = ec2_client.describe_instances()['Reservations']
         tag_value = aws_cleanup_operations.get_tag_name_from_tags(instances[0]['Instances'][0].get('Tags'), tag_name='DaysCount')
         assert tag_value == str(datetime.datetime.utcnow().date()) + "@1"
-

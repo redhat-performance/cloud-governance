@@ -66,8 +66,3 @@ class AzureOperations:
             else:
                 billing_profiles.append(response.id)
         return billing_profiles
-
-
-
-
-

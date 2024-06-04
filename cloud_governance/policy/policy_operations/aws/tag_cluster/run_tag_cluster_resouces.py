@@ -91,4 +91,3 @@ def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: di
     for func in func_resource_list[1:]:
         func(instance_tags=response)
     logger.info(response)
-

@@ -101,9 +101,3 @@ def test_upload_data():
         'Username': 'cloud-governance-user-test'
     }]
     assert 1 == dynamo_db._upload_to_dynamo_db_table(data=mock_log_data)
-
-
-
-
-
-

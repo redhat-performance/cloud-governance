@@ -288,4 +288,3 @@ class ZombieClusterCommonMethods:
             if cluster_delete_days >= self.DAYS_TO_DELETE_RESOURCE:
                 delete_cluster_resource = True
         return cluster_left_out_days, delete_cluster_resource
-

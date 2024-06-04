@@ -96,6 +96,3 @@ pod
 pytest
 postinstallation
 ```
-
-
-

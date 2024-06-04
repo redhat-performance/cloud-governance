@@ -329,4 +329,3 @@ class CollectCROReports:
         result = self.__upload_cro_report_to_es(monitor_data=monitor_data)
         handler.setLevel(logging.WARN)
         return result
-

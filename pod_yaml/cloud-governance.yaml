@@ -44,6 +44,3 @@ spec:
         image: quay.io/ebattat/cloud-governance
         name: cloud-governance
       restartPolicy: OnFailure
-
-
-

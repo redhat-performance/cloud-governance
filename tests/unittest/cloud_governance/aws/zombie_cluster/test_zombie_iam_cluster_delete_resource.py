@@ -184,4 +184,3 @@ def test_not_delete_iam_cluster_user():
             find = True
             break
     assert find
-

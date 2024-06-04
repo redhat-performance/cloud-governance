@@ -48,4 +48,3 @@ class UnattachedVolume(AzurePolicyOperations):
                 self.update_resource_day_count_tag(resource_id=volume.get("id"), cleanup_days=cleanup_days, tags=tags)
 
         return unattached_volumes
-

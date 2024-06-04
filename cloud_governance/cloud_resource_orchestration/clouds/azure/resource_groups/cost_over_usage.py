@@ -80,4 +80,3 @@ class CostOverUsage(AbstractCostOverUsage, ABC):
             response = self.__cost_mgmt_operations.get_filter_data(cost_data=results_by_time, tag_name=tag_name)
             return response
         return {}
-

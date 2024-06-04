@@ -23,4 +23,3 @@ def test_verify_active():
 def test_verify_non_active():
     cost_over_usage = CostOverUsage()
     assert not cost_over_usage._verify_active_resources(tag_value='user', tag_name='test')
-
