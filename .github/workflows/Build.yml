@@ -274,8 +274,8 @@ jobs:
           # Verfiy and wait till latest cloud-governance version will be updated in Pypi (timeout 900 seconds)
           timeout=900
           sleep_time=30
+          pip --no-cache-dir install setuptools cloud-governance --upgrade
           expected_version=$(python3 setup.py --version)
-          pip --no-cache-dir install cloud-governance --upgrade
           build=$(pip freeze | grep cloud-governance | sed 's/==/=/g')
           actual_version="$(cut -d'=' -f2 <<<"$build")"
           current_wait_time=0
@@ -338,9 +338,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: 🎁 Bump Version
         run: |
+          pip install setuptools bumpversion
           version=$(python3 setup.py --version)
           git checkout main
-          pip install bumpversion
           git config --global user.email ${{ secrets.EMAIL }}
           git config --global user.name  ${{ secrets.NAME }}
           git config pull.rebase false  # merge (the default strategy)
