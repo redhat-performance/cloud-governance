@@ -64,6 +64,7 @@ setup(
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'requests==2.32.2',  # rest api & lambda
         'retry==0.9.2',
+        'setuptools',  # Requires for python3.12
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'sphinx==5.0.0',  # readthedocs
