@@ -314,6 +314,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: ⌛ Upload to 🐋 quay.io
         run: |
+          pip install setuptools
           version=$(python3 setup.py --version)
           sudo docker build --build-arg VERSION=$version -t quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}:v$version .
           sudo docker build --build-arg VERSION=latest -t quay.io/${{ secrets.QAUYIO_REPOSITORY }}/${{ secrets.PACKAGE_NAME }}:latest .
