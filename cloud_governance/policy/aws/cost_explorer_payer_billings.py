@@ -238,7 +238,7 @@ class CostExplorerPayerBillings(CostBillingReports):
 
     def get_monthly_cost_details(self, start_date: datetime = None, end_date: datetime = None):
         """This method list the savings plan details"""
-        current_date = datetime.datetime.utcnow()
+        current_date = datetime.datetime.now(datetime.UTC.utc)
         if not start_date and not end_date:
             end_date = (current_date.replace(day=1) - datetime.timedelta(days=1)).date()
             start_date = end_date.replace(day=1)

@@ -1,5 +1,4 @@
-import os
-from datetime import datetime, timedelta
+from datetime import datetime, UTC
 import time
 import pandas as pd
 from elasticsearch.helpers import bulk
@@ -138,7 +137,7 @@ class ElasticSearchOperations:
 
         # utcnow - solve timestamp issue
         if not data.get('timestamp'):
-            data['timestamp'] = datetime.utcnow()  # datetime.now()
+            data['timestamp'] = datetime.now(UTC.utc)  # datetime.now()
         if 'policy' not in data:
             data['policy'] = self.__environment_variables_dict.get('policy')
         # Upload data to elastic search server
@@ -322,7 +321,7 @@ class ElasticSearchOperations:
                     if 'CurrentDate' in item:
                         item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")
                     else:
-                        item['timestamp'] = datetime.utcnow()
+                        item['timestamp'] = datetime.now(UTC.utc)
                 item['_index'] = index
                 if item.get('AccountId'):
                     item['AccountId'] = str(item.get('AccountId'))

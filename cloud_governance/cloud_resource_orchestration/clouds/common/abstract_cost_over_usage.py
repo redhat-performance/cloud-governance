@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from ast import literal_eval
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import typeguard
 
@@ -35,7 +35,7 @@ class AbstractCostOverUsage(ABC):
         self.es_index_cro = self._environment_variables_dict.get('CRO_ES_INDEX', '')
         self._cro_duration_days = self._environment_variables_dict.get('CRO_DURATION_DAYS')
         self._over_usage_threshold = OVER_USAGE_THRESHOLD * self._over_usage_amount
-        self.current_end_date = datetime.utcnow()
+        self.current_end_date = datetime.now(UTC.utc)
         self.current_start_date = self.current_end_date - timedelta(days=self._cro_duration_days)
         self.es_operations = ElasticSearchOperations(es_host=self._es_host, es_port=self._es_port)
         self._elastic_search_queries = ElasticSearchQueries(cro_duration_days=self._cro_duration_days)

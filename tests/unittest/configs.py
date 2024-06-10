@@ -6,8 +6,8 @@ PROJECT_NAME = 'cloud_governance'
 
 DRY_RUN_YES = 'yes'
 DRY_RUN_NO = 'no'
-CURRENT_DATE = datetime.datetime.utcnow().date()
-CURRENT_DATE_TIME = datetime.datetime.utcnow()
+CURRENT_DATE = datetime.datetime.now(datetime.UTC.utc).date()
+CURRENT_DATE_TIME = datetime.datetime.now(datetime.UTC.utc)
 TEST_USER_NAME = 'unit-test'
 
 # AWS

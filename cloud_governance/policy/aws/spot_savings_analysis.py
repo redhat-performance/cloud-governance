@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, UTC
 
 import typeguard
 
@@ -32,7 +32,7 @@ class SpotSavingsAnalysis:
         This method prepare the query
         :return:
         """
-        current_date = datetime.utcnow()
+        current_date = datetime.now(UTC.utc)
         year = current_date.year
         current_month = current_date.month
         previous_month = current_month - 1 if current_month - 1 != 0 else 12

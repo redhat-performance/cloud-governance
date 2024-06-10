@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from cloud_governance.policy.helpers.azure.azure_policy_operations import AzurePolicyOperations
 
@@ -19,7 +19,7 @@ class InstanceRun(AzurePolicyOperations):
         """
         instance_types = self._update_instance_type_count()
         account = self.account
-        current_day = datetime.utcnow()
+        current_day = datetime.now(UTC.utc)
         es_instance_types_data = []
         for region, instance_types in instance_types.items():
             for instance_type, instance_type_count in instance_types.items():

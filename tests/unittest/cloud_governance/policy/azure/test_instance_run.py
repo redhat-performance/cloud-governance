@@ -1,4 +1,5 @@
 import datetime
+from datetime import UTC
 from unittest.mock import patch, Mock
 
 from azure.mgmt.compute import ComputeManagementClient
@@ -114,7 +115,7 @@ def test_instance_run_stopped_test_days():
     environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
-    date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date()
+    date = (datetime.datetime.now(UTC.utc) - datetime.timedelta(days=1)).date()
     mock_virtual_machines = Mock()
     vm1 = MockVirtualMachine(tags={'User': 'mock', 'Policy': 'notdelete',
                                    'DaysCount': f'{date}@1'})
@@ -144,7 +145,7 @@ def test_instance_run_stopped_test_current_day():
     environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['dry_run'] = 'no'
-    date = (datetime.datetime.utcnow()).date()
+    date = (datetime.datetime.now(UTC.utc)).date()
     mock_virtual_machines = Mock()
     vm1 = MockVirtualMachine(tags={'User': 'mock', 'Policy': 'notdelete',
                                    'DaysCount': f'{date}@1'})
@@ -174,7 +175,7 @@ def test_instance_run_vm_already_stopped():
     environment_variables.environment_variables_dict['policy'] = 'instance_run'
     environment_variables.environment_variables_dict['SHUTDOWN_PERIOD'] = True
     environment_variables.environment_variables_dict['dry_run'] = 'no'
-    date = (datetime.datetime.utcnow()).date()
+    date = (datetime.datetime.now(UTC.utc)).date()
     mock_virtual_machines = Mock()
     vm1 = MockVirtualMachine(tags={'User': 'mock', 'Policy': 'notdelete',
                                    'DaysCount': f'{date}@1'})

@@ -1,7 +1,6 @@
-import json
 import logging
 from ast import literal_eval
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import typeguard
 
@@ -45,7 +44,7 @@ class CostOverUsage:
         self.__cro_admins = self.__environment_variables_dict.get('CRO_DEFAULT_ADMINS', [])
         self.es_index_cro = self.__environment_variables_dict.get('CRO_ES_INDEX', '')
         self.__cro_duration_days = self.__environment_variables_dict.get('CRO_DURATION_DAYS')
-        self.current_end_date = datetime.utcnow()
+        self.current_end_date = datetime.now(UTC.utc)
         self.current_start_date = self.current_end_date - timedelta(days=self.__cro_duration_days)
         self.__public_cloud_name = self.__environment_variables_dict.get('PUBLIC_CLOUD_NAME')
         self.__ce_operations = CostExplorerOperations()
@@ -293,7 +292,7 @@ class CostOverUsage:
             last_alert = response[0]
             last_send_date = last_alert.get('_source').get('timestamp')
             alert_number = last_alert.get('_source').get('Alert', 0)
-            current_date = datetime.utcnow().date()
+            current_date = datetime.now(UTC.utc).date()
             last_send_date = datetime.strptime(last_send_date, self.TIMESTAMP_DATE_FORMAT).date()
             days = (current_date - last_send_date).days
             if days % self.SEND_ALERT_DAY == 0 and last_send_date != current_date:

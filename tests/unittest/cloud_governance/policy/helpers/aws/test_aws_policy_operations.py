@@ -1,4 +1,5 @@
 import datetime
+from datetime import UTC
 
 import boto3
 from moto import mock_ec2, mock_s3, mock_iam
@@ -49,7 +50,7 @@ def test_get_clean_up_days_count_already_exists():
     """
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     aws_cleanup_operations = AWSPolicyOperations()
-    mock_date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date()
+    mock_date = (datetime.datetime.now(UTC.utc) - datetime.timedelta(days=1)).date()
     tags = [{'Key': "Name", "Value": "Unittest"}, {'Key': "DaysCount", "Value": f'{mock_date}@1'}]
     days_count = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
     assert days_count == 0
@@ -66,7 +67,7 @@ def test_get_clean_up_days_count_already_updated_today():
     """
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     aws_cleanup_operations = AWSPolicyOperations()
-    mock_date = str(datetime.datetime.utcnow().date())
+    mock_date = str(datetime.datetime.now(UTC.utc).date())
     tags = [{'Key': "Name", "Value": "Unittest"}, {'Key': "DaysCount", "Value": f'{mock_date}@1'}]
     days_count = aws_cleanup_operations.get_clean_up_days_count(tags=tags)
     assert days_count == 0
@@ -151,7 +152,7 @@ def test_update_resource_day_count_tag():
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']
         tag_value = aws_cleanup_operations.get_tag_name_from_tags(instances[0]['Instances'][0].get('Tags'), tag_name='DaysCount')
-        assert tag_value == str(datetime.datetime.utcnow().date()) + "@0"
+        assert tag_value == str(datetime.datetime.now(UTC.utc).date()) + "@0"
 
 
 @mock_ec2
@@ -168,7 +169,7 @@ def test_update_resource_day_count_tag_exists_tag():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
-    mock_date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date()
+    mock_date = (datetime.datetime.now(UTC.utc) - datetime.timedelta(days=1)).date()
     tags = [{'Key': 'User', 'Value': 'cloud-governance'}, {'Key': "Name", "Value": "Unittest"},
             {'Key': "DaysCount", "Value": f'{mock_date}@1'}]
     resource = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1,
@@ -181,7 +182,7 @@ def test_update_resource_day_count_tag_exists_tag():
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']
         tag_value = aws_cleanup_operations.get_tag_name_from_tags(instances[0]['Instances'][0].get('Tags'), tag_name='DaysCount')
-        assert tag_value == str(datetime.datetime.utcnow().date()) + "@2"
+        assert tag_value == str(datetime.datetime.now(UTC.utc).date()) + "@2"
 
 
 @mock_ec2
@@ -198,7 +199,7 @@ def test_update_resource_day_count_tag_updated_tag_today():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name='ap-south-1')
     default_ami_id = 'ami-03cf127a'
-    mock_date = datetime.datetime.utcnow().date()
+    mock_date = datetime.datetime.now(UTC.utc).date()
     tags = [{'Key': 'User', 'Value': 'cloud-governance'}, {'Key': "Name", "Value": "Unittest"},
             {'Key': "DryRunYesDays", "Value": f'{mock_date}@1'}]
     resource = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1,
@@ -211,4 +212,4 @@ def test_update_resource_day_count_tag_updated_tag_today():
         aws_cleanup_operations.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         instances = ec2_client.describe_instances()['Reservations']
         tag_value = aws_cleanup_operations.get_tag_name_from_tags(instances[0]['Instances'][0].get('Tags'), tag_name='DaysCount')
-        assert tag_value == str(datetime.datetime.utcnow().date()) + "@1"
+        assert tag_value == str(datetime.datetime.now(UTC.utc).date()) + "@1"

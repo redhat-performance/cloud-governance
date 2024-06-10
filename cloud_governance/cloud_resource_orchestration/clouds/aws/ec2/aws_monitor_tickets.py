@@ -1,6 +1,6 @@
 import json
 import tempfile
-from datetime import datetime
+from datetime import datetime, UTC
 
 import typeguard
 
@@ -215,7 +215,7 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                         self.__es_operations.update_elasticsearch_index(index=self.es_cro_index, id=ticket_id,
                                                                         metadata={
                                                                             'cluster_cost': cluster_cost,
-                                                                            'timestamp': datetime.utcnow()
+                                                                            'timestamp': datetime.now(UTC.utc)
                                                                         })
 
     def __prepare_athena_query_for_cluster_cost(self, names: list):

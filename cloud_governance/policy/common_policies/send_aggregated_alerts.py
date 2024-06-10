@@ -30,7 +30,7 @@ class SendAggregatedAlerts:
         :return:
         :rtype:
         """
-        current_date = (datetime.utcnow().date()).__str__()
+        current_date = (datetime.now(UTC.utc).date()).__str__()
         policy_es_index = self.__environment_variables.get('es_index')
         account_name = (self.__environment_variables.get('account', '').upper()
                         .replace('OPENSHIFT-', '')
@@ -150,14 +150,14 @@ class SendAggregatedAlerts:
                 if record.get('SkipPolicy') != 'NA':
                     delete_date = 'skip_delete'
                 if days_to_take_action - 5 == days:
-                    delete_date = (datetime.utcnow() + timedelta(days=5)).date()
+                    delete_date = (datetime.now(UTC.utc) + timedelta(days=5)).date()
                     alert_user = True
                 elif days == days_to_take_action - 3:
-                    delete_date = (datetime.utcnow() + timedelta(days=3)).date()
+                    delete_date = (datetime.now(UTC.utc) + timedelta(days=3)).date()
                     alert_user = True
                 else:
                     if days >= days_to_take_action:
-                        delete_date = datetime.utcnow().date().__str__()
+                        delete_date = datetime.now(UTC.utc).date().__str__()
                         alert_user = True
                 if record.get('policy') in ['empty_roles', 's3_inactive']:
                     record['RegionName'] = 'us-east-1'

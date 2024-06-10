@@ -1,14 +1,10 @@
-import logging
 from abc import ABC
-from datetime import datetime, timedelta
+from datetime import datetime, UTC
 
 import typeguard
 
-from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.cost_over_usage import CostOverUsage
-from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
-from cloud_governance.common.logger.init_logger import handler
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -116,7 +112,7 @@ class AbstractCollectCROReports(ABC):
             source['user_cro'] = instance_data[self.ZERO].get('user_cro')
         if instance_data[self.ZERO].get('user') and source.get('user') != instance_data[self.ZERO].get('user'):
             source['user'] = instance_data[self.ZERO].get('user')
-        source['timestamp'] = datetime.utcnow()
+        source['timestamp'] = datetime.now(UTC.utc)
         if source.get('ticket_id_state') != 'in-progress':
             source['ticket_id_state'] = 'in-progress'
             source['approved_manager'] = instance_data[self.ZERO].get('approved_manager')

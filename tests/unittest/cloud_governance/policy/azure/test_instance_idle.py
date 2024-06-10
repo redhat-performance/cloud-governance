@@ -1,17 +1,14 @@
 import datetime
-from unittest.mock import patch, Mock
+from datetime import UTC
 
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.monitor import MonitorManagementClient
 from azure.mgmt.monitor.v2021_05_01.models import TimeSeriesElement, MetricValue
-from azure.mgmt.resource import ResourceManagementClient
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.azure.cleanup.instance_idle import InstanceIdle
-from cloud_governance.policy.azure.cleanup.instance_run import InstanceRun
 from tests.unittest.configs import SUBSCRIPTION_ID, CURRENT_DATE
 from tests.unittest.mocks.azure.mock_compute.mock_compute import mock_compute
-from tests.unittest.mocks.azure.mock_computes import MockVirtualMachine, MockAzure
 from tests.unittest.mocks.azure.mock_identity.mock_default_credential import MockDefaultAzureCredential
 from tests.unittest.mocks.azure.mock_monitor.mock_monitor import mock_monitor
 from tests.unittest.mocks.azure.mock_network.mock_network import mock_network
@@ -34,17 +31,17 @@ def test_instance_idle():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
@@ -68,17 +65,17 @@ def test_instance_idle__check_not_idle():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=3)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=3)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
@@ -122,17 +119,17 @@ def test_instance_idle__dryrun_no():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=3)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=3)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=10000)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=10000)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=10000)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=10000)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
@@ -157,17 +154,17 @@ def test_instance_idle__dryrun_no_delete():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
@@ -195,17 +192,17 @@ def test_instance_idle__skips_delete():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
@@ -233,17 +230,17 @@ def test_instance_idle__set_counter_zero():
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-in-metric',
                                          unit='Network In Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-network-out-metric',
                                          unit='Network Out Total',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     instance_idle = InstanceIdle()
     response = instance_idle.run()

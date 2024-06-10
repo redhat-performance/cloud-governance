@@ -37,6 +37,6 @@ class UploadElasticSearch(AbstractUpload, ABC):
                             self._es_operations.upload_to_elasticsearch(data=policy_dict.copy(), index=self._es_index)
                     logger.info(f'Uploaded the policy results to elasticsearch index: {self._es_index}')
                 else:
-                    logger.error(f'No data to upload on @{self._account}  at {datetime.utcnow()}')
+                    logger.error(f'No data to upload on @{self._account}  at {datetime.now(UTC.utc)}')
             else:
                 logger.error('ElasticSearch host is not pingable, Please check your connection')

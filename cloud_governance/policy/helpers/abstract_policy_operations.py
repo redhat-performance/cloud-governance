@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Union
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
@@ -14,7 +14,7 @@ class AbstractPolicyOperations(ABC):
     DAYS_TO_NOTIFY_ADMINS = 2
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAILY_HOURS = 24
-    CURRENT_DATE = datetime.utcnow().date().__str__()
+    CURRENT_DATE = datetime.now(UTC.utc).date().__str__()
 
     def __init__(self):
         self._environment_variables_dict = environment_variables.environment_variables_dict
@@ -27,7 +27,7 @@ class AbstractPolicyOperations(ABC):
         self._es_upload = ElasticUpload()
         self._shutdown_period = self._environment_variables_dict.get('SHUTDOWN_PERIOD')
 
-    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.utcnow()):
+    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.now(UTC.utc)):
         """
         This method returns the days
         :param start_date:
@@ -184,8 +184,8 @@ class AbstractPolicyOperations(ABC):
         :return:
         :rtype:
         """
-        year_end_date = datetime.utcnow().date().replace(month=12, day=31)
-        total_days = (year_end_date - datetime.utcnow().date()).days + 1
+        year_end_date = datetime.now(UTC.utc).date().replace(month=12, day=31)
+        total_days = (year_end_date - datetime.now(UTC.utc).date()).days + 1
         return total_days * 24 * unit_price
 
     # ES Schema format
@@ -195,7 +195,7 @@ class AbstractPolicyOperations(ABC):
                        region: str, cleanup_result: str, resource_action: str, cloud_name: str,
                        resource_state: str,
                        resource_type: str, **kwargs):
-        current_date = datetime.utcnow().date()
+        current_date = datetime.now(UTC.utc).date()
         resource_data = {
             'ResourceId': resource_id,
             'User': user,

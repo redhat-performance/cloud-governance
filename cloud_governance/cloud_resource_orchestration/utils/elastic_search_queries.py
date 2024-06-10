@@ -1,5 +1,5 @@
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 
 class ElasticSearchQueries:
@@ -8,7 +8,7 @@ class ElasticSearchQueries:
     """
 
     def __init__(self, cro_duration_days: int = 30):
-        self.current_end_date = datetime.utcnow()
+        self.current_end_date = datetime.now(UTC.utc)
         self.current_start_date = self.current_end_date - timedelta(days=cro_duration_days)
 
     def get_all_in_progress_tickets(self, match_conditions: list = None, fields: list = None,  **kwargs):

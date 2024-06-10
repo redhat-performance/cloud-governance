@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from freezegun import freeze_time
 from moto import mock_rds, mock_cloudwatch
@@ -9,7 +9,7 @@ from cloud_governance.main.environment_variables import environment_variables
 from tests.unittest.configs import DB_INSTANCE_CLASS, AWS_DEFAULT_REGION, TEST_USER_NAME, DB_ENGINE, \
     CLOUD_WATCH_METRICS_DAYS, PROJECT_NAME
 
-current_date = datetime.utcnow()
+current_date = datetime.now(UTC.utc)
 start_date = current_date - timedelta(days=CLOUD_WATCH_METRICS_DAYS + 1)
 
 

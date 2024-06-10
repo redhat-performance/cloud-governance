@@ -146,7 +146,7 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
                 es_operations.upload_to_elasticsearch(data=zombie_cluster.copy(), index=es_index)
                 logger.info(f'Uploaded the policy results to elasticsearch index: {es_index}')
         else:
-            logger.error(f'No data to upload on @{account}  at {datetime.utcnow()}')
+            logger.error(f'No data to upload on @{account}  at {datetime.now(UTC.utc)}')
     else:
         logger.error('ElasticSearch host is not pingable, Please check ')
     return zombie_result

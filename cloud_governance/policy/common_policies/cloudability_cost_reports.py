@@ -55,7 +55,7 @@ class CloudabilityCostReports:
         return (self.__get_end_date() - datetime.timedelta(days=LOOK_BACK_DAYS)).replace(day=1)
 
     def __get_end_date(self):
-        return datetime.datetime.utcnow().date()
+        return datetime.datetime.now(UTC.utc).date()
 
     def __get_cost_reports(self, start_date: str = None, end_date: str = None, custom_filter: str = ''):
         """
@@ -141,8 +141,8 @@ class CloudabilityCostReports:
         This method returns the next 12 months, year
         :return:
         """
-        year = datetime.datetime.utcnow().year
-        next_month = datetime.datetime.utcnow().month + 1
+        year = datetime.datetime.now(UTC.utc).year
+        next_month = datetime.datetime.now(UTC.utc).month + 1
         month_year = []
         for idx in range(MONTHS):
             month = str((idx + next_month) % MONTHS)
@@ -163,12 +163,12 @@ class CloudabilityCostReports:
         """
         forecast_cost_data = []
         month_years = self.__next_twelve_months()
-        month = (datetime.datetime.utcnow().month - 1) % 12
+        month = (datetime.datetime.now(UTC.utc).month - 1) % 12
         if month == 0:
             month = 12
         if len(str(month)) == 1:
             month = f'0{month}'
-        year = datetime.datetime.utcnow().year
+        year = datetime.datetime.now(UTC.utc).year
         cache_start_date = f'{year}-{str(month)}-01'
         for data in cost_data:
             if cache_start_date == data.get('start_date') and data.get('CostCenter') > 0:

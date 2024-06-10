@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 from azure.mgmt.compute.v2023_01_02.models import Disk, DiskSku
 from azure.mgmt.compute.v2023_03_01.models import VirtualMachine, HardwareProfile, VirtualMachineInstanceView, \
@@ -14,7 +14,7 @@ class MockVirtualMachine(VirtualMachine):
         super().__init__(location='mock')
         self.tags = tags if tags else {}
         self.name = 'mock_machine'
-        self.time_created = datetime.utcnow()
+        self.time_created = datetime.now(UTC.utc)
         self.hardware_profile = HardwareProfile(vm_size='Standard_D2s_v3')
         self.id = f'/subscriptions/{uuid.uuid1()}/resourceGroups/mock/providers/Microsoft.Compute/virtualMachines/mock-machine'
 

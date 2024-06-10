@@ -1,5 +1,4 @@
-import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import typeguard
 
@@ -7,7 +6,6 @@ from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.
 from cloud_governance.cloud_resource_orchestration.clouds.common.abstract_collect_cro_reports import \
     AbstractCollectCROReports
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
-from cloud_governance.main.environment_variables import environment_variables
 
 
 class CollectCROReports(AbstractCollectCROReports):
@@ -33,7 +31,7 @@ class CollectCROReports(AbstractCollectCROReports):
                     "must": [
                         {"term": {"CloudName.keyword": self._public_cloud_name}},
                         {"term": {"AccountId.keyword": self._account_id}},
-                        {"term": {"Month": str(datetime.utcnow().year)}},
+                        {"term": {"Month": str(datetime.now(UTC.utc).year)}},
                     ]
                 }
             },
@@ -69,7 +67,7 @@ class CollectCROReports(AbstractCollectCROReports):
             resource_type = 'Forecast'
             pass
         else:
-            end_date = datetime.utcnow().replace(microsecond=self.ZERO) + timedelta(days=1)
+            end_date = datetime.now(UTC.utc).replace(microsecond=self.ZERO) + timedelta(days=1)
             response = self.__cost_over_usage.get_monthly_user_es_cost_data(start_date=start_date, end_date=end_date,
                                                                             extra_matches=extra_filter_matches,
                                                                             extra_operation=self.AND,
@@ -124,7 +122,7 @@ class CollectCROReports(AbstractCollectCROReports):
         This method returns the total account budget till date for this year
         :return:
         """
-        current_date = datetime.utcnow()
+        current_date = datetime.now(UTC.utc)
         start_date = datetime(current_date.year, 1, 1, 0, 0, 0)
         end_date = current_date + timedelta(days=1)
         cost_explorer_operations = self.__cost_over_usage.get_cost_management_object()
@@ -163,8 +161,8 @@ class CollectCROReports(AbstractCollectCROReports):
                                                                           group_by_tag_name=group_by_tag_name,
                                                                           user_name=user_name)
                 user_daily_cost.update(ce_user_daily_report)
-                update_data = {'actual_cost': user_cost, 'timestamp': datetime.utcnow(),
-                               f'TotalCurrentUsage-{datetime.utcnow().year}': total_account_cost,
+                update_data = {'actual_cost': user_cost, 'timestamp': datetime.now(UTC.utc),
+                               f'TotalCurrentUsage-{datetime.now(UTC.utc).year}': total_account_cost,
                                'user_daily_cost': str(user_daily_cost)}
                 if not source_data.get(self.ALLOCATED_BUDGET):
                     update_data[self.ALLOCATED_BUDGET] = self._get_account_budget_from_payer_ce_report()
@@ -192,7 +190,7 @@ class CollectCROReports(AbstractCollectCROReports):
         :param tag_value:
         :return:
         """
-        end_date = datetime.utcnow()
+        end_date = datetime.now(UTC.utc)
         start_date = end_date - timedelta(days=days)
         cost_explorer_object = self.__cost_over_usage.get_cost_management_object()
         ce_daily_usage = cost_explorer_object.get_usage(scope=self.__scope, grouping=[tag_name], granularity='Daily',

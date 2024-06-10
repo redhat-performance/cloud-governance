@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from cloud_governance.cloud_resource_orchestration.common.cro_object import CroObject
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
@@ -11,7 +11,7 @@ from cloud_governance.main.environment_variables import environment_variables
 class RunCRO:
     """This class monitors cro activities"""
 
-    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.utcnow().date()}'
+    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.now(UTC.utc).date()}'
     PERSISTENT_RUN_INDEX = 'cloud_resource_orchestration_persistence_run'
 
     def __init__(self):
@@ -34,10 +34,10 @@ class RunCRO:
         if not self.__es_operations.verify_elastic_index_doc_id(index=self.PERSISTENT_RUN_INDEX,
                                                                 doc_id=self.PERSISTENT_RUN_DOC_ID):
             self.__es_operations.upload_to_elasticsearch(index=self.PERSISTENT_RUN_INDEX, data={
-                f'last_run_{self.__account.lower()}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
+                f'last_run_{self.__account.lower()}': datetime.now(UTC.utc)}, id=self.PERSISTENT_RUN_DOC_ID)
         else:
             self.__es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX,
-                                                            metadata={f'last_run_{self.__account.lower()}': datetime.utcnow()},
+                                                            metadata={f'last_run_{self.__account.lower()}': datetime.now(UTC.utc)},
                                                             id=self.PERSISTENT_RUN_DOC_ID)
 
     @logger_time_stamp
@@ -54,7 +54,7 @@ class RunCRO:
                 last_run_time = source.get(f'last_run_{self.__account.lower()}')
                 if last_run_time:
                     last_updated_time = datetime.strptime(last_run_time, "%Y-%m-%dT%H:%M:%S.%f").date()
-                    if last_updated_time == datetime.utcnow().date():
+                    if last_updated_time == datetime.now(UTC.utc).date():
                         first_run = False
             self.__environment_variables_dict.update({'CRO_FIRST_RUN': first_run})
             if first_run:

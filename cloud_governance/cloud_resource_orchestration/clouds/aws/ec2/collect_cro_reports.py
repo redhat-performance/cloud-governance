@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import typeguard
 
@@ -45,7 +45,7 @@ class CollectCROReports:
                     "must": [
                         {"term": {"CloudName.keyword": self.__public_cloud_name}},
                         {"term": {"AccountId.keyword": self.__account_id}},
-                        {"term": {"Month": str(datetime.utcnow().year)}},
+                        {"term": {"Month": str(datetime.now(UTC.utc).year)}},
                     ]
                 }
             },
@@ -61,7 +61,7 @@ class CollectCROReports:
         This method returns the total account budget till date for this year
         :return:
         """
-        current_date = datetime.utcnow().date()
+        current_date = datetime.now(UTC.utc).date()
         start_date = datetime(current_date.year, 1, 1).date()
         cost_explorer_operations = self.__cost_over_usage.get_cost_explorer_operations()
         response = cost_explorer_operations.get_cost_and_usage_from_aws(start_date=str(start_date), end_date=str(current_date+timedelta(days=1)), granularity='MONTHLY')
@@ -92,7 +92,7 @@ class CollectCROReports:
             return_key = 'Forecast'
         else:
             response = self.__cost_over_usage.get_monthly_user_es_cost_data(start_date=start_date,
-                                                                            end_date=datetime.utcnow().replace(microsecond=self.ZERO) + timedelta(days=1),
+                                                                            end_date=datetime.now(UTC.utc).replace(microsecond=self.ZERO) + timedelta(days=1),
                                                                             extra_matches=extra_filter_matches, extra_operation=self.AND, tag_name=group_by_tag_name)
             return_key = 'Cost'
         if response:
@@ -173,7 +173,7 @@ class CollectCROReports:
             source['user_cro'] = instance_data[self.ZERO].get('user_cro')
         if instance_data[self.ZERO].get('user') and source.get('user') != instance_data[self.ZERO].get('user'):
             source['user'] = instance_data[self.ZERO].get('user')
-        source['timestamp'] = datetime.utcnow()
+        source['timestamp'] = datetime.now(UTC.utc)
         if source.get('ticket_id_state') != 'in-progress':
             source['ticket_id_state'] = 'in-progress'
             source['approved_manager'] = instance_data[self.ZERO].get('approved_manager')
@@ -213,7 +213,7 @@ class CollectCROReports:
             user_cost = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id,
                                                 requested_date=ticket_opened_date)
             duration = int(instance_data[self.ZERO].get('duration', 0))
-            user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.utcnow(), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
+            user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name, group_by_tag_value=ticket_id, requested_date=datetime.now(UTC.utc), extra_filter_key_values={'Project': user_project}, forecast=True, duration=duration)
             cost_estimation = float(instance_data[self.ZERO].get('estimated_cost', self.ZERO))
             if self.__cost_over_usage.es_operations.verify_elastic_index_doc_id(index=self.__cost_over_usage.es_index_cro, doc_id=ticket_id):
                 es_data = self.__cost_over_usage.es_operations.get_es_data_by_id(id=ticket_id,index=self.__cost_over_usage.es_index_cro)
@@ -270,10 +270,10 @@ class CollectCROReports:
                                                                           user_name=user_name)
                 user_daily_cost.update(ce_user_daily_report)
                 user_forecast = self.get_user_cost_data(group_by_tag_name=group_by_tag_name,
-                                                        group_by_tag_value=ticket_id, requested_date=datetime.utcnow(),
+                                                        group_by_tag_value=ticket_id, requested_date=datetime.now(UTC.utc),
                                                         forecast=True, duration=duration)
-                update_data = {'actual_cost': user_cost, 'forecast': user_forecast, 'timestamp': datetime.utcnow(),
-                               f'TotalCurrentUsage-{datetime.utcnow().year}': total_account_cost,
+                update_data = {'actual_cost': user_cost, 'forecast': user_forecast, 'timestamp': datetime.now(UTC.utc),
+                               f'TotalCurrentUsage-{datetime.now(UTC.utc).year}': total_account_cost,
                                'user_daily_cost': str(user_daily_cost)}
                 if not source_data.get(self.ALLOCATED_BUDGET):
                     update_data[self.ALLOCATED_BUDGET] = self.get_account_budget_from_payer_ce_report()
@@ -302,7 +302,7 @@ class CollectCROReports:
         :param tag_value:
         :return:
         """
-        end_date = datetime.utcnow().date()
+        end_date = datetime.now(UTC.utc).date()
         start_date = end_date - timedelta(days=days)
         cost_explorer_object = self.__cost_over_usage.get_cost_explorer_operations()
         ce_daily_usage = cost_explorer_object.get_cost_by_tags(tag=tag_name,

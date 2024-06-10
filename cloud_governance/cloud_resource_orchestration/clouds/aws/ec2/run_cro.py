@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 import boto3
 
@@ -14,7 +14,7 @@ from cloud_governance.main.environment_variables import environment_variables
 
 class RunCRO:
 
-    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.utcnow().date()}'
+    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.now(UTC.utc).date()}'
     PERSISTENT_RUN_INDEX = 'cloud_resource_orchestration_persistence_run'
 
     def __init__(self):
@@ -39,7 +39,7 @@ class RunCRO:
             last_run_time = source.get(f'last_run_{self.account.lower()}')
             if last_run_time:
                 last_updated_time = datetime.strptime(last_run_time, "%Y-%m-%dT%H:%M:%S.%f").date()
-                if last_updated_time == datetime.utcnow().date():
+                if last_updated_time == datetime.now(UTC.utc).date():
                     first_run = False
         self.__environment_variables_dict.update({'CRO_FIRST_RUN': first_run})
         if first_run:
@@ -57,9 +57,9 @@ class RunCRO:
         :return:
         """
         if not self.cro_cost_over_usage.es_operations.verify_elastic_index_doc_id(index=self.PERSISTENT_RUN_INDEX, doc_id=self.PERSISTENT_RUN_DOC_ID):
-            self.cro_cost_over_usage.es_operations.upload_to_elasticsearch(index=self.PERSISTENT_RUN_INDEX, data={f'last_run_{self.account}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
+            self.cro_cost_over_usage.es_operations.upload_to_elasticsearch(index=self.PERSISTENT_RUN_INDEX, data={f'last_run_{self.account}': datetime.now(UTC.utc)}, id=self.PERSISTENT_RUN_DOC_ID)
         else:
-            self.cro_cost_over_usage.es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX, metadata={f'last_run_{self.account}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
+            self.cro_cost_over_usage.es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX, metadata={f'last_run_{self.account}': datetime.now(UTC.utc)}, id=self.PERSISTENT_RUN_DOC_ID)
 
     @logger_time_stamp
     def run_cloud_resources(self):

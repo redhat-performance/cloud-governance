@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 import boto3
 
@@ -13,7 +13,7 @@ def test_iam_zombie_user_create_and_delete():
     :return:
     """
     short_random_id = uuid.uuid1()
-    time_ms = str(datetime.utcnow().strftime('%f'))
+    time_ms = str(datetime.now(UTC.utc).strftime('%f'))
     USER_NAME = f'integration-ocp-{short_random_id}-{time_ms}'
     iam_resource = boto3.client('iam')
     tags = [

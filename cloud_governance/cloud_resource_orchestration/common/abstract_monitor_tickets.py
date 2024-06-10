@@ -1,12 +1,12 @@
 from abc import abstractmethod, ABC
-from datetime import datetime
+from datetime import datetime, UTC
 
 import typeguard
 
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
 from cloud_governance.cloud_resource_orchestration.utils.elastic_search_queries import ElasticSearchQueries
 from cloud_governance.cloud_resource_orchestration.utils.constant_variables import FIRST_CRO_ALERT, SECOND_CRO_ALERT, \
-    CLOSE_JIRA_TICKET, JIRA_ISSUE_NEW_STATE, DATE_FORMAT
+    CLOSE_JIRA_TICKET, DATE_FORMAT
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -147,7 +147,7 @@ class AbstractMonitorTickets(ABC):
         This method close the ticket and update in ElasticSearch
         :return:
         """
-        data = {'timestamp': datetime.utcnow(), 'ticket_id_state': 'closed'}
+        data = {'timestamp': datetime.now(UTC.utc), 'ticket_id_state': 'closed'}
         if self.__es_operations.check_elastic_search_connection():
             self.__es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=data)
             self.__jira_operations.move_issue_state(ticket_id, state='CLOSED')
@@ -238,7 +238,7 @@ class AbstractMonitorTickets(ABC):
                 duration = int(source_data.get('duration', 0))
                 used_budget = int(source_data.get('actual_cost', 0))
                 ticket_start_date = datetime.strptime(source_data.get('ticket_opened_date'), DATE_FORMAT).date()
-                completed_duration = (datetime.utcnow().date() - ticket_start_date).days
+                completed_duration = (datetime.now(UTC.utc).date() - ticket_start_date).days
                 self._monitor_ticket_budget(ticket_id=ticket_id, region_name=region_name, budget=budget,
                                             used_budget=used_budget,
                                             user_cro=source_data.get('user_cro'),

@@ -105,7 +105,7 @@ class NonClusterZombiePolicy:
         This method returns the days
         @return:
         """
-        today = datetime.datetime.utcnow().date()
+        today = datetime.datetime.now(UTC.utc).date()
         days = today - create_date.date()
         return days.days
 

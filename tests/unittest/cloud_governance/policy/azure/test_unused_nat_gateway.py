@@ -1,4 +1,5 @@
 import datetime
+from datetime import  UTC
 
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.monitor import MonitorManagementClient
@@ -52,7 +53,7 @@ def test_unused_nat_gateway__check_used():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=100)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=100)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -79,7 +80,7 @@ def test_unused_nat_gateway__skip_live_cluster_id():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -104,7 +105,7 @@ def test_unused_nat_gateway__collect_not_live_cluster_id():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -129,7 +130,7 @@ def test_unused_nat_gateway__dryrun_no():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -154,7 +155,7 @@ def test_unused_nat_gateway__dryrun_no_delete():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -181,7 +182,7 @@ def test_unused_nat_gateway__skips_delete():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -208,7 +209,7 @@ def test_unused_nat_gateway__set_counter_zero():
     monitor_client.metrics.create_metric(resource_id=nat_gateway.id, type='NatGateway', name='test-metric',
                                          unit='SNATConnectionCount',
                                          timeseries=[TimeSeriesElement(data=[
-                                             MetricValue(time_stamp=datetime.datetime.utcnow(), average=0)
+                                             MetricValue(time_stamp=datetime.datetime.now(UTC.utc), average=0)
                                          ])])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()

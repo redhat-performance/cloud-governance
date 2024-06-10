@@ -27,7 +27,7 @@ class UnUsedNatGateway(AWSPolicyOperations):
         """
         if days == 0:
             days = 1
-        end_time = datetime.datetime.utcnow()
+        end_time = datetime.datetime.now(datetime.UTC.utc)
         start_time = end_time - datetime.timedelta(days=days)
         response = self._cloudwatch.get_metric_data(start_time=start_time, end_time=end_time, resource_id=resource_id,
                                                     resource_type='NatGatewayId', namespace=self.NAMESPACE,

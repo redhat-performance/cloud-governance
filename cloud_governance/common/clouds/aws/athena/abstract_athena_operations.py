@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, UTC
 
 from cloud_governance.main.environment_variables import environment_variables
 
 
 class AbstractAthenaOperations(ABC):
 
-    CURRENT_DATE = str(datetime.utcnow().date()).replace("-", "")
+    CURRENT_DATE = str(datetime.now(UTC.utc).date()).replace("-", "")
 
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict

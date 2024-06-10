@@ -57,6 +57,6 @@ class ClusterRun(AWSPolicyOperations):
                         'InstanceCount': 1,
                         'Stopped': stopped_instances,
                         'Running': running_instances,
-                        'index-id': f'{datetime.datetime.utcnow().date()}-{self._cloud_name.lower()}-{self.account.lower()}-{self._region.lower()}-{cluster_tag}'
+                        'index-id': f'{datetime.datetime.now(datetime.UTC.utc).date()}-{self._cloud_name.lower()}-{self.account.lower()}-{self._region.lower()}-{cluster_tag}'
                     }
         return list(cluster_data.values())
