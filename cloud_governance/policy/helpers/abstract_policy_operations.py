@@ -219,6 +219,8 @@ class AbstractPolicyOperations(ABC):
             resource_data.update({'RunningDays': kwargs.get('running_days')})
         if kwargs.get('volume_size'):
             resource_data.update({'VolumeSize': kwargs.get('volume_size')})
+        if kwargs.get('create_date'):
+            resource_data.update({'create_date': kwargs.get('create_date')})
 
         return resource_data
 

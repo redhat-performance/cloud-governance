@@ -47,7 +47,7 @@ class DatabaseIdle(AWSPolicyOperations):
                                                     cleanup_result=str(cleanup_result),
                                                     resource_action=self.RESOURCE_ACTION,
                                                     cloud_name=self._cloud_name,
-                                                    launch_time=str(create_date),
+                                                    create_date=str(create_date),
                                                     resource_type=db.get('DBInstanceClass'),
                                                     unit_price=unit_price,
                                                     resource_state=db.get('DBInstanceStatus')
