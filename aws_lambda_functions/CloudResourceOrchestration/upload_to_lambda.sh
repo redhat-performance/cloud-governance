@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PROJECT_NAME="CloudResourceOrchestration"
 SUCCESS_OUTPUT_PATH="/dev/null"
 AWS_DEFAULT_REGION="us-east-1"

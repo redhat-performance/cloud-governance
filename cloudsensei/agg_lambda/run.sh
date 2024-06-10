@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PROJECT_NAME="AggFunction"
 SUCCESS_OUTPUT_PATH="/dev/null"
 ERROR_LOG="$(mktemp -d)/stderr.log"
