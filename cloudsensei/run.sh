@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 PROJECT_NAME="CloudSensei"
 SUCCESS_OUTPUT_PATH="/dev/null"
 ERROR_LOG="$(mktemp -d)/stderr.log"
