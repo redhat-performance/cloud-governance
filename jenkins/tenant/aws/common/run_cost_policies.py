@@ -9,7 +9,7 @@ ES_PORT = os.environ['ES_PORT']
 
 
 cost_tags = ['PurchaseType', 'ChargeType', 'User', 'Budget', 'Project', 'Manager', 'Owner',
-             'LaunchTime', 'Name', 'Email', 'Environment', 'User:Spot']
+             'LaunchTime', 'Name', 'Email', 'Environment', 'User:Spot', 'cluster_id']
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
 granularity = 'DAILY'  # DAILY/MONTHLY/HOURLY
 cost_explorer_index = 'cloud-governance-haim-cost-explorer-global-index'
