@@ -341,12 +341,12 @@ class EC2Operations:
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_volumes, input_tag='Volumes',
                                                     check_tag='NextToken', **kwargs)
 
-    def get_images(self):
+    def get_images(self, **kwargs):
         """
         This method returns all images in the region
         @return:
         """
-        return self.ec2_client.describe_images(Owners=['self'])['Images']
+        return self.ec2_client.describe_images(Owners=['self'], **kwargs)['Images']
 
     def get_snapshots(self):
         """
