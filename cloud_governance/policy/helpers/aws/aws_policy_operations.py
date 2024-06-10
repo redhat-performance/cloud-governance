@@ -289,12 +289,12 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                                                                          aggregation='average')
         return round(average_network_out_bytes / TOTAL_BYTES_IN_KIB, DEFAULT_ROUND_DIGITS)
 
-    def _get_ami_ids(self):
+    def _get_ami_ids(self, **kwargs):
         """
         This method returns all image ids
         @return:
         """
-        images = self._ec2_operations.get_images()
+        images = self._ec2_operations.get_images(**kwargs)
         image_ids = []
         for image in images:
             image_ids.append(image.get('ImageId'))

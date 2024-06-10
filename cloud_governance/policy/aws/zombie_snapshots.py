@@ -12,33 +12,20 @@ class ZombieSnapshots(AWSPolicyOperations):
         super().__init__()
         self.__image_ids = self._get_ami_ids()
 
-    def __get_image_ids_from_description(self, snapshot_description: str):
+    def __snapshot_id_in_images(self, resource_id: str):
         """
-        This method gets image Ids from snapshot description
-        Two cases:
-        # Created by CreateImage(i-******) for ami-********
-        # Copied for DestinationAmi ami-******* from SourceAmi ami-******* for SourceSnapshot snap-******. Task created on 1,566,308,778,174.
-        @return:
-        """
-        image_ids = []
-        images_array = snapshot_description.split('ami-')[1:]
-        for image in images_array:
-            image_ids.append(f'ami-{image.split(" ")[0]}')
-        return image_ids
-
-    def __is_zombie_snapshot(self, snapshot_description: str):
-        """
-        This method returns bool on verifying snapshots as zombie or not
-        :param snapshot_description:
+        This method checks if snapshot_id exists in images list
+        :param resource_id:
         :return:
         """
-        zombie_snapshot = True
-        if snapshot_description:
-            snapshot_images = self.__get_image_ids_from_description(snapshot_description)
-            for snapshot_image in snapshot_images:
-                if snapshot_image in self.__image_ids:
-                    return False
-        return zombie_snapshot
+        image_snapshot_filter = {
+            'Name': 'block-device-mapping.snapshot-id',
+            'Values': [
+                resource_id,
+            ]
+        }
+        images = self._get_ami_ids(Filters=[image_snapshot_filter])
+        return len(images) >= 1
 
     def run(self):
         """
@@ -53,7 +40,7 @@ class ZombieSnapshots(AWSPolicyOperations):
             cleanup_result = False
             cluster_tag = self._get_cluster_tag(tags=tags)
             cleanup_days = 0
-            if not cluster_tag and self.__is_zombie_snapshot(snapshot.get('Description')):
+            if not cluster_tag and not self.__snapshot_id_in_images(resource_id):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                                  clean_up_days=cleanup_days)
