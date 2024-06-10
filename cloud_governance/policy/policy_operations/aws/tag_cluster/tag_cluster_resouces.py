@@ -15,7 +15,6 @@ class TagClusterResources(TagClusterOperations):
 
     SHORT_ID = 5
     NA_VALUE = 'NA'
-    CLUSTER_ID_COST_ALLOCATION_TAG = 'cluster_id'
 
     def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None,
                  region: str = 'us-east-2', dry_run: str = 'yes', cluster_only: bool = False):
@@ -61,13 +60,16 @@ class TagClusterResources(TagClusterOperations):
         if not cluster_id_tag:
             cluster_name = ''
             for tag in tags:
-                if self.cluster_prefix in tag.get('Key'):
-                    cluster_name = tag['Key']
-                    break
+                if tag.get('Key') == 'api.openshift.com/name':
+                    cluster_name = tag['Value']
+                else:
+                    if not cluster_name and self.cluster_prefix in tag.get('Key'):
+                        cluster_name = tag['Key']
             if cluster_name:
                 # cluster_name = cluster_id
                 cluster_name = cluster_name.split('/')[-1]
                 tags.append({'Key': self.CLUSTER_ID_COST_ALLOCATION_TAG, 'Value': cluster_name})
+        return tags
 
     def __check_name_in_tags(self, tags: list, resource_id: str):
         """
@@ -155,7 +157,6 @@ class TagClusterResources(TagClusterOperations):
                                 instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                                 add_tags.extend(instance_tags)
                                 add_tags = self.__check_name_in_tags(tags=add_tags, resource_id=resource_id)
-                                self.__add_cluster_id_tag(tags=add_tags)
                                 add_tags = self.__remove_tags_start_with_aws(add_tags)
                                 add_tags = self.__filter_resource_tags_by_add_tags(resource.get(tags), add_tags)
                                 if add_tags:
@@ -256,7 +257,7 @@ class TagClusterResources(TagClusterOperations):
         @param tags:
         @return:
         """
-        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
+        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email', self.CLUSTER_ID_COST_ALLOCATION_TAG]
         tag_count = 0
         for tag in tags:
             if tag.get('Key') in check_tags:
@@ -285,6 +286,7 @@ class TagClusterResources(TagClusterOperations):
                         for tag in tags:
                             if self.cluster_prefix in tag.get('Key'):
                                 add_tags = self.__append_input_tags()
+                                add_tags.append(tag)
                                 cluster_name = tag.get('Key').split('/')[-1]
                                 user = self.ec2_operations.get_tag_value_from_tags(tags=tags, tag_name='User')
                                 if cluster_name in cluster_instances and user and user != 'NA':
@@ -328,6 +330,7 @@ class TagClusterResources(TagClusterOperations):
                                     add_tags.append({'Key': 'LaunchTime',
                                                      'Value': self.get_date_from_date_time(item.get('LaunchTime'))})
                                     add_tags = self.remove_creation_date(add_tags)
+                                    add_tags = self.__add_cluster_id_tag(tags=add_tags)
                                     add_tags = self.__filter_resource_tags_by_add_tags(tags=item.get('Tags'),
                                                                                        search_tags=add_tags)
                                     if add_tags:

@@ -13,6 +13,8 @@ class TagClusterOperations:
     This class tags AWS resources
     """
 
+    CLUSTER_ID_COST_ALLOCATION_TAG = 'cluster_id'
+
     def __init__(self, region: str, input_tags: dict = None,  cluster_name: str = None,  cluster_prefix: str = None, dry_run: str = None, cluster_only: bool = None):
         self.cluster_only = cluster_only
         self.cluster_prefix = cluster_prefix
