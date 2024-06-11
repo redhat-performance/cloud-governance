@@ -1,6 +1,6 @@
 aiohttp==3.9.4
 attrs==21.4.0
-azure-identity==1.12.0
+azure-identity==1.16.1
 azure-mgmt-billing==6.0.0
 azure-mgmt-compute==30.1.0
 azure-mgmt-costmanagement==3.0.0
