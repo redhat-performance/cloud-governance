@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'aiohttp==3.9.4',  # required by jira
         'attrs==21.4.0',  # readthedocs
-        'azure-identity==1.12.0',  # azure identity
+        'azure-identity==1.16.1',  # azure identity
         'azure-mgmt-billing==6.0.0',  # azure billing management
         'azure-mgmt-costmanagement==3.0.0',  # azure cost management
         'azure-mgmt-subscription==3.1.1',  # azure subscriptions
