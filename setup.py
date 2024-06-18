@@ -49,7 +49,7 @@ setup(
         'boto3==1.26.4',  # required by c7n 0.9.14
         'botocore==1.29.4',  # required by c7n 0.9.14
         'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.11.0',  # depend on elasticsearch server
+        'elasticsearch==7.17.9',  # depend on elasticsearch server
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
         'google-auth-oauthlib==0.5.2',  # google drive
