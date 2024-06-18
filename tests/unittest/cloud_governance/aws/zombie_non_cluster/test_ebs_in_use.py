@@ -1,4 +1,3 @@
-import os
 
 import boto3
 from moto import mock_ec2, mock_s3
@@ -6,8 +5,7 @@ from moto import mock_ec2, mock_s3
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.ebs_in_use import EbsInUse
-
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+from tests.unittest.configs import AWS_DEFAULT_REGION
 
 
 @mock_ec2
@@ -17,8 +15,8 @@ def test_ebs_in_use():
     @return:
     """
     environment_variables.environment_variables_dict['policy'] = 'ebs_in_use'
-    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
-    ec2_client = boto3.client('ec2', region_name=region)
+    environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
+    ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     volume_id = ec2_client.create_volume(Size=10, AvailabilityZone='us-east-1a')['VolumeId']
     default_ami_id = 'ami-03cf127a'
     instance_id = ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][0]['InstanceId']
@@ -36,8 +34,8 @@ def test_ebs_in_use_s3_upload():
     @return:
     """
     environment_variables.environment_variables_dict['policy'] = 'ebs_in_use'
-    region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
-    ec2_client = boto3.client('ec2', region_name=region)
+    environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
+    ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     default_ami_id = 'ami-03cf127a'
     ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)
     s3_client = boto3.client('s3', region_name='us-east-1')

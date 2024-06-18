@@ -10,7 +10,7 @@ azure-mgmt-resource==23.0.1
 azure-mgmt-subscription==3.1.1
 boto3==1.26.4
 botocore==1.29.4
-elasticsearch==7.11.0
+elasticsearch==7.17.9
 elasticsearch-dsl==7.4.0
 google-api-python-client==2.57.0
 google-auth-httplib2==0.1.0

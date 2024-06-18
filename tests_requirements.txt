@@ -5,7 +5,7 @@ azure-mgmt-costmanagement==3.0.0
 azure-mgmt-monitor==6.0.2
 azure-mgmt-subscription==3.1.1
 boto3==1.26.4
-elasticsearch==7.11.0
+elasticsearch==7.17.9
 elasticsearch-dsl==7.4.0
 freezegun==1.5.1
 moto==4.0.1
