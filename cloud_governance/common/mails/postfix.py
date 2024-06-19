@@ -158,7 +158,7 @@ class Postfix:
                         if kwargs.get('extra_purse'):
                             data['extra_purse'] = round(kwargs['extra_purse'], 3)
                         if self.__es_host:
-                            # self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+                            self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                             logger.warn(f'Uploaded to es index: {self.__es_index}')
                         else:
                             logger.warn('Error missing the es_host')
