@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -30,7 +30,7 @@ class SendAggregatedAlerts:
         :return:
         :rtype:
         """
-        current_date = (datetime.utcnow().date()).__str__()
+        current_date = (datetime.now(timezone.utc).date()).__str__()
         policy_es_index = self.__environment_variables.get('es_index')
         account_name = (self.__environment_variables.get('account', '').upper()
                         .replace('OPENSHIFT-', '')
@@ -143,7 +143,10 @@ class SendAggregatedAlerts:
                     days = 0
                 alert_user = True if self.__alert_dry_run else False
                 dry_run = record.get('DryRun')
-                days_to_take_action = int(record.get('ExpireDays', self.__days_to_delete_resource))
+                if record.get('ExpireDays'):
+                    days_to_take_action = int(record.get('ExpireDays'))
+                else:
+                    days_to_take_action = int(self.__days_to_delete_resource)
                 if not record.get('SkipPolicy'):
                     record['SkipPolicy'] = 'NA'
                 delete_date = ''
