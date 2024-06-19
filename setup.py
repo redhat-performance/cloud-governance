@@ -46,10 +46,14 @@ setup(
         'azure-mgmt-billing==6.0.0',  # azure billing management
         'azure-mgmt-costmanagement==3.0.0',  # azure cost management
         'azure-mgmt-subscription==3.1.1',  # azure subscriptions
+        'azure-mgmt-resource==23.0.1',
+        'azure-mgmt-compute==30.1.0',
+        'azure-mgmt-network==25.0.0',
+        'azure-mgmt-monitor==6.0.2',
         'boto3==1.26.4',  # required by c7n 0.9.14
         'botocore==1.29.4',  # required by c7n 0.9.14
         'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.17.9',  # depend on elasticsearch server
+        'elasticsearch==7.13.4',  # opensearch 1.2.4 for elasticsearch
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
         'google-auth-oauthlib==0.5.2',  # google drive
@@ -57,6 +61,7 @@ setup(
         'google-cloud-billing==1.9.1',  # google cloud cost
         'ibm_platform_services==0.27.0',  # IBM Usage reports
         'myst-parser==1.0.0',  # readthedocs
+        'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
         'oauthlib~=3.1.1',  # required by jira
         'pandas',  # latest: aggregate ec2/ebs cluster data
         'PyAthena[Pandas]==3.0.5',  # AWS Athena package
@@ -70,11 +75,7 @@ setup(
         'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
-        'urllib3==1.26.19',  # required by jira
-        'azure-mgmt-resource==23.0.1',
-        'azure-mgmt-compute==30.1.0',
-        'azure-mgmt-network==25.0.0',
-        'azure-mgmt-monitor==6.0.2'
+        'urllib3==1.26.19'  # required by jira
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
