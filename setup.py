@@ -70,7 +70,7 @@ setup(
         'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
-        'urllib3==1.26.18',  # required by jira
+        'urllib3==1.26.19',  # required by jira
         'azure-mgmt-resource==23.0.1',
         'azure-mgmt-compute==30.1.0',
         'azure-mgmt-network==25.0.0',
