@@ -8,6 +8,10 @@ on:
     types: [labeled, synchronize]
     branches: [ main ]
 
+concurrency:
+  group: pr-queue
+  cancel-in-progress: false
+
 jobs:
   approve: # First step
     runs-on: ubuntu-latest
