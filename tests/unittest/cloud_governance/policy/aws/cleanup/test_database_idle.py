@@ -87,7 +87,7 @@ def test_database_idle_delete():
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert running_instances_data[0]['DryRun'] == 'no'
-    assert running_instances_data[0]['ResourceDelete'] == 'True'
+    assert running_instances_data[0]['ResourceAction'] == 'True'
 
 
 @mock_cloudwatch
@@ -113,6 +113,6 @@ def test_database_idle_dry_run_yes():
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert running_instances_data[0]['DryRun'] == 'yes'
-    assert running_instances_data[0]['ResourceDelete'] == 'False'
+    assert running_instances_data[0]['ResourceAction'] == 'False'
     assert get_tag_value_from_tags(tags=rds_client.describe_db_instances()['DBInstances'][0]['TagList'],
                                    tag_name='DaysCount') == f"{current_date.date()}@0"

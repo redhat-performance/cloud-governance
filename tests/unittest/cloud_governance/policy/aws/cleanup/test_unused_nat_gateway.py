@@ -103,7 +103,7 @@ def test_unused_nat_gateway___dry_run_no_7_days_action_delete():
     assert len(response) == 1
     response = response[0]
     assert response.get('CleanUpDays') == 7
-    assert response.get('ResourceDelete') == 'True'
+    assert response.get('ResourceAction') == 'True'
 
 
 @mock_ec2
@@ -126,7 +126,7 @@ def test_unused_nat_gateway___dry_run_no_skips_delete():
     assert len(response) == 1
     response = response[0]
     assert response.get('CleanUpDays') == 7
-    assert response.get('ResourceDelete') == 'False'
+    assert response.get('ResourceAction') == 'False'
 
 
 @mock_ec2

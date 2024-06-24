@@ -2,6 +2,7 @@
 import os
 from datetime import datetime, timedelta
 from typing import Union
+import re
 
 
 class Utils:
@@ -130,3 +131,17 @@ class Utils:
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         return start_date, end_date
+
+    @staticmethod
+    def convert_to_title_case(snake_case: str):
+        """
+        This method converts lower case to title case
+        ex: test_name => TestName
+            test-name => TestName
+        :param snake_case:
+        :type snake_case:
+        :return:
+        :rtype:
+        """
+        title_case = re.sub(r'(?:^|[_-])([a-z])', lambda match: match.group(1).upper(), snake_case)
+        return title_case
