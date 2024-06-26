@@ -17,3 +17,5 @@ Accounts:
 - **special-projects**: "chen.yosef@redhat.com, hhalbfin@redhat.com",
 - **edgeinfra**: "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com",
 - **specialprojects-qe**: "augol@redhat.com, hhalbfin@redhat.com"
+- **partnerlab**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
+- **blueprints**: "abeekhof@redhat.com, hhalbfin@redhat.com"
