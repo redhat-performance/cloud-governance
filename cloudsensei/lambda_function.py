@@ -18,11 +18,28 @@ class EC2Operations:
     """
 
     SLACK_ITEM_SIZE = 50
+    KEYS_LIST = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',
+                 'RunningDays']
 
     def __init__(self):
         self.__ec2_client = boto3.client('ec2', region_name='us-east-1')
         self.__iam_client = boto3.client('iam')
         self.__resource_days = int(os.environ.get('RESOURCE_DAYS', 7))
+        self.__users_mapping_list = self.get_user_mapping()
+
+    def get_user_mapping(self):
+        """
+        This method returns the user mappings
+        :return:
+        """
+        users_mapping_list = {}
+        mapping_list = os.environ.get('USERS_MAPPING_LIST', '')  # "user1: kerberosid, user2:kerberosid"
+        if mapping_list:
+            mapping_list = mapping_list.split(',')
+            for user in mapping_list:
+                key, value = user.split(':')
+                users_mapping_list[key] = value
+        return users_mapping_list
 
     def set_ec2_client(self, region_name: str):
         """
@@ -77,6 +94,9 @@ class EC2Operations:
                             elif tag_key == 'name':
                                 name = tag.get('Value')
                         if not skip and user:
+                            user = user.lower()
+                            if user in self.__users_mapping_list:
+                                user = self.__users_mapping_list[user]
                             instance_details = {'InstanceId': resource.get('InstanceId'),
                                                 'Name': name, 'LaunchDate': str(launch_time),
                                                 'RunningDays': f"{days} days",
@@ -84,8 +104,8 @@ class EC2Operations:
                                                 'InstanceType': resource.get('InstanceType')}
                             if ticket_tags:  # Add TicketId tags if available
                                 instance_details['TicketId'] = ticket_tags
-                            long_running_instances_by_user.setdefault(user.lower(), {}).setdefault(region_name,
-                                                                                                   []).append(
+                            long_running_instances_by_user.setdefault(user, {}).setdefault(region_name,
+                                                                                           []).append(
                                 instance_details)
         return long_running_instances_by_user
 
@@ -106,7 +126,6 @@ class EC2Operations:
         """
 
         divider = {"type": "divider"}
-        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'RunningDays']
         rows = []
         for user, region_list in resources_list.items():
             for region_name, resources_list in region_list.items():
@@ -115,12 +134,36 @@ class EC2Operations:
                         resources.update({'User': user, 'Region': region_name})
                         rows.append({
                             "type": "section",
-                            "fields": [{"type": "mrkdwn", "text": f"{str(resources.get(item))}"} for item in keys_list],
-                        })
+                            "fields": [
+                                {"type": "mrkdwn", "text": f"{str(resources.get(item))}"}
+                                if item != 'User' else {"type": "mrkdwn", "text": f"@{str(resources.get(item))}"}
+                                for item in self.KEYS_LIST]}
+                        )
             rows.append(divider)
         item_blocks = [rows[i:i + self.SLACK_ITEM_SIZE] for i in
                        range(0, len(rows), self.SLACK_ITEM_SIZE)]  # splitting because slack block allows only 50 items
-        slack_message_block = []
+        slack_message_block = [[{
+            "type": "rich_text",
+            "elements": [
+                {
+                    "type": "rich_text_section",
+                    "elements": [
+                        {
+                            "type": "text",
+                            "text": "Please look at the following instances and take an respective action",
+                            "style": {
+                                "bold": True
+                            },
+                        }
+                    ]
+                }
+            ]
+        }], [{
+            'type': 'section',
+            'fields': [
+                {"type": "mrkdwn", "text": f"{item}"} for item in self.KEYS_LIST
+            ]
+        }]]
         for block in item_blocks:
             slack_message_block.append(block)
         return slack_message_block
@@ -131,11 +174,9 @@ class EC2Operations:
         :param resources_list:
         :return:
         """
-        keys_list = ['User', 'TicketId', 'Region', 'Name', 'InstanceType', 'InstanceId', 'LaunchDate', 'State',
-                     'RunningDays']
         with open('email_template.j2') as template:
             template = Template(template.read())
-            body = template.render({'resources_list': resources_list, 'keys_list': keys_list})
+            body = template.render({'resources_list': resources_list, 'keys_list': self.KEYS_LIST})
             return body
 
 
@@ -199,25 +240,31 @@ def lambda_handler(event, context):
     ec2_operations = EC2Operations()
     account_name = ec2_operations.get_account_alias_name()
     process_data = ProcessData(subject=f'Daily Cloud Report: Long running instances in the @{account_name} account')
+    slack_message = ''
     if os.environ.get("SLACK_API_TOKEN"):
         slack_blocks = ec2_operations.organize_message_to_send_slack(ec2_operations.get_resources())
         code, message = process_data.post_message_in_slack(slack_blocks=slack_blocks, account_name=account_name)
+        slack_message = message
+    organized_ec2_data = ec2_operations.organize_message_to_seng_mail(ec2_operations.get_resources())
+    if os.environ.get("SEND_AGG_MAIL", "no").lower() == "yes":
+        code, message = process_data.save_to_elastic_search(organized_ec2_data, account_name=account_name)
+        if os.environ.get('SES_HOST_ADDRESS'):
+            code, message = process_data.send_email(organized_ec2_data)
+    elif os.environ.get('SES_HOST_ADDRESS'):
+        if os.environ.get('SES_HOST_ADDRESS'):
+            code, message = process_data.send_email(organized_ec2_data)
     else:
-        organized_ec2_data = ec2_operations.organize_message_to_seng_mail(ec2_operations.get_resources())
-        if os.environ.get("SEND_AGG_MAIL", "no").lower() == "yes":
-            code, message = process_data.save_to_elastic_search(organized_ec2_data, account_name=account_name)
-            if os.environ.get('SES_HOST_ADDRESS'):
-                code, message = process_data.send_email(organized_ec2_data)
-        elif os.environ.get('SES_HOST_ADDRESS'):
-            if os.environ.get('SES_HOST_ADDRESS'):
-                code, message = process_data.send_email(organized_ec2_data)
-        else:
+        if not os.environ.get('SES_HOST_ADDRESS') and \
+                not os.environ.get("SEND_AGG_MAIL", "no").lower() == "yes" and \
+                not os.environ.get("SLACK_API_TOKEN"):
             organized_ec2_data = ec2_operations.get_resources()
             message = organized_ec2_data
             code = 200
     end_time = time()
     return {
         'statusCode': code,
-        'body': json.dumps({'message': message, 'extra_message': extra_message}),
+        'body': json.dumps({'message': message,
+                            'extra_message': extra_message,
+                            'slack_message': slack_message}),
         'total_running_time': f"{end_time - start_time} s"
     }
