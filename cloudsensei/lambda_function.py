@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from ast import literal_eval
 from time import time
 
 import boto3
@@ -25,7 +26,32 @@ class EC2Operations:
         self.__ec2_client = boto3.client('ec2', region_name='us-east-1')
         self.__iam_client = boto3.client('iam')
         self.__resource_days = int(os.environ.get('RESOURCE_DAYS', 7))
+        self.__block_list_instances_name = literal_eval(os.environ.get('BLOCK_LIST_INSTANCES_NAMES', '[]'))
         self.__users_mapping_list = self.get_user_mapping()
+
+    def get_tag_value_from_tags(self, tags: list, tag_name: str, cast_type: str = 'str',
+                                default_value: any = '') -> any:
+        """
+        This method returns the tag value inputted by tag_name
+        :param tags:
+        :param tag_name:
+        :param cast_type:
+        :param default_value:
+        :return:
+        """
+        if tags:
+            for tag in tags:
+                key = tag.get('Key').lower().replace("_", '').replace("-", '').strip()
+                if key == tag_name.lower():
+                    if cast_type:
+                        if cast_type == 'int':
+                            return int(tag.get('Value').split()[0].strip())
+                        elif cast_type == 'float':
+                            return float(tag.get('Value').strip())
+                        else:
+                            return str(tag.get('Value').strip())
+                    return tag.get('Value').strip()
+        return default_value
 
     def get_user_mapping(self):
         """
@@ -55,10 +81,11 @@ class EC2Operations:
         :return:
         """
         resource_list = []
-        resources = self.__ec2_client.describe_instances()
+        filter_list = [{'Name': 'instance-state-name', 'Values': ['running']}]
+        resources = self.__ec2_client.describe_instances(Filters=filter_list)
         resource_list.extend(resources['Reservations'])
         while 'NextToken' in resources.keys():
-            resources = self.__ec2_client.describe_instances(NextToken=resources['NextToken'])
+            resources = self.__ec2_client.describe_instances(NextToken=resources['NextToken'],Filters=filter_list)
             resource_list.extend(resources['Reservations'])
         return resource_list
 
@@ -79,20 +106,15 @@ class EC2Operations:
                     skip = False
                     launch_time = resource.get('LaunchTime').date()
                     days = (current_datetime - launch_time).days
-                    if days > self.__resource_days:
-                        user = name = None
-                        ticket_tags = ''
-                        for tag in resource.get('Tags', []):
-                            tag_key = tag.get('Key').lower()
-                            if tag_key.lower() == 'cloudsensei':
-                                skip = True
-                                break
-                            if tag_key == 'user':
-                                user = tag.get('Value')
-                            if tag_key == 'ticketid':
-                                ticket_tags = tag.get('Value')
-                            elif tag_key == 'name':
-                                name = tag.get('Value')
+                    tags = resource.get('Tags', [])
+                    name = self.get_tag_value_from_tags(tag_name='Name', tags=tags)
+                    if days > self.__resource_days and \
+                            name not in self.__block_list_instances_name:
+                        cloudsensei = self.get_tag_value_from_tags(tag_name='cloudsensei', tags=tags)
+                        if cloudsensei:
+                            break
+                        ticket_tags = self.get_tag_value_from_tags(tag_name='ticketid', tags=tags)
+                        user = self.get_tag_value_from_tags(tag_name='user', tags=tags)
                         if not skip and user:
                             user = user.lower()
                             if user in self.__users_mapping_list:
@@ -136,7 +158,6 @@ class EC2Operations:
                             "type": "section",
                             "fields": [
                                 {"type": "mrkdwn", "text": f"{str(resources.get(item))}"}
-                                if item != 'User' else {"type": "mrkdwn", "text": f"@{str(resources.get(item))}"}
                                 for item in self.KEYS_LIST]}
                         )
             rows.append(divider)
@@ -164,6 +185,14 @@ class EC2Operations:
                 {"type": "mrkdwn", "text": f"{item}"} for item in self.KEYS_LIST
             ]
         }]]
+        if not item_blocks:
+            slack_message_block.append([{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "No long running instances"
+                }
+            }])
         for block in item_blocks:
             slack_message_block.append(block)
         return slack_message_block
@@ -174,6 +203,8 @@ class EC2Operations:
         :param resources_list:
         :return:
         """
+        if not resources_list:
+            return ''
         with open('email_template.j2') as template:
             template = Template(template.read())
             body = template.render({'resources_list': resources_list, 'keys_list': self.KEYS_LIST})
@@ -189,6 +220,8 @@ class ProcessData:
         This method send email
         :return:
         """
+        if not organized_ec2_data:
+            return 204, "No long running instances"
         response = send_email_with_ses(body=organized_ec2_data, subject=self.__subject, to=os.environ.get('TO_ADDRESS'),
                                        cc=os.environ.get('CC_ADDRESS'))
         if response:
