@@ -1,4 +1,4 @@
-accounts_list = ['coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com"]
+accounts_list = ['coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com"]
 pipeline {
     options {
         disableConcurrentBuilds()
