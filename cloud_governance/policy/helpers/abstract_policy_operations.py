@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Union
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
@@ -185,8 +185,8 @@ class AbstractPolicyOperations(ABC):
         :return:
         :rtype:
         """
-        year_end_date = datetime.utcnow().date().replace(month=12, day=31)
-        total_days = (year_end_date - datetime.utcnow().date()).days + 1
+        year_end_date = datetime.now(timezone.utc).date().replace(month=12, day=31)
+        total_days = (year_end_date - datetime.now(timezone.utc).date()).days + 1
         return total_days * 24 * unit_price
 
     # ES Schema format
@@ -198,6 +198,7 @@ class AbstractPolicyOperations(ABC):
         kwargs['clean_up_days'] = kwargs.get('cleanup_days', 0)
         kwargs['days_count'] = kwargs.pop('cleanup_days', 0)
         kwargs['account'] = self.account
+        kwargs['total_yearly_savings'] = self.__current_savings_year(unit_price=kwargs.get('unit_price', 0))
         policy_es_data = PolicyEsMetaData(**kwargs)
         resource_data = policy_es_data.get_as_dict_title_case()
         return resource_data
