@@ -14,6 +14,8 @@ concurrency:
 
 jobs:
   approve: # First step
+    # minimize potential vulnerabilities
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
     runs-on: ubuntu-latest
     steps:
       - name: Approve
@@ -25,8 +27,6 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
-    # minimize potential vulnerabilities
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -65,7 +65,7 @@ jobs:
 
   terraform_apply:
     name: terraform_apply
-    needs: [unittest, approve]
+    needs: [approve, unittest]
     runs-on: ubuntu-latest
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
@@ -113,7 +113,7 @@ jobs:
 
   integration:
     name: integration
-    needs: [ unittest, terraform_apply, approve ]
+    needs: [approve, unittest, terraform_apply]
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
@@ -186,7 +186,7 @@ jobs:
 
   terraform_destroy:
     name: terraform_destroy
-    needs: [unittest, terraform_apply, integration, approve]
+    needs: [approve, unittest, terraform_apply, integration]
     if: success() || failure()
     runs-on: ubuntu-latest
     steps:
@@ -228,7 +228,7 @@ jobs:
 
   e2e:
     name: e2e
-    needs: [ unittest, terraform_apply, integration, approve  ]
+    needs: [approve, unittest, terraform_apply, integration]
     runs-on: ubuntu-latest
     strategy:
       matrix:
