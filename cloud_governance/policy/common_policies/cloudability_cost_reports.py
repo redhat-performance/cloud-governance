@@ -5,7 +5,7 @@ from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.google_drive.gcp_operations import GCPOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.api_requests import APIRequests
-from cloud_governance.common.utils.configs import LOOK_BACK_DAYS, PUBLIC_ACCOUNTS_COST_REPORTS, MONTHS, \
+from cloud_governance.common.utils.configs import LOOK_BACK_DAYS, IT_ACCOUNTS_COST_REPORTS_LIST, MONTHS, \
     DEFAULT_ROUND_DIGITS, DATE_FORMAT
 from cloud_governance.common.utils.utils import Utils
 from cloud_governance.main.environment_variables import environment_variables
@@ -90,7 +90,7 @@ class CloudabilityCostReports:
         :return:
         :rtype:
         """
-        accounts_reports_df = self.__gcp_operations.get_accounts_sheet(sheet_name=PUBLIC_ACCOUNTS_COST_REPORTS)
+        accounts_reports_df = self.__gcp_operations.get_accounts_sheet(sheet_name=IT_ACCOUNTS_COST_REPORTS_LIST)
         cost_centers = list(set(accounts_reports_df['CostCenter'].tolist()))
         custom_filter = '&'.join([f'filters=category4=={cost_center}' for cost_center in cost_centers])
         cloudability_reports = self.__get_cost_reports(custom_filter=custom_filter)
