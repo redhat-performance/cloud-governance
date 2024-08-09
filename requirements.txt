@@ -1,4 +1,4 @@
-aiohttp==3.9.4
+aiohttp==3.10.2
 attrs==21.4.0
 azure-identity==1.16.1
 azure-mgmt-billing==6.0.0
