@@ -52,7 +52,7 @@ class SendAggregatedAlerts:
                         {
                             "terms": {
                                 "policy.keyword": [
-                                    "ebs_in_use", "zombie_cluster_resource",
+                                    "ebs_in_use",
                                     "instance_run", "cluster_run", "optimize_resource_report",
                                     "optimize_resources_report", "skipped_resources"
                                 ]
