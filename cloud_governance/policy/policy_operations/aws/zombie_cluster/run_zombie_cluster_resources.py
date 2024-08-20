@@ -3,6 +3,7 @@ from datetime import datetime
 import typeguard
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.zombie_cluster_common_methods import ZombieClusterCommonMethods
@@ -113,6 +114,8 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
     delete_data = {}
     cluster_data = {}
     zombie_cluster_common_methods = ZombieClusterCommonMethods(region=region)
+    cluster_delete_days = {}
+    zombie_cluster_resources_ids = {}
     for func in func_resource_list:
         resource_data, cluster_left_out_days = func()
         if resource_data:
@@ -121,6 +124,10 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
                 cluster_left_out_days=cluster_left_out_days,
                 notify_data=notify_data, delete_data=delete_data, cluster_data=cluster_data, func_name=func.__name__)
             resource_data_list = sorted(set(resource_data.values()))
+            for resource_id, cluster_name in resource_data.items():
+                zombie_cluster_resources_ids.setdefault(cluster_name.strip(), []).append(resource_id)
+                cluster_delete_days[cluster_name] = get_tag_value_from_tags(tag_name='ClusterDeleteDays',
+                                                                            tags=cluster_left_out_days.get(cluster_name, []))
             resource_data_list = [func.__name__.replace("zombie_cluster_", "") + ':' + item for item in
                                   resource_data_list]
             logger.info(f'key: {func.__name__}, count: {len(resource_data)}, data: {resource_data_list}')
@@ -143,6 +150,8 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
             for zombie_cluster in zombie_cluster_result:
                 zombie_cluster['region_name'] = region
                 zombie_cluster['account'] = account
+                zombie_cluster['ResourceIds'] = zombie_cluster_resources_ids[zombie_cluster['ResourceId']]
+                zombie_cluster['CleanUpDays'] = cluster_delete_days[zombie_cluster['ZombieClusterTag']]
                 es_operations.upload_to_elasticsearch(data=zombie_cluster.copy(), index=es_index)
                 logger.info(f'Uploaded the policy results to elasticsearch index: {es_index}')
         else:
