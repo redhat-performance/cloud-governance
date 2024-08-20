@@ -129,13 +129,19 @@ class ZombieClusterCommonMethods:
                 cluster_delete_days = self.get_tag_name_from_tags(tags=tags, tag_name='ClusterDeleteDays')
                 if cluster_delete_days:
                     if resource_id in zombies:
-                        tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays',
-                                                         tag_value=str(int(cluster_delete_days) + 1))
+                        if self.dry_run == 'no':
+                            tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays',
+                                                             tag_value=str(int(cluster_delete_days) + 1))
+                        else:
+                            tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(0))
                     else:
                         tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(0))
                 else:
                     if resource_id in zombies:
-                        tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(1))
+                        if self.dry_run == 'no':
+                            tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(1))
+                        else:
+                            tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(0))
                 if old_tags != tags:
                     try:
                         if aws_service == 'ec2':

@@ -1,8 +1,11 @@
 import boto3
 import pytest
 from moto import mock_ec2, mock_elb, mock_elbv2, mock_s3
+
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from tests.unittest.configs import DRY_RUN_YES, DRY_RUN_NO
 
 tags = [
     {'Key': 'kubernetes.io/cluster/unittest-test-cluster', 'Value': 'Owned'},
@@ -61,6 +64,7 @@ def test_delete_ec2_ami_after_seven():
     This method tests the deletion of AMI image after seven days
     :return:
     """
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
     ec2_client = boto3.client('ec2', region_name=region_name)
     default_ami_id = 'ami-03cf127a'
     ec2_resource = boto3.resource('ec2', region_name=region_name)
