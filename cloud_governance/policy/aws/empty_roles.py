@@ -30,7 +30,8 @@ class EmptyRoles(AWSPolicyOperations):
             cleanup_days = 0
             inline_policies = self._iam_operations.list_inline_role_policies(role_name=role_name)
             attached_policies = self._iam_operations.list_attached_role_policies(role_name=role_name)
-            if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0:
+            if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0 and \
+                self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=role_name, tags=tags,
                                                                  clean_up_days=cleanup_days)

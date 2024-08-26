@@ -40,7 +40,8 @@ class ZombieSnapshots(AWSPolicyOperations):
             cleanup_result = False
             cluster_tag = self._get_cluster_tag(tags=tags)
             cleanup_days = 0
-            if not cluster_tag and not self.__snapshot_id_in_images(resource_id):
+            if not cluster_tag and not self.__snapshot_id_in_images(resource_id) and \
+                    self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                                  clean_up_days=cleanup_days)

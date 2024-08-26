@@ -35,6 +35,7 @@ class InstanceIdle(AWSPolicyOperations):
             if Utils.contains_ignore_case(string=status, str1='running') and \
                     not cluster_tag and \
                     Utils.greater_than(val1=running_days, val2=INSTANCE_IDLE_DAYS) and \
+                    self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP') and \
                     self.verify_instance_idle(resource_id=instance_id):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=instance_id, tags=tags,

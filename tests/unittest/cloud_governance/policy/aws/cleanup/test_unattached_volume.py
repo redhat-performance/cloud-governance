@@ -85,10 +85,7 @@ def test_unattached_volume_dry_run_no_skip():
     }])
     volume_run = UnattachedVolume()
     response = volume_run.run()
-    assert len(response) > 0
-    response = response[0]
-    assert response.get('ResourceAction') == 'False'
-    assert response.get('SkipPolicy') == 'NOTDELETE'
+    assert len(response) == 0
 
 
 @mock_ec2

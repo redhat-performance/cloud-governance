@@ -109,9 +109,7 @@ def test_ip_unattached__skips_delete_on_dry_run_no():
     response = ip_unattached.run()
     addresses = ec2_client.describe_addresses()['Addresses']
     assert len(addresses) == 1
-    assert len(response) == 1
-    assert response[0]['CleanUpDays'] == 7
-    assert response[0]['ResourceState'] == 'disassociated'
+    assert len(response) == 0
 
 
 @mock_ec2

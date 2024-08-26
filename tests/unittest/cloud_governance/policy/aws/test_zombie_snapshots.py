@@ -135,7 +135,7 @@ def test_zombie_snapshots_skip():
     zombie_snapshots = ZombieSnapshots()
     response = zombie_snapshots.run()
     assert len(ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']) == 1
-    assert len(response) == 1
+    assert len(response) == 0
 
 
 @mock_ec2

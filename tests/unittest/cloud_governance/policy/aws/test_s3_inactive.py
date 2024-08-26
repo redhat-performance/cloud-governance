@@ -87,7 +87,7 @@ def test_s3_inactive_delete():
 @mock_s3
 def test_s3_inactive_skip():
     """
-    This method tests skip delete of the ami related snapshots
+    This method tests skip delete of the s3 empty bucket
     @return:
     """
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
@@ -103,16 +103,16 @@ def test_s3_inactive_skip():
     s3_inactive = S3Inactive()
     response = s3_inactive.run()
     assert len(s3_operations.list_buckets()) == 1
-    assert len(response) == 1
+    assert len(response) == 0
     assert get_tag_value_from_tags(tags=s3_operations.get_bucket_tagging(bucket_name=TEST_USER_NAME),
-                                   tag_name='DaysCount') == f"{CURRENT_DATE}@7"
+                                   tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
 @mock_ec2
 @mock_s3
 def test_s3_inactive_contains_cluster_tag():
     """
-    This method tests snapshot having the live cluster
+    This method tests s3 bucket having the live cluster
     @return:
     """
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
@@ -141,7 +141,7 @@ def test_s3_inactive_contains_cluster_tag():
 @mock_s3
 def test_s3_inactive_contains_data():
     """
-    This method tests snapshot having the live cluster
+    This method tests s3 bucket having the live cluster
     @return:
     """
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
