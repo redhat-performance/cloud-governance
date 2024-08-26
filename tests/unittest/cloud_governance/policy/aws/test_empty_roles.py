@@ -132,9 +132,9 @@ def test_empty_roles_skip():
     empty_roles = EmptyRoles()
     response = empty_roles.run()
     assert len(iam_operations.get_roles()) == 1
-    assert len(response) == 1
+    assert len(response) == 0
     assert get_tag_value_from_tags(tags=iam_operations.get_role(role_name=PROJECT_NAME).get('Tags', []),
-                                   tag_name='DaysCount') == f"{CURRENT_DATE}@7"
+                                   tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
 @mock_ec2

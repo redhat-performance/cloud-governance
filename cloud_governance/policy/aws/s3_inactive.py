@@ -28,7 +28,8 @@ class S3Inactive(AWSPolicyOperations):
             cluster_tag = self._get_cluster_tag(tags=tags)
             cleanup_days = 0
             s3_contents = self._s3operations.get_bucket_contents(bucket_name=bucket_name)
-            if cluster_tag not in self.__global_active_cluster_ids and len(s3_contents) == 0:
+            if (cluster_tag not in self.__global_active_cluster_ids and len(s3_contents) == 0
+                    and self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP')):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=bucket_name, tags=tags,
                                                                  clean_up_days=cleanup_days)

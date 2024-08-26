@@ -32,7 +32,8 @@ class DatabaseIdle(AWSPolicyOperations):
             resource_arn = db.get('DBInstanceArn', '')
             if Utils.greater_than(val1=running_days, val2=CLOUDWATCH_METRICS_AVAILABLE_DAYS) \
                     and not cluster_tag \
-                    and self.is_database_idle(resource_id):
+                    and self.is_database_idle(resource_id) \
+                    and self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                                  clean_up_days=cleanup_days)

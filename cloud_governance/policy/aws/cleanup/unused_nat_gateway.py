@@ -68,7 +68,8 @@ class UnUsedNatGateway(AWSPolicyOperations):
             cluster_tag = self._get_cluster_tag(tags=tags)
             cleanup_days = 0
             if (Utils.equal_ignore_case(nat_gateway.get('State'), 'available')
-                    and cluster_tag not in self.__active_cluster_ids):
+                    and cluster_tag not in self.__active_cluster_ids and
+                    self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP')):
                 if (not self.__check_nat_gateway_in_routes(nat_gateway_id=resource_id) or
                         self.__check_cloud_watch_logs(resource_id=resource_id)):
                     cleanup_days = self.get_clean_up_days_count(tags=tags)

@@ -28,7 +28,7 @@ class IpUnattached(AWSPolicyOperations):
             ip_not_used = False
             resource_id = address.get('AllocationId')
             cluster_tag = self._get_cluster_tag(tags=address.get('Tags'))
-            if cluster_tag not in active_cluster_ids:
+            if cluster_tag not in active_cluster_ids and self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                 if not address.get('NetworkInterfaceId'):
                     cleanup_days = self.get_clean_up_days_count(tags=tags)
                     ip_not_used = True

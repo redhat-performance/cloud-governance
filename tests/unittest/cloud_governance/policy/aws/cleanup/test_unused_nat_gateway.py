@@ -123,10 +123,7 @@ def test_unused_nat_gateway___dry_run_no_skips_delete():
     ec2_client.create_nat_gateway(SubnetId=subnet_id, TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
-    assert len(response) == 1
-    response = response[0]
-    assert response.get('CleanUpDays') == 7
-    assert response.get('ResourceAction') == 'False'
+    assert len(response) == 0
 
 
 @mock_ec2

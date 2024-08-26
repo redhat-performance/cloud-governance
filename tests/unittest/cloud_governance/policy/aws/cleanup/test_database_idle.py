@@ -60,7 +60,7 @@ def test_database_idle_alert_skip():
                                   Engine=DB_ENGINE, Tags=tags)
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
-    assert running_instances_data[0]['DryRun'] == 'no'
+    assert len(running_instances_data) == 0
     assert len(rds_client.describe_db_instances()['DBInstances']) == 1
 
 

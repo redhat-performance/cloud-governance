@@ -165,9 +165,8 @@ def test_instance_idle__skips_delete():
         ]
         instance_idle = InstanceIdle()
         response = instance_idle.run()
-        assert len(response) == 1
-        assert response[0]['CleanUpDays'] == 7
-        assert response[0]['ResourceState'] != 'Deleted'
+        assert len(response) == 0
+
 
 
 def test_instance_idle__set_counter_zero():
