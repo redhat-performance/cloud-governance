@@ -30,26 +30,28 @@ class EmptyRoles(AWSPolicyOperations):
             cleanup_days = 0
             inline_policies = self._iam_operations.list_inline_role_policies(role_name=role_name)
             attached_policies = self._iam_operations.list_attached_role_policies(role_name=role_name)
-            if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0 and \
-                self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                cleanup_days = self.get_clean_up_days_count(tags=tags)
-                cleanup_result = self.verify_and_delete_resource(resource_id=role_name, tags=tags,
-                                                                 clean_up_days=cleanup_days)
-                resource_data = self._get_es_schema(resource_id=role_name,
-                                                    user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
-                                                    skip_policy=self.get_skip_policy_value(tags=tags),
-                                                    cleanup_days=cleanup_days,
-                                                    dry_run=self._dry_run,
-                                                    name=role_name,
-                                                    region=self.IAM_GLOBAL_REGION,
-                                                    cleanup_result=str(cleanup_result),
-                                                    resource_action=self.RESOURCE_ACTION,
-                                                    cloud_name=self._cloud_name,
-                                                    resource_type='EmptyRole',
-                                                    resource_state="Empty",
-                                                    unit_price=0)
-                empty_roles.append(resource_data)
-            if not cleanup_result:
-                self.update_resource_day_count_tag(resource_id=role_name, cleanup_days=cleanup_days, tags=tags)
-
+            try:
+                if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0 and \
+                    self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+                    cleanup_days = self.get_clean_up_days_count(tags=tags)
+                    cleanup_result = self.verify_and_delete_resource(resource_id=role_name, tags=tags,
+                                                                     clean_up_days=cleanup_days)
+                    resource_data = self._get_es_schema(resource_id=role_name,
+                                                        user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                        skip_policy=self.get_skip_policy_value(tags=tags),
+                                                        cleanup_days=cleanup_days,
+                                                        dry_run=self._dry_run,
+                                                        name=role_name,
+                                                        region=self.IAM_GLOBAL_REGION,
+                                                        cleanup_result=str(cleanup_result),
+                                                        resource_action=self.RESOURCE_ACTION,
+                                                        cloud_name=self._cloud_name,
+                                                        resource_type='EmptyRole',
+                                                        resource_state="Empty",
+                                                        unit_price=0)
+                    empty_roles.append(resource_data)
+                if not cleanup_result:
+                    self.update_resource_day_count_tag(resource_id=role_name, cleanup_days=cleanup_days, tags=tags)
+            except Exception as e:
+                logger.error(f'Exception raised while processing the empty roles operation on {role_name}, {e}')
         return empty_roles

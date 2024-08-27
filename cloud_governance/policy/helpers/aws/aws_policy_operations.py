@@ -57,7 +57,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             if self._policy == 's3_inactive':
                 self._s3_client.delete_bucket(Bucket=resource_id)
             elif self._policy == 'empty_roles':
-                self._iam_operations.delete_role(role_name=resource_id)
+                response = self._iam_operations.delete_role(role_name=resource_id)
             elif self._policy == 'unattached_volume':
                 self._ec2_client.delete_volume(VolumeId=resource_id)
             elif self._policy == 'ip_unattached':
@@ -74,7 +74,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 return False
             logger.info(f'{self._policy} {action}: {resource_id}')
         except Exception as err:
-            logger.info(f'Exception raised: {err}: {resource_id}')
+            logger.error(f'Exception raised: {err}: {resource_id}')
+            raise err
 
     def __remove_tag_key_aws(self, tags: list):
         """
