@@ -13,6 +13,7 @@ class TFVarGenerator:
                 "tags": {
                     "Name": os.environ['TAG_NAME'].strip("\n\t ")
                 },
+                "subnet_id": os.environ['SUBNET_ID'].strip("\n\t "),
             }
         except Exception as err:
             raise Exception(err)
