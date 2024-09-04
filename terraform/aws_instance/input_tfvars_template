@@ -2,6 +2,7 @@ instance_details = {
     "small_instance" = {
       "image_id" = "{{ image_id }}"
       "instance_type" = "{{ instance_type }}"
+      "subnet_id" = "{{ subnet_id }}"
       "tags" = {
       {% for key, value in tags.items() %}
             {{ key }} = "{{ value }}"

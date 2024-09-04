@@ -96,6 +96,7 @@ jobs:
           ROLE_NAME: ${{ secrets.ROLE_NAME }}
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
           TAG_NAME: ${{ secrets.TAG_NAME }}
+          SUBNET_ID: ${{ SUBNET_ID }}
         run: |
           cd terraform/aws_instance
           # terrafrom apply
@@ -109,7 +110,7 @@ jobs:
 
   integration:
     name: integration
-    needs: [unittest, terraform_apply]
+    needs: [ unittest, terraform_apply ]
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
@@ -354,12 +355,12 @@ jobs:
 
   e2e:
     name: e2e
-    needs: [unittest, terraform_apply, integration, pypi_upload, pypi_validate, quay_upload, bump_version]
+    needs: [ unittest, terraform_apply, integration, pypi_upload, pypi_validate, quay_upload, bump_version ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        region: ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1', 'ap-south-1', 'eu-north-1', 'ap-northeast-1', 'ap-southeast-1', 'ap-southeast-2', 'eu-south-1', 'eu-west-3', 'sa-east-1']
-        policy: ['instance_idle', 'instance_run', 'unattached_volume',  'ebs_in_use']
+        region: [ 'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-central-1', 'ap-south-1', 'eu-north-1', 'ap-northeast-1', 'ap-southeast-1', 'ap-southeast-2', 'eu-south-1', 'eu-west-3', 'sa-east-1' ]
+        policy: [ 'instance_idle', 'instance_run', 'unattached_volume',  'ebs_in_use' ]
         # we don't run zombie_cluster_resource due to long run
     steps:
       - uses: actions/checkout@v4

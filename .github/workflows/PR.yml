@@ -5,7 +5,7 @@ name: PR
 
 on:
   pull_request_target:
-    types: [labeled, synchronize]
+    types: [ labeled, synchronize ]
     branches: [ main ]
 
 concurrency:
@@ -23,49 +23,49 @@ jobs:
   unittest:
     name: unittest
     runs-on: ubuntu-latest
-    needs: [approve]
+    needs: [ approve ]
     strategy:
       matrix:
         python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
     steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        # ldap requirements
-        sudo apt update -y
-        sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
-        python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Configure AWS credentials for pytest
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.REGION }}
-    - name: 📃 Unittest tests with pytest
-      env:
-        BUCKET: ${{ secrets.BUCKET }}
-        REGION: ${{ secrets.REGION }}
-      run: |
-        python -m pytest -v tests/unittest
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          # ldap requirements
+          sudo apt update -y
+          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          python -m pip install --upgrade pip
+          pip install flake8 pytest pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Configure AWS credentials for pytest
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
+      - name: 📃 Unittest tests with pytest
+        env:
+          BUCKET: ${{ secrets.BUCKET }}
+          REGION: ${{ secrets.REGION }}
+        run: |
+          python -m pytest -v tests/unittest
 
   terraform_apply:
     name: terraform_apply
-    needs: [approve, unittest]
+    needs: [ approve, unittest ]
     runs-on: ubuntu-latest
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
@@ -100,6 +100,7 @@ jobs:
           ROLE_NAME: ${{ secrets.ROLE_NAME }}
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
           TAG_NAME: ${{ secrets.TAG_NAME }}
+          SUBNET_ID: ${{ SUBNET_ID }}
         run: |
           cd terraform/aws_instance
           # terrafrom apply
@@ -113,7 +114,7 @@ jobs:
 
   integration:
     name: integration
-    needs: [approve, unittest, terraform_apply]
+    needs: [ approve, unittest, terraform_apply ]
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
@@ -186,7 +187,7 @@ jobs:
 
   terraform_destroy:
     name: terraform_destroy
-    needs: [approve, unittest, terraform_apply, integration]
+    needs: [ approve, unittest, terraform_apply, integration ]
     if: success() || failure()
     runs-on: ubuntu-latest
     steps:
@@ -228,7 +229,7 @@ jobs:
 
   e2e:
     name: e2e
-    needs: [approve, unittest, terraform_apply, integration]
+    needs: [ approve, unittest, terraform_apply, integration ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
