@@ -100,7 +100,7 @@ jobs:
           ROLE_NAME: ${{ secrets.ROLE_NAME }}
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
           TAG_NAME: ${{ secrets.TAG_NAME }}
-          SUBNET_ID: ${{ SUBNET_ID }}
+          SUBNET_ID: ${{ secrets.SUBNET_ID }}
         run: |
           cd terraform/aws_instance
           # terrafrom apply
