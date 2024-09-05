@@ -99,3 +99,49 @@ class ResourcesPricing:
         ]
         unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
         return round(unit_price, DEFAULT_ROUND_DIGITS)
+
+    def get_snapshot_unit_price(self, region_name: str):
+        """
+        This method returns the unit price of Ebs Snapshot
+        :param region_name:
+        :return:
+        """
+        service_code = 'AmazonEC2'
+        filter_dict = [
+            {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {"Field": "productFamily", "Value": "Storage Snapshot", "Type": "TERM_MATCH"},
+            {"Field": "snapshotarchivefeetype", "Value": "SnapshotArchiveStorage", "Type": "TERM_MATCH"},
+        ]
+        unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
+        return round(unit_price, DEFAULT_ROUND_DIGITS)
+
+    def get_ec2_price(self, region_name: str, instance_type: str, operating_system: str = None):
+        """
+        This method returns the unit price of Ec2 Price
+        :param operating_system:
+        :param region_name:
+        :param instance_type:
+        :return:
+        """
+        if not operating_system:
+            operating_system = 'Linux/UNIX'
+        os_types = {'Linux/UNIX': 'Linux',
+                    'Red Hat Enterprise Linux': 'RHEL',
+                    'SUSE Linux': 'SUSE',
+                    'Ubuntu Pro Linux': 'Ubuntu Pro',
+                    'Windows': 'Windows',
+                    'Red Hat Enterprise Linux with High Availability': 'Red Hat Enterprise Linux with HA'}
+        operating_system_value = "NA"
+        for os_type in os_types.keys():
+            if os_type.lower() == operating_system.lower():
+                operating_system_value = os_types[os_type]
+        service_code = 'AmazonEC2'
+        filter_dict = [
+            {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {"Field": "tenancy", "Value": "shared", "Type": "TERM_MATCH"},
+            {"Field": "operatingSystem", "Value": f"{operating_system_value}", "Type": "TERM_MATCH"},
+            {"Field": "instanceType", "Value": f"{instance_type}", "Type": "TERM_MATCH"},
+            {"Field": "capacitystatus", "Value": "Used", "Type": "TERM_MATCH"},
+        ]
+        unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
+        return round(unit_price, DEFAULT_ROUND_DIGITS)

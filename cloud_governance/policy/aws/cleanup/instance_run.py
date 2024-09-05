@@ -4,7 +4,6 @@ from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyO
 
 
 class InstanceRun(AWSPolicyOperations):
-
     INSTANCE_TYPES_ES_INDEX = "cloud-governance-instance-types"
     RESOURCE_ACTION = "Stopped"
 
@@ -62,8 +61,12 @@ class InstanceRun(AWSPolicyOperations):
         for instance in instances:
             tags = instance.get('Tags', [])
             cleanup_result = False
+
             if instance.get('State', {}).get('Name') == 'running':
                 running_days = self.calculate_days(instance.get('LaunchTime'))
+                unit_price = self._resource_pricing.get_ec2_price(region_name=self._region,
+                                                                  instance_type=instance.get('InstanceType'),
+                                                                  operating_system=instance.get('PlatformDetails'))
                 if self._shutdown_period:
                     cleanup_days = self.get_clean_up_days_count(tags=tags)
                     cleanup_result = self.verify_and_delete_resource(
@@ -84,6 +87,7 @@ class InstanceRun(AWSPolicyOperations):
                     name=self.get_tag_name_from_tags(tags=tags, tag_name='Name'),
                     region=self._region, cleanup_result=str(cleanup_result),
                     cloud_name=self._cloud_name,
+                    unit_price=unit_price
                 )
                 if self._shutdown_period and self._force_delete and self._dry_run == 'no':
                     resource_data.update({'ForceDeleted': str(self._force_delete)})

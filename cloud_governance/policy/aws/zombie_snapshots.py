@@ -1,3 +1,4 @@
+from cloud_governance.common.utils.configs import HOURS_IN_MONTH
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
@@ -32,6 +33,7 @@ class ZombieSnapshots(AWSPolicyOperations):
         This method returns all the zombie snapshots and delete after x days
         @return:
         """
+        monthly_price = self._resource_pricing.get_snapshot_unit_price(region_name=self._region)
         snapshots = self._ec2_operations.get_snapshots()
         zombie_snapshots = []
         for snapshot in snapshots:
@@ -45,7 +47,7 @@ class ZombieSnapshots(AWSPolicyOperations):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
                 cleanup_result = self.verify_and_delete_resource(resource_id=resource_id, tags=tags,
                                                                  clean_up_days=cleanup_days)
-                unit_price = 0
+                unit_price = (monthly_price / HOURS_IN_MONTH) * float(snapshot.get('VolumeSize'))
                 resource_data = self._get_es_schema(resource_id=resource_id,
                                                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                                                     skip_policy=self.get_skip_policy_value(tags=tags),
@@ -57,7 +59,8 @@ class ZombieSnapshots(AWSPolicyOperations):
                                                     cloud_name=self._cloud_name,
                                                     resource_type='Snapshot',
                                                     volume_size=f"{snapshot.get('VolumeSize')} GB",
-                                                    unit_price=unit_price, resource_state='Backup' if not cleanup_result else "Deleted"
+                                                    unit_price=unit_price,
+                                                    resource_state='Backup' if not cleanup_result else "Deleted"
                                                     )
                 zombie_snapshots.append(resource_data)
             if not cleanup_result:

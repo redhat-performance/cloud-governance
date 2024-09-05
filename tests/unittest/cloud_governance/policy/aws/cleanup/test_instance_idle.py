@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 from typing import Union
 from unittest.mock import patch
@@ -41,7 +40,8 @@ def mock_describe_instances(*args, **kwargs):
                         'InstanceId': 'i-1234567890abcdef0',
                         'State': {'Name': 'running'},
                         'LaunchTime': kwargs.get('LaunchTime', datetime.utcnow()),
-                        'Tags': kwargs.get('Tags', [])
+                        'Tags': kwargs.get('Tags', []),
+                        'PlatformDetails': 'Linux/UNIX'
                         # Change the launch time here
                     }
                 ]
@@ -75,11 +75,13 @@ def test_instance_idle__check_not_idle():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     with patch('boto3.client') as mock_client:
-        mock_client.return_value.describe_instances.side_effect = [mock_describe_instances(LaunchTime=datetime.utcnow() - timedelta(days=8))]
-        mock_client.return_value.get_metric_data.side_effect = [MockCloudWatchMetric(metrics=[5, 4, 8, 10]).create_metric(),
-                                                                MockCloudWatchMetric(metrics=[5000, 2000, 4000, 8000]).create_metric(),
-                                                                MockCloudWatchMetric(metrics=[1000, 200, 500]).create_metric()
-                                                                ]
+        mock_client.return_value.describe_instances.side_effect = [
+            mock_describe_instances(LaunchTime=datetime.utcnow() - timedelta(days=8))]
+        mock_client.return_value.get_metric_data.side_effect = [
+            MockCloudWatchMetric(metrics=[5, 4, 8, 10]).create_metric(),
+            MockCloudWatchMetric(metrics=[5000, 2000, 4000, 8000]).create_metric(),
+            MockCloudWatchMetric(metrics=[1000, 200, 500]).create_metric()
+            ]
         instance_idle = InstanceIdle()
         response = instance_idle.run()
         assert len(response) == 0
@@ -95,7 +97,8 @@ def test_instance_idle__skip_cluster():
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     with patch('boto3.client') as mock_client:
-        mock_client.return_value.describe_instances.side_effect = [mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
+        mock_client.return_value.describe_instances.side_effect = [
+            mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
         instance_idle = InstanceIdle()
         response = instance_idle.run()
         assert len(response) == 0
@@ -111,12 +114,13 @@ def test_instance_idle__dryrun_no_active_instance():
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     with patch('boto3.client') as mock_client:
-        mock_client.return_value.describe_instances.side_effect = [mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
+        mock_client.return_value.describe_instances.side_effect = [
+            mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
         mock_client.return_value.get_metric_data.side_effect = [
             MockCloudWatchMetric(metrics=[5, 4, 8, 10]).create_metric(),
             MockCloudWatchMetric(metrics=[5000, 2000, 4000, 8000]).create_metric(),
             MockCloudWatchMetric(metrics=[1000, 200, 500]).create_metric()
-            ]
+        ]
         instance_idle = InstanceIdle()
         response = instance_idle.run()
         assert len(response) == 0
@@ -157,7 +161,8 @@ def test_instance_idle__skips_delete():
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     with patch('boto3.client') as mock_client:
-        mock_client.return_value.describe_instances.side_effect = [mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
+        mock_client.return_value.describe_instances.side_effect = [
+            mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
         mock_client.return_value.get_metric_data.side_effect = [
             MockCloudWatchMetric(metrics=[0, 1, 0, 0.1]).create_metric(),
             MockCloudWatchMetric(metrics=[50, 20, 5, 10]).create_metric(),
@@ -166,7 +171,6 @@ def test_instance_idle__skips_delete():
         instance_idle = InstanceIdle()
         response = instance_idle.run()
         assert len(response) == 0
-
 
 
 def test_instance_idle__set_counter_zero():
@@ -179,7 +183,8 @@ def test_instance_idle__set_counter_zero():
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     with patch('boto3.client') as mock_client:
-        mock_client.return_value.describe_instances.side_effect = [mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
+        mock_client.return_value.describe_instances.side_effect = [
+            mock_describe_instances(Tags=tags, LaunchTime=datetime.utcnow() - timedelta(days=8))]
         mock_client.return_value.get_metric_data.side_effect = [
             MockCloudWatchMetric(metrics=[0, 1, 0, 0.1]).create_metric(),
             MockCloudWatchMetric(metrics=[50, 20, 5, 10]).create_metric(),
