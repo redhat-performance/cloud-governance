@@ -1,4 +1,3 @@
-
 from cloud_governance.common.utils.configs import INSTANCE_IDLE_DAYS
 from cloud_governance.common.utils.utils import Utils
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
@@ -38,6 +37,9 @@ class InstanceIdle(AWSPolicyOperations):
                     self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP') and \
                     self.verify_instance_idle(resource_id=instance_id):
                 cleanup_days = self.get_clean_up_days_count(tags=tags)
+                unit_price = self._resource_pricing.get_ec2_price(region_name=self._region,
+                                                                  instance_type=instance.get('InstanceType'),
+                                                                  operating_system=instance.get('PlatformDetails'))
                 cleanup_result = self.verify_and_delete_resource(resource_id=instance_id, tags=tags,
                                                                  clean_up_days=cleanup_days)
                 resource_data = self._get_es_schema(
@@ -52,7 +54,8 @@ class InstanceIdle(AWSPolicyOperations):
                     name=self.get_tag_name_from_tags(tags=tags, tag_name='Name'),
                     resource_action=self.RESOURCE_ACTION,
                     region=self._region, cleanup_result=str(cleanup_result),
-                    cloud_name=self._cloud_name
+                    cloud_name=self._cloud_name,
+                    unit_price=unit_price
                 )
                 if self._force_delete and self._dry_run == 'no':
                     resource_data.update({'ForceDeleted': str(self._force_delete)})
