@@ -218,3 +218,4 @@ empty_test_environment_variables.py
 /cloud_governance/policy/send_mail.py
 cloudsensei/.env.txt
 .vscode
+env.yaml

@@ -232,6 +232,27 @@ podman run --rm --name cloud-governance -e policy="tag_vm" -e account="$account"
 
 ```
 
+#### Run with yaml config
+
+```shell
+cp example.yaml env.yaml
+```
+
+Added the supported environment variables.
+example:
+
+```yaml
+policy: instance_idle
+AWS_ACCESS_KEY_ID: ""
+AWS_SECRET_ACCESS_KEY: ""
+```
+
+```shell
+podman run --rm --name cloud-governance \
+-v "${PWD}/env.yaml":"/tmp/env.yaml" \
+"quay.io/cloud-governance/cloud-governance:latest"
+```
+
 ## Run Policy Using Pod
 
 #### Run as a pod job via OpenShift

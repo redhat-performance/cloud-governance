@@ -1,0 +1,167 @@
+policy: ""
+account: ""
+
+
+# AWS values
+PUBLIC_CLOUD_NAME: AWS
+AWS_DEFAULT_REGION: "us-east-2"
+AWS_ACCESS_KEY_ID: ""
+AWS_SECRET_ACCESS_KEY: ""
+
+# AWS Assumed Role Acconut
+AWS_ACCOUNT_ROLE: ""
+PAYER_SUPPORT_FEE_CREDIT: ""
+TEMPORARY_DIR: /tmp
+
+#  AWS Athena
+S3_RESULTS_PATH: ""
+DEFAULT_ROUND_DIGITS: 3
+ATHENA_DATABASE_NAME: ""
+ATHENA_TABLE_NAME: ""
+ATHENA_ACCOUNT_ACCESS_KEY: ""
+ATHENA_ACCOUNT_SECRET_KEY: ""
+
+aws_non_cluster_policies: [ 'instance_idle', 'ec2_stop', 'ebs_in_use',
+                            'ebs_unattached', 's3_inactive',
+                            'empty_roles', 'ip_unattached',
+                            'unused_nat_gateway',
+                            'zombie_snapshots', 'skipped_resources',
+                            'monthly_report', 'optimize_resources_report' ]
+cost_policies: [ 'cost_explorer', 'cost_over_usage', 'cost_billing_reports',
+                 'cost_explorer_payer_billings', 'spot_savings_analysis' ]
+
+policy_output: ""
+bucket: ""
+cost_metric: UnblendedCost
+start_date: ""
+end_date: ""
+granularity: DAILY
+cost_explorer_tags: { }
+
+resource_name: ""
+mandatory_tags: ""
+tag_operation: ""
+validate_type: ""
+user_tags: ""
+user_tag_operation: ""
+username: ""
+remove_tags: ""
+resource: ""
+cluster_tag: ""
+service_type: ""
+TABLE_NAME: ""
+REPLACE_ACCOUNT_NAME: { }
+
+# IBM
+ibm_policies: [ 'tag_baremetal', 'tag_vm', 'ibm_cost_report',
+                'ibm_cost_over_usage' ]
+IBM_ACCOUNT_ID: ""
+IBM_API_USERNAME: ""
+IBM_API_KEY: ""
+USAGE_REPORTS_APIKEY: ""
+month: ""
+year: ""
+tag_remove_name: ""
+tag_custom: { }
+
+# AZURE Credentials
+AZURE_ACCOUNT_ID: ""
+AZURE_CLIENT_ID: ""
+AZURE_TENANT_ID: ""
+AZURE_CLIENT_SECRET: ""
+AZURE_SUBSCRIPTION_ID: ""
+
+# Google Account env vars
+GCP_DATABASE_NAME: ""
+GCP_DATABASE_TABLE_NAME: ""
+GOOGLE_APPLICATION_CREDENTIALS: ""
+SPREADSHEET_ID: ""
+
+
+# ElasticSearch
+es_index: 'cloud-governance-policy-es-index'
+upload_data_elk: ""
+upload_data_es: ""
+es_host: ""
+es_port: ""
+es_doc_type: ""
+ES_TIMEOUT: 2000
+
+
+# Mail alerts env vars
+# ldap env var
+LDAP_HOST_NAME: ""
+SENDER_MAIL: ""
+SENDER_PASSWORD: ""
+REPLY_TO: dev-null@redhat.com
+special_user_mails: { }
+account_admin: ""
+IGNORE_MAILS: ""
+MAXIMUM_THRESHOLD: ""
+to_mail: [ ]
+cc_mail: [ ]
+ALERT_DRY_RUN: false
+
+# Cloudability
+
+CLOUDABILITY_VIEW_ID: ""
+APPITO_ENVID: ""
+APPITO_KEY_SECRET: ""
+APPITO_KEY_ACCESS: ""
+CLOUDABILITY_API: ""
+CLOUDABILITY_API_REPORTS_PATH: ""
+CLOUDABILITY_METRICS: unblended_cost
+CLOUDABILITY_DIMENSIONS: "date,category4,vendor_account_name,vendor_account_identifier,vendor"
+
+
+# Common Values
+dry_run: yes
+TOTAL_ACCOUNTS: false
+DAYS_TO_DELETE_RESOURCE: 7
+DAYS_TO_TAKE_ACTION: 7
+FORCE_DELETE: false
+file_path: ""
+file_name: ""
+SHUTDOWN_PERIOD: false
+PRINT_LOGS: true
+COST_CENTER_OWNER: { }
+EMAIL_ALERT: true
+MANAGER_EMAIL_ALERT: true
+UPDATE_TAG_BULKS: 20
+SAVE_TO_FILE_PATH: ""
+ADMIN_MAIL_LIST: ""
+COMMON_POLICIES: false
+
+# GitHub credentials
+git_access_token: ""
+git_repo: ""
+several_repos: ""
+
+# Jira env parameters
+JIRA_URL: ""
+JIRA_USERNAME: ""
+JIRA_TOKEN: ""
+JIRA_QUEUE: ""
+JIRA_PASSWORD: ""
+
+
+# CRO -- Cloud Resource Orch
+CRO_PORTAL: ""
+CLOUD_NAME: ""
+MONITOR: ""
+MANAGEMENT: false
+CLOUD_RESOURCE_ORCHESTRATION: false
+USER_COST_INDEX: ""
+CRO_ES_INDEX: cloud-governance-resource-orchestration
+CRO_COST_OVER_USAGE: 500
+CRO_DEFAULT_ADMINS: [ ]
+CRO_DURATION_DAYS: 30
+RUN_ACTIVE_REGIONS: false
+CRO_RESOURCE_TAG_NAME: TicketId
+CRO_REPLACED_USERNAMES: [ "osdCcsAdmin" ]
+CE_PAYER_INDEX: ""
+EMAIL_TO: ""
+EMAIL_CC: [ ]
+MANAGER_ESCALATION_DAYS: 3
+GLOBAL_CLOUD_ADMIN: natashba
+TICKET_OVER_USAGE_LIMIT: 80
