@@ -12,7 +12,8 @@ LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
-CLOUD_GOVERNANCE = "quay.io/ebattat/cloud-governance:latest"
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance:latest')
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):
@@ -57,7 +58,7 @@ def run_cmd(cmd: str):
 def get_container_cmd(env_dict: dict):
     env_list = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_dict.items())))
     container_name = "cloud-governance"
-    container_run_cmd = f"""podman run --rm --name "{container_name}" --net="host" {env_list}  {CLOUD_GOVERNANCE}"""
+    container_run_cmd = f"""podman run --rm --name "{container_name}" --net="host" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"""
     return container_run_cmd
 
 
@@ -65,7 +66,6 @@ policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
 if isinstance(policies_in_action, str):
     policies_in_action = literal_eval(policies_in_action)
 policies_not_action = list(set(available_policies) - set(policies_in_action))
-
 
 container_env_dict = {
     "AZURE_CLIENT_SECRET": AZURE_CLIENT_SECRET,

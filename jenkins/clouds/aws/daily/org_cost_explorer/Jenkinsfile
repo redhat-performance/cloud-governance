@@ -7,6 +7,7 @@ pipeline {
         }
     }
     environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
         AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
         ES_HOST = credentials('cloud-governance-es-host')
@@ -42,7 +43,7 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
         stage('Run the AWS Cost Reports') {
@@ -52,7 +53,7 @@ pipeline {
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
                  deleteDir()
             }
         }

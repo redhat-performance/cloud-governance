@@ -11,6 +11,7 @@ pipeline {
         }
     }
     environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
@@ -27,7 +28,7 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
         stage('Run Policies the Cost Policies') {
@@ -62,7 +63,7 @@ pipeline {
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
                  deleteDir()
             }
         }

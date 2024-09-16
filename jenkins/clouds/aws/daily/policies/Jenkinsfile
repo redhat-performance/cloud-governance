@@ -11,6 +11,7 @@ pipeline {
         }
     }
     environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         POLICIES_IN_ACTION = '["instance_idle", "ec2_stop", "unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
@@ -37,7 +38,7 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
         stage('Run Daily Policies') {
@@ -58,7 +59,7 @@ pipeline {
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
                  deleteDir()
             }
         }

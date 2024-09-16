@@ -8,6 +8,7 @@ pipeline {
         }
     }
     environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         POLICIES_IN_ACTION = '[]'
         AZURE_CLIENT_SECRET = credentials('cloud-governance-azure-client-secret')
         AZURE_TENANT_ID = credentials('cloud-governance-azure-tenant-id')
@@ -26,7 +27,7 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
         stage('Run Azure Policies') {
@@ -48,7 +49,7 @@ pipeline {
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
                  deleteDir()
             }
         }
