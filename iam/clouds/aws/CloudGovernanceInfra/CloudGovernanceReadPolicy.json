@@ -6,7 +6,13 @@
       "Effect": "Allow",
       "Action": [
         "ce:GetCostAndUsage",
-        "ce:GetCostForecast"
+        "ce:GetCostForecast",
+        "tag:GetResources",
+        "tag:TagResources",
+        "support:DescribeTrustedAdvisorCheckResult",
+        "support:DescribeTrustedAdvisorChecks",
+        "resource-explorer-2:ListViews",
+        "resource-explorer-2:Search"
       ],
       "Resource": "*"
     },
@@ -38,29 +44,28 @@
       "Sid": "EC2ResourceLevel",
       "Effect": "Allow",
       "Action": [
-        "ec2:DescribeAddresses",
-        "ec2:DescribeInstances",
-        "autoscaling:DescribeLaunchConfigurations",
-        "ec2:DescribeRegions",
-        "ec2:DescribeDhcpOptions",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeInternetGateways",
-        "ec2:DescribeNetworkInterfaces",
         "autoscaling:DescribeAutoScalingGroups",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeNetworkAcls",
-        "ec2:DescribeRouteTables",
-        "ec2:ReleaseAddress",
-        "ec2:AssociateDhcpOptions",
-        "ec2:DescribeTags",
-        "ec2:DescribeVpcPeeringConnections",
-        "ec2:DescribeNatGateways",
-        "ec2:DescribeSecurityGroups",
+        "autoscaling:DescribeLaunchConfigurations",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeDhcpOptions",
         "ec2:DescribeImages",
-        "ec2:DescribeVpcs",
         "ec2:DescribeInstanceTypes",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInternetGateways",
+        "ec2:DescribeNatGateways",
+        "ec2:DescribeNetworkAcls",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeRegions",
+        "ec2:DescribeReservedInstances",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeTags",
+        "ec2:DescribeVolumes",
         "ec2:DescribeVpcEndpoints",
-        "ec2:DescribeSubnets"
+        "ec2:DescribeVpcPeeringConnections",
+        "ec2:DescribeVpcs"
       ],
       "Resource": "*"
     },
@@ -79,20 +84,20 @@
       "Effect": "Allow",
       "Action": [
         "iam:GetRole",
-        "iam:TagRole",
+        "iam:GetUser",
+        "iam:GetUserPolicy",
+        "iam:ListAccessKeys",
+        "iam:ListAccountAliases",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListInstanceProfilesForRole",
+        "iam:ListRolePolicies",
         "iam:ListRoles",
         "iam:ListUserPolicies",
-        "iam:CreateUser",
-        "iam:TagUser",
-        "iam:GetUserPolicy",
-        "iam:ListAttachedRolePolicies",
         "iam:ListUsers",
-        "iam:GetUser",
-        "iam:ListAccessKeys",
-        "iam:ListRolePolicies",
-        "iam:ListAccountAliases",
-        "iam:ListInstanceProfilesForRole",
-        "sts:GetCallerIdentity"
+        "iam:TagRole",
+        "iam:TagUser",
+        "iam:UntagRole",
+        "iam:UntagUser"
       ],
       "Resource": "*"
     },
@@ -106,15 +111,14 @@
       "Sid": "S3Bucket",
       "Effect": "Allow",
       "Action": [
-        "s3:PutObject",
+        "s3:GetBucketLocation",
+        "s3:GetBucketTagging",
         "s3:GetObject",
         "s3:ListAllMyBuckets",
-        "s3:CreateBucket",
         "s3:ListBucket",
+        "s3:PutObject",
         "s3:PutObjectTagging",
-        "s3:putBucketTagging",
-        "s3:GetBucketTagging",
-        "s3:GetBucketLocation"
+        "s3:putBucketTagging"
       ],
       "Resource": "*"
     },
@@ -131,8 +135,17 @@
       "Sid": "CloudWatch",
       "Effect": "Allow",
       "Action": [
-        "cloudwatch:GetMetricData",
-        "cloudwatch:GetMetricStatistics"
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:GetMetricData"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RDS",
+      "Effect": "Allow",
+      "Action": [
+        "rds:AddTagsToResource",
+        "rds:DescribeDBInstances"
       ],
       "Resource": "*"
     }
