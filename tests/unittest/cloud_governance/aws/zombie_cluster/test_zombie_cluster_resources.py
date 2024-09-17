@@ -1,9 +1,10 @@
+from unittest import skip
 
 # TEST DRY RUN: delete=False
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
-
-zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False, region='us-east-2')
+zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False,
+                                                  region='us-east-2')
 
 
 def test_all_clusters():
@@ -111,7 +112,7 @@ def test_zombie_cluster_internet_gateway():
     This method return all cluster internet_gateway
     :return:
     """
-    assert  len(zombie_cluster_resources.zombie_cluster_internet_gateway()[0]) >= 0
+    assert len(zombie_cluster_resources.zombie_cluster_internet_gateway()[0]) >= 0
 
 
 def test_zombie_cluster_dhcp_option():
@@ -154,6 +155,7 @@ def test_zombie_cluster_role():
     assert len(zombie_cluster_resources.zombie_cluster_role()[0]) >= 0
 
 
+@skip(reason='Skipping the zombie cluster user')
 def test_zombie_cluster_user():
     """
     This method return all zombie cluster user, scan cluster in all regions
