@@ -300,8 +300,6 @@ jobs:
               fi
           done
 
-
-
   public_quay_upload:
     name: public_quay_upload
     needs: [ unittest, terraform_apply, integration, pypi_upload, pypi_validate ]
@@ -364,19 +362,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: 🎁 Bump Version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pip install setuptools bumpversion
+          python -m pip install --upgrade setuptools bumpversion
           version=$(python3 setup.py --version)
-          git checkout main
-          git config --global user.email ${{ secrets.EMAIL }}
-          git config --global user.name  ${{ secrets.NAME }}
-          git config pull.rebase false  # merge (the default strategy)
+          git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+          git config --global user.name "${{ secrets.GIT_USER_NAME }}"
           bumpversion patch
-          # GITHUB_REPOSITORY already taken => GIT_REPOSITORY
-          git commit .bumpversion.cfg setup.py -m 'bump version to exist version v'$version
-          git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} main
-          git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} main
-          git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
+          git add .bumpversion.cfg setup.py
+          git commit -m "Bump version to v${version}"
+          git push origin main
+          git push origin --tags
 
   e2e:
     name: e2e
