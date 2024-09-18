@@ -1,0 +1,87 @@
+accounts_list = ['redhat-hacbs-dev': "dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com"]
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'haim-cloud-governance-worker'
+            image 'quay.io/athiru/fedora38-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        ALERT_DRY_RUN = true
+        contact1 = "ebattat@redhat.com"
+        contact2 = "athiruma@redhat.com"
+        // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
+        // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
+        // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
+        POLICIES_IN_ACTION = '[]'
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Cost Policies') {
+            steps {
+                 script {
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key')]) {
+                        env.account_name = "${account}"
+                        env.ES_INDEX = "cloud-governance-cost-explorer-global-index-tenant-qe"
+                        sh 'python3 jenkins/tenant/aws/common/run_cost_policies.py'
+                                        }
+                    }
+                }
+            }
+        }
+        stage('Run Daily Policies') {
+            steps {
+                 script {
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key')]) {
+                        env.account_name = "${account}"
+                        env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
+                        env.ES_INDEX = "cloud-governance-cost-policy-es-index-tenant-qe"
+                        sh 'python3 jenkins/tenant/aws/common/run_policies.py'
+                                        }
+                    }
+                }
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}"
+            }
+          }
+    }
+}
