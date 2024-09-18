@@ -23,8 +23,13 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
 
 
 exclude_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
-                    'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports', 'spot_savings_analysis']
+                    'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
+                    'spot_savings_analysis']
 available_policies = get_policies(exclude_policies=exclude_policies)
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance')
+
+
 # available_policies: Run policies in dry_run="yes" mode
 
 
@@ -44,7 +49,7 @@ def get_container_cmd(env_dict: dict):
     env_list = ' '.join(list(map(create_container_envs, env_dict.items())))
     container_name = "cloud-governance-poc-haim"
     container_run_cmd = f"""
-podman run --rm --name "{container_name}" --net="host" {env_list}  quay.io/ebattat/cloud-governance:latest
+podman run --rm --name "{container_name}" --net="host" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
 """
     return container_run_cmd
 
@@ -62,13 +67,11 @@ ES_PORT = os.environ['ES_PORT']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
-CLOUD_GOVERNANCE_IMAGE = "quay.io/ebattat/cloud-governance:latest"
 
 policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
 if isinstance(policies_in_action, str):
     policies_in_action = literal_eval(policies_in_action)
 policies_not_action = list(set(available_policies) - set(policies_in_action))
-
 
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'eu-north-1', 'eu-west-3', 'eu-west-2',
            'eu-west-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'ca-central-1', 'sa-east-1',
@@ -110,11 +113,11 @@ run_cmd('echo "Running the CloudGovernance policies with dry_run=no" ')
 run_cmd(f"echo Polices list: {policies_in_action}")
 run_policies(policies=policies_in_action, dry_run='no')
 
-
 run_cmd(f"""echo "Running the tag_iam_user" """)
-run_cmd(f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" quay.io/ebattat/cloud-governance:latest""")
-
+run_cmd(
+    f"""podman run --rm --name cloud-governance-poc-haim --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Run the AggMail
 
-run_cmd(f"""podman run --rm --name cloud-governance-haim --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" -e ALERT_DRY_RUN="{ALERT_DRY_RUN}" {CLOUD_GOVERNANCE_IMAGE}""")
+run_cmd(
+    f"""podman run --rm --name cloud-governance-haim --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" -e ALERT_DRY_RUN="{ALERT_DRY_RUN}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")

@@ -15,6 +15,8 @@ AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_
 S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance:latest')
 
 # Cloudability env variables
 
@@ -25,7 +27,6 @@ CLOUDABILITY_VIEW_ID = os.environ['CLOUDABILITY_VIEW_ID']
 APPITO_KEY_ACCESS = os.environ['APPITO_KEY_ACCESS']
 APPITO_KEY_SECRET = os.environ['APPITO_KEY_SECRET']
 APPITO_ENVID = os.environ['APPITO_ENVID']
-
 
 os.system('echo "Updating the Org level cost billing reports"')
 
@@ -42,7 +43,7 @@ combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_input_vars['es_index'] = 'cloud-governance-clouds-billing-reports'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 os.system(
-    f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" quay.io/ebattat/cloud-governance:latest""")
+    f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 os.system('echo "Run the Spot Analysis report over the account using AWS Athena"')
 os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
@@ -53,9 +54,8 @@ os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_an
 -e S3_RESULTS_PATH="{S3_RESULTS_PATH}" \
 -e ATHENA_DATABASE_NAME="{ATHENA_DATABASE_NAME}" \
 -e ATHENA_TABLE_NAME="{ATHENA_TABLE_NAME}" \
-quay.io/ebattat/cloud-governance:latest""")
+{QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-CLOUD_GOVERNANCE_IMAGE = "quay.io/ebattat/cloud-governance:latest"
 CONTAINER_NAME = "cloud-governance"
 COST_ES_INDEX = "cloud-governance-clouds-billing-reports"
 CLOUDABILITY_POLICY = 'cloudability_cost_reports'
@@ -86,7 +86,7 @@ def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = 
     """
     inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
     return (f'podman run --rm --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
-            f'{CLOUD_GOVERNANCE_IMAGE}')
+            f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}')
 
 
 common_env_vars = {

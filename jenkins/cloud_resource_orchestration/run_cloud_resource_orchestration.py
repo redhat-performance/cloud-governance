@@ -25,6 +25,8 @@ AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_
 S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance:latest')
 
 es_index = CLOUD_RESOURCE_ORCHESTRATION_INDEX
 
@@ -40,7 +42,8 @@ common_env_vars = {
 input_vars_to_container = [{'account': 'perf-dept', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF,
                             'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF, 'PUBLIC_CLOUD_NAME': 'AWS'},
                            {'account': 'perf-scale', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE,
-                            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE, 'PUBLIC_CLOUD_NAME': 'AWS'},
+                            'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE,
+                            'PUBLIC_CLOUD_NAME': 'AWS'},
                            {'account': 'psap', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
                             'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP, 'PUBLIC_CLOUD_NAME': 'AWS'}]
 
@@ -68,8 +71,8 @@ common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
     os.system(f"""echo Running on Account {input_vars.get("account").upper()}""")
     envs = list(map(combine_vars, input_vars.items()))
-    os.system(f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} quay.io/ebattat/cloud-governance:latest""")
-
+    os.system(
+        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
 AZURE_CLIENT_SECRET = os.environ['AZURE_CLIENT_SECRET']
@@ -88,5 +91,5 @@ azure_cro_env = {
 azure_cro_env.update(common_env_vars)
 envs = list(map(combine_vars, azure_cro_env.items()))
 azure_cro = """ podman run --net="host" --rm --name cloud_resource_orchestration """
-azure_cro += f" -e {' -e '.join(envs)}  quay.io/ebattat/cloud-governance:latest"
+azure_cro += f" -e {' -e '.join(envs)}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
 os.system(azure_cro)

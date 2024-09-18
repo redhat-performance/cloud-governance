@@ -7,6 +7,7 @@ pipeline {
         }
     }
     environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         GCP_DATABASE_NAME = credentials('cloud-governance-gcp-database-name')
         GCP_DATABASE_TABLE_NAME = credentials('cloud-governance-gcp-database-table-name')
         ES_HOST = credentials('cloud-governance-es-host')
@@ -25,7 +26,7 @@ pipeline {
         }
         stage('Initial Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
         stage('Upload ElasticSearch') {
@@ -35,7 +36,7 @@ pipeline {
         }
         stage('Finalize Cleanup') {
             steps {
-                 sh '''if [[ "$(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q quay.io/ebattat/cloud-governance 2> /dev/null); fi'''
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
                  deleteDir()
             }
         }

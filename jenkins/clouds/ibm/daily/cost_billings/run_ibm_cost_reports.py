@@ -1,6 +1,4 @@
-
 import os
-
 
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
@@ -20,14 +18,24 @@ SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 LOGS = os.environ.get('LOGS', 'logs')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance:latest')
 
 print('Run IBM Cost Forecast, Budget upload monthly')
 
 es_index = 'cloud-governance-clouds-billing-reports'
 
-key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAME_PERFORMANCE_SCALE, "IBM_API_KEY": IBM_API_KEY_PERFORMANCE_SCALE, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_PERFORMANCE_SCALE, "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_PERFORMANCE_SCALE},
-            {"account": "interop-ibm-ci", "IBM_API_USERNAME": IBM_API_USERNAME_INTEROP_IBM_CI, "IBM_API_KEY": IBM_API_KEY_INTEROP_IBM_CI, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_INTEROP_IBM_CI, "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_INTEROP_IBM_CI},
-            {"account": "certification-ce", "IBM_API_USERNAME": IBM_API_USERNAME_CERTIFICATION_CE, "IBM_API_KEY": IBM_API_KEY_CERTIFICATION_CE, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_CERTIFICATION_CE, "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_CERTIFICATION_CE}]
+key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAME_PERFORMANCE_SCALE,
+             "IBM_API_KEY": IBM_API_KEY_PERFORMANCE_SCALE,
+             "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_PERFORMANCE_SCALE,
+             "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_PERFORMANCE_SCALE},
+            {"account": "interop-ibm-ci", "IBM_API_USERNAME": IBM_API_USERNAME_INTEROP_IBM_CI,
+             "IBM_API_KEY": IBM_API_KEY_INTEROP_IBM_CI, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_INTEROP_IBM_CI,
+             "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_INTEROP_IBM_CI},
+            {"account": "certification-ce", "IBM_API_USERNAME": IBM_API_USERNAME_CERTIFICATION_CE,
+             "IBM_API_KEY": IBM_API_KEY_CERTIFICATION_CE, "USAGE_REPORTS_APIKEY": USAGE_REPORTS_APIKEY_CERTIFICATION_CE,
+             "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_CERTIFICATION_CE}]
 
 for keys in key_list:
-    os.system(f"""podman run --rm --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" quay.io/ebattat/cloud-governance:latest""")
+    os.system(
+        f"""podman run --rm --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
