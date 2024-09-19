@@ -1,4 +1,5 @@
 import typeguard
+from moto.iam.exceptions import NoSuchEntity
 
 from cloud_governance.common.logger.init_logger import logger
 
@@ -68,13 +69,17 @@ class DeleteIAMResources:
         try:
             # Detach policy from user
             user_policies = self.iam_client.list_user_policies(UserName=resource_id)
-            if user_policies['PolicyNames']:
-                self.iam_client.delete_user_policy(UserName=resource_id, PolicyName=f'{resource_id}-policy')
+            try:
+                if user_policies['PolicyNames']:
+                    self.iam_client.delete_user_policy(UserName=resource_id, PolicyName=f'{resource_id}-policy')
+            except Exception:
+                logger.exception(f'Cannot delete_policies: {user_policies.get("PolicyNames")}')
             list_access_key = self.iam_client.list_access_keys(UserName=resource_id)
+            # @Todo user_delete permission is very problematic operation, it might affect other users.
             # delete user access key
-            for access_key in list_access_key['AccessKeyMetadata']:
-                self.iam_client.delete_access_key(UserName=resource_id, AccessKeyId=access_key['AccessKeyId'])
-            self.iam_client.delete_user(UserName=resource_id)
+            # for access_key in list_access_key['AccessKeyMetadata']:
+            #     self.iam_client.delete_access_key(UserName=resource_id, AccessKeyId=access_key['AccessKeyId'])
+            # self.iam_client.delete_user(UserName=resource_id)
             logger.info(f'delete_user: {resource_id}')
         except Exception as err:
             logger.exception(f'Cannot delete_user: {resource_id}, {err}')
