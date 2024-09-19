@@ -54,8 +54,6 @@ jobs:
           coverage run -m pytest -v tests/unittest
           coverage report -m
       - name: 🎥 Publish to coveralls.io
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip install coveralls
           COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
@@ -180,8 +178,6 @@ jobs:
           coverage run -m pytest -v tests/integration
           coverage report -m
       - name: 🎥 Publish to coveralls.io
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip install coveralls
           COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }} coveralls
@@ -367,16 +363,14 @@ jobs:
         run: |
           pip install setuptools bumpversion
           version=$(python3 setup.py --version)
-          git checkout main
-          git config --global user.email ${{ secrets.EMAIL }}
-          git config --global user.name  ${{ secrets.NAME }}
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git config pull.rebase false  # merge (the default strategy)
           bumpversion patch
           # GITHUB_REPOSITORY already taken => GIT_REPOSITORY
           git commit .bumpversion.cfg setup.py -m 'bump version to exist version v'$version
-          git pull https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} main
-          git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} main
-          git push https://${{ secrets.GITHUB_TOKEN }}@${{ secrets.GIT_REPOSITORY}} --tag
+          git push
+          git push --tag
 
   e2e:
     name: e2e
@@ -407,7 +401,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
         run: |
           # gileaks policy
-          # GITHUB_TOKEN already taken => GIT_TOKEN
           region='us-east-1'
           policy='gitleaks'
           sudo podman run --rm --name cloud-governance -e policy=$policy -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$region -e git_access_token=${{ secrets.GIT_TOKEN }} -e git_repo=https://github.com/redhat-performance/cloud-governance -e policy_output=s3://${{ secrets.BUCKET }}/test/$region -e log_level=INFO ${{ secrets.QUAY_PUBLIC_CLOUD_GOVERNANCE_REPOSITORY }} > /dev/null
