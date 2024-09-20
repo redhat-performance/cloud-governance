@@ -1,5 +1,4 @@
 import typeguard
-from moto.iam.exceptions import NoSuchEntity
 
 from cloud_governance.common.logger.init_logger import logger
 
