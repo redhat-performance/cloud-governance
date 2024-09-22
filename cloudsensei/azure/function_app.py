@@ -120,7 +120,8 @@ class ProcessInstances:
                     'time_created': instance.time_created.strftime('%Y-%m-%d %H:%M:%S'),
                     'region': instance.location,
                     'instance_type': instance.hardware_profile.vm_size,
-                    'status': self.__azure_operations._get_instance_status(resource_group, instance.name)
+                    'status': self.__azure_operations._get_instance_status(resource_group, instance.name),
+                    'running_days': running_days,
                 }
                 long_running_instances.append(instance_resource)
         long_running_instances.sort(key=lambda x: (x['region'], x['resource_group']))
@@ -183,7 +184,7 @@ class ProcessInstances:
         return slack_message_block
 
 
-@app.schedule(schedule="0 0 18 * * * ", arg_name="myTimer", run_on_startup=True,
+@app.schedule(schedule="0 30 12 * * * ", arg_name="myTimer", run_on_startup=False,
               use_monitor=False)
 def monitor_resources(myTimer: func.TimerRequest) -> None:
     process_instances = ProcessInstances()
