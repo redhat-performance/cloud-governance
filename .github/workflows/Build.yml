@@ -296,8 +296,6 @@ jobs:
               fi
           done
 
-
-
   public_quay_upload:
     name: public_quay_upload
     needs: [ unittest, terraform_apply, integration, pypi_upload, pypi_validate ]
@@ -313,8 +311,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: ⌛ Upload to 🐋 quay.io
         run: |
-          pip install setuptools
-          version=$(python3 setup.py --version)
           sudo docker build --build-arg VERSION=latest -t ${{ secrets.QUAY_PUBLIC_CLOUD_GOVERNANCE_REPOSITORY}}:latest .
           sudo docker login quay.io -u ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_USER }} -p ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_TOKEN }}
           sudo docker push ${{ secrets.QUAY_PUBLIC_CLOUD_GOVERNANCE_REPOSITORY}}:latest
