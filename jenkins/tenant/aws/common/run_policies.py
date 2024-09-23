@@ -44,19 +44,9 @@ def run_cmd(cmd: str):
     os.system(cmd)
 
 
-def get_container_cmd(env_dict: dict):
-    create_container_envs = lambda item: f'-e {item[0]}="{item[1]}"'
-    env_list = ' '.join(list(map(create_container_envs, env_dict.items())))
-    container_name = "cloud-governance-poc-haim"
-    container_run_cmd = f"""
-podman run --rm --name "{container_name}" --net="host" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
-"""
-    return container_run_cmd
-
-
 access_key = os.environ['access_key']
 secret_key = os.environ['secret_key']
-s3_bucket = os.environ['s3_bucket']
+s3_bucket = os.environ.get('s3_bucket')
 account_name = os.environ['account_name']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 14)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
@@ -67,6 +57,21 @@ ES_PORT = os.environ['ES_PORT']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
+
+# Set es_index if given
+ES_INDEX = os.environ.get('ES_INDEX', None)
+env_es_index = f'-e es_index={ES_INDEX}' if ES_INDEX else ''
+
+
+def get_container_cmd(env_dict: dict):
+    create_container_envs = lambda item: f'-e {item[0]}="{item[1]}"'
+    env_list = ' '.join(list(map(create_container_envs, env_dict.items())))
+    container_name = "cloud-governance-poc-haim"
+    container_run_cmd = f"""
+podman run --rm --name "{container_name}" --net="host" {env_list} {env_es_index} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
+"""
+    return container_run_cmd
+
 
 policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
 if isinstance(policies_in_action, str):
@@ -91,8 +96,9 @@ container_env_dict = {
 
 def run_policies(policies: list, dry_run: str = 'yes'):
     for region in regions:
-        container_env_dict.update({"policy_output": f"s3://{s3_bucket}/{LOGS}/{region}", "AWS_DEFAULT_REGION": region,
-                                   'dry_run': dry_run})
+        if s3_bucket:
+            container_env_dict.update({"policy_output": f"s3://{s3_bucket}/{LOGS}/{region}"})
+        container_env_dict.update({"AWS_DEFAULT_REGION": region, 'dry_run': dry_run})
         for policy in policies:
             container_env_dict.update({"AWS_DEFAULT_REGION": region, 'policy': policy})
             container_cmd = ''
