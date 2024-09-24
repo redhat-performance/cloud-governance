@@ -4,7 +4,9 @@ import os
 from ast import literal_eval
 
 import boto3
+import yaml
 
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.main.environment_variables_exceptions import ParseFailed
 
 
@@ -12,9 +14,52 @@ class EnvironmentVariables:
     """
     This class manages the environment variable parameters
     """
+    DEFAULT_CONF_PATH = os.environ.get("DEFAULT_CONF_PATH", "/tmp/env.yaml")
+
+    def load_from_env(self):
+        """
+        This method load environment variables from text files.
+        :return:
+        """
+        for env in ".env", ".env.generated":
+            try:
+                file_path = os.path.join(os.path.dirname(__file__), env)
+                if os.path.exists(file_path):
+                    with open(file_path) as f:
+                        for line in f.readlines():
+                            key, found, value = line.strip().partition("=")
+                            if not found:
+                                logger.error(f"ERROR: invalid line in {env}: {line.strip()}")
+                                continue
+                            if key not in os.environ:
+                                os.environ[key] = value
+            except FileNotFoundError:
+                pass
+
+    def load_from_yaml(self, ):
+        """
+        Load values from yaml file as attributes of this class.
+        Will never override existing attributes.
+        """
+
+        for yaml_file_path in (os.path.join(os.path.curdir, 'env.yaml'), self.DEFAULT_CONF_PATH):
+            try:
+                if os.path.exists(yaml_file_path):
+                    with open(yaml_file_path, 'r') as yaml_file:
+                        yaml_data = yaml.safe_load(yaml_file)
+                        if isinstance(yaml_data, dict):
+                            for key, value in yaml_data.items():
+                                if key not in os.environ:  # Prefer existing env variables
+                                    os.environ[key] = str(value)
+            except FileNotFoundError:
+                pass
 
     def __init__(self):
+        super().__init__()
         self._environment_variables_dict = {}
+
+        self.load_from_env()
+        self.load_from_yaml()
 
         # env files override true ENV. Not best order, but easier to write :/
         # .env.generated can be auto-generated (by an external tool) based on the local cluster's configuration.
@@ -41,18 +86,22 @@ class EnvironmentVariables:
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
         self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
 
-        self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
+        self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(
+            EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
 
-        self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS', True)
+        self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS',
+                                                                                                           True)
         if not self._environment_variables_dict['AWS_DEFAULT_REGION']:
             self._environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
         self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = EnvironmentVariables.get_env('PUBLIC_CLOUD_NAME', 'AWS')
         self._environment_variables_dict['AWS_ACCESS_KEY_ID'] = EnvironmentVariables.get_env('AWS_ACCESS_KEY_ID', '')
-        self._environment_variables_dict['AWS_SECRET_ACCESS_KEY'] = EnvironmentVariables.get_env('AWS_SECRET_ACCESS_KEY', '')
+        self._environment_variables_dict['AWS_SECRET_ACCESS_KEY'] = EnvironmentVariables.get_env(
+            'AWS_SECRET_ACCESS_KEY', '')
         if self._environment_variables_dict['AWS_ACCESS_KEY_ID'] and \
                 self._environment_variables_dict['AWS_SECRET_ACCESS_KEY']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AWS'
-            self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace('OPENSHIFT-', '')
+            self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace(
+                'OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
 
         self._environment_variables_dict['aws_non_cluster_policies'] = ['instance_idle', 'ec2_stop', 'ebs_in_use',
@@ -82,32 +131,39 @@ class EnvironmentVariables:
         self._environment_variables_dict['cluster_tag'] = EnvironmentVariables.get_env('cluster_tag', '')
         self._environment_variables_dict['service_type'] = EnvironmentVariables.get_env('service_type', '')
         self._environment_variables_dict['TABLE_NAME'] = EnvironmentVariables.get_env('TABLE_NAME', '')
-        self._environment_variables_dict['REPLACE_ACCOUNT_NAME'] = EnvironmentVariables.get_env('REPLACE_ACCOUNT_NAME', '{}')
-        self._environment_variables_dict['DAYS_TO_DELETE_RESOURCE'] = int(EnvironmentVariables.get_env('DAYS_TO_DELETE_RESOURCE', '7'))
+        self._environment_variables_dict['REPLACE_ACCOUNT_NAME'] = EnvironmentVariables.get_env('REPLACE_ACCOUNT_NAME',
+                                                                                                '{}')
+        self._environment_variables_dict['DAYS_TO_DELETE_RESOURCE'] = int(
+            EnvironmentVariables.get_env('DAYS_TO_DELETE_RESOURCE', '7'))
 
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')
         self._environment_variables_dict['end_date'] = EnvironmentVariables.get_env('end_date', '')
         self._environment_variables_dict['granularity'] = EnvironmentVariables.get_env('granularity', 'DAILY')
-        self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags', '{}')
+        self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags',
+                                                                                              '{}')
 
         # AZURE Credentials
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
         self._environment_variables_dict['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
-        self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
-        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env('AZURE_SUBSCRIPTION_ID', '')
-        if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID']\
+        self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET',
+                                                                                               '')
+        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env(
+            'AZURE_SUBSCRIPTION_ID', '')
+        if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID'] \
                 and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'
-        self._environment_variables_dict['TOTAL_ACCOUNTS'] = EnvironmentVariables.get_boolean_from_environment('TOTAL_ACCOUNTS', False)
+        self._environment_variables_dict['TOTAL_ACCOUNTS'] = EnvironmentVariables.get_boolean_from_environment(
+            'TOTAL_ACCOUNTS', False)
 
         # IBM env vars
         self._environment_variables_dict['IBM_ACCOUNT_ID'] = EnvironmentVariables.get_env('IBM_ACCOUNT_ID', '')
         self._environment_variables_dict['IBM_API_USERNAME'] = EnvironmentVariables.get_env('IBM_API_USERNAME', '')
         self._environment_variables_dict['IBM_API_KEY'] = EnvironmentVariables.get_env('IBM_API_KEY', '')
-        self._environment_variables_dict['USAGE_REPORTS_APIKEY'] = EnvironmentVariables.get_env('USAGE_REPORTS_APIKEY', '')
+        self._environment_variables_dict['USAGE_REPORTS_APIKEY'] = EnvironmentVariables.get_env('USAGE_REPORTS_APIKEY',
+                                                                                                '')
         if self._environment_variables_dict['USAGE_REPORTS_APIKEY']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'IBM'
         self._environment_variables_dict['month'] = EnvironmentVariables.get_env('month', '')
@@ -119,12 +175,14 @@ class EnvironmentVariables:
 
         # Common env vars
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')
-        self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment('FORCE_DELETE', False)
+        self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment(
+            'FORCE_DELETE', False)
         self._environment_variables_dict['policy_output'] = EnvironmentVariables.get_env('policy_output', '')
         self._environment_variables_dict['bucket'] = EnvironmentVariables.get_env('bucket', '')
         self._environment_variables_dict['file_path'] = EnvironmentVariables.get_env('file_path', '')
         self._environment_variables_dict['file_name'] = EnvironmentVariables.get_env('file_name', '')
-        self._environment_variables_dict['SHUTDOWN_PERIOD'] = EnvironmentVariables.get_boolean_from_environment('SHUTDOWN_PERIOD', False)
+        self._environment_variables_dict['SHUTDOWN_PERIOD'] = EnvironmentVariables.get_boolean_from_environment(
+            'SHUTDOWN_PERIOD', False)
         # common elastic search vars
         self._environment_variables_dict['upload_data_elk'] = EnvironmentVariables.get_env('upload_data_elk', '')
         self._environment_variables_dict['upload_data_es'] = EnvironmentVariables.get_env('upload_data_es', '')
@@ -145,7 +203,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['SENDER_MAIL'] = EnvironmentVariables.get_env('SENDER_MAIL', '')
         self._environment_variables_dict['SENDER_PASSWORD'] = EnvironmentVariables.get_env('SENDER_PASSWORD', '')
         self._environment_variables_dict['REPLY_TO'] = EnvironmentVariables.get_env('REPLY_TO', 'dev-null@redhat.com')
-        self._environment_variables_dict['special_user_mails'] = EnvironmentVariables.get_env('special_user_mails', '{}')
+        self._environment_variables_dict['special_user_mails'] = EnvironmentVariables.get_env('special_user_mails',
+                                                                                              '{}')
         self._environment_variables_dict['account_admin'] = EnvironmentVariables.get_env('account_admin', '')
         self._environment_variables_dict['IGNORE_MAILS'] = EnvironmentVariables.get_env('IGNORE_MAILS', '')
         self._environment_variables_dict['MAXIMUM_THRESHOLD'] = EnvironmentVariables.get_env('MAXIMUM_THRESHOLD', '')
@@ -155,12 +214,14 @@ class EnvironmentVariables:
                                                              get_boolean_from_environment('ALERT_DRY_RUN', False))
 
         # Google Drive env vars
-        self._environment_variables_dict['GOOGLE_APPLICATION_CREDENTIALS'] = EnvironmentVariables.get_env('GOOGLE_APPLICATION_CREDENTIALS', '')
+        self._environment_variables_dict['GOOGLE_APPLICATION_CREDENTIALS'] = EnvironmentVariables.get_env(
+            'GOOGLE_APPLICATION_CREDENTIALS', '')
         self._environment_variables_dict['SPREADSHEET_ID'] = EnvironmentVariables.get_env('SPREADSHEET_ID', '')
 
         # AWS Top Acconut
         self._environment_variables_dict['AWS_ACCOUNT_ROLE'] = EnvironmentVariables.get_env('AWS_ACCOUNT_ROLE', '')
-        self._environment_variables_dict['PAYER_SUPPORT_FEE_CREDIT'] = EnvironmentVariables.get_env('PAYER_SUPPORT_FEE_CREDIT', 0)
+        self._environment_variables_dict['PAYER_SUPPORT_FEE_CREDIT'] = EnvironmentVariables.get_env(
+            'PAYER_SUPPORT_FEE_CREDIT', 0)
         self._environment_variables_dict['TEMPORARY_DIR'] = EnvironmentVariables.get_env('TEMPORARY_DIR', '/tmp')
         self._environment_variables_dict['COST_CENTER_OWNER'] = EnvironmentVariables.get_env('COST_CENTER_OWNER', '{}')
 
@@ -175,69 +236,95 @@ class EnvironmentVariables:
         self._environment_variables_dict['CRO_PORTAL'] = EnvironmentVariables.get_env('CRO_PORTAL', '')
         self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
         self._environment_variables_dict['MONITOR'] = EnvironmentVariables.get_env('MONITOR', '')
-        self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT', False)
+        self._environment_variables_dict['MANAGEMENT'] = EnvironmentVariables.get_boolean_from_environment('MANAGEMENT',
+                                                                                                           False)
 
         # GCP Account
         self._environment_variables_dict['GCP_DATABASE_NAME'] = EnvironmentVariables.get_env('GCP_DATABASE_NAME')
-        self._environment_variables_dict['GCP_DATABASE_TABLE_NAME'] = EnvironmentVariables.get_env('GCP_DATABASE_TABLE_NAME')
+        self._environment_variables_dict['GCP_DATABASE_TABLE_NAME'] = EnvironmentVariables.get_env(
+            'GCP_DATABASE_TABLE_NAME')
         if self._environment_variables_dict.get('GCP_DATABASE_TABLE_NAME'):
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'GCP'
 
-        self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('EMAIL_ALERT', True)
-        self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment('MANAGER_EMAIL_ALERT', True)
-        self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
+        self._environment_variables_dict['EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment(
+            'EMAIL_ALERT', True)
+        self._environment_variables_dict['MANAGER_EMAIL_ALERT'] = EnvironmentVariables.get_boolean_from_environment(
+            'MANAGER_EMAIL_ALERT', True)
+        self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(
+            EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
 
         # policies aggregate alert
         self._environment_variables_dict['SAVE_TO_FILE_PATH'] = EnvironmentVariables.get_env('SAVE_TO_FILE_PATH', '')
         self._environment_variables_dict['BUCKET_NAME'] = EnvironmentVariables.get_env('BUCKET_NAME')
         self._environment_variables_dict['BUCKET_KEY'] = EnvironmentVariables.get_env('BUCKET_KEY')
-        self._environment_variables_dict['MAIL_ALERT_DAYS'] = literal_eval(EnvironmentVariables.get_env('MAIL_ALERT_DAYS', '[]'))
-        self._environment_variables_dict['POLICY_ACTIONS_DAYS'] = literal_eval(EnvironmentVariables.get_env('POLICY_ACTIONS_DAYS', '[]'))
-        self._environment_variables_dict['DEFAULT_ADMINS'] = literal_eval(EnvironmentVariables.get_env('DEFAULT_ADMINS', '[]'))
-        self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
-        self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
+        self._environment_variables_dict['MAIL_ALERT_DAYS'] = literal_eval(
+            EnvironmentVariables.get_env('MAIL_ALERT_DAYS', '[]'))
+        self._environment_variables_dict['POLICY_ACTIONS_DAYS'] = literal_eval(
+            EnvironmentVariables.get_env('POLICY_ACTIONS_DAYS', '[]'))
+        self._environment_variables_dict['DEFAULT_ADMINS'] = literal_eval(
+            EnvironmentVariables.get_env('DEFAULT_ADMINS', '[]'))
+        self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(
+            EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
+        self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(
+            EnvironmentVariables.get_env('POLICIES_TO_ALERT', '[]'))
         self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
         if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch
-        self._environment_variables_dict['CLOUD_RESOURCE_ORCHESTRATION'] = EnvironmentVariables.get_boolean_from_environment('CLOUD_RESOURCE_ORCHESTRATION', False)
+        self._environment_variables_dict[
+            'CLOUD_RESOURCE_ORCHESTRATION'] = EnvironmentVariables.get_boolean_from_environment(
+            'CLOUD_RESOURCE_ORCHESTRATION', False)
         self._environment_variables_dict['USER_COST_INDEX'] = EnvironmentVariables.get_env('USER_COST_INDEX', '')
-        self._environment_variables_dict['CRO_ES_INDEX'] = EnvironmentVariables.get_env('CRO_ES_INDEX', 'cloud-governance-resource-orchestration')
-        self._environment_variables_dict['CRO_COST_OVER_USAGE'] = int(EnvironmentVariables.get_env('CRO_COST_OVER_USAGE', '500'))
-        self._environment_variables_dict['CRO_DEFAULT_ADMINS'] = literal_eval(EnvironmentVariables.get_env('CRO_DEFAULT_ADMINS', "[]"))
-        self._environment_variables_dict['CRO_DURATION_DAYS'] = int(EnvironmentVariables.get_env('CRO_DURATION_DAYS', '30'))
-        self._environment_variables_dict['RUN_ACTIVE_REGIONS'] = EnvironmentVariables.get_boolean_from_environment('RUN_ACTIVE_REGIONS', False)
-        self._environment_variables_dict['CRO_RESOURCE_TAG_NAME'] = EnvironmentVariables.get_env('CRO_RESOURCE_TAG_NAME', 'TicketId')
-        self._environment_variables_dict['CRO_REPLACED_USERNAMES'] = literal_eval(EnvironmentVariables.get_env('CRO_REPLACED_USERNAMES', "['osdCcsAdmin']"))
+        self._environment_variables_dict['CRO_ES_INDEX'] = EnvironmentVariables.get_env('CRO_ES_INDEX',
+                                                                                        'cloud-governance-resource-orchestration')
+        self._environment_variables_dict['CRO_COST_OVER_USAGE'] = int(
+            EnvironmentVariables.get_env('CRO_COST_OVER_USAGE', '500'))
+        self._environment_variables_dict['CRO_DEFAULT_ADMINS'] = literal_eval(
+            EnvironmentVariables.get_env('CRO_DEFAULT_ADMINS', "[]"))
+        self._environment_variables_dict['CRO_DURATION_DAYS'] = int(
+            EnvironmentVariables.get_env('CRO_DURATION_DAYS', '30'))
+        self._environment_variables_dict['RUN_ACTIVE_REGIONS'] = EnvironmentVariables.get_boolean_from_environment(
+            'RUN_ACTIVE_REGIONS', False)
+        self._environment_variables_dict['CRO_RESOURCE_TAG_NAME'] = EnvironmentVariables.get_env(
+            'CRO_RESOURCE_TAG_NAME', 'TicketId')
+        self._environment_variables_dict['CRO_REPLACED_USERNAMES'] = literal_eval(
+            EnvironmentVariables.get_env('CRO_REPLACED_USERNAMES', "['osdCcsAdmin']"))
         self._environment_variables_dict['CE_PAYER_INDEX'] = EnvironmentVariables.get_env('CE_PAYER_INDEX', '')
         self._environment_variables_dict['EMAIL_TO'] = EnvironmentVariables.get_env('EMAIL_TO', '')
         self._environment_variables_dict['EMAIL_CC'] = literal_eval(EnvironmentVariables.get_env('EMAIL_CC', "[]"))
-        self._environment_variables_dict['MANAGER_ESCALATION_DAYS'] = int(EnvironmentVariables.get_env('MANAGER_ESCALATION_DAYS', '3'))
-        self._environment_variables_dict['GLOBAL_CLOUD_ADMIN'] = EnvironmentVariables.get_env('GLOBAL_CLOUD_ADMIN', 'natashba')
-        self._environment_variables_dict['TICKET_OVER_USAGE_LIMIT'] = int(EnvironmentVariables.get_env('TICKET_OVER_USAGE_LIMIT', '80'))
+        self._environment_variables_dict['MANAGER_ESCALATION_DAYS'] = int(
+            EnvironmentVariables.get_env('MANAGER_ESCALATION_DAYS', '3'))
+        self._environment_variables_dict['GLOBAL_CLOUD_ADMIN'] = EnvironmentVariables.get_env('GLOBAL_CLOUD_ADMIN',
+                                                                                              'natashba')
+        self._environment_variables_dict['TICKET_OVER_USAGE_LIMIT'] = int(
+            EnvironmentVariables.get_env('TICKET_OVER_USAGE_LIMIT', '80'))
 
         #  AWS Athena
         self._environment_variables_dict['S3_RESULTS_PATH'] = EnvironmentVariables.get_env('S3_RESULTS_PATH', '')
         self._environment_variables_dict['DEFAULT_ROUND_DIGITS'] = \
             int(EnvironmentVariables.get_env('DEFAULT_ROUND_DIGITS', '3'))
-        self._environment_variables_dict['ATHENA_DATABASE_NAME'] = EnvironmentVariables.get_env('ATHENA_DATABASE_NAME', '')
+        self._environment_variables_dict['ATHENA_DATABASE_NAME'] = EnvironmentVariables.get_env('ATHENA_DATABASE_NAME',
+                                                                                                '')
         self._environment_variables_dict['ATHENA_TABLE_NAME'] = EnvironmentVariables.get_env('ATHENA_TABLE_NAME', '')
-        self._environment_variables_dict['ATHENA_ACCOUNT_ACCESS_KEY'] = EnvironmentVariables.get_env('ATHENA_ACCOUNT_ACCESS_KEY', '')
-        self._environment_variables_dict['ATHENA_ACCOUNT_SECRET_KEY'] = EnvironmentVariables.get_env('ATHENA_ACCOUNT_SECRET_KEY', '')
+        self._environment_variables_dict['ATHENA_ACCOUNT_ACCESS_KEY'] = EnvironmentVariables.get_env(
+            'ATHENA_ACCOUNT_ACCESS_KEY', '')
+        self._environment_variables_dict['ATHENA_ACCOUNT_SECRET_KEY'] = EnvironmentVariables.get_env(
+            'ATHENA_ACCOUNT_SECRET_KEY', '')
 
         # Cloudability
 
-        self._environment_variables_dict['CLOUDABILITY_VIEW_ID'] = EnvironmentVariables.get_env('CLOUDABILITY_VIEW_ID', '')
+        self._environment_variables_dict['CLOUDABILITY_VIEW_ID'] = EnvironmentVariables.get_env('CLOUDABILITY_VIEW_ID',
+                                                                                                '')
         self._environment_variables_dict['APPITO_ENVID'] = EnvironmentVariables.get_env('APPITO_ENVID', '')
         self._environment_variables_dict['APPITO_KEY_SECRET'] = EnvironmentVariables.get_env('APPITO_KEY_SECRET', '')
         self._environment_variables_dict['APPITO_KEY_ACCESS'] = EnvironmentVariables.get_env('APPITO_KEY_ACCESS', '')
         self._environment_variables_dict['CLOUDABILITY_API'] = EnvironmentVariables.get_env('CLOUDABILITY_API', '')
-        self._environment_variables_dict['CLOUDABILITY_API_REPORTS_PATH'] = EnvironmentVariables.get_env('CLOUDABILITY_API_REPORTS_PATH', '')
-        self._environment_variables_dict['CLOUDABILITY_METRICS'] = EnvironmentVariables.get_env('CLOUDABILITY_METRICS', 'unblended_cost')
-        self._environment_variables_dict['CLOUDABILITY_DIMENSIONS'] = EnvironmentVariables.get_env('CLOUDABILITY_DIMENSIONS', 'date,category4,vendor_account_name,vendor_account_identifier,vendor')
-
-
-
+        self._environment_variables_dict['CLOUDABILITY_API_REPORTS_PATH'] = EnvironmentVariables.get_env(
+            'CLOUDABILITY_API_REPORTS_PATH', '')
+        self._environment_variables_dict['CLOUDABILITY_METRICS'] = EnvironmentVariables.get_env('CLOUDABILITY_METRICS',
+                                                                                                'unblended_cost')
+        self._environment_variables_dict['CLOUDABILITY_DIMENSIONS'] = EnvironmentVariables.get_env(
+            'CLOUDABILITY_DIMENSIONS', 'date,category4,vendor_account_name,vendor_account_identifier,vendor')
 
     @staticmethod
     def to_bool(arg, def_val: bool = None):
@@ -273,7 +360,6 @@ class EnvironmentVariables:
             return os.environ.get('account', '').upper()
         except:
             return os.environ.get('account', '').upper()
-
 
     @staticmethod
     def get_env(var: str, defval=''):
