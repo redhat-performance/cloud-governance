@@ -148,6 +148,15 @@
         "rds:DescribeDBInstances"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "ElasticFileSystem",
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeMountTargets"
+      ],
+      "Resource": "*"
     }
   ]
 }
