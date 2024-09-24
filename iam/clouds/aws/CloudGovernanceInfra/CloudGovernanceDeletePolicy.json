@@ -17,6 +17,17 @@
       "Resource": "*"
     },
     {
+      "Sid": "ElasticFileSystem",
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeMountTargets",
+        "elasticfilesystem:DeleteMountTarget",
+        "elasticfilesystem:DeleteFileSystem"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "EC2AccountLevel",
       "Effect": "Allow",
       "Action": [
