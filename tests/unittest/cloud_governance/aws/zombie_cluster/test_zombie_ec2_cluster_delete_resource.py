@@ -3,7 +3,7 @@ import pytest
 from moto import mock_ec2, mock_elb, mock_elbv2, mock_s3
 
 from cloud_governance.main.environment_variables import environment_variables
-from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
+from cloud_governance.policy.aws.zombie_cluster_resource_test import ZombieClusterResources
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from tests.unittest.configs import DRY_RUN_YES, DRY_RUN_NO
 
@@ -201,7 +201,8 @@ def test_delete_ec2_elastic_load_balancer_v2():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_load_balancer_v2', force_delete=True)
+                                                      resource_name='zombie_cluster_load_balancer_v2',
+                                                      force_delete=True)
     zombie_cluster_resources.zombie_cluster_load_balancer_v2()
 
     assert not EC2Operations(region_name).find_load_balancer_v2(elb_name='test-load-balancer-v2')
@@ -254,7 +255,8 @@ def test_delete_ec2_vpc_endpoints():
     vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
     vpc_endpoint_id = ec2_client.create_vpc_endpoint(VpcEndpointType='Interface', VpcId=vpc_response['Vpc']['VpcId'],
                                                      TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}],
-                                                     ServiceName='com.amazonaws.us-east-2.s3').get('VpcEndpoint').get('VpcEndpointId')
+                                                     ServiceName='com.amazonaws.us-east-2.s3').get('VpcEndpoint').get(
+        'VpcEndpointId')
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
@@ -356,10 +358,12 @@ def test_delete_network_acl():
     :return:
     """
     ec2_client = boto3.client('ec2', region_name=region_name)
-    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16',
+                                         TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])
     vpc_id = vpc_response['Vpc']['VpcId']
     network_acl_id = ec2_client.create_network_acl(VpcId=vpc_id, TagSpecifications=[{'ResourceType': 'network-acl',
-                                                                                     'Tags': tags}])['NetworkAcl']['NetworkAclId']
+                                                                                     'Tags': tags}])['NetworkAcl'][
+        'NetworkAclId']
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
@@ -382,11 +386,13 @@ def test_delete_network_interface():
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     network_interface_id = ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1],
-                                                               Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
+                                                               Description='testing the internet gateway')[
+        'NetworkInterface']['NetworkInterfaceId']
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_network_interface', force_delete=True)
+                                                      resource_name='zombie_cluster_network_interface',
+                                                      force_delete=True)
     zombie_cluster_resources.zombie_cluster_network_interface()
     assert EC2Operations(region_name).find_network_interface(network_interface_id)
 
@@ -406,7 +412,8 @@ def test_delete_internet_gateway():
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
-                                                      resource_name='zombie_cluster_internet_gateway', force_delete=True)
+                                                      resource_name='zombie_cluster_internet_gateway',
+                                                      force_delete=True)
     zombie_cluster_resources.zombie_cluster_internet_gateway()
     assert not EC2Operations(region_name).find_internet_gateway(ing_id)
 
@@ -442,13 +449,16 @@ def test_delete_elastic_ip():
     vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
     vpc_id = vpc_response['Vpc']['VpcId']
 
-    allocation_id = ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])['AllocationId']
+    allocation_id = \
+    ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])[
+        'AllocationId']
     subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
     sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing the security groups',
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     network_interface_id = ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1],
-                                                               Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
+                                                               Description='testing the internet gateway')[
+        'NetworkInterface']['NetworkInterfaceId']
     ec2_client.associate_address(NetworkInterfaceId=network_interface_id, AllocationId=allocation_id)
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
@@ -467,7 +477,9 @@ def test_delete_vpc():
     :return:
     """
     ec2_client = boto3.client('ec2', region_name=region_name)
-    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])['Vpc']['VpcId']
+    vpc_id = \
+    ec2_client.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}])['Vpc'][
+        'VpcId']
     subnet1 = ec2_client.create_subnet(CidrBlock='10.0.1.0/24', VpcId=vpc_id)['Subnet']['SubnetId']
     ec2_client.create_subnet(CidrBlock='10.0.2.0/24', VpcId=vpc_id)
 
@@ -475,7 +487,7 @@ def test_delete_vpc():
     ec2_client.create_tags(Resources=[volume['VolumeId']], Tags=tags)
 
     elb = boto3.client('elb', region_name=region_name)
-    elb.create_load_balancer(Listeners=[{'InstancePort': 80, 'InstanceProtocol': 'HTTP','LoadBalancerPort': 80,
+    elb.create_load_balancer(Listeners=[{'InstancePort': 80, 'InstanceProtocol': 'HTTP', 'LoadBalancerPort': 80,
                                          'Protocol': 'HTTP'}], LoadBalancerName='test-load-balancer', Tags=tags)
     elbv2 = boto3.client('elbv2', region_name=region_name)
     elbv2.create_load_balancer(Name='test-load-balancer-v2', Tags=tags, Subnets=[subnet1])
@@ -506,10 +518,13 @@ def test_delete_vpc():
     ec2_client.create_tags(Resources=[ing_id], Tags=tags)
     ec2_client.attach_internet_gateway(InternetGatewayId=ing_id, VpcId=vpc_id)
 
-    allocation_id = ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])['AllocationId']
+    allocation_id = \
+    ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])[
+        'AllocationId']
 
     network_interface_id = ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1],
-                                                               Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
+                                                               Description='testing the internet gateway')[
+        'NetworkInterface']['NetworkInterfaceId']
     ec2_client.associate_address(NetworkInterfaceId=network_interface_id, AllocationId=allocation_id)
 
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,

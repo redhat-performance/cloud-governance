@@ -5,7 +5,7 @@ from moto import mock_iam, mock_ec2
 import boto3
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
-from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
+from cloud_governance.policy.aws.zombie_cluster_resource_test import ZombieClusterResources
 
 EC2_POLICY = {
     "Version": "2012-10-17",

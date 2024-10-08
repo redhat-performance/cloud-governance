@@ -2,6 +2,7 @@ import boto3
 from moto import mock_ec2
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 
 AWS_DEFAULT_REGION = 'ap-south-1'
 
@@ -49,4 +50,24 @@ def test_tag_ec2_resources():
     for i in range(25):
         ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1, MinCount=1)
     resource_ids = ec2_operations.get_ec2_instance_ids()
-    assert ec2_operations.tag_ec2_resources(client_method=ec2_client.create_tags, resource_ids=resource_ids, tags=tags) == 2
+    assert ec2_operations.tag_ec2_resources(client_method=ec2_client.create_tags, resource_ids=resource_ids,
+                                            tags=tags) == 2
+
+
+@mock_ec2
+def test_delete_volume():
+    """
+    This method tests the method delete_volume
+    :return:
+    """
+    ec2_client = get_boto3_client('ec2', region_name=AWS_DEFAULT_REGION)
+    ec2_operations = EC2Operations(region=AWS_DEFAULT_REGION)
+    tags = [{'Key': 'User', 'Value': 'cloud-governance'},
+            {'Key': 'kubernetes.io/cluster/mock-test', 'Value': 'owned'}]
+    volume = ec2_client.create_volume(AvailabilityZone=f'{AWS_DEFAULT_REGION}a',
+                                      Size=10,
+                                      TagSpecifications=[{
+                                          'ResourceType': 'volume',
+                                          'Tags': tags
+                                      }])
+    assert ec2_operations.delete_volumes([volume.get('VolumeId')])

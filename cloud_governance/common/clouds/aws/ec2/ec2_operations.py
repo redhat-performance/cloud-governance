@@ -624,9 +624,12 @@ class EC2Operations:
         active_instances = {}
         active_regions = self.get_active_regions()
         for region_name in active_regions[::-1]:
-            filters = [{'Name': f'tag:{tag_name}', 'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
+            filters = [{'Name': f'tag:{tag_name}',
+                        'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
             self.get_ec2_instance_list()
-            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2', region_name=region_name), ignore_tag=ignore_tag)
+            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2',
+                                                                                                             region_name=region_name),
+                                                                    ignore_tag=ignore_tag)
             if active_instances_in_region:
                 if skip_full_scan:
                     return True
@@ -642,7 +645,8 @@ class EC2Operations:
         :return:
         """
         ignore_tag = 'TicketId'
-        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True, ignore_tag=ignore_tag)
+        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True,
+                                         ignore_tag=ignore_tag)
 
     def describe_tags(self, **kwargs):
         """
@@ -665,3 +669,17 @@ class EC2Operations:
         :rtype:
         """
         return self.get_ec2_instance_list(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+
+    # Delete Operations
+
+    def delete_volumes(self, resource_ids: list) -> bool:
+        """
+        This method delete volume
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_volume(VolumeId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err

@@ -22,7 +22,8 @@ This tool support the following policies:
 * [instance_run](../../cloud_governance/policy/aws/cleanup/instance_run.py): List the running ec2 instances.
 * [unattached_volume](../../cloud_governance/policy/aws/cleanup/unattached_volume.py): Identify and remove the available
   EBS volumes.
-* [zombie_cluster_resource](../../cloud_governance/policy/aws/zombie_cluster_resource.py): Identify the non-live cluster
+* [zombie_cluster_resource](../../cloud_governance/policy/aws/zombie_cluster_resource_test.py): Identify the non-live
+  cluster
   resource and delete those resources by resolving dependency. We are deleting more than 20 cluster resources.
     * Ebs, Snapshots, AMI, Load Balancer
     * VPC, Subnets, Route tables, DHCP, Internet Gateway, NatGateway, Network Interface, ElasticIp, Network ACL,

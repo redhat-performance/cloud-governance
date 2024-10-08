@@ -50,6 +50,7 @@ class EnvironmentVariables:
                         if isinstance(yaml_data, dict):
                             for key, value in yaml_data.items():
                                 if key not in os.environ:  # Prefer existing env variables
+                                    setattr(self, key, value)
                                     os.environ[key] = str(value)
             except FileNotFoundError:
                 pass
@@ -60,24 +61,14 @@ class EnvironmentVariables:
 
         self.load_from_env()
         self.load_from_yaml()
+        if not hasattr(self, "CLUSTER_PREFIX"):
+            self.CLUSTER_PREFIX = "kubernetes.io/cluster"
 
-        # env files override true ENV. Not best order, but easier to write :/
-        # .env.generated can be auto-generated (by an external tool) based on the local cluster's configuration.
-        for env in ".env", ".env.generated":
-            try:
-                file_path = os.path.join(os.path.dirname(__file__), env)
-                with open(file_path) as f:
-                    for line in f.readlines():
-                        key, found, value = line.strip().partition("=")
-                        if not found:
-                            print("ERROR: invalid line in {env}: {line.strip()}")
-                            continue
-                        if key in os.environ:
-                            continue  # prefer env to env file
-                        os.environ[key] = value
+        if not hasattr(self, "DAYS_TO_TAKE_ACTION"):
+            self.DAYS_TO_TAKE_ACTION = 7
 
-            except FileNotFoundError:
-                pass  # ignore
+        if not hasattr(self, "FORCE_DELETE"):
+            self.FORCE_DELETE = False
 
         ##################################################################################################
         # dynamic parameters - configure for local run

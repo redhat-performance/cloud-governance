@@ -14,10 +14,13 @@ from cloud_governance.policy.policy_operations.azure.azure_policy_runner import 
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.policy.policy_operations.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
     remove_cluster_resources_tags
-from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import \
+    tag_non_cluster_resource, \
     remove_tag_non_cluster_resource, tag_na_resources
-from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
-from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
+from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, \
+    run_validate_iam_user_tags
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import \
+    zombie_cluster_resource
 from cloud_governance.policy.policy_operations.gcp.gcp_policy_runner import GcpPolicyRunner
 from cloud_governance.policy.policy_operations.gitleaks.gitleaks import GitLeaks
 from cloud_governance.policy.policy_operations.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
@@ -25,8 +28,8 @@ from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
-
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import \
+    ZombieNonClusterPolicies
 
 environment_variables_dict = environment_variables.environment_variables_dict
 log_level = environment_variables_dict.get('log_level', 'INFO').upper()
@@ -110,23 +113,6 @@ def run_policy(account: str, policy: str, region: str, dry_run: str):
             remove_keys = literal_eval(remove_keys)
         tag_iam_user(user_tag_operation=user_tag_operation, file_name=file_name, remove_keys=remove_keys,
                      username=username)
-    elif policy == 'zombie_cluster_resource':
-        policy_output = environment_variables_dict.get('policy_output', '')
-        resource = environment_variables_dict.get('resource', '')
-        resource_name = environment_variables_dict.get('resource_name', '')
-        cluster_tag = environment_variables_dict.get('cluster_tag', '')
-        service_type = environment_variables_dict.get('service_type', '')
-        if dry_run == 'no':  # delete
-            zombie_result = zombie_cluster_resource(delete=True, region=region, resource=resource,
-                                                    cluster_tag=cluster_tag, resource_name=resource_name,
-                                                    service_type=service_type)
-        else:  # default: yes or other
-            zombie_result = zombie_cluster_resource(region=region, resource=resource, cluster_tag=cluster_tag,
-                                                    resource_name=resource_name, service_type=service_type)
-        if policy_output:
-            s3operations = S3Operations(region_name=region)
-            logger.info(s3operations.save_results_to_s3(policy=policy.replace('_', '-'), policy_output=policy_output,
-                                                        policy_result=zombie_result))
     elif policy == 'tag_non_cluster':
         # instance_name = environment_variables_dict['resource_name']
         mandatory_tags = environment_variables_dict.get('mandatory_tags', {})
@@ -224,7 +210,8 @@ def main():
             ibm_classic_infrastructure_policy_runner = None
             is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
             if not is_tag_ibm_classic_infrastructure_runner:
-                if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'IBM':
+                if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                        'PUBLIC_CLOUD_NAME').upper() == 'IBM':
                     is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('cost_policies')
             if is_tag_ibm_classic_infrastructure_runner:
                 ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
@@ -237,14 +224,16 @@ def main():
                     cost_explorer_policies_runner = CostReportPolicies()
 
             is_azure_policy_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AZURE':
+            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                    'PUBLIC_CLOUD_NAME').upper() == 'AZURE':
                 azure_cost_policy_runner = None
                 is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
                 if is_azure_policy_runner:
                     azure_cost_policy_runner = AzurePolicyRunner()
 
             is_gcp_policy_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'GCP':
+            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                    'PUBLIC_CLOUD_NAME').upper() == 'GCP':
                 gcp_cost_policy_runner = None
                 is_gcp_policy_runner = policy in environment_variables_dict.get('cost_policies')
                 if is_gcp_policy_runner:
