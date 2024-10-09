@@ -54,6 +54,8 @@ class ClusterRun(AWSPolicyOperations):
                 else:
                     running_instances = 1
                 creation_date = ''
+                rosa_cluster = True if self.get_tag_name_from_tags(tags=tags, tag_name='red-hat-managed') else False
+                using_graviton = True if '.g' in instance.get('InstanceType') else False
                 if 'master' in name_tag.lower():
                     creation_date = self.__get_creation_date(instance.get('BlockDeviceMappings', []))
                 instance_data = f"{instance.get('InstanceId')}, {self.get_tag_name_from_tags(tags=tags, tag_name='Name')}, {instance.get('InstanceType')}, {instance_state}, {running_days}, {launch_time}"
@@ -63,6 +65,7 @@ class ClusterRun(AWSPolicyOperations):
                         cluster_data[cluster_tag]['ClusterState'] = instance_state
                         cluster_data[cluster_tag]['StoppedDate'] = stopped_date_time
                     cluster_data[cluster_tag]['Instances'].append(instance_data)
+                    cluster_data[cluster_tag]['InstanceTypes'].append(instance.get('InstanceType'))
                     cluster_data[cluster_tag]['InstanceCount'] = len(cluster_data[cluster_tag]['Instances'])
                     cluster_data[cluster_tag]['Stopped'] = int(cluster_data[cluster_tag]['Stopped']) + stopped_instances
                     cluster_data[cluster_tag]['Running'] = int(cluster_data[cluster_tag]['Running']) + running_instances
@@ -72,6 +75,7 @@ class ClusterRun(AWSPolicyOperations):
                         'ClusterName2': cluster_tag.split('/')[-1].lower(),
                         'ResourceId': cluster_tag,
                         'ClusterTag': cluster_tag,
+                        'InstanceTypes': [instance.get('InstanceType')],
                         'User': self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                         'RunningDays': running_days,
                         'RegionName': self._region,
@@ -80,11 +84,15 @@ class ClusterRun(AWSPolicyOperations):
                         'InstanceCount': 1,
                         'Stopped': stopped_instances,
                         'Running': running_instances,
+                        'Graviton': using_graviton,
+                        'RosaCluster': rosa_cluster,
                         'index-id': f'{datetime.datetime.now(datetime.timezone.utc).date()}-{self._cloud_name.lower()}-{self.account.lower()}-{self._region.lower()}-{cluster_tag}',
                     }
                     if creation_date:
                         cluster_data[cluster_tag]['creation_date'] = creation_date
                         cluster_data[cluster_tag]['ClusterState'] = instance_state
                         cluster_data[cluster_tag]['StoppedDate'] = stopped_date_time
-
+        for cluster in cluster_data.values():
+            instance_types = cluster['InstanceTypes']
+            cluster['InstanceTypes'] = [f"{x}: {instance_types.count(x)}" for x in set(instance_types)]
         return list(cluster_data.values())
