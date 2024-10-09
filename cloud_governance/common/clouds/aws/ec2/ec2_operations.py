@@ -1,3 +1,4 @@
+import functools
 import os
 
 import boto3
@@ -348,36 +349,36 @@ class EC2Operations:
         """
         return self.ec2_client.describe_images(Owners=['self'], **kwargs)['Images']
 
-    def get_snapshots(self):
+    def get_snapshots(self, **kwargs):
         """
         This method returns all snapshots in the region
         @return:
         """
-        return self.ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']
+        return self.ec2_client.describe_snapshots(OwnerIds=['self'], **kwargs)['Snapshots']
 
-    def get_security_groups(self):
+    def get_security_groups(self, **kwargs):
         """
         This method returns security groups in the region
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_security_groups,
-                                                    input_tag='SecurityGroups', check_tag='NextToken')
+                                                    input_tag='SecurityGroups', check_tag='NextToken', **kwargs)
 
-    def get_elastic_ips(self):
+    def get_elastic_ips(self, **kwargs):
         """
         This method returns elastic_ips in the region
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_addresses, input_tag='Addresses',
-                                                    check_tag='NextToken')
+                                                    check_tag='NextToken', **kwargs)
 
-    def get_network_interface(self):
+    def get_network_interface(self, **kwargs):
         """
         This method returns network_interface in the region
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_network_interfaces,
-                                                    input_tag='NetworkInterfaces', check_tag='NextToken')
+                                                    input_tag='NetworkInterfaces', check_tag='NextToken', **kwargs)
 
     def get_load_balancers(self):
         """
@@ -395,69 +396,69 @@ class EC2Operations:
         return self.utils.get_details_resource_list(func_name=self.elbv2_client.describe_load_balancers,
                                                     input_tag='LoadBalancers', check_tag='Marker')
 
-    def get_vpcs(self):
+    def get_vpcs(self, **kwargs):
         """
         This method returns all vpcs
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_vpcs, input_tag='Vpcs',
-                                                    check_tag='NextToken')
+                                                    check_tag='NextToken', **kwargs)
 
-    def get_subnets(self):
+    def get_subnets(self, **kwargs):
         """
         This method returns all subnets
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_subnets, input_tag='Subnets',
-                                                    check_tag='NextToken')
+                                                    check_tag='NextToken', **kwargs)
 
-    def get_route_tables(self):
+    def get_route_tables(self, **kwargs):
         """
         This method returns all route tables
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_route_tables,
-                                                    input_tag='RouteTables', check_tag='NextToken')
+                                                    input_tag='RouteTables', check_tag='NextToken', **kwargs)
 
-    def get_internet_gateways(self):
+    def get_internet_gateways(self, **kwargs):
         """
         This method returns all internet gateways
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_internet_gateways,
-                                                    input_tag='InternetGateways', check_tag='NextToken')
+                                                    input_tag='InternetGateways', check_tag='NextToken', **kwargs)
 
-    def get_dhcp_options(self):
+    def get_dhcp_options(self, **kwargs):
         """
         This method returns all dhcp options
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_dhcp_options,
-                                                    input_tag='DhcpOptions', check_tag='NextToken')
+                                                    input_tag='DhcpOptions', check_tag='NextToken', **kwargs)
 
-    def get_vpce(self):
+    def get_vpce(self, **kwargs):
         """
         This method returns all vpc endpoints
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_vpc_endpoints,
-                                                    input_tag='VpcEndpoints', check_tag='NextToken')
+                                                    input_tag='VpcEndpoints', check_tag='NextToken', **kwargs)
 
-    def get_nat_gateways(self):
+    def get_nat_gateways(self, **kwargs):
         """
         This method returns all nat gateways
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_nat_gateways,
-                                                    input_tag='NatGateways', check_tag='NextToken')
+                                                    input_tag='NatGateways', check_tag='NextToken', **kwargs)
 
-    def get_nacls(self):
+    def get_nacls(self, **kwargs):
         """
         This method returns all network acls
         @return:
         """
         return self.utils.get_details_resource_list(func_name=self.ec2_client.describe_network_acls,
-                                                    input_tag='NetworkAcls', check_tag='NextToken')
+                                                    input_tag='NetworkAcls', check_tag='NextToken', **kwargs)
 
     def is_cluster_resource(self, resource_id: str):
         """
@@ -624,9 +625,12 @@ class EC2Operations:
         active_instances = {}
         active_regions = self.get_active_regions()
         for region_name in active_regions[::-1]:
-            filters = [{'Name': f'tag:{tag_name}', 'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
+            filters = [{'Name': f'tag:{tag_name}',
+                        'Values': [tag_value, tag_value.upper(), tag_value.lower(), tag_value.title()]}]
             self.get_ec2_instance_list()
-            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2', region_name=region_name), ignore_tag=ignore_tag)
+            active_instances_in_region = self.get_ec2_instance_list(Filters=filters, ec2_client=boto3.client('ec2',
+                                                                                                             region_name=region_name),
+                                                                    ignore_tag=ignore_tag)
             if active_instances_in_region:
                 if skip_full_scan:
                     return True
@@ -642,7 +646,8 @@ class EC2Operations:
         :return:
         """
         ignore_tag = 'TicketId'
-        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True, ignore_tag=ignore_tag)
+        return self.get_active_instances(tag_name=tag_name, tag_value=tag_value, skip_full_scan=True,
+                                         ignore_tag=ignore_tag)
 
     def describe_tags(self, **kwargs):
         """
@@ -665,3 +670,284 @@ class EC2Operations:
         :rtype:
         """
         return self.get_ec2_instance_list(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+
+    def describe_load_balancer_tags(self, load_balancer_name: str):
+        """
+        This method returns the tags of load balancer
+        :param load_balancer_name:
+        :return:
+        """
+        return self.elb1_client.describe_tags(LoadBalancerNames=[load_balancer_name]).get('TagDescriptions', [])[0].get(
+            'Tags', [])
+
+    def describe_load_balancer_v2_tags(self, resource_arns: str):
+        """
+        This method returns the tags of load balancer v2
+        :param resource_arns:
+        :return:
+        """
+        return self.elbv2_client.describe_tags(ResourceArns=[resource_arns]).get('TagDescriptions', [])[0].get(
+            'Tags', [])
+
+    # Delete Operations
+
+    def delete_volumes(self, resource_ids: list) -> bool:
+        """
+        This method delete volume
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_volume(VolumeId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def revoke_security_group_ingress(self, group_id: str, ip_permissions: list):
+        """
+        This method revokes ingress security group
+        :param group_id:
+        :param ip_permissions:
+        :return:
+        """
+        try:
+            self.ec2_client.revoke_security_group_ingress(GroupId=group_id, IpPermissions=ip_permissions)
+            return True
+        except Exception as err:
+            raise err
+
+    def __revoke_security_group_ingress(self, security_group_ids: list):
+        """
+        this method revokes security group ingress
+        :param security_group_ids:
+        :return:
+        """
+        if security_group_ids:
+            security_groups = self.get_security_groups(GroupIds=security_group_ids)
+            for security_group in security_groups:
+                running_instances = self.get_ec2_instance_ids(
+                    Filters=[{'Name': 'instance.group-id', 'Values': [security_group.get('GroupId')]}])
+                if not running_instances:
+                    if security_group.get('IpPermissions'):
+                        self.revoke_security_group_ingress(group_id=security_group.get('GroupId'),
+                                                           ip_permissions=security_group.get('IpPermissions'))
+
+    def delete_security_group(self, resource_ids: list) -> bool:
+        """
+        This method delete volume
+        :param resource_ids:
+        :return:
+        """
+        self.__revoke_security_group_ingress(security_group_ids=resource_ids)
+        for resource_id in resource_ids:
+            try:
+                self.ec2_client.delete_security_group(GroupId=resource_id)
+            except Exception as err:
+                if 'default' not in str(err):
+                    raise err
+        return True
+
+    def deregister_ami(self, resource_ids: list) -> bool:
+        """
+        This method de-register AMI
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.deregister_image(ImageId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_snapshot(self, resource_ids: list) -> bool:
+        """
+        This method delete snapshot
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_snapshot(SnapshotId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_load_balancer_v2(self, resource_ids: list) -> bool:
+        """
+        This method delete load balancer v2
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.elbv2_client.delete_load_balancer(LoadBalancerArn=resource_arn) for resource_arn in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_load_balancer_v1(self, resource_ids: list) -> bool:
+        """
+        This method delete load balancer
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.elb1_client.delete_load_balancer(LoadBalancerName=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_nat_gateway(self, resource_ids: list) -> bool:
+        """
+        This method delete nat gateway
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_nat_gateway(NatGatewayId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_network_interface(self, resource_ids: list) -> bool:
+        """
+        This method delete network interface
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_network_interface(NetworkInterfaceId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_network_interface(self, resource_ids: list) -> bool:
+        """
+        This method delete network interface
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_network_interface(NetworkInterfaceId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_internet_gateway(self, resource_ids: list) -> bool:
+        """
+        This method delete internet gateway
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_internet_gateway(InternetGatewayId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def release_address(self, resource_ids: list) -> bool:
+        """
+        This method release address
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.release_address(AllocationId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_dhcp(self, resource_ids: list) -> bool:
+        """
+        This method delete dhcp
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_dhcp_options(DhcpOptionsId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_nacl(self, resource_ids: list) -> bool:
+        """
+        This method delete nacl
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_network_acl(NetworkAclId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_vpc_endpoint(self, resource_ids: list) -> bool:
+        """
+        This method delete nacl
+        :param resource_ids:
+        :return:
+        """
+        try:
+            self.ec2_client.delete_vpc_endpoints(VpcEndpointIds=resource_ids)
+            return True
+        except Exception as err:
+            raise err
+
+    def disassociate_route_table(self, association_id: str) -> bool:
+        """
+        This method disassociate route table
+        :param association_id:
+        :return:
+        """
+        try:
+            self.ec2_client.disassociate_route_table(AssociationId=association_id)
+            return True
+        except Exception as err:
+            raise err
+
+    def __remove_route_table_associations(self, route_table_ids: list):
+        if route_table_ids:
+            route_tables = self.get_route_tables(RouteTableIds=route_table_ids)
+            for route_table in route_tables:
+                for association in route_table.get('Associations', []):
+                    if association.get('SubnetId'):
+                        self.disassociate_route_table(association['RouteTableAssociationId'])
+                    elif association.get('RouteTableId') and not association.get('Main'):
+                        self.disassociate_route_table(association['RouteTableAssociationId'])
+
+    def delete_vpc_route_table(self, resource_ids: list) -> bool:
+        """
+        This method delete route table
+        :param resource_ids:
+        :return:
+        """
+        self.__remove_route_table_associations(resource_ids)
+        for resource_id in resource_ids:
+            try:
+                self.ec2_client.delete_route_table(RouteTableId=resource_id)
+            except Exception as err:
+                if 'default' not in str(err):
+                    raise err
+        return True
+
+    def delete_vpc_subnet(self, resource_ids: list) -> bool:
+        """
+        This method delete subnet
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_subnet(SubnetId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
+
+    def delete_vpc(self, resource_ids: list) -> bool:
+        """
+        This method delete VPC
+        :param resource_ids:
+        :return:
+        """
+        try:
+            [self.ec2_client.delete_vpc(VpcId=resource_id) for resource_id in resource_ids]
+            return True
+        except Exception as err:
+            raise err
