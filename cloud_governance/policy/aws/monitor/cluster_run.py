@@ -1,7 +1,10 @@
 import datetime
 import re
 
+from math import ceil
+
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
+from cloud_governance.common.utils.configs import GRAVITON_MAPPINGS, DEFAULT_ROUND_DIGITS, DEFAULT_GRAVITON_INSTANCE
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
@@ -40,7 +43,8 @@ class ClusterRun(AWSPolicyOperations):
                 name_tag = self.get_tag_name_from_tags(tags=tags, tag_name='Name')
                 launch_time = instance.get('LaunchTime')
                 running_instances = stopped_instances = 0
-                running_days = self.calculate_days(instance.get('LaunchTime'))
+                running_days = self.calculate_days(launch_time)
+                running_hours = ceil(self.calculate_hours(launch_time))
                 stopped_date_time = ''
                 if string_equal_ignore_case(instance_state, 'stopped'):
                     stopped_instances = 1
@@ -55,7 +59,11 @@ class ClusterRun(AWSPolicyOperations):
                     running_instances = 1
                 creation_date = ''
                 rosa_cluster = True if self.get_tag_name_from_tags(tags=tags, tag_name='red-hat-managed') else False
-                using_graviton = True if '.g' in instance.get('InstanceType') else False
+                instance_type = instance.get('InstanceType')
+                using_graviton = False
+                for graviton_instance_family in GRAVITON_MAPPINGS.values():
+                    if graviton_instance_family in instance_type:
+                        using_graviton = True
                 if 'master' in name_tag.lower():
                     creation_date = self.__get_creation_date(instance.get('BlockDeviceMappings', []))
                 instance_data = f"{instance.get('InstanceId')}, {self.get_tag_name_from_tags(tags=tags, tag_name='Name')}, {instance.get('InstanceType')}, {instance_state}, {running_days}, {launch_time}"
@@ -78,9 +86,11 @@ class ClusterRun(AWSPolicyOperations):
                         'InstanceTypes': [instance.get('InstanceType')],
                         'User': self.get_tag_name_from_tags(tags=tags, tag_name='User'),
                         'RunningDays': running_days,
+                        'RunningHours': running_hours,
                         'RegionName': self._region,
                         'PublicCloud': self._cloud_name,
                         'Instances': [instance_data],
+                        'LaunchTime': launch_time.date(),
                         'InstanceCount': 1,
                         'Stopped': stopped_instances,
                         'Running': running_instances,
@@ -94,5 +104,29 @@ class ClusterRun(AWSPolicyOperations):
                         cluster_data[cluster_tag]['StoppedDate'] = stopped_date_time
         for cluster in cluster_data.values():
             instance_types = cluster['InstanceTypes']
+            total_cost = 0
+            graviton_instance_cost = 0
+            cluster['GravitonInstanceTypes'] = []
+            running_hours = 1 if cluster['RunningHours'] == 0 else cluster['RunningHours']
+            for instance_type in set(instance_types):
+                instance_types_count = instance_types.count(instance_type)
+                unit_price = self._resource_pricing.get_ec2_price(region_name=self._region,
+                                                                  instance_type=instance_type)
+                total_cost += (unit_price * running_hours * instance_types_count)
+                if not cluster['Graviton']:
+                    instance_family, instance_size = instance_type.split('.')
+                    graviton_instance = f'{DEFAULT_GRAVITON_INSTANCE}.{instance_size}'
+                    if instance_family in GRAVITON_MAPPINGS:
+                        graviton_instance = f'{GRAVITON_MAPPINGS[instance_family]}.{instance_size}'
+                    graviton_unit_price = self._resource_pricing.get_ec2_price(region_name=self._region,
+                                                                               instance_type=graviton_instance)
+                    graviton_instance_cost += (graviton_unit_price * running_hours * instance_types_count)
+                    cluster['GravitonInstanceTypes'].append(f"{graviton_instance}: {instance_types_count}")
+
+            cluster['TotalGravitonInstanceCost'] = round(graviton_instance_cost, DEFAULT_ROUND_DIGITS)
+            cluster['TotalCost'] = round(total_cost, DEFAULT_ROUND_DIGITS)
+
+            cluster['GravitonSavings'] = round(total_cost - graviton_instance_cost,
+                                               DEFAULT_ROUND_DIGITS) if graviton_instance_cost != 0 else 0
             cluster['InstanceTypes'] = [f"{x}: {instance_types.count(x)}" for x in set(instance_types)]
         return list(cluster_data.values())
