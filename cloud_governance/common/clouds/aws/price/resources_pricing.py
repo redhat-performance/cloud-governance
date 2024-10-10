@@ -138,10 +138,12 @@ class ResourcesPricing:
         service_code = 'AmazonEC2'
         filter_dict = [
             {"Field": "regionCode", "Value": region_name, "Type": "TERM_MATCH"},
+            {'Type': 'TERM_MATCH', 'Field': 'servicecode', 'Value': 'AmazonEC2'},
             {"Field": "tenancy", "Value": "shared", "Type": "TERM_MATCH"},
             {"Field": "operatingSystem", "Value": f"{operating_system_value}", "Type": "TERM_MATCH"},
             {"Field": "instanceType", "Value": f"{instance_type}", "Type": "TERM_MATCH"},
-            {"Field": "capacitystatus", "Value": "Used", "Type": "TERM_MATCH"},
+            {'Type': 'TERM_MATCH', 'Field': 'capacitystatus', 'Value': 'Used'},
+            {'Type': 'TERM_MATCH', 'Field': 'preInstalledSw', 'Value': 'NA'},
         ]
         unit_price = self._aws_pricing.get_service_pricing(service_code, filter_dict)
         return round(unit_price, DEFAULT_ROUND_DIGITS)
