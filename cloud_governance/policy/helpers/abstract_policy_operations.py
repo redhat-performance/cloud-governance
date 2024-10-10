@@ -11,7 +11,6 @@ from cloud_governance.main.environment_variables import environment_variables
 
 
 class AbstractPolicyOperations(ABC):
-
     DAYS_TO_NOTIFY_ADMINS = 2
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAILY_HOURS = 24
@@ -45,6 +44,24 @@ class AbstractPolicyOperations(ABC):
         start_date = start_date.date()
         days = start_date - create_date.date()
         return days.days
+
+    def calculate_hours(self, create_date: Union[datetime, str],
+                        start_date: Union[datetime, str] = datetime.now(timezone.utc)):
+        """
+        This method returns the hours
+        :param start_date:
+        :type start_date:
+        :param create_date:
+        :type create_date:
+        :return:
+        :rtype:
+        """
+        if isinstance(create_date, str):
+            create_date = datetime.strptime(create_date, "%Y-%M-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        days = start_date - create_date
+        return days.seconds / 3600
 
     def get_clean_up_days_count(self, tags: Union[list, dict]):
         """
