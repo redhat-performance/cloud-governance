@@ -1,11 +1,15 @@
-accounts_list = ['redhat-hacbs-dev': "dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com"]
+accounts_list = ['konflux-fedora': 'dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com, maniskum@redhat.com',
+                 'external-staging-multi-platform': 'dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com, maniskum@redhat.com',
+                 'internal-staging-multi-platform': 'dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com, maniskum@redhat.com',
+                 'external-staging-konflux': 'dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com, maniskum@redhat.com',
+                 'internal-staging-konflux': 'dbaez@redhat.com, eedri@redhat.com, ilario@redhat.com, xjiang@redhat.com, ebattat@redhat.com, maniskum@redhat.com']
 pipeline {
     options {
         disableConcurrentBuilds()
     }
     agent {
         docker {
-            label 'haim-cloud-governance-worker'
+            label 'cloud-governance-worker'
             image 'quay.io/athiru/fedora38-podman:latest'
             args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
