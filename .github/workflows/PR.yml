@@ -67,12 +67,19 @@ jobs:
     name: terraform_apply
     needs: [ approve, unittest ]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for pytest
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -188,12 +195,19 @@ jobs:
   terraform_destroy:
     name: terraform_destroy
     needs: [ approve, unittest, terraform_apply, integration ]
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
     if: success() || failure()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for pytest
         uses: aws-actions/configure-aws-credentials@v4
         with:

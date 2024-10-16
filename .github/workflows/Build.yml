@@ -64,8 +64,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for creating EC2 instance
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -187,8 +194,15 @@ jobs:
     needs: [ unittest, terraform_apply, integration ]
     if: success() || failure()
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for pytest
         uses: aws-actions/configure-aws-credentials@v4
         with:
