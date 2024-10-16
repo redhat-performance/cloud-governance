@@ -1,11 +1,11 @@
-### ecoeng_02 - dry_run=no
+### qe_01 - dry_run=no
 
 **POLICIES_IN_ACTION
 ** = '[]'
 
 ES_HOST:
 
-- Currently using intlab
+- Currently, using haim elasticsearch
 
 Accounts:
 
