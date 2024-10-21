@@ -41,3 +41,17 @@ class RDSOperations:
             logger.info(f"Tags are updated to the resource: {resource_arn}")
         except Exception as err:
             logger.error(f"Something went wrong in add/ update tags: {err}")
+
+    def remove_tags_from_resource(self, resource_arn: str, tags: list):
+        """
+        This method deletes the tags of the rds resource
+        :param resource_arn:
+        :param tags:
+        :return:
+        """
+        try:
+            tags_keys = [key for tag in tags for key, _ in tag.items() if key == 'Key']
+            self._db_client.remove_tags_from_resource(ResourceName=resource_arn, Tags=tags_keys)
+            logger.info(f"Tags: {tags_keys} are deleted to the resource: {resource_arn}")
+        except Exception as err:
+            logger.error(f"Something went wrong in add/ update tags: {err}")

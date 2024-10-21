@@ -38,7 +38,8 @@ class IAMOperations:
         This method returns all roles
         @return:
         """
-        return self.utils.get_details_resource_list(func_name=self.iam_client.list_roles, input_tag='Roles', check_tag='Marker')
+        return self.utils.get_details_resource_list(func_name=self.iam_client.list_roles, input_tag='Roles',
+                                                    check_tag='Marker')
 
     def get_users(self):
         """
@@ -113,7 +114,8 @@ class IAMOperations:
         """
         attached_policies = []
         try:
-            attached_policies = self.iam_client.list_attached_role_policies(RoleName=role_name).get('AttachedPolicies', [])
+            attached_policies = self.iam_client.list_attached_role_policies(RoleName=role_name).get('AttachedPolicies',
+                                                                                                    [])
         except Exception as err:
             logger.error(err)
         return attached_policies
@@ -139,6 +141,20 @@ class IAMOperations:
         """
         try:
             self.iam_client.tag_role(RoleName=role_name, Tags=tags)
+            return True
+        except Exception as err:
+            raise err
+
+    def untag_role(self, role_name: str, tags: list):
+        """
+        This method untags the iam role
+        :param role_name:
+        :param tags:
+        :return:
+        """
+        try:
+            self.iam_client.untag_role(RoleName=role_name,
+                                       TagKeys=[key for tag in tags for key, _ in tag.items() if key == 'Key'])
             return True
         except Exception as err:
             raise err

@@ -11,7 +11,6 @@ from tests.unittest.configs import DRY_RUN_YES, AWS_DEFAULT_REGION, INSTANCE_TYP
     TEST_USER_NAME, DRY_RUN_NO
 
 
-
 @mock_ec2
 def test_zombie_snapshots():
     """
@@ -52,8 +51,11 @@ def test_zombie_snapshots():
     assert len(response) == 1
     assert response[0]['CleanUpDays'] == 0
     assert get_tag_value_from_tags(tags=ec2_client.describe_snapshots(OwnerIds=['self'],
-                                                                      SnapshotIds=[snapshot_id])['Snapshots'][0]['Tags'],
+                                                                      SnapshotIds=[snapshot_id])['Snapshots'][0][
+        'Tags'],
                                    tag_name='DaysCount')
+    assert get_tag_value_from_tags(tags=zombie_snapshots._ec2_operations.get_snapshots()[0]['Tags'],
+                                   tag_name='cost-savings') == 'true'
 
 
 @mock_ec2
@@ -136,6 +138,8 @@ def test_zombie_snapshots_skip():
     response = zombie_snapshots.run()
     assert len(ec2_client.describe_snapshots(OwnerIds=['self'])['Snapshots']) == 1
     assert len(response) == 0
+    assert get_tag_value_from_tags(tags=zombie_snapshots._ec2_operations.get_snapshots()[0]['Tags'],
+                                   tag_name='cost-savings') == ''
 
 
 @mock_ec2

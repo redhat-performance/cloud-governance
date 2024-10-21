@@ -36,6 +36,8 @@ def test_database_idle():
     assert len(running_instances_data) == 1
     assert get_tag_value_from_tags(tags=rds_client.describe_db_instances()['DBInstances'][0]['TagList'],
                                    tag_name='DaysCount') == f"{current_date.date()}@1"
+    assert get_tag_value_from_tags(tags=rds_client.describe_db_instances()['DBInstances'][0]['TagList'],
+                                   tag_name='cost-savings') == "true"
 
 
 @mock_cloudwatch

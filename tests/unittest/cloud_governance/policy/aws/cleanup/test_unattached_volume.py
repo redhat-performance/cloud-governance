@@ -1,6 +1,7 @@
 import boto3
 from moto import mock_ec2
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.unattached_volume import UnattachedVolume
 
@@ -21,6 +22,8 @@ def test_unattached_volume_dry_run_yes_0_unattached():
     volume_run = UnattachedVolume()
     response = volume_run.run()
     assert len(response) == 0
+    assert not get_tag_value_from_tags(tags=volume_run._get_all_volumes()[0]['Tags'],
+                                       tag_name='cost-savings')
 
 
 @mock_ec2
@@ -36,6 +39,8 @@ def test_unattached_volume_dry_run_yes():
     response = response[0]
     assert response.get('ResourceAction') == 'False'
     assert response.get('SkipPolicy') == 'NA'
+    assert get_tag_value_from_tags(tags=volume_run._get_all_volumes()[0]['Tags'],
+                                   tag_name='cost-savings') == 'true'
 
 
 @mock_ec2
@@ -103,7 +108,7 @@ def test_check_exists_cluster():
     ec2_client = boto3.client('ec2', region_name=region_name)
     default_ami_id = 'ami-03cf127a'
     ec2_client.run_instances(ImageId=default_ami_id, InstanceType='t2.micro', MaxCount=1,
-                             MinCount=1, TagSpecifications=[{ 'ResourceType': 'instance','Tags': tags}])
+                             MinCount=1, TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}])
     ec2_client.create_volume(AvailabilityZone=f'{region_name}a', Size=10, TagSpecifications=[{
         'ResourceType': 'volume',
         'Tags': tags

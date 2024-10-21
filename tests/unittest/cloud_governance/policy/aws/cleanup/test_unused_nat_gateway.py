@@ -3,6 +3,7 @@ import datetime
 import boto3
 from moto import mock_ec2, mock_cloudwatch
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.unused_nat_gateway import UnUsedNatGateway
 from tests.unittest.configs import AWS_DEFAULT_REGION, NAT_GATEWAY_NAMESPACE
@@ -25,6 +26,8 @@ def test_unused_nat_gateway_dry_run_yes():
     response = unused_nat_gateway.run()
     assert len(response) == 1
     assert response[0]['CleanUpDays'] == 0
+    assert get_tag_value_from_tags(tags=unused_nat_gateway._ec2_operations.get_nat_gateways()[0]['Tags'],
+                                   tag_name='cost-savings') == 'true'
 
 
 @mock_cloudwatch
@@ -62,6 +65,8 @@ def test_unused_nat_gateway_dry_run_yes_collect_none():
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
     assert len(response) == 0
+    assert get_tag_value_from_tags(tags=unused_nat_gateway._ec2_operations.get_nat_gateways()[0]['Tags'],
+                                   tag_name='cost-savings') == ''
 
 
 @mock_ec2
