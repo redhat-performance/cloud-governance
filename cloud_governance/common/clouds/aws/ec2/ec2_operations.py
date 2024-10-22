@@ -689,6 +689,15 @@ class EC2Operations:
         return self.elbv2_client.describe_tags(ResourceArns=[resource_arns]).get('TagDescriptions', [])[0].get(
             'Tags', [])
 
+    def get_all_non_terminated_instances(self):
+        """
+        This method returns all non-terminated instances
+        :return:
+        """
+        return self.get_ec2_instance_list(
+            Filters=[{'Name': 'instance-state-name',
+                      'Values': ['running', 'stopped', 'stopping', 'shutting-down', 'pending']}])
+
     # Delete Operations
 
     def delete_volumes(self, resource_ids: list) -> bool:
@@ -723,14 +732,19 @@ class EC2Operations:
         :return:
         """
         if security_group_ids:
-            security_groups = self.get_security_groups(GroupIds=security_group_ids)
-            for security_group in security_groups:
+            for security_group_id in security_group_ids:
                 running_instances = self.get_ec2_instance_ids(
-                    Filters=[{'Name': 'instance.group-id', 'Values': [security_group.get('GroupId')]}])
+                    Filters=[{'Name': 'instance.group-id', 'Values': [security_group_id]}])
                 if not running_instances:
-                    if security_group.get('IpPermissions'):
-                        self.revoke_security_group_ingress(group_id=security_group.get('GroupId'),
-                                                           ip_permissions=security_group.get('IpPermissions'))
+                    security_groups = self.get_security_groups(
+                        Filters=[{'Name': 'ip-permission.group-id', 'Values': [security_group_id]}])
+                    for security_group in security_groups:
+                        if security_group.get('IpPermissions'):
+                            for ip_permission in security_group.get('IpPermissions'):
+                                if ip_permission.get('UserIdGroupPairs'):
+                                    if ip_permission.get('UserIdGroupPairs')[0]['GroupId'] == security_group_id:
+                                        self.revoke_security_group_ingress(group_id=security_group.get('GroupId'),
+                                                                           ip_permissions=[ip_permission])
 
     def delete_security_group(self, resource_ids: list) -> bool:
         """
@@ -803,18 +817,6 @@ class EC2Operations:
         """
         try:
             [self.ec2_client.delete_nat_gateway(NatGatewayId=resource_id) for resource_id in resource_ids]
-            return True
-        except Exception as err:
-            raise err
-
-    def delete_network_interface(self, resource_ids: list) -> bool:
-        """
-        This method delete network interface
-        :param resource_ids:
-        :return:
-        """
-        try:
-            [self.ec2_client.delete_network_interface(NetworkInterfaceId=resource_id) for resource_id in resource_ids]
             return True
         except Exception as err:
             raise err

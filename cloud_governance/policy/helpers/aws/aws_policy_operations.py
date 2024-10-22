@@ -1,5 +1,6 @@
 from cloud_governance.common.clouds.aws.cloudwatch.cloudwatch_operations import CloudWatchOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
+from cloud_governance.common.clouds.aws.efs.efs_operations import EFSOperations
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.price.resources_pricing import ResourcesPricing
 from cloud_governance.common.clouds.aws.rds.rds_operations import RDSOperations
@@ -25,6 +26,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._rds_operations = RDSOperations(region_name=self._region)
         self._s3operations = S3Operations(region_name=self._region)
         self._ec2_operations = EC2Operations(region=self._region)
+        self._efs_operations = EFSOperations(region_name=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
         self._resource_pricing = ResourcesPricing()
 

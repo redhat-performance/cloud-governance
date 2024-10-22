@@ -5,19 +5,22 @@ from typing import Union
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.utils.configs import INSTANCE_IDLE_CPU_PERCENTAGE, INSTANCE_IDLE_NETWORK_IN_KILO_BYTES, \
     INSTANCE_IDLE_NETWORK_OUT_KILO_BYTES
+from cloud_governance.common.utils.policy_response import PolicyResponse
 from cloud_governance.common.utils.utils import Utils
 from cloud_governance.common.elasticsearch.modals.policy_es_data import PolicyEsMetaData
 from cloud_governance.main.environment_variables import environment_variables
 
 
 class AbstractPolicyOperations(ABC):
-
     DAYS_TO_NOTIFY_ADMINS = 2
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAILY_HOURS = 24
     CURRENT_DATE = datetime.utcnow().date().__str__()
 
     def __init__(self):
+        self.config_variable = environment_variables
+        self._days_to_take_action = self.config_variable.DAYS_TO_TAKE_ACTION
+        self._force_delete = self.config_variable.FORCE_DELETE
         self._environment_variables_dict = environment_variables.environment_variables_dict
         self.account = self._environment_variables_dict.get('account')
         self._days_to_take_action = self._environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
@@ -46,9 +49,10 @@ class AbstractPolicyOperations(ABC):
         days = start_date - create_date.date()
         return days.days
 
-    def get_clean_up_days_count(self, tags: Union[list, dict]):
+    def get_clean_up_days_count(self, tags: Union[list, dict], tag_name: str = 'DaysCount'):
         """
         This method returns the cleanup days count
+        :param tag_name:
         :param tags:
         :type tags:
         :return:
@@ -56,7 +60,7 @@ class AbstractPolicyOperations(ABC):
         """
         if self._dry_run == 'yes':
             return 0
-        last_used_day = self.get_tag_name_from_tags(tags=tags, tag_name='DaysCount')
+        last_used_day = self.get_tag_name_from_tags(tags=tags, tag_name=tag_name)
         if not last_used_day:
             return 1
         else:
@@ -94,7 +98,7 @@ class AbstractPolicyOperations(ABC):
         return 'NA'
 
     @abstractmethod
-    def _delete_resource(self, resource_id: str):
+    def _delete_resource(self, resource_id: Union[str, list]):
         """
         This method deletes the resource
         :param resource_id:
@@ -270,3 +274,41 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         raise NotImplementedError("Not implemented error")
+
+    def zombie_cluster_verify_and_delete_resource(self, resource_ids: list, tags: Union[list, dict], clean_up_days: int,
+                                                  days_to_delete_resource: int = None, **kwargs) -> PolicyResponse:
+        """
+        This method verify and delete the resource by calculating the days
+        :return:
+        :rtype:
+        """
+        if self._force_delete and self._dry_run == 'no':
+            return self.execute_delete(resource_ids)
+        days_to_delete_resource = self._days_to_take_action if not days_to_delete_resource else days_to_delete_resource
+
+        if clean_up_days >= self._days_to_take_action - self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
+            if clean_up_days == self._days_to_take_action - self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
+                kwargs['delta_cost'] = kwargs.get('extra_purse')
+                # @Todo, If it require add email alert. May In future will add the email alert.
+            else:
+                if clean_up_days >= days_to_delete_resource:
+                    if self._dry_run == 'no':
+                        if self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+                            return self.execute_delete(resource_ids)
+        return PolicyResponse(deleted=False)
+
+    def execute_delete(self, resource_ids: list) -> PolicyResponse:
+        """
+        This method executes the deletes operation
+        :param resource_ids:
+        :return:
+        """
+        policy_response = PolicyResponse(deleted=False)
+        try:
+            result = self._delete_resource(resource_id=resource_ids)
+            policy_response.set_value("message", result)
+            policy_response.set_value("deleted", True)
+        except Exception as err:
+            policy_response.set_value("message", "Error raised, check error to know error")
+            policy_response.set_value("error", str(err))
+        return policy_response
