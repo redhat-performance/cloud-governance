@@ -23,7 +23,6 @@ class AbstractPolicyOperations(ABC):
         self._force_delete = self.config_variable.FORCE_DELETE
         self._environment_variables_dict = environment_variables.environment_variables_dict
         self.account = self._environment_variables_dict.get('account')
-        self._days_to_take_action = self._environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
         self._dry_run = self._environment_variables_dict.get('dry_run')
         self._policy = self._environment_variables_dict.get('policy')
         self._force_delete = self._environment_variables_dict.get('FORCE_DELETE')

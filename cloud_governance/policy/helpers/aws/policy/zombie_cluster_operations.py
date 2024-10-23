@@ -125,7 +125,7 @@ class ZombieClusterOperations(AWSPolicyOperations):
             zombie_cluster_resources_response[zombie_cluster_tag] = {
                 'ResourceIds': resource_ids,
                 'DaysCount': self.get_clean_up_days_count(tags, tag_name='CleanUpDays'),
-                'ClenUpResult': policy_response.deleted,
+                'CleanUpResult': policy_response.deleted,
                 'Message': policy_response.message,
                 'Error': policy_response.error,
                 'User': self.get_tag_name_from_tags(tags=tags, tag_name='User'),
@@ -165,9 +165,9 @@ class ZombieClusterOperations(AWSPolicyOperations):
                 elif 'efs' in resource_id:
                     self._efs_operations.delete_efs_filesystem(resource_ids=resource_ids)
                 elif 'nat' in resource_id:
-                    self._ec2_operations.delete_nat(resource_ids=resource_ids)
+                    self._ec2_operations.delete_nat_gateway(resource_ids=resource_ids)
                 elif 'eni' in resource_id:
-                    self._ec2_operations.delete_eni(resource_ids=resource_ids)
+                    self._ec2_operations.delete_network_interface(resource_ids=resource_ids)
                 elif 'eip' in resource_id:
                     self._ec2_operations.release_address(resource_ids=resource_ids)
                 elif 'dopt' in resource_id:
