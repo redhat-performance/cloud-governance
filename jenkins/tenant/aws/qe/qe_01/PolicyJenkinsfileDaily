@@ -42,8 +42,7 @@ pipeline {
                     for (account in accounts_list.keySet()) {
                         echo "Running for account ${account.toUpperCase()}"
                         withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
-                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
-                                        string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'))
                                         ]) {
                         env.account_name = "${account}"
                         env.ES_INDEX = "cloud-governance-cost-explorer-global-index-tenant-qe"
