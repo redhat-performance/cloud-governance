@@ -3,9 +3,56 @@ from moto import mock_ec2, mock_elb, mock_elbv2
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
-from tests.unittest.configs import DEFAULT_AMI_ID, INSTANCE_TYPE_T2_MICRO, TEST_USER_NAME
+from tests.unittest.configs import DEFAULT_AMI_ID, INSTANCE_TYPE_T2_MICRO, TEST_USER_NAME, AWS_DEFAULT_REGION
 
-AWS_DEFAULT_REGION = 'ap-south-1'
+
+#############################################
+# Creating EC2 methods to create AWS EC2 resources like EC2, Security Group
+
+
+def get_tags(cluster_tag: str = None):
+    tags = [{'Key': 'Name', 'Value': 'unitest'}]
+    if cluster_tag:
+        tags.append({'Key': cluster_tag, 'Value': 'owned'})
+    return tags
+
+
+def create_ec2_instance(cluster_tag: str = None):
+    tags = get_tags(cluster_tag)
+    ec2_client = get_boto3_client('ec2', region_name=AWS_DEFAULT_REGION)
+    resource = ec2_client.run_instances(ImageId=DEFAULT_AMI_ID, InstanceType=INSTANCE_TYPE_T2_MICRO,
+                                        TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}],
+                                        MaxCount=1, MinCount=1)['Instances'][0]
+    return resource
+
+
+def create_vpc(cluster_tag: str = None):
+    ec2_client = get_boto3_client('ec2', region_name=AWS_DEFAULT_REGION)
+    tags = get_tags(cluster_tag)
+    vpc = ec2_client.create_vpc(CidrBlock="10.0.0.0/16",
+                                TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}])['Vpc']
+    return vpc
+
+
+def create_security_group(vpc_id: str, cluster_tag: str = None, group_name: str = ''):
+    tags = get_tags(cluster_tag)
+    ec2_client = get_boto3_client('ec2', region_name=AWS_DEFAULT_REGION)
+
+    return ec2_client.create_security_group(
+        Description='Test Security Group', GroupName=f'test-group-{group_name}',
+        VpcId=vpc_id,
+        TagSpecifications=[{
+            'ResourceType': 'security-group',
+            'Tags': tags
+        }])
+
+
+def create_security_group_rule(security_group_id: str, ip_permissions: list):
+    ec2_client = get_boto3_client('ec2', region_name=AWS_DEFAULT_REGION)
+    ec2_client.authorize_security_group_ingress(GroupId=security_group_id, IpPermissions=ip_permissions)
+
+
+###############################################
 
 
 @mock_ec2
@@ -278,3 +325,17 @@ def test_delete_vpc():
     ec2_client = ec2_operations.ec2_client
     vpc = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")['Vpc']['VpcId']
     assert ec2_operations.delete_vpc([vpc])
+
+
+@mock_ec2
+def test_get_all_non_terminated_instances():
+    ec2_operations = EC2Operations(region=AWS_DEFAULT_REGION)
+    ec2_client = ec2_operations.ec2_client
+    resource_id = \
+        ec2_client.run_instances(ImageId=DEFAULT_AMI_ID, InstanceType='t2.micro', MaxCount=1, MinCount=1)['Instances'][
+            0]['InstanceId']
+    ec2_client.run_instances(ImageId=DEFAULT_AMI_ID, InstanceType='t2.micro', MaxCount=1, MinCount=1)
+    ec2_client.stop_instances(InstanceIds=[resource_id])
+    assert len(ec2_operations.get_all_non_terminated_instances()) == 2
+    ec2_client.terminate_instances(InstanceIds=[resource_id])
+    assert len(ec2_operations.get_all_non_terminated_instances()) == 1
