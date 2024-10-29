@@ -2,6 +2,7 @@ from cloud_governance.common.utils.utils import Utils
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_runners.azure.policy_runner import PolicyRunner as AzurePolicyRunner
 from cloud_governance.policy.policy_runners.aws.policy_runner import PolicyRunner as AWSPolicyRunner
+from cloud_governance.policy.policy_runners.ibm.policy_runner import PolicyRunner as IBMPolicyRunner
 
 
 class MainOperations:
@@ -21,9 +22,11 @@ class MainOperations:
         policy_runner = None
         if Utils.equal_ignore_case(self._public_cloud_name, 'AWS'):
             policy_runner = AWSPolicyRunner()
+        elif Utils.equal_ignore_case(self._public_cloud_name, 'Azure'):
+            policy_runner = AzurePolicyRunner()
         else:
-            if Utils.equal_ignore_case(self._public_cloud_name, 'AZURE'):
-                policy_runner = AzurePolicyRunner()
+            if Utils.equal_ignore_case(self._public_cloud_name, 'IBM'):
+                policy_runner = IBMPolicyRunner()
 
         return policy_runner
 
@@ -40,7 +43,7 @@ class MainOperations:
             if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run",
                                                              "ip_unattached", "unused_nat_gateway", "instance_idle",
                                                              "zombie_snapshots", "database_idle", "s3_inactive",
-                                                             "empty_roles"]:
+                                                             "empty_roles", "tag_resources"]:
                 source = policy_type
                 if Utils.equal_ignore_case(policy_type, self._public_cloud_name):
                     source = ''

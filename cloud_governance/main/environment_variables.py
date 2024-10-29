@@ -49,6 +49,7 @@ class EnvironmentVariables:
                         yaml_data = yaml.safe_load(yaml_file)
                         if isinstance(yaml_data, dict):
                             for key, value in yaml_data.items():
+                                setattr(self, key, value)
                                 if key not in os.environ:  # Prefer existing env variables
                                     os.environ[key] = str(value)
             except FileNotFoundError:
@@ -164,7 +165,9 @@ class EnvironmentVariables:
         self._environment_variables_dict['IBM_API_KEY'] = EnvironmentVariables.get_env('IBM_API_KEY', '')
         self._environment_variables_dict['USAGE_REPORTS_APIKEY'] = EnvironmentVariables.get_env('USAGE_REPORTS_APIKEY',
                                                                                                 '')
-        if self._environment_variables_dict['USAGE_REPORTS_APIKEY']:
+        self._environment_variables_dict['IBM_CLOUD_API_KEY'] = EnvironmentVariables.get_env('IBM_CLOUD_API_KEY', '')
+
+        if self._environment_variables_dict['USAGE_REPORTS_APIKEY'] or hasattr(self, "IBM_CLOUD_API_KEY"):
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'IBM'
         self._environment_variables_dict['month'] = EnvironmentVariables.get_env('month', '')
         self._environment_variables_dict['year'] = EnvironmentVariables.get_env('year', '')

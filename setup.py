@@ -57,7 +57,10 @@ setup(
         'google-auth-oauthlib==0.5.2',  # google drive
         'google-cloud-bigquery==3.5.0',  # google cloud cost
         'google-cloud-billing==1.9.1',  # google cloud cost
-        'ibm_platform_services==0.27.0',  # IBM Usage reports
+        'ibm-cloud-sdk-core==3.18.0',
+        'ibm-platform-services==0.27.0',  # IBM Usage reports
+        'ibm-schematics==1.1.0',
+        'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
         'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
         'oauthlib~=3.1.1',  # required by jira
