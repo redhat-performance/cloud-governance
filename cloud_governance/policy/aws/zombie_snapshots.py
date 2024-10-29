@@ -63,6 +63,11 @@ class ZombieSnapshots(AWSPolicyOperations):
                                                     resource_state='Backup' if not cleanup_result else "Deleted"
                                                     )
                 zombie_snapshots.append(resource_data)
+                if not cleanup_result:
+                    self.update_resource_tags(resource_id=resource_id, tags=tags + self.cost_savings_tag)
+            else:
+                cleanup_days = 0
+                self.delete_resource_tags(resource_id=resource_id, tags=self.cost_savings_tag)
             if not cleanup_result:
                 self.update_resource_day_count_tag(resource_id=resource_id, cleanup_days=cleanup_days, tags=tags)
         return zombie_snapshots

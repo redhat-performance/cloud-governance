@@ -60,7 +60,10 @@ class InstanceIdle(AWSPolicyOperations):
                 if self._force_delete and self._dry_run == 'no':
                     resource_data.update({'ForceDeleted': str(self._force_delete)})
                 idle_instances.append(resource_data)
+                if not cleanup_result:
+                    self.update_resource_tags(resource_id=instance_id, tags=tags + self.cost_savings_tag)
             else:
+                self.delete_resource_tags(resource_id=instance_id, tags=self.cost_savings_tag)
                 cleanup_days = 0
             if not cleanup_result:
                 self.update_resource_day_count_tag(resource_id=instance_id, cleanup_days=cleanup_days, tags=tags)

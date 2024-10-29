@@ -54,7 +54,12 @@ class DatabaseIdle(AWSPolicyOperations):
                                                     resource_state=db.get('DBInstanceStatus')
                                                     if not cleanup_result else "Deleted"
                                                     )
+                if not cleanup_result:
+                    self.update_resource_tags(resource_id=resource_arn, tags=tags + self.cost_savings_tag)
                 idle_dbs.append(resource_data)
+            else:
+                cleanup_days = 0
+                self.delete_resource_tags(resource_id=resource_arn, tags=self.cost_savings_tag)
             if not cleanup_result:
                 self.update_resource_day_count_tag(resource_id=resource_arn, cleanup_days=cleanup_days, tags=tags)
 

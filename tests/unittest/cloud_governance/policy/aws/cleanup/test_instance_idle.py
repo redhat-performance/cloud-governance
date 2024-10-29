@@ -5,6 +5,7 @@ from unittest.mock import patch
 import boto3
 from moto import mock_ec2, mock_cloudwatch
 
+from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.instance_idle import InstanceIdle
 from tests.unittest.configs import AWS_DEFAULT_REGION, DRY_RUN_YES, DEFAULT_AMI_ID, INSTANCE_TYPE_T2_MICRO, \
@@ -15,20 +16,23 @@ from tests.unittest.configs import AWS_DEFAULT_REGION, DRY_RUN_YES, DEFAULT_AMI_
 @mock_ec2
 def test_instance_idle__instance_age_less_than_7():
     """
-    This method tests instance_idle of less than DEFAULT_DAYA 7
+    This method tests instance_idle of less than DEFAULT_DAYs 7
     :return:
     :rtype:
     """
 
     environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
+    environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     tags = [{'Key': 'User', 'Value': TEST_USER_NAME}]
-    ec2_client.run_instances(ImageId=DEFAULT_AMI_ID, InstanceType=INSTANCE_TYPE_T2_MICRO, MaxCount=1, MinCount=1,
+    ec2_client.run_instances(ImageId=DEFAULT_AMI_ID, InstanceType=INSTANCE_TYPE_T2_MICRO, MaxCount=1,
+                             MinCount=1,
                              TagSpecifications=[{'ResourceType': 'instance', 'Tags': tags}])
     instance_idle = InstanceIdle()
     response = instance_idle.run()
     assert len(response) == 0
+    assert not get_tag_value_from_tags(instance_idle._get_all_instances()[0]['Tags'], tag_name='cost-savings')
 
 
 def mock_describe_instances(*args, **kwargs):
@@ -81,7 +85,7 @@ def test_instance_idle__check_not_idle():
             MockCloudWatchMetric(metrics=[5, 4, 8, 10]).create_metric(),
             MockCloudWatchMetric(metrics=[5000, 2000, 4000, 8000]).create_metric(),
             MockCloudWatchMetric(metrics=[1000, 200, 500]).create_metric()
-            ]
+        ]
         instance_idle = InstanceIdle()
         response = instance_idle.run()
         assert len(response) == 0

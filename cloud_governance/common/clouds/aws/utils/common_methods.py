@@ -20,6 +20,7 @@ def get_tag_value_from_tags(tags: list, tag_name: str, cast_type: str = 'str',
     :rtype:
     """
     if tags:
+        tag_name = tag_name.lower().replace("_", '').replace("-", '').strip()
         for tag in tags:
             key = tag.get('Key').lower().replace("_", '').replace("-", '').strip()
             if key == tag_name.lower():

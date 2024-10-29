@@ -27,6 +27,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._ec2_operations = EC2Operations(region=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
         self._resource_pricing = ResourcesPricing()
+        self.cost_savings_tag = [{'Key': 'cost-savings', 'Value': 'true'}]
 
     def get_tag_name_from_tags(self, tags: list, tag_name: str) -> str:
         """
@@ -117,6 +118,44 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         tags = self.__remove_tag_key_aws(tags=tags)
         return tags
 
+    def delete_resource_tags(self, tags: list, resource_id: str):
+        """
+        This method deletes the tag of a resource
+        :param tags:
+        :param resource_id:
+        :return:
+        """
+        try:
+            if self._policy == 'empty_roles':
+                self._iam_operations.untag_role(role_name=resource_id, tags=tags)
+            elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
+                                  'instance_run', 'instance_idle'):
+                self._ec2_client.delete_tags(Resources=[resource_id], Tags=tags)
+            elif self._policy == 'database_idle':
+                self._rds_operations.remove_tags_from_resource(resource_arn=resource_id, tags=tags)
+        except Exception as err:
+            logger.info(f'Exception raised: {err}: {resource_id}')
+
+    def update_resource_tags(self, tags: list, resource_id: str):
+        """
+        This method updates the tags of the resource
+        :param tags:
+        :param resource_id:
+        :return:
+        """
+        try:
+            if self._policy == 's3_inactive':
+                self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
+            elif self._policy == 'empty_roles':
+                self._iam_operations.tag_role(role_name=resource_id, tags=tags)
+            elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
+                                  'instance_run', 'instance_idle'):
+                self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
+            elif self._policy == 'database_idle':
+                self._rds_operations.add_tags_to_resource(resource_arn=resource_id, tags=tags)
+        except Exception as err:
+            logger.info(f'Exception raised: {err}: {resource_id}')
+
     def update_resource_day_count_tag(self, resource_id: str, cleanup_days: int, tags: list,
                                       force_tag_update: str = ''):
         """
@@ -133,18 +172,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         tags = self._update_tag_value(tags=tags, tag_name='DaysCount', tag_value=str(cleanup_days))
-        try:
-            if self._policy == 's3_inactive':
-                self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
-            elif self._policy == 'empty_roles':
-                self._iam_operations.tag_role(role_name=resource_id, tags=tags)
-            elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
-                                  'instance_run', 'instance_idle'):
-                self._ec2_client.create_tags(Resources=[resource_id], Tags=tags)
-            elif self._policy == 'database_idle':
-                self._rds_operations.add_tags_to_resource(resource_arn=resource_id, tags=tags)
-        except Exception as err:
-            logger.info(f'Exception raised: {err}: {resource_id}')
+        self.update_resource_tags(tags=tags, resource_id=resource_id)
 
     def _get_all_instances(self):
         """
