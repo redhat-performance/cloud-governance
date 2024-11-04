@@ -75,6 +75,27 @@ This tool support the following policies:
 
 * [tag_baremetal](cloud_governance/policy/ibm/tag_baremetal.py): Tag IBM baremetal machines
 * [tag_vm](cloud_governance/policy/ibm/tag_vm.py): Tga IBM Virtual Machines machines
+* [tag_resources](./cloud_governance/policy/ibm/tag_resources.py): Tag IBM resources
+  list of supported IBM Resources
+
+- virtual_servers
+- volumes
+- floating_ips
+- vpcs
+- virtual_network_interfaces
+- security_groups
+- public_gateways
+- vpc_endpoint_gateways
+- load_balancers
+- schematics_workspaces
+
+Environment Variables required:
+
+| KeyName                    | Value  | Description                                                                |
+|----------------------------|--------|----------------------------------------------------------------------------|
+| IBM_CUSTOM_TAGS_LIST       | string | pass string with separated with comma. i.e: "cost-center: test, env: test" |
+| RESOURCE_TO_TAG (optional) | string | pass the resource name to tag. ex: virtual_servers                         |
+| IBM_CLOUD_API_KEY          | string | IBM Cloud API Key                                                          |
 
 ** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
 and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
