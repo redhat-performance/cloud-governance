@@ -46,7 +46,7 @@ run_cmd('Run IBM tagging on baremetal, vm')
 run_cmd("Run IBM tag baremetal")
 volume_mounts_targets = [GOOGLE_APPLICATION_CREDENTIALS]
 
-input_env_keys = {'volume_mounts': volume_mounts_targets, 'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME,
+input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME,
                   'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS, 'SPREADSHEET_ID': SPREADSHEET_ID,
                   'IBM_API_USERNAME': IBM_API_USERNAME, 'IBM_API_KEY': IBM_API_KEY, 'tag_operation': "update",
                   'log_level': "INFO", 'policy': 'tag_baremetal'}
