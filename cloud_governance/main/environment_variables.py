@@ -259,6 +259,9 @@ class EnvironmentVariables:
         # policies aggregate alert
         self._environment_variables_dict['SAVE_TO_FILE_PATH'] = EnvironmentVariables.get_env('SAVE_TO_FILE_PATH', '')
         self._environment_variables_dict['BUCKET_NAME'] = EnvironmentVariables.get_env('BUCKET_NAME')
+        if not self._environment_variables_dict['policy_output'] and \
+                self._environment_variables_dict.get('BUCKET_NAME'):
+            self._environment_variables_dict['policy_output'] = ''
         self._environment_variables_dict['BUCKET_KEY'] = EnvironmentVariables.get_env('BUCKET_KEY')
         self._environment_variables_dict['MAIL_ALERT_DAYS'] = literal_eval(
             EnvironmentVariables.get_env('MAIL_ALERT_DAYS', '[]'))
