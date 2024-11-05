@@ -39,6 +39,9 @@ pipeline {
         contact4 = "matrujil@redhat.com"
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
+        // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
+        POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
+
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -76,10 +79,6 @@ pipeline {
                         withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
                                         string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
                                         string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
-                        // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
-                        env.POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
-                        if (account == "blueprints")
-                        env.POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
                         env.account_name = "${account}"
                         env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
                         sh 'python3 jenkins/tenant/aws/common/run_policies.py'
