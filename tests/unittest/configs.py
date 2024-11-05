@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 
 PROJECT_NAME = 'cloud_governance'
 
@@ -6,9 +6,11 @@ PROJECT_NAME = 'cloud_governance'
 
 DRY_RUN_YES = 'yes'
 DRY_RUN_NO = 'no'
-CURRENT_DATE = datetime.datetime.utcnow().date()
-CURRENT_DATE_TIME = datetime.datetime.utcnow()
+CURRENT_DATE = datetime.now(timezone.utc).date()
+CURRENT_DATE_TIME = datetime.now(timezone.utc)
 TEST_USER_NAME = 'unit-test'
+CLUSTER_TAG1 = 'kubernetes.io/cluster/unittest1'
+CLUSTER_TAG2 = 'kubernetes.io/cluster/unittest2'
 
 # AWS
 AWS_DEFAULT_REGION = 'us-west-2'
@@ -21,6 +23,7 @@ CLOUD_WATCH_METRICS_DAYS = 14
 # AWS RDS
 DB_INSTANCE_CLASS = 'db.t3.small'
 DB_ENGINE = 'postgres'
+VOLUME_SIZE = 10
 
 # Azure
 SUBSCRIPTION_ID = 'unitest-subscription'

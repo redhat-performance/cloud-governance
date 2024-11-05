@@ -16,11 +16,10 @@ from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.main.environment_variables import environment_variables
-from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
+from cloud_governance.policy.aws.cleanup.zombie_cluster_resource import ZombieClusterResource
 
 
 class NonClusterZombiePolicy:
-
     DAYS_TO_DELETE_RESOURCE = environment_variables.environment_variables_dict.get('DAYS_TO_DELETE_RESOURCE')
     DAYS_TO_NOTIFY_ADMINS = 6
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
@@ -43,7 +42,7 @@ class NonClusterZombiePolicy:
         self._iam_operations = IAMOperations()
         self._iam_client = boto3.client('iam')
         self._cluster_prefix = 'kubernetes.io/cluster'
-        self._zombie_cluster = ZombieClusterResources(cluster_prefix=self._cluster_prefix)
+        self._zombie_cluster = ZombieClusterResource()
         self._s3operations = S3Operations(region_name=self._region)
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
         self._special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
@@ -52,7 +51,8 @@ class NonClusterZombiePolicy:
         self._mail_description = MailMessage()
         self.__ldap_host_name = self.__environment_variables_dict.get('LDAP_HOST_NAME', '')
         self._ldap = LdapSearch(ldap_host_name=self.__ldap_host_name)
-        self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT') if self.__environment_variables_dict.get('EMAIL_ALERT') else False
+        self.__email_alert = self.__environment_variables_dict.get(
+            'EMAIL_ALERT') if self.__environment_variables_dict.get('EMAIL_ALERT') else False
         self.__manager_email_alert = self.__environment_variables_dict.get('MANAGER_EMAIL_ALERT')
         self._admins = ['athiruma@redhat.com', 'ebattat@redhat.com']
         self._es_upload = ElasticUpload()
@@ -138,7 +138,8 @@ class NonClusterZombiePolicy:
                 upload_data.append(resource_data)
         return upload_data
 
-    def _get_resource_username(self, resource_id: str, resource_type: str, create_date: datetime = '', event_type: str = ''):
+    def _get_resource_username(self, resource_id: str, resource_type: str, create_date: datetime = '',
+                               event_type: str = ''):
         """
         Get Username from the cloudtrail
         @param create_date:
@@ -147,10 +148,13 @@ class NonClusterZombiePolicy:
         @return:
         """
         if event_type:
-            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date, resource_id=resource_id,
-                                                                         resource_type=resource_type, event_type=event_type)
+            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date,
+                                                                         resource_id=resource_id,
+                                                                         resource_type=resource_type,
+                                                                         event_type=event_type)
         else:
-            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date, resource_id=resource_id,
+            return self._cloudtrail.get_username_by_instance_id_and_time(start_time=create_date,
+                                                                         resource_id=resource_id,
                                                                          resource_type=resource_type)
 
     def _get_policy_value(self, tags: list):
@@ -174,27 +178,36 @@ class NonClusterZombiePolicy:
         if self.__email_alert:
             try:
                 special_user_mails = self._literal_eval(self._special_user_mails)
-                user, resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(
+                user, resource_name = self._get_tag_name_from_tags(tags=tags,
+                                                                   tag_name='User'), self._get_tag_name_from_tags(
                     tags=tags, tag_name='Name')
                 if not resource_name:
                     resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self._ldap.get_user_details(user_name=to)
-                cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com'] if self.__manager_email_alert else []
+                cc = [self._account_admin,
+                      f'{ldap_data.get("managerId")}@redhat.com'] if self.__manager_email_alert else []
                 name = to
                 if ldap_data:
                     name = ldap_data.get('displayName')
                 subject, body = self._mail_description.resource_message(name=name, days=days,
                                                                         notification_days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL,
                                                                         delete_days=self.DAYS_TO_DELETE_RESOURCE,
-                                                                        resource_name=resource_name, resource_id=resource_id,
-                                                                        resource_type=resource_type, msgadmins=self.DAYS_TO_NOTIFY_ADMINS, extra_purse=kwargs.get('extra_purse'))
+                                                                        resource_name=resource_name,
+                                                                        resource_id=resource_id,
+                                                                        resource_type=resource_type,
+                                                                        msgadmins=self.DAYS_TO_NOTIFY_ADMINS,
+                                                                        extra_purse=kwargs.get('extra_purse'))
                 if not kwargs.get('admins'):
-                    self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
+                    self._mail.send_email_postfix(to=to, content=body, subject=subject, cc=cc, resource_id=resource_id,
+                                                  message_type=kwargs.get('message_type'),
+                                                  extra_purse=kwargs.get('delta_cost', 0))
                 else:
                     if self.__manager_email_alert:
                         kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
-                    self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[], resource_id=resource_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
+                    self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[],
+                                                  resource_id=resource_id, message_type=kwargs.get('message_type'),
+                                                  extra_purse=kwargs.get('delta_cost', 0))
             except Exception as err:
                 logger.info(err)
 
@@ -251,7 +264,8 @@ class NonClusterZombiePolicy:
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_id}')
 
-    def _check_resource_and_delete(self, resource_name: str, resource_id: str, resource_type: str, resource: dict, empty_days: int, days_to_delete_resource: int, tags: list = [], **kwargs):
+    def _check_resource_and_delete(self, resource_name: str, resource_id: str, resource_type: str, resource: dict,
+                                   empty_days: int, days_to_delete_resource: int, tags: list = [], **kwargs):
         """
         This method check and delete resources
         @param resource_name:
@@ -268,20 +282,28 @@ class NonClusterZombiePolicy:
             tags = resource.get('Tags') if resource.get('Tags') else []
         user = self._get_tag_name_from_tags(tag_name='User', tags=tags)
         if not user:
-            user = self._get_resource_username(resource_id=resource_id, resource_type=resource_type, event_type='EventName')
+            user = self._get_resource_username(resource_id=resource_id, resource_type=resource_type,
+                                               event_type='EventName')
             if user:
                 tags.append({'Key': 'User', 'Value': user})
         zombie_resource = {}
         if empty_days >= self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
             if empty_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
                 kwargs['delta_cost'] = kwargs.get('extra_purse')
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL, message_type='notification', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags,
+                                   days=self.DAYS_TO_TRIGGER_RESOURCE_MAIL, message_type='notification',
+                                   extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
             elif empty_days == self.DAYS_TO_NOTIFY_ADMINS:
-                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, admins=self._admins, message_type='notify_admin', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
+                self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days,
+                                   admins=self._admins, message_type='notify_admin',
+                                   extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
             elif empty_days >= days_to_delete_resource:
                 if self._dry_run == 'no':
                     if self._get_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags, days=empty_days, message_type='delete', extra_purse=kwargs.get('extra_purse'), delta_cost=kwargs.get('delta_cost', 0))
+                        self._trigger_mail(resource_type=resource_name, resource_id=resource_id, tags=tags,
+                                           days=empty_days, message_type='delete',
+                                           extra_purse=kwargs.get('extra_purse'),
+                                           delta_cost=kwargs.get('delta_cost', 0))
                         self.__delete_resource_on_name(resource_id=resource_id)
             zombie_resource = resource
         return zombie_resource
@@ -291,9 +313,10 @@ class NonClusterZombiePolicy:
         This method update the tags in aws
         @return:
         """
-        if left_out_days < self.DAYS_TO_DELETE_RESOURCE or self._dry_run == 'yes' or self._get_policy_value(tags=tags) in ('NOTDELETE', 'SKIP'):
-            if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay')\
-                    or self._get_tag_name_from_tags(tags=tags, tag_name='DryRunNoDays')\
+        if left_out_days < self.DAYS_TO_DELETE_RESOURCE or self._dry_run == 'yes' or self._get_policy_value(
+                tags=tags) in ('NOTDELETE', 'SKIP'):
+            if self._get_tag_name_from_tags(tags=tags, tag_name='LastUsedDay') \
+                    or self._get_tag_name_from_tags(tags=tags, tag_name='DryRunNoDays') \
                     or resource_left_out:
                 if self._dry_run == 'no':
                     tags = self._update_tag_value(tags=tags, tag_name='DryRunNoDays', tag_value=str(left_out_days))
@@ -321,12 +344,15 @@ class NonClusterZombiePolicy:
         organize_data = []
         if 'ec2' in self._policy:
             for instance in resources:
-                skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='Policy')
+                skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []),
+                                                                           tag_name='Policy')
                 if not skip_policy:
-                    skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='Skip')
+                    skip_policy = self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []),
+                                                                               tag_name='Skip')
                 instance_data = {
                     'ResourceId': instance.get('InstanceId'), 'InstanceId': instance.get('InstanceId'),
-                    'User': self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []), tag_name='User'),
+                    'User': self._ec2_operations.get_tag_value_from_tags(tags=instance.get('Tags', []),
+                                                                         tag_name='User'),
                     'Policy': skip_policy,
                     'LaunchTime': instance.get('LaunchTime').strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     'InstanceType': instance.get('InstanceType'),
@@ -334,7 +360,7 @@ class NonClusterZombiePolicy:
                     'StateTransitionReason': instance.get('StateTransitionReason')
                 }
                 for index, device_mappings in enumerate(instance['BlockDeviceMappings']):
-                    instance_data.setdefault('DeviceMappings', [])\
+                    instance_data.setdefault('DeviceMappings', []) \
                         .append(device_mappings['Ebs']['AttachTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"))
                 organize_data.append(instance_data)
         else:
@@ -343,8 +369,10 @@ class NonClusterZombiePolicy:
                                'VolumeId': volume.get('VolumeId'),
                                'VolumeState': volume.get('State'), 'Iops': volume.get('Iops'),
                                'VolumeType': volume.get('VolumeType'),
-                               'User': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []), tag_name='User'),
-                               'Policy': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []), tag_name='Policy')}
+                               'User': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []),
+                                                                                    tag_name='User'),
+                               'Policy': self._ec2_operations.get_tag_value_from_tags(tags=volume.get('Tags', []),
+                                                                                      tag_name='Policy')}
                 if volume.get('Attachments'):
                     for attachment in volume.get('Attachments'):
                         volume_data.update({
@@ -362,8 +390,12 @@ class NonClusterZombiePolicy:
                 volume_ids.append(block_device.get('Ebs').get('VolumeId'))
             volumes = self._ec2_client.describe_volumes(VolumeIds=volume_ids)['Volumes']
             for volume in volumes:
-                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=volume.get('Size'), volume_type=volume.get('VolumeType'), hours=resource_hours)
+                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=volume.get('Size'),
+                                                               volume_type=volume.get('VolumeType'),
+                                                               hours=resource_hours)
         else:
             if resource_type == 'ebs':
-                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=resource.get('Size'), volume_type=resource.get('VolumeType'), hours=resource_hours)
+                ebs_cost += self.resource_pricing.get_ebs_cost(volume_size=resource.get('Size'),
+                                                               volume_type=resource.get('VolumeType'),
+                                                               hours=resource_hours)
         return round(ebs_cost, 3)

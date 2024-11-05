@@ -51,6 +51,7 @@ class EnvironmentVariables:
                             for key, value in yaml_data.items():
                                 if key not in os.environ:  # Prefer existing env variables
                                     os.environ[key] = str(value)
+                                    setattr(self, key, value)
             except FileNotFoundError:
                 pass
 
@@ -69,6 +70,12 @@ class EnvironmentVariables:
 
         if not hasattr(self, "FORCE_DELETE"):
             self.FORCE_DELETE = False
+
+        if not hasattr(self, "ZOMBIE_CLUSTER_RESOURCE_NAME"):
+            self.ZOMBIE_CLUSTER_RESOURCE_NAME = None
+
+        if not hasattr(self, "dry_run"):
+            self.dry_run = "yes"
 
         ##################################################################################################
         # dynamic parameters - configure for local run
