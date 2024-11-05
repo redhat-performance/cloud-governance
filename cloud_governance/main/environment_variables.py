@@ -28,6 +28,7 @@ class EnvironmentVariables:
                     with open(file_path) as f:
                         for line in f.readlines():
                             key, found, value = line.strip().partition("=")
+                            setattr(self, key, value)
                             if not found:
                                 logger.error(f"ERROR: invalid line in {env}: {line.strip()}")
                                 continue
@@ -167,7 +168,9 @@ class EnvironmentVariables:
                                                                                                 '')
         self._environment_variables_dict['IBM_CLOUD_API_KEY'] = EnvironmentVariables.get_env('IBM_CLOUD_API_KEY', '')
 
-        if self._environment_variables_dict['USAGE_REPORTS_APIKEY'] or hasattr(self, "IBM_CLOUD_API_KEY"):
+        if (self._environment_variables_dict['USAGE_REPORTS_APIKEY'] or
+                self._environment_variables_dict['IBM_CLOUD_API_KEY'] or
+                hasattr(self, "IBM_CLOUD_API_KEY")):
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'IBM'
         self._environment_variables_dict['month'] = EnvironmentVariables.get_env('month', '')
         self._environment_variables_dict['year'] = EnvironmentVariables.get_env('year', '')
