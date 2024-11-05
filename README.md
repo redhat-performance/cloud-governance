@@ -18,108 +18,64 @@ When monitoring the resources, we found that most of the cost leakage is from av
 and unattached Public IPv4 addresses (Starting from February 2024, public IPv4 addresses are chargeable whether they are
 used or not).
 
-This tool support the following policies:
-[policy](cloud_governance/policy)
+| Providers | Disks   | NatGateway | PublicIp | Snapshots | InstanceIdle | TagResources | EC2Stop | ocp_cleanup | ClusterRun | EmptyBucket | EmptyRoles |
+|-----------|---------|------------|----------|-----------|--------------|--------------|---------|-------------|------------|-------------|------------|
+| AWS       | &check; | &check;    | &check;  | &check;   | &check;      | &check;      | &check; | &check;     | &check;    | &check;     | &check;    |
+| Azure     | &check; | &check;    | &check;  | &check;   | &check;      | &cross;      | &cross; | &cross;     | &check;    | &cross;     | &cross;    |
 
-[AWS Polices](cloud_governance/policy/aws)
+List of Policies:
 
-* Real time Openshift Cluster cost, User cost
-* [instance_idle](cloud_governance/policy/aws/cleanup/instance_idle.py): Monitor the idle instances based on the
-  instance metrics for the last 7 days.
-    * CPU Percent < 2%
-    * Network < 5KiB
-* [instance_run](cloud_governance/policy/aws/cleanup/instance_run.py): List the running ec2 instances.
-* [unattached_volume](cloud_governance/policy/aws/cleanup/unattached_volume.py): Identify and remove the available EBS
-  volumes.
-* [zombie_cluster_resource](cloud_governance/policy/aws/zombie_cluster_resource.py): Identify the non-live cluster
-  resource and delete those resources by resolving dependency. We are deleting more than 20 cluster resources.
-    * Ebs, Snapshots, AMI, Load Balancer
-    * VPC, Subnets, Route tables, DHCP, Internet Gateway, NatGateway, Network Interface, ElasticIp, Network ACL,
-      Security Group, VPC Endpoint
-    * S3
-    * IAM User, IAM Role
-* [ip_unattached](cloud_governance/policy/aws/ip_unattached.py): Identify the unattached public IPv4 addresses.
-* [zombie_snapshots](cloud_governance/policy/aws/zombie_snapshots.py): Identify the snapshots, which are abandoned by
-  the AMI.
-* [unused_nat_gateway](cloud_governance/policy/aws/cleanup/unused_nat_gateway.py): Identify the unused NatGateway by
-  monitoring the active connection count.
-* [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Identify the empty s3 buckets, causing the resource quota
-  issues.
-* [empty_roles](cloud_governance/policy/aws/empty_roles.py): Identify the empty roles that do not have any attached
-  policies to them.
-* [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): list in use volumes.
-* [tag_resources](cloud_governance/policy/policy_operations/aws/tag_cluster): Update cluster and non cluster resource
-  tags fetching from the user tags or from the mandatory tags
-* [tag_non_cluster](cloud_governance/policy/policy_operations/aws/tag_non_cluster): tag ec2 resources (instance, volume,
-  ami, snapshot) by instance name
-* [tag_iam_user](cloud_governance/policy/policy_operations/aws/tag_user): update the user tags from the csv file
-* [cost_explorer](cloud_governance/policy/aws/cost_explorer.py): Get data from cost explorer and upload to ElasticSearch
+##### [AWS Polices!](./POLICIES.md#aws-policies)
 
-* gitleaks: scan GitHub repository git leak (security scan)
-* [cost_over_usage](cloud_governance/policy/aws/cost_over_usage.py): send mail to aws user if over usage cost
+- instance_idle
+- instance_run
+- unattached_volume
+- zombie_cluster_resource
+- ip_unattached
+- zombie_snapshots
+- unused_nat_gateway
+- s3_inactive
+- empty_roles
+- tag_resources
+- tag_iam_user
+- cost_over_usage
+- cluster_run
 
-[Azure policies](cloud_governance/policy/azure)
+##### [Azure Polices!](POLICIES.md)
 
-* [instance_idle](cloud_governance/policy/azure/cleanup/instance_idle.py): Monitor the idle instances based on the
-  instance metrics.
-    * CPU Percent < 2%
-    * Network < 5KiB
-* [unattached_volume](cloud_governance/policy/azure/cleanup/unattached_volume.py): Identify and remove the available
-  disks.
-* [ip_unattached](cloud_governance/policy/azure/cleanup/ip_unattached.py): Identify the unattached public IPv4
-  addresses.
-* [unused_nat_gateway](cloud_governance/policy/azure/cleanup/unused_nat_gateway.py): Identify the unused NatGateway by
-  monitoring the active connection count.
+- instance_idle
+- unattached_volume
+- ip_unattached
+- unused_nat_gateway
 
-[IBM policies](cloud_governance/policy/ibm)
+##### [IBM Polices!](POLICIES.md)
 
-* [tag_baremetal](cloud_governance/policy/ibm/tag_baremetal.py): Tag IBM baremetal machines
-* [tag_vm](cloud_governance/policy/ibm/tag_vm.py): Tga IBM Virtual Machines machines
-* [tag_resources](./cloud_governance/policy/ibm/tag_resources.py): Tag IBM resources
-  list of supported IBM Resources
+- tag_baremetal
+- tag_vm
+- tag_resources
 
-- virtual_servers
-- volumes
-- floating_ips
-- vpcs
-- virtual_network_interfaces
-- security_groups
-- public_gateways
-- vpc_endpoint_gateways
-- load_balancers
-- schematics_workspaces
-
-Environment Variables required:
-
-| KeyName                    | Value  | Description                                                                |
-|----------------------------|--------|----------------------------------------------------------------------------|
-| IBM_CUSTOM_TAGS_LIST       | string | pass string with separated with comma. i.e: "cost-center: test, env: test" |
-| RESOURCE_TO_TAG (optional) | string | pass the resource name to tag. ex: virtual_servers                         |
-| IBM_CLOUD_API_KEY          | string | IBM Cloud API Key                                                          |
-
-** You can write your own policy using [Cloud-Custodian](https://cloudcustodian.io/docs/quickstart/index.html)
-and run it (see 'custom cloud custodian policy' in [Policy workflows](#policy-workloads)).
+Check out policy summary [here!](POLICIES.md)
 
 ![](images/cloud_governance1.png)
 ![](images/demo.gif)
 
-![](images/cloud_governance2.png)
-
 Reference:
 
+* Checkout
+  blog: [Optimizing cloud resource management with cloud governance](https://www.redhat.com/en/blog/optimizing-cloud-resource-management-cloud-governance)
 * The cloud-governance package is placed in [PyPi](https://pypi.org/project/cloud-governance/)
 * The cloud-governance container image is placed in [Quay.io](https://quay.io/repository/ebattat/cloud-governance)
 * The cloud-governance readthedocs link is [ReadTheDocs](https://cloud-governance.readthedocs.io/en/latest/)
-  ![](images/cloud_governance3.png)
+
+[//]: # (  ![]&#40;images/cloud_governance3.png&#41;)
 
 _**Table of Contents**_
 
 <!-- TOC -->
 
 - [Installation](#installation)
-- [Configuration](#configuration)
-- [Run AWS Policy Using Podman](#run-aws-policy-using-podman)
-- [Run IBM Policy Using Podman](#run-ibm-policy-using-podman)
+- [Configuration](#environment-variables-configurations)
+- [Run Policies](#run-policies)
 - [Run Policy Using Pod](#run-policy-using-pod)
 - [Pytest](#pytest)
 - [Post Installation](#post-installation)
@@ -131,147 +87,83 @@ _**Table of Contents**_
 #### Download cloud-governance image from quay.io
 
 ```sh
-# Need to run it with root privileges
-sudo podman pull quay.io/cloud-governance/cloud-governance
+podman pull quay.io/cloud-governance/cloud-governance
 ```
 
-#### Environment variables description:
+#### Environment variables configurations:
 
-(mandatory)AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-
-(mandatory)AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-
-##### Policy name:
-
-(mandatory)policy=instance_idle / instance_run / ebs_unattached / ebs_in_use / tag_cluster_resource /
-zombie_cluster_resource / tag_ec2_resource
-
-##### Policy logs output
-
-(mandatory)policy_output=s3://redhat-cloud-governance/logs
-
-##### Cluster or instance name:
-
-(mandatory policy:tag_cluster_resource)resource_name=ocs-test
-
-##### Cluster or instance tags:
-
-(mandatory policy:tag_cluster_resource)mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}"
-
-##### gitleaks
-
-(mandatory policy: gitleaks)git_access_token=$git_access_token
-(mandatory policy: gitleaks)git_repo=https://github.com/redhat-performance/cloud-governance
-(optional policy: gitleaks)several_repos=yes/no (default = no)
-
-##### Choose a specific region or all for all the regions, default : us-east-2
-
-(optional)AWS_DEFAULT_REGION=us-east-2/all (default = us-east-2)
-
-##### Choose dry run or not, default yes
-
-(optional)dry_run=yes/no (default = yes)
-
-##### Choose log level, default INFO
-
-(optional)log_level=INFO (default = INFO)
-
-#### LDAP hostname to fetch mail records
-
-LDAP_HOST_NAME=ldap.example.com
-
-#### Enable Google Drive API in console and create Service account
-
-GOOGLE_APPLICATION_CREDENTIALS=$pwd/service_account.json
-
-# Configuration
+| Key                            | Value    | Description                                                                 |
+|--------------------------------|----------|:----------------------------------------------------------------------------|
+| AWS_ACCESS_KEY_ID              | required | AWS access key                                                              |
+| AWS_SECRET_ACCESS_KEY          | required | AWS Secret key                                                              |
+| AWS_DEFAULT_REGION             | required | AWS Region, default set to us-east-2                                        |
+| BUCKET_NAME                    | optional | Cloud bucket Name, to store data                                            |
+| policy                         | required | check [here](POLICIES.md) for policies list                                 |
+| dry_run                        | optional | default set to "yes", supported only two: yes/ no                           |
+| log_level                      | optional | default set to INFO                                                         |
+| LDAP_HOST_NAME                 | optional | ldap hostnames                                                              |
+| es_host                        | optional | Elasticsearch Host                                                          |
+| es_port                        | optional | Elasticsearch Port                                                          |
+| es_index                       | optional | Elasticsearch Index, to push the data. default to cloud-governance-es-index |
+| GOOGLE_APPLICATION_CREDENTIALS | optional | GCP creds, to access google resources. i.e Sheets, Docs                     |
+| AZURE_CLIENT_SECRET            | required | Azure Client Secret                                                         |
+| AZURE_TENANT_ID                |          | Azure Tenant Id                                                             |
+| AZURE_ACCOUNT_ID               |          | Azure Account Id                                                            |
+| AZURE_CLIENT_ID                |          | Azure Client Id                                                             |
+| GCP_DATABASE_NAME              |          | GCP BigQuery database name, used to generate cost reports                   |
+| GCP_DATABASE_TABLE_NAME        |          | GCP BigQuery TableName, used to generate cost reports                       |
+| IBM_API_USERNAME               |          | IBM Account Username                                                        |
+| IBM_API_KEY                    |          | IBM Account Classic Infrastructure key                                      |
+| IBM_CLOUD_API_KEY              |          | IBM Cloud API Key                                                           |
+| IBM_CUSTOM_TAGS_LIST           |          | pass string with separated with comma. i.e: "cost-center: test, env: test"  |
 
 ### AWS Configuration
 
-#### Create a user and a bucket
+Create IAM User with Read/Delete Permissions and create S3 bucket.
 
-* Create user with [IAM](iam/clouds)
-* Create a logs bucket [create_bucket.sh](iam/clouds/aws/create_bucket.sh)
+- Follow the instructions [README.md](iam/clouds/aws/CloudGovernanceInfra/README.md).
 
 ### IBM Configuration
 
 * Create classic infrastructure API key
+* Create IBM CLOUD API key to use tag_resources policy
 
-## Run AWS Policy Using Podman
+## Run Policies
 
-```sh
-# policy=instance_idle
-sudo podman run --rm --name cloud-governance -e policy="instance_idle" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
+## AWS
 
-# policy=instance_run
-sudo podman run --rm --name cloud-governance -e policy="instance_run" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# select policy ['ec2_stop', 's3_inactive', 'empty_roles', 'ip_unattached', 'unused_nat_gateway', 'zombie_snapshots']
-sudo podman run --rm --name cloud-governance -e policy="policy" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes"  -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# policy=ebs_unattached
-sudo podman run --rm --name cloud-governance -e policy="ebs_unattached" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# policy=ebs_in_use
-sudo podman run --rm --name cloud-governance -e policy="ebs_in_use" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# policy=zombie_cluster_resource
-sudo podman run --rm --name cloud-governance -e policy="zombie_cluster_resource" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e resource="zombie_cluster_elastic_ip" -e cluster_tag="kubernetes.io/cluster/test-pd9qq" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# policy=tag_resources
-sudo podman run --rm --name cloud-governance -e policy="tag_resources" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e tag_operation="read/update/delete" -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" "quay.io/cloud-governance/cloud-governance"
-
-# policy=tag_non_cluster
-sudo podman run --rm --name cloud-governance -e policy="tag_non_cluster" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e tag_operation="read/update/delete" -e mandatory_tags="{'Owner': 'Name','Email': 'name@redhat.com','Purpose': 'test'}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" "quay.io/cloud-governance/cloud-governance"
-
-# policy=tag_iam_user
-sudo podman run --rm --name cloud-governance -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e user_tag_operation="read/update/delete" -e remove_tags="['Environment', 'Test']" -e username="test_username" -e file_name="tag_user.csv"  -e log_level="INFO" -v "/home/user/tag_user.csv":"/tmp/tag_user.csv" --privileged "quay.io/cloud-governance/cloud-governance"
-
-# policy=cost_explorer
-sudo podman run --rm --name cloud-governance -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e es_host="$elasticsearch_host" -e es_port="$elasticsearch_port" -e es_index="$elasticsearch_index" -e cost_metric=UnblendedCost -e start_date="$start_date" -e end_date="$end_date" -e granularity="DAILY" -e cost_explorer_tags="['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance:latest"
-sudo podman run --rm --name cloud-governance -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e es_index="elasticsearch_index" -e cost_metric="UnblendedCost" -e start_date="$start_date" -e end_date="$end_date" -e granularity="DAILY" -e cost_explorer_tags="['User', 'Budget', 'Project', 'Manager', 'Owner', 'LaunchTime', 'Name', 'Email']" -e file_name="cost_explorer.txt" -v "/home/cost_explorer.txt":"/tmp/cost_explorer.txt" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance:latest"
-
-# policy=validate_iam_user_tags
-sudo podman run --rm --name cloud-governance  -e policy="validate_iam_user_tags" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e validate_type="spaces/tags" -e user_tags="['Budget', 'User', 'Owner', 'Manager', 'Environment', 'Project']"   -e log_level="INFO" "quay.io/cloud-governance/cloud-governance:latest"
-
-# policy=gitleaks
-sudo podman run --rm --name cloud-governance -e policy="gitleaks" -e git_access_token="$git_access_token" -e git_repo="https://github.com/redhat-performance/cloud-governance" -e several_repos="no" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
-
-# custom cloud custodian policy (path for custom policy: -v /home/user/custodian_policy:/custodian_policy)
-sudo podman run --rm --name cloud-governance -e policy="/custodian_policy/policy.yml" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" -v "/home/user/custodian_policy":"/custodian_policy" --privileged "quay.io/cloud-governance/cloud-governance"
-
-```
-
-## Run IBM Policy Using Podman
-
-```sh
-# policy=tag_baremetal
-podman run --rm --name cloud-governance -e policy="tag_baremetal" -e account="$account" -e IBM_API_USERNAME="$IBM_API_USERNAME" -e IBM_API_KEY="$IBM_API_KEY" -e SPREADSHEET_ID="$SPREADSHEET_ID" -e GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_APPLICATION_CREDENTIALS" -v $GOOGLE_APPLICATION_CREDENTIALS:$GOOGLE_APPLICATION_CREDENTIALS -e LDAP_USER_HOST="$LDAP_USER_HOST" -e tag_operation="update" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" "quay.io/cloud-governance/cloud-governance:latest"
-
-# tag=tab_vm
-podman run --rm --name cloud-governance -e policy="tag_vm" -e account="$account" -e IBM_API_USERNAME="$IBM_API_USERNAME" -e IBM_API_KEY="$IBM_API_KEY" -e SPREADSHEET_ID="$SPREADSHEET_ID" -e GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_APPLICATION_CREDENTIALS" -v $GOOGLE_APPLICATION_CREDENTIALS:$GOOGLE_APPLICATION_CREDENTIALS -e LDAP_USER_HOST="$LDAP_USER_HOST" -e tag_operation="update" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" "quay.io/cloud-governance/cloud-governance:latest"
-
-```
-
-#### Run with yaml config
+- Passing environment variables
 
 ```shell
-cp example.yaml env.yaml
+  podman run --rm --name cloud-governance \
+  -e policy="zombie_cluster_resource" \
+  -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+  -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+  -e AWS_DEFAULT_REGION="us-east-2" \
+  -e dry_run="yes"  \
+   "quay.io/cloud-governance/cloud-governance"
 ```
 
-Added the supported environment variables.
-example:
+- Using involvement file config
+- Create env.yaml file, and mount it to /tmp/env.yaml else mount to anypath and pass env DEFAULT_CONFIG_PATH where you
+  mounted
 
 ```yaml
-policy: instance_idle
 AWS_ACCESS_KEY_ID: ""
 AWS_SECRET_ACCESS_KEY: ""
+AWS_DEFAULT_REGION: "us-east-2"
+policy: "zombie_cluster_resource"
+dry_run: "yes"
+es_host: ""
+es_port: ""
+es_index: ""
 ```
 
 ```shell
-podman run --rm --name cloud-governance \
--v "${PWD}/env.yaml":"/tmp/env.yaml" \
-"quay.io/cloud-governance/cloud-governance:latest"
+  podman run --rm --name cloud-governance \
+  -v "env.yaml":"/tmp/env.yaml" \
+  --net="host" \
+   "quay.io/cloud-governance/cloud-governance"
 ```
 
 ## Run Policy Using Pod
