@@ -106,7 +106,7 @@ class TagClusterResources(TagClusterOperations):
                 for item in instance:
                     if item.get('Tags'):
                         for tag in item.get('Tags'):
-                            if self.cluster_prefix in tag.get('Key'):
+                                            if self.cluster_prefix in tag.get('Key') and tag.get('Value').lower() == 'owned':
                                 if tag.get('Key') == cluster_name:
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
                                               instance_tag.get('Key') != 'Name']
@@ -149,7 +149,7 @@ class TagClusterResources(TagClusterOperations):
                 # search that not exist permanent tags in the resource
                 if not self.__validate_existing_tag(resource.get(tags)):
                     for tag in resource[tags]:
-                        if self.cluster_prefix in tag.get('Key'):
+                        if self.cluster_prefix in tag.get('Key') and tag.get('Value').lower() == 'owned':
                             if tag.get('Key') not in cluster_tags:
                                 cluster_tags[tag.get('Key')] = []
                                 cluster_ids[tag.get('Key')] = []
@@ -472,7 +472,7 @@ class TagClusterResources(TagClusterOperations):
                 if item.get('Tags'):
                     if not self.__validate_existing_tag(item.get('Tags')):
                         for tag in item['Tags']:
-                            if self.cluster_prefix in tag.get('Key'):
+                            if self.cluster_prefix in tag.get('Key') and tag.get('Value').lower() == 'owned':
                                 all_tags = []
                                 instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                                 if not instance_tags:
@@ -679,7 +679,7 @@ class TagClusterResources(TagClusterOperations):
                     role_name_list = []
                     roles = self.iam_operations.get_roles()
                     for role in roles:
-                        if cluster_key in role.get('RoleName'):
+                        if cluster_key in role.get('RoleName') and any(t.get('Key', '').startswith(self.cluster_prefix) and t.get('Value', '').lower() == 'owned' for t in role.get('Tags', [])):
                             role_name_list.append(role.get('RoleName'))
                     if role_name_list:
                         for role_name in role_name_list:
@@ -735,7 +735,7 @@ class TagClusterResources(TagClusterOperations):
                             # search that not exist permanent tags in the resource
                             if not self.__validate_existing_tag(data.get('Tags')):
                                 for tag in data['Tags']:
-                                    if cluster_name in tag['Key']:
+                                    if cluster_name in tag['Key'] and tag['Value'].lower() == 'owned':
                                         all_tags = []
                                         instance_tags = self.__get_cluster_tags_by_instance_cluster(
                                             cluster_name=f'{self.cluster_prefix}{cluster_name}')
@@ -810,7 +810,7 @@ class TagClusterResources(TagClusterOperations):
                 if cluster_key:
                     for bucket in response['Buckets']:
                         # starts with cluster name
-                        if bucket['Name'].startswith(cluster_key):
+                            if bucket_tags and any(tag.get('Key', '').startswith(self.cluster_prefix) and tag.get('Value', '').lower() == 'owned' for tag in bucket_tags.get('TagSet', [])):
                             bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
                             if bucket_tags:
                                 bucket_tags = bucket_tags['TagSet']
