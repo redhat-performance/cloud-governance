@@ -28,7 +28,7 @@ class EnvironmentVariables:
                     with open(file_path) as f:
                         for line in f.readlines():
                             key, found, value = line.strip().partition("=")
-                            setattr(self, key, value)
+                            setattr(self, key, value.strip('"'))
                             if not found:
                                 logger.error(f"ERROR: invalid line in {env}: {line.strip()}")
                                 continue
@@ -62,24 +62,6 @@ class EnvironmentVariables:
 
         self.load_from_env()
         self.load_from_yaml()
-
-        # env files override true ENV. Not best order, but easier to write :/
-        # .env.generated can be auto-generated (by an external tool) based on the local cluster's configuration.
-        for env in ".env", ".env.generated":
-            try:
-                file_path = os.path.join(os.path.dirname(__file__), env)
-                with open(file_path) as f:
-                    for line in f.readlines():
-                        key, found, value = line.strip().partition("=")
-                        if not found:
-                            print("ERROR: invalid line in {env}: {line.strip()}")
-                            continue
-                        if key in os.environ:
-                            continue  # prefer env to env file
-                        os.environ[key] = value
-
-            except FileNotFoundError:
-                pass  # ignore
 
         ##################################################################################################
         # dynamic parameters - configure for local run
