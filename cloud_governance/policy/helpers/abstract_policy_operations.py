@@ -97,7 +97,7 @@ class AbstractPolicyOperations(ABC):
         return 'NA'
 
     @abstractmethod
-    def _delete_resource(self, resource_id: Union[str, list]):
+    def _delete_resource(self, resource_id: Union[str, list], **kwargs):
         """
         This method deletes the resource
         :param resource_id:
@@ -293,10 +293,10 @@ class AbstractPolicyOperations(ABC):
                 if clean_up_days >= days_to_delete_resource:
                     if self._dry_run == 'no':
                         if self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                            return self.execute_delete(resource_ids)
+                            return self.execute_delete(resource_ids, resource_id_key=kwargs.get('resource_id_key', ''))
         return PolicyResponse(deleted=False)
 
-    def execute_delete(self, resource_ids: list) -> PolicyResponse:
+    def execute_delete(self, resource_ids: list, **kwargs) -> PolicyResponse:
         """
         This method executes the deletes operation
         :param resource_ids:
@@ -304,7 +304,7 @@ class AbstractPolicyOperations(ABC):
         """
         policy_response = PolicyResponse(deleted=False)
         try:
-            result = self._delete_resource(resource_id=resource_ids)
+            result = self._delete_resource(resource_id=resource_ids, resource_id_key=kwargs.get('resource_id_key', ''))
             policy_response.set_value("message", result)
             policy_response.set_value("deleted", True)
         except Exception as err:

@@ -1,5 +1,6 @@
 import functools
 import os
+import time
 
 import boto3
 import typeguard
@@ -388,6 +389,15 @@ class EC2Operations:
         return self.utils.get_details_resource_list(func_name=self.elb1_client.describe_load_balancers,
                                                     input_tag='LoadBalancerDescriptions', check_tag='Marker')
 
+    def tag_elbv1(self, resource_ids: list, tags: list):
+        """
+        This method tags the elastic v1 load balancers in the region.
+        :param resource_ids:
+        :param tags:
+        :return:
+        """
+        return self.elb1_client.add_tags(LoadBalancerNames=resource_ids, Tags=tags)
+
     def get_load_balancers_v2(self):
         """
         This method returns load balancers v2 in the region
@@ -395,6 +405,16 @@ class EC2Operations:
         """
         return self.utils.get_details_resource_list(func_name=self.elbv2_client.describe_load_balancers,
                                                     input_tag='LoadBalancers', check_tag='Marker')
+
+    def tag_elbv2(self, resource_ids: list, tags: list):
+        """
+        This method tags the elastic v1 load balancers in the region.
+        :param resource_ids:
+        :param tags:
+        :return:
+        """
+        for resource_id in resource_ids:
+            return self.elbv2_client.add_tags(ResourceArns=[resource_id], Tags=tags)
 
     def get_vpcs(self, **kwargs):
         """
@@ -816,7 +836,12 @@ class EC2Operations:
         :return:
         """
         try:
-            [self.ec2_client.delete_nat_gateway(NatGatewayId=resource_id) for resource_id in resource_ids]
+            for resource_id in resource_ids:
+                self.ec2_client.delete_nat_gateway(NatGatewayId=resource_id)
+            while len(self.get_nat_gateways(Filters=[
+                {'Name': 'state', 'Values': ['deleted']},
+                {'Name': 'nat-gateway-id', 'Values': resource_ids}])) != len(resource_ids):
+                time.sleep(60)
             return True
         except Exception as err:
             raise err
@@ -833,14 +858,21 @@ class EC2Operations:
         except Exception as err:
             raise err
 
-    def delete_internet_gateway(self, resource_ids: list) -> bool:
+    def detach_and_delete_internet_gateway(self, resource_ids: list) -> bool:
         """
         This method delete internet gateway
         :param resource_ids:
         :return:
         """
         try:
-            [self.ec2_client.delete_internet_gateway(InternetGatewayId=resource_id) for resource_id in resource_ids]
+            internet_gateways = self.get_internet_gateways(InternetGatewayIds=resource_ids)
+            for internet_gateway in internet_gateways:
+                attachments = internet_gateway.get('Attachments')
+                resource_id = internet_gateway.get('InternetGatewayId')
+                if attachments:
+                    vpc_id = attachments[0].get('VpcId')
+                    self.ec2_client.detach_internet_gateway(InternetGatewayId=resource_id, VpcId=vpc_id)
+                self.ec2_client.delete_internet_gateway(InternetGatewayId=resource_id)
             return True
         except Exception as err:
             raise err
@@ -864,7 +896,9 @@ class EC2Operations:
         :return:
         """
         try:
-            [self.ec2_client.delete_dhcp_options(DhcpOptionsId=resource_id) for resource_id in resource_ids]
+            for resource_id in resource_ids:
+                self.ec2_client.associate_dhcp_options(DhcpOptionsId=resource_id, VpcId='default')
+                self.ec2_client.delete_dhcp_options(DhcpOptionsId=resource_id)
             return True
         except Exception as err:
             raise err

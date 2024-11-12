@@ -1,4 +1,5 @@
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 
 
@@ -41,7 +42,7 @@ class ZombieClusterOperations(AWSPolicyOperations):
             cluster_id = ''
 
             for tag in resource.get(tags_name, []):
-                if tag['Key'].startswith(self._cluster_prefix):
+                if tag['Key'].startswith(self._cluster_prefix) and tag['Value'].lower() == 'owned':
                     cluster_id = tag.get('Key')
                     break
 
@@ -52,7 +53,7 @@ class ZombieClusterOperations(AWSPolicyOperations):
 
             found = False
             for tag in resource.get(tags_name, []):
-                if zombie_cluster_id and zombie_cluster_id == tag['Key']:
+                if zombie_cluster_id and zombie_cluster_id == tag['Key'] and tag['Value'].lower() == 'owned':
                     found = True
                 elif self._zombie_resource_name and tag['Value'].startswith(self._zombie_resource_name):
                     found = True
@@ -64,13 +65,15 @@ class ZombieClusterOperations(AWSPolicyOperations):
                 result_resources_cluster_id.setdefault(cluster_id, []).append(resource)
         return result_resources_cluster_id
 
+    @logger_time_stamp
     def update_resource_tags(self, resource_ids: list,
                              cleanup_days: int,
                              tags: list,
                              resource_type: str,
-                             tag_name: str = 'CleanUpDays'):
+                             tag_name: str = 'CleanUpDays', resource_id_key: str = None):
         """
         This method updates the resource tags
+        :param resource_id_key:
         :param tag_name:
         :param resource_type:
         :param resource_ids:
@@ -87,10 +90,21 @@ class ZombieClusterOperations(AWSPolicyOperations):
                 for resource_id in resource_ids:
                     self._iam_operations.tag_role(role_name=resource_id, tags=tags)
             elif resource_type in ['ec2_service']:
-                self._ec2_client.create_tags(Resources=resource_ids, Tags=tags)
+                if resource_ids:
+                    if resource_id_key == 'LoadBalancerArn':
+                        self._ec2_operations.tag_elbv2(
+                            resource_ids=resource_ids, tags=tags)
+                    elif resource_id_key == 'LoadBalancerName':
+                        self._ec2_operations.tag_elbv1(
+                            resource_ids=resource_ids, tags=tags)
+                    else:
+                        self._ec2_client.create_tags(Resources=resource_ids, Tags=tags)
+            return True, None
         except Exception as err:
             logger.info(f'Exception raised: {err}: {resource_ids}')
+            return False, err
 
+    @logger_time_stamp
     def process_and_delete_resources(self, zombie_cluster_resources: dict,
                                      resource_id_key: str,
                                      resource_type: str,
@@ -121,7 +135,8 @@ class ZombieClusterOperations(AWSPolicyOperations):
             policy_response = self.zombie_cluster_verify_and_delete_resource(resource_ids,
                                                                              tags=tags,
                                                                              clean_up_days=cleanup_days,
-                                                                             resource_type=resource_type)
+                                                                             resource_type=resource_type,
+                                                                             resource_id_key=resource_id_key)
             zombie_cluster_resources_response[zombie_cluster_tag] = {
                 'ResourceIds': resource_ids,
                 'DaysCount': self.get_clean_up_days_count(tags, tag_name='CleanUpDays'),
@@ -133,14 +148,17 @@ class ZombieClusterOperations(AWSPolicyOperations):
                 'CreateDate': str(found_create_date if found_create_date else ""),
             }
             if not policy_response.deleted:
-                self.update_resource_tags(tags=tags,
-                                          resource_ids=resource_ids,
-                                          resource_type=resource_type,
-                                          cleanup_days=self.get_clean_up_days_count(tags),
-                                          tag_name='CleanUpDays')
+                ok, err = self.update_resource_tags(tags=tags,
+                                                    resource_ids=resource_ids,
+                                                    resource_type=resource_type,
+                                                    cleanup_days=self.get_clean_up_days_count(tags),
+                                                    tag_name='CleanUpDays', resource_id_key=resource_id_key)
+                if not ok:
+                    zombie_cluster_resources_response[zombie_cluster_tag]['TaggingError'] = err
         return zombie_cluster_resources_response
 
-    def _delete_resource(self, resource_id: list):
+    @logger_time_stamp
+    def _delete_resource(self, resource_id: list, **kwargs):
         """
         This method deletes the resource
         :param resource_id:
@@ -156,11 +174,13 @@ class ZombieClusterOperations(AWSPolicyOperations):
                     self._ec2_operations.delete_security_group(resource_ids=resource_ids)
                 elif 'ami' in resource_id:
                     self._ec2_operations.deregister_ami(resource_ids=resource_ids)
+                elif 'igw' in resource_id:
+                    self._ec2_operations.detach_and_delete_internet_gateway(resource_ids=resource_ids)
                 elif 'snap' in resource_id:
                     self._ec2_operations.delete_snapshot(resource_ids=resource_ids)
-                elif 'elasticloadbalancing' in resource_id:
+                elif kwargs.get('resource_id_key', '') == 'LoadBalancerArn':
                     self._ec2_operations.delete_load_balancer_v2(resource_ids=resource_ids)
-                elif 'load' in resource_id:
+                elif kwargs.get('resource_id_key', '') == 'LoadBalancerName':
                     self._ec2_operations.delete_load_balancer_v1(resource_ids=resource_ids)
                 elif 'efs' in resource_id:
                     self._efs_operations.delete_efs_filesystem(resource_ids=resource_ids)
@@ -174,6 +194,8 @@ class ZombieClusterOperations(AWSPolicyOperations):
                     self._ec2_operations.delete_dhcp(resource_ids=resource_ids)
                 elif 'nacl' in resource_id:
                     self._ec2_operations.delete_nacl(resource_ids=resource_ids)
+                elif 'vpce' in resource_id and kwargs.get('resource_id_key', '') == 'VpcEndpointId':
+                    self._ec2_operations.delete_vpc_endpoint(resource_ids=resource_ids)
                 elif 'vpc' in resource_id:
                     self._ec2_operations.delete_vpc(resource_ids=resource_ids)
                 elif 'subnet' in resource_id:
@@ -182,5 +204,6 @@ class ZombieClusterOperations(AWSPolicyOperations):
                     self._ec2_operations.delete_vpc_route_table(resource_ids=resource_ids)
                 return "Resources are deleted"
             except Exception as err:
+                logger.error(err)
                 raise err
         raise Exception("No resources are to deleted")
