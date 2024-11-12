@@ -1,5 +1,6 @@
 from abc import ABC
 
+from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.helpers.aws.policy.zombie_cluster_operations import ZombieClusterOperations
 
 
@@ -9,6 +10,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
         super().__init__()
         self.zombie_cluster_resource_name = self.config_variable.ZOMBIE_CLUSTER_RESOURCE_NAME
 
+    @logger_time_stamp
     def get_zombie_cluster_resources(self, resource_list: list,
                                      resource_key_id: str,
                                      zombie_cluster_id: str,
@@ -36,6 +38,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
             create_date=create_date)
         return zombie_cluster_resources
 
+    @logger_time_stamp
     def zombie_cluster_volume(self, zombie_cluster_id: str = None):
         """
         This method returns the list of zombie cluster volumes, and delete them once they reach the delete days
@@ -53,6 +56,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date='CreateTime')
 
+    @logger_time_stamp
     def zombie_cluster_snapshot(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's snapshot according to cluster tag name and cluster name data
@@ -70,6 +74,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  create_date='StartTime'
                                                  )
 
+    @logger_time_stamp
     def zombie_cluster_ami(self, zombie_cluster_id: str = None):
         """
         This method returns list of cluster's ami according to cluster tag name and cluster name data
@@ -84,6 +89,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date='CreationDate')
 
+    @logger_time_stamp
     def zombie_cluster_load_balancer(self):
         """
         This method returns list of cluster's load balancer according to cluster_id tag
@@ -100,6 +106,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id="",
                                                  create_date='CreatedTime')
 
+    @logger_time_stamp
     def zombie_cluster_load_balancer_v2(self):
         """
         This method returns list of cluster's load balancer_v2 according to cluster_id tag
@@ -116,6 +123,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id="",
                                                  create_date='CreatedTime')
 
+    @logger_time_stamp
     def zombie_cluster_elastic_file_system(self):
         """
         This method returns list of cluster's elastic file system according to cluster_id tag
@@ -131,6 +139,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
 
     # VPC
 
+    @logger_time_stamp
     def zombie_cluster_security_group(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's security groups compare to existing instances and cluster name data
@@ -141,11 +150,15 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
         if zombie_cluster_id:
             filters.append([{'Name': f'tag:{zombie_cluster_id}', 'Values': 'owned'}])
         security_groups_data = self._ec2_operations.get_security_groups(Filters=filters)
+        for security_group in security_groups_data.copy():
+            if security_group.get('GroupName') == 'default':
+                security_groups_data.remove(security_group)
         return self.get_zombie_cluster_resources(resource_list=security_groups_data,
                                                  resource_key_id=group_id,
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_network_interface(self, zombie_cluster_id: str = None):
         """
         This method returns the list of zombie cluster's network interface according to cluster_id
@@ -163,6 +176,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  create_date="",
                                                  tags_name='TagSet')
 
+    @logger_time_stamp
     def zombie_cluster_nat_gateway(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's nat_gateway according to cluster_id'
@@ -179,6 +193,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="CreateTime")
 
+    @logger_time_stamp
     def zombie_cluster_route_table(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's route table according to cluster_id'
@@ -190,11 +205,18 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
         if zombie_cluster_id:
             filters.append([{'Name': f'tag:{zombie_cluster_id}', 'Values': 'owned'}])
         route_table_data = self._ec2_operations.get_route_tables(Filters=filters)
+        for route_table in route_table_data.copy():
+            associations = route_table.get('Associations', [])
+            if associations:
+                for association in associations:
+                    if association.get('Main'):
+                        route_table_data.remove(route_table)
         return self.get_zombie_cluster_resources(resource_list=route_table_data,
                                                  resource_key_id=route_table_id,
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_subnets(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's subnets according to cluster_id'
@@ -211,6 +233,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_internet_gateway(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's internet_gateway according to cluster_id'
@@ -227,6 +250,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_dhcp_options(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's dhcp options according to cluster_id'
@@ -243,6 +267,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_vpc_end_point(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's vpc endpoint according to cluster_id'
@@ -259,6 +284,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_nacl(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's nacl according to cluster_id
@@ -275,6 +301,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_elastic_ip(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's elastic ip according to cluster_id
@@ -291,6 +318,7 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
 
+    @logger_time_stamp
     def zombie_cluster_vpc(self, zombie_cluster_id: str = None):
         """
         This method returns list of zombie cluster's vpc according to cluster_id
@@ -306,6 +334,15 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                                                  resource_key_id=vpc_id,
                                                  zombie_cluster_id=zombie_cluster_id,
                                                  create_date="")
+
+    @logger_time_stamp
+    def zombie_cluster_role(self, zombie_cluster_id: str = None):
+        """
+        This method returns list of zombie cluster's role according to cluster_id, runs only on us-east-1 region
+        :param zombie_cluster_id:
+        :return:
+        """
+        # @ TODO implement in feature releases
 
     def __get_zombie_cluster_methods_and_dependencies(self):
         """
@@ -342,9 +379,10 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
             *dependencies.keys(),
             self.zombie_cluster_vpc_end_point,
             self.zombie_cluster_nacl,
-            self.zombie_cluster_vpc,
+            self.zombie_cluster_route_table,
             self.zombie_cluster_internet_gateway,
             self.zombie_cluster_dhcp_options,
+            self.zombie_cluster_vpc,
         ]
         dependencies[self.zombie_cluster_vpc] = zombie_clusters_resources
         return zombie_clusters_resources, dependencies
@@ -367,27 +405,29 @@ class ZombieClusterResource(ZombieClusterOperations, ABC):
                 executed_method_name = exec_cluster.__name__
                 message = zombie_resources["Message"]
                 error = zombie_resources["Error"]
+                tagging_error = zombie_resources.get("TaggingError", None),
                 zombie_resources.pop("Message", None)
                 zombie_resources.pop("Error", None)
+                zombie_resources.pop("TaggingError", None)
                 if zombie_tag in zombie_cluster_response:
                     zombie_cluster_response[zombie_tag]['ResourceIds'].extend(zombie_resources['ResourceIds'])
                     resource_names = list(set(zombie_cluster_response[zombie_tag]['ResourceNames']))
                     resource_names.append(executed_method_name)
                     zombie_cluster_response[zombie_tag]['ResourceNames'] = list(resource_names)
                     zombie_cluster_response[zombie_tag].setdefault('Errors', []).append(
-                        f'{executed_method_name}: {error}'
-                    )
+                        f'{executed_method_name}: {error}')
                     zombie_cluster_response[zombie_tag].setdefault('Message', []).append(
-                        f'{executed_method_name}: {message}'
-                    )
+                        f'{executed_method_name}: {message}')
+                    zombie_cluster_response[zombie_tag].setdefault('TaggingError', []).append(
+                        f'{executed_method_name}: {tagging_error}')
                 else:
                     zombie_cluster_response.setdefault(zombie_tag, {}).update(zombie_resources)
                     zombie_cluster_response[zombie_tag].setdefault('Errors', []).append(
-                        f'{executed_method_name}: {error}'
-                    )
+                        f'{executed_method_name}: {error}')
                     zombie_cluster_response[zombie_tag].setdefault('Message', []).append(
-                        f'{executed_method_name}: {message}'
-                    )
+                        f'{executed_method_name}: {message}')
+                    zombie_cluster_response[zombie_tag].setdefault('TaggingError', []).append(
+                        f'{executed_method_name}: {tagging_error}')
                     zombie_cluster_response[zombie_tag].setdefault('ResourceNames', []).append(executed_method_name)
         return zombie_cluster_response
 

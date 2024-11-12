@@ -179,7 +179,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         cluster_ids = []
         for instance in active_instances:
             for tag in instance.get('Tags', []):
-                if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                if tag.get('Key', '').startswith('kubernetes.io/cluster') and tag.get('Value').lower() == "owned":
                     cluster_ids.append(tag.get('Key'))
                     break
         return cluster_ids
@@ -196,7 +196,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                 ec2_client=get_boto3_client('ec2', region_name=region))
             for instance in active_instances:
                 for tag in instance.get('Tags', []):
-                    if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                    if tag.get('Key', '').startswith('kubernetes.io/cluster') and tag.get('Value').lower() == "owned":
                         cluster_ids.append(tag.get('Key'))
                         break
         return cluster_ids

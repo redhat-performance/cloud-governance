@@ -1,11 +1,11 @@
 from moto import mock_ec2
 
-from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client, get_tag_value_from_tags
+from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.helpers.aws.policy.zombie_cluster_operations import ZombieClusterOperations
-from tests.unittest.cloud_governance.common.clouds.aws.ec2.test_ec2_operations import create_ec2_instance, create_vpc, \
+from tests.unittest.mocks.aws.ec2_create import create_ec2_instance, create_vpc, \
     create_security_group_rule, create_security_group
-from tests.unittest.configs import DEFAULT_AMI_ID, AWS_DEFAULT_REGION, INSTANCE_TYPE_T2_MICRO
+from tests.unittest.configs import AWS_DEFAULT_REGION
 
 environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
 

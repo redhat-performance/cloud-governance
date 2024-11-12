@@ -4,7 +4,7 @@ from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.zombie_cluster_resource import ZombieClusterResource
 from tests.unittest.configs import CLUSTER_TAG1, AWS_DEFAULT_REGION
 from tests.unittest.mocks.aws.ec2_create import create_volume, create_vpc, create_subnet, create_network_interface, \
-    create_security_group, create_nat_gateway
+    create_nat_gateway
 
 environment_variables.environment_variables_dict["AWS_DEFAULT_REGION"] = AWS_DEFAULT_REGION
 
