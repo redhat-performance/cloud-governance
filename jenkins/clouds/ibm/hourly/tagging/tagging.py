@@ -9,6 +9,7 @@ IBM_CUSTOM_TAGS_LIST = os.environ['IBM_CUSTOM_TAGS_LIST']
 IBM_CLOUD_API_KEY = os.environ['IBM_CLOUD_API_KEY']
 LOGS = os.environ.get('LOGS', 'logs')
 account = os.environ['account']
+IBM_ACCOUNT_ID_PERFORMANCE_SCALE = os.environ['IBM_ACCOUNT_ID_PERFORMANCE_SCALE']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
                                                   'quay.io/cloud-governance/cloud-governance:latest')
 
@@ -47,11 +48,11 @@ run_cmd("echo Run IBM tagging on baremetal, vm")
 
 run_cmd("echo Run IBM tag baremetal")
 volume_mounts_targets = [GOOGLE_APPLICATION_CREDENTIALS]
-
+tag_custom = [IBM_CUSTOM_TAGS_LIST]
 input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME,
                   'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS, 'SPREADSHEET_ID': SPREADSHEET_ID,
                   'IBM_API_USERNAME': IBM_API_USERNAME, 'IBM_API_KEY': IBM_API_KEY, 'tag_operation': "update",
-                  'log_level': "INFO", 'policy': 'tag_baremetal', "PUBLIC_CLOUD_NAME": "IBM"}
+                  'log_level': "INFO", 'policy': 'tag_baremetal', "PUBLIC_CLOUD_NAME": "IBM", "tag_custom": tag_custom}
 
 baremetal_cmd = get_podman_run_cmd(volume_mounts=volume_mounts_targets, **input_env_keys)
 run_cmd(baremetal_cmd)
@@ -66,5 +67,6 @@ run_cmd("echo Run tag resources command")
 podman_run_cmd = get_podman_run_cmd(policy="tag_resources", account=account,
                                     IBM_CLOUD_API_KEY=IBM_CLOUD_API_KEY,
                                     IBM_CUSTOM_TAGS_LIST=IBM_CUSTOM_TAGS_LIST,
-                                    PUBLIC_CLOUD_NAME="IBM")
+                                    PUBLIC_CLOUD_NAME="IBM",
+                                    IBM_ACCOUNT_ID=IBM_ACCOUNT_ID_PERFORMANCE_SCALE)
 run_cmd(podman_run_cmd)

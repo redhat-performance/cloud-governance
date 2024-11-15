@@ -43,7 +43,8 @@ class GoogleDriveOperations:
                         }
                     }]}
                 if self.__service:
-                    self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id, body=create_worksheet_meta_data).execute()
+                    self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id,
+                                                              body=create_worksheet_meta_data).execute()
                     logger.info(f'{sheet_name} worksheet created')
             else:
                 logger.info(f'{sheet_name} Worksheet Already present')
@@ -62,7 +63,8 @@ class GoogleDriveOperations:
         """
         if self.__service:
             try:
-                result = self.__service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=sheet_name).execute()
+                result = self.__service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                                    range=sheet_name).execute()
                 file_name = f'{sheet_name}.csv'
                 output_file = os.path.join(file_path, file_name)
                 if result.get('values'):
@@ -104,7 +106,8 @@ class GoogleDriveOperations:
         """
         if self.__service:
             sheets_with_properties = self.__service.spreadsheets().get(spreadsheetId=spreadsheet_id,
-                                                                       fields='sheets.properties').execute().get('sheets')
+                                                                       fields='sheets.properties').execute().get(
+                'sheets')
             for sheet in sheets_with_properties:
                 if 'title' in sheet['properties'].keys():
                     if sheet['properties']['title'] == sheet_name:
@@ -126,7 +129,8 @@ class GoogleDriveOperations:
                     {
                         "deleteDimension": {
                             "range": {
-                                "sheetId": self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id),
+                                "sheetId": self.find_sheet_id_by_name(sheet_name=sheet_name,
+                                                                      spreadsheet_id=spreadsheet_id),
                                 "dimension": "ROWS",
                                 "startIndex": row_number,
                                 "endIndex": row_number + 1

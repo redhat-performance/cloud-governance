@@ -10,6 +10,7 @@ def test_tag_all_vpc_resources():
     environment_variables.IBM_CLOUD_API_KEY = 'mock_ibm_api_key'
     environment_variables.RESOURCE_TO_TAG = 'virtual_servers'
     environment_variables.IBM_CUSTOM_TAGS_LIST = "cost-center: test"
+    environment_variables.IBM_ACCOUNT_ID = "test"
     tag_resources = TagResources()
     res = tag_resources.tag_all_vpc_resources()
     assert res.get('messages').get('virtual_servers')

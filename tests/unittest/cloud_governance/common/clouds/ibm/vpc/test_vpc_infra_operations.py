@@ -3,6 +3,7 @@ from cloud_governance.main.environment_variables import environment_variables
 from tests.unittest.mocks.ibm.mock_ibm_vpc import mock_ibm_vpc
 
 environment_variables.IBM_CLOUD_API_KEY = 'mock_ibm_api_key'
+environment_variables.IBM_ACCOUNT_ID = "test"
 
 
 @mock_ibm_vpc

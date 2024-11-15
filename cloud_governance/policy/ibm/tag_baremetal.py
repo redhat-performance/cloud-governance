@@ -1,4 +1,3 @@
-
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.policy_operations.ibm.tagging.tagging_operations import TaggingOperations
@@ -20,7 +19,8 @@ class TagBareMetal(TaggingOperations):
         """
         hardware_data = self._classic_operations.get_hardware_data(hardware_id=str(hardware_id))
         if hardware_data:
-            return hardware_data.get('billingItem').get('orderItem').get('order').get('userRecord').get('username'), f'{hardware_data.get("hostname")}.{hardware_data.get("domain")}'
+            return hardware_data.get('billingItem').get('orderItem').get('order').get('userRecord').get(
+                'username'), f'{hardware_data.get("hostname")}.{hardware_data.get("domain")}'
         return '', ''
 
     def tag_remove_hardware(self, user_tags: list, hardware_tags: list, hardware_id: str, hardware_name: str):
@@ -37,11 +37,15 @@ class TagBareMetal(TaggingOperations):
             remove_hardware_tags = [self._tag_remove_name]
         if remove_hardware_tags:
             try:
-                response = self.softlayer_operation(softlayer_name='SoftLayer_Hardware_Server', softlayer_method='removeTags', resource_id=hardware_id, tags=','.join(remove_hardware_tags))
+                response = self.softlayer_operation(softlayer_name='SoftLayer_Hardware_Server',
+                                                    softlayer_method='removeTags', resource_id=hardware_id,
+                                                    tags=','.join(remove_hardware_tags))
                 if response:
-                    logger.info(f'Tags are Removed to the hardware: {hardware_id} - {hardware_name} : count: {len(remove_hardware_tags)} : {remove_hardware_tags}')
+                    logger.info(
+                        f'Tags are Removed to the hardware: {hardware_id} - {hardware_name} : count: {len(remove_hardware_tags)} : {remove_hardware_tags}')
                 else:
-                    logger.info(f'Tags are not Removed to the Hardware: {hardware_id} - {hardware_name}, something might fail')
+                    logger.info(
+                        f'Tags are not Removed to the Hardware: {hardware_id} - {hardware_name}, something might fail')
             except Exception as err:
                 logger.info(f'{err}')
         return remove_hardware_tags
@@ -57,18 +61,22 @@ class TagBareMetal(TaggingOperations):
         """
         add_hardware_tags = []
         if self._tag_custom:
-            add_hardware_tags.extend(self._tag_custom)
+            user_tags.extend(self._tag_custom)
         add_hardware_tags.extend(self._filter_common_tags(user_tags=user_tags, resource_tags=hardware_tags))
         if add_hardware_tags:
             if self._tag_operation == 'update':
                 add_hardware_tags.extend(hardware_tags)
                 add_hardware_tags = list(set(add_hardware_tags))
                 try:
-                    response = self.softlayer_operation(softlayer_name='SoftLayer_Hardware_Server', softlayer_method='setTags', resource_id=hardware_id, tags=','.join(add_hardware_tags))
+                    response = self.softlayer_operation(softlayer_name='SoftLayer_Hardware_Server',
+                                                        softlayer_method='setTags', resource_id=hardware_id,
+                                                        tags=','.join(add_hardware_tags))
                     if response:
-                        logger.info(f'Tags are added to the hardware: {hardware_id} - {hardware_name} : count: {len(add_hardware_tags)} : {add_hardware_tags}')
+                        logger.info(
+                            f'Tags are added to the hardware: {hardware_id} - {hardware_name} : count: {len(add_hardware_tags)} : {add_hardware_tags}')
                     else:
-                        logger.info(f'Tags are not added to the hardware: {hardware_id} - {hardware_name}, something might fail')
+                        logger.info(
+                            f'Tags are not added to the hardware: {hardware_id} - {hardware_name}, something might fail')
                 except Exception as err:
                     logger.info(f'{err}')
         return add_hardware_tags

@@ -153,6 +153,7 @@ class EnvironmentVariables:
         if (self._environment_variables_dict['USAGE_REPORTS_APIKEY'] or
                 self._environment_variables_dict['IBM_CLOUD_API_KEY'] or
                 hasattr(self, "IBM_CLOUD_API_KEY")):
+            self.IBM_CLOUD_API_KEY = self._environment_variables_dict['IBM_CLOUD_API_KEY']
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'IBM'
         self._environment_variables_dict['month'] = EnvironmentVariables.get_env('month', '')
         self._environment_variables_dict['year'] = EnvironmentVariables.get_env('year', '')

@@ -13,8 +13,9 @@ def get_resources_wrapper(func):
         resources_crn = []
         resource_list = func(*args, **kwargs)
         for region, resources in resource_list.items():
-            resources_crn.extend([resource.get('crn') for resource in resources])
-        return resources_crn
+            resources_crn.extend(
+                [resource.get('crn') if isinstance(resource, dict) else resource for resource in resources])
+        return list(set(resources_crn))
 
     return wrapper
 
@@ -44,6 +45,24 @@ class TagResources:
         :return:
         """
         return self.vpc_infra_operations.get_all_instances()
+
+    @get_resources_wrapper
+    @logger_time_stamp
+    def get_images_crn(self):
+        """
+        This method returns all virtual server crn's
+        :return:
+        """
+        return self.vpc_infra_operations.get_all_images()
+
+    @get_resources_wrapper
+    @logger_time_stamp
+    def get_placement_groups_crn(self):
+        """
+        This method returns all placement group crn's
+        :return:
+        """
+        return self.vpc_infra_operations.get_all_placement_groups()
 
     @get_resources_wrapper
     @logger_time_stamp
@@ -126,6 +145,15 @@ class TagResources:
         """
         return self.vpc_infra_operations.get_all_load_balancers()
 
+    @get_resources_wrapper
+    @logger_time_stamp
+    def get_baremetal_servers_crn(self):
+        """
+        This method returns all baremetals crn's
+        :return:
+        """
+        return self.vpc_infra_operations.get_all_baremetal_servers()
+
     @logger_time_stamp
     def tag_all_vpc_resources(self):
         """
@@ -139,6 +167,7 @@ class TagResources:
         tags_list = self.__ibm_custom_tags_list.split(',')
         vpc_resources = [
             "virtual_servers",
+            "placement_groups",
             "volumes",
             "floating_ips",
             "vpcs",
@@ -147,7 +176,9 @@ class TagResources:
             "public_gateways",
             "vpc_endpoint_gateways",
             "load_balancers",
-            "schematics_workspaces"
+            "schematics_workspaces",
+            "baremetal_servers",
+            "images"
         ]
         if self.resource_to_tag and self.resource_to_tag in vpc_resources:
             vpc_resources = [self.resource_to_tag]
