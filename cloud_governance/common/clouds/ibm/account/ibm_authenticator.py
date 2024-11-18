@@ -14,7 +14,10 @@ class IBMAuthenticator:
     def __init__(self):
         logging.disable(logging.DEBUG)
         self.env_config = environment_variables
-        self.account_id = self.env_config.IBM_ACCOUNT_ID
+        if hasattr(self.env_config, 'IBM_ACCOUNT_ID'):
+            self.account_id = self.env_config.IBM_ACCOUNT_ID
+        else:
+            self.account_id = self.env_config.environment_variables_dict.get('ACCOUNT_ID')
         if hasattr(self.env_config, 'IBM_CLOUD_API_KEY'):
             self.__api_key = self.env_config.IBM_CLOUD_API_KEY
         else:
