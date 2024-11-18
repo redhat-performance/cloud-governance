@@ -33,7 +33,8 @@ class IBMAccount:
         self.__API_KEY = self.__environment_variables_dict.get('IBM_API_KEY', '')
         try:
             if self.__API_KEY and self.__API_USERNAME:
-                self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME, api_key=self.__API_KEY, timeout=self.DELAY)
+                self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME,
+                                                                    api_key=self.__API_KEY, timeout=self.DELAY)
                 self.short_account_id = str(self.__API_USERNAME.split('_')[0])
             if self.__environment_variables_dict.get('USAGE_REPORTS_APIKEY'):
                 self.__service_client = UsageReportsV4.new_instance()
@@ -81,23 +82,32 @@ class IBMAccount:
         if not os.path.exists(file_name):
             self.__gsheet_client.download_spreadsheet(spreadsheet_id=self.__gsheet_id, sheet_name=self.account,
                                                       file_path=file_path)
-        df = pd.read_csv(file_name)
-        df.fillna('', inplace=True)
-        if user_email:
-            df.set_index('_Email', inplace=True)
-            user = username.split('@')[0]
+        if os.path.exists(file_name):
+            df = pd.read_csv(file_name)
+            df.fillna('', inplace=True)
+            if user_email:
+                df.set_index('_Email', inplace=True)
+                user = username.split('@')[0]
+            else:
+                df.set_index('User', inplace=True)
+                user = username.split('_')[1].split('@')[0]
+            try:
+                tags = dict(df.loc[username])
+            except KeyError:
+                tags = {}
+            tags['User'] = user
         else:
-            df.set_index('User', inplace=True)
-            user = username.split('_')[1].split('@')[0]
-        tags = dict(df.loc[username])
-        tags['User'] = user
+            tags = {}
+            if '@redhat.com' in username:
+                tags = {'User': username.split('_')[-1].split('@')[0]}
         for key in list(tags.keys()):
             if key.startswith('_'):
                 tags.pop(key)
-        ldap_data = self.__ldap.get_user_details(user_name=tags['User'])
-        if ldap_data:
-            tags['Owner'] = ldap_data['FullName']
-            tags['Manager'] = ldap_data['managerName']
+        if tags:
+            ldap_data = self.__ldap.get_user_details(user_name=tags['User'])
+            if ldap_data:
+                tags['Owner'] = ldap_data['FullName']
+                tags['Manager'] = ldap_data['managerName']
         return self.__organise_user_tags(tags)
 
     @retry(exceptions=Exception, tries=RETRIES, delay=DELAY)
@@ -116,12 +126,14 @@ class IBMAccount:
             }
         }
         invoice_mask = "mask[id, closedDate, typeCode, createDate]"
-        invoice_list = self.__sl_client.call('SoftLayer_Account', 'getInvoices', mask=invoice_mask, filter=_filter, iter=True)
+        invoice_list = self.__sl_client.call('SoftLayer_Account', 'getInvoices', mask=invoice_mask, filter=_filter,
+                                             iter=True)
         invoice_data = {}
         for invoice in invoice_list:
             if invoice.get('typeCode') == 'RECURRING':
                 invoice_item_mask = f"""mask[id, createDate, recurringFee, parentId, categoryCode, description, hostName, domainName, invoiceId, resourceTableId, productItemId]"""
-                invoice_items = self.__sl_client.call('SoftLayer_Billing_Invoice', 'getItems', id=invoice.get('id'), iter=True, mask=invoice_item_mask)
+                invoice_items = self.__sl_client.call('SoftLayer_Billing_Invoice', 'getItems', id=invoice.get('id'),
+                                                      iter=True, mask=invoice_item_mask)
                 invoice_data[invoice.get('id')] = invoice_items
         return invoice_data
 
@@ -168,7 +180,8 @@ class IBMAccount:
                 else:
                     parent_id_data[item_id] = parent_id_data.get(item_id, 0) + recurring_fee
                 if username:
-                    description_id_data.setdefault(parent_id, set()).add(f'{username[0]}-{"-".join(description.split()[:2])}')
+                    description_id_data.setdefault(parent_id, set()).add(
+                        f'{username[0]}-{"-".join(description.split()[:2])}')
         for parent_id, username in description_id_data.items():
             hostname_data[parent_id] = list(username)[0]
         combine_invoice_data = {}
@@ -200,5 +213,7 @@ class IBMAccount:
         @return:
         """
         billing_month = str(year) + '-' + str(month)  # yyyy-mm
-        account_summary = self.__service_client.get_account_summary(account_id=self.__account_id, billingmonth=billing_month, timeout=self.DELAY).get_result()
+        account_summary = self.__service_client.get_account_summary(account_id=self.__account_id,
+                                                                    billingmonth=billing_month,
+                                                                    timeout=self.DELAY).get_result()
         return account_summary

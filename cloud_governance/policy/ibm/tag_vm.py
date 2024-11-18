@@ -18,7 +18,8 @@ class TagVM(TaggingOperations):
         @return:
         """
         vm_data = self._classic_operations.get_virtual_machine_data(vm_id=str(vm_id))
-        return vm_data.get('billingItem').get('orderItem').get('order').get('userRecord').get('username'), f'{vm_data.get("hostname")}.{vm_data.get("domain")}'
+        return vm_data.get('billingItem').get('orderItem').get('order').get('userRecord').get(
+            'username'), f'{vm_data.get("hostname")}.{vm_data.get("domain")}'
 
     def tag_update_virtual_machine(self, user_tags: list, vm_tags: list, vm_id: str, vm_name: str):
         """
@@ -31,7 +32,7 @@ class TagVM(TaggingOperations):
         """
         add_vm_tags = []
         if self._tag_custom:
-            add_vm_tags.extend(self._tag_custom)
+            user_tags.extend(self._tag_custom)
         add_vm_tags.extend(self._filter_common_tags(user_tags=user_tags, resource_tags=vm_tags))
         if add_vm_tags:
             tags = add_vm_tags
@@ -39,7 +40,9 @@ class TagVM(TaggingOperations):
                 add_vm_tags.extend(vm_tags)
                 add_vm_tags = list(set(add_vm_tags))
                 try:
-                    response = self.softlayer_operation(softlayer_name='SoftLayer_Virtual_Guest', softlayer_method='setTags', tags=','.join(add_vm_tags), resource_id=vm_id)
+                    response = self.softlayer_operation(softlayer_name='SoftLayer_Virtual_Guest',
+                                                        softlayer_method='setTags', tags=','.join(add_vm_tags),
+                                                        resource_id=vm_id)
                     if response:
                         logger.info(f'Tags are added to the vm: {vm_id} - {vm_name} : count: {len(tags)} : {tags}')
                     else:
@@ -62,9 +65,12 @@ class TagVM(TaggingOperations):
             remove_vm_tags = [self._tag_remove_name]
         if remove_vm_tags:
             try:
-                response = self.softlayer_operation(softlayer_name='SoftLayer_Virtual_Guest', softlayer_method='removeTags', tags=','.join(remove_vm_tags), resource_id=vm_id)
+                response = self.softlayer_operation(softlayer_name='SoftLayer_Virtual_Guest',
+                                                    softlayer_method='removeTags', tags=','.join(remove_vm_tags),
+                                                    resource_id=vm_id)
                 if response:
-                    logger.info(f'Tags are Removed to the vm: {vm_id} - {vm_name} : count: {len(remove_vm_tags)} : {remove_vm_tags}')
+                    logger.info(
+                        f'Tags are Removed to the vm: {vm_id} - {vm_name} : count: {len(remove_vm_tags)} : {remove_vm_tags}')
                 else:
                     logger.info(f'Tags are not Removed to the vm: {vm_id} - {vm_name}, something might fail')
             except Exception as err:

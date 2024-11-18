@@ -18,6 +18,8 @@ pipeline {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         IBM_CUSTOM_TAGS_LIST = credentials('IBM_CUSTOM_TAGS_LIST')
         IBM_CLOUD_API_KEY = credentials('IBM_CLOUD_API_KEY')
+        IBM_ACCOUNT_ID_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-account-id-performance-scale')
+
         account = "IBM-PERF"
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"

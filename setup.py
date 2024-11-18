@@ -58,6 +58,7 @@ setup(
         'google-cloud-bigquery==3.5.0',  # google cloud cost
         'google-cloud-billing==1.9.1',  # google cloud cost
         'ibm-cloud-sdk-core==3.18.0',
+        'ibm-cos-sdk==2.13.6',
         'ibm-platform-services==0.27.0',  # IBM Usage reports
         'ibm-schematics==1.1.0',
         'ibm-vpc==0.21.0',

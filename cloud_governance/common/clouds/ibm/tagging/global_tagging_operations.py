@@ -28,8 +28,13 @@ class GlobalTaggingOperations(IBMAuthenticator):
                                 for i in range(0, len(resources_list), self.BATCH_SIZE)]
         success = 0
         errors = []
+        tag_names = []
+        for tag in tags:
+            key, value = tag.split(":")
+            tag_names.append(f'{key.strip()}:{value.strip()}')
+        logger.info(f"Tagging {len(resources_crn)} resources.")
         for resource_batch in resources_batch_list:
-            responses = self.__tag_service.attach_tag(resources=resource_batch, tag_names=tags) \
+            responses = self.__tag_service.attach_tag(resources=resource_batch, tag_names=tag_names) \
                 .get_result()['results']
             for resource in responses:
                 if resource['is_error']:

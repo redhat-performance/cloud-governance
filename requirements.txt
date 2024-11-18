@@ -18,6 +18,7 @@ google-auth-oauthlib==0.5.2
 google-cloud-bigquery==3.5.0
 google-cloud-billing==1.9.1
 ibm-cloud-sdk-core==3.18.0
+ibm-cos-sdk==2.13.6
 ibm-platform-services==0.27.0
 ibm-schematics==1.1.0
 ibm-vpc==0.21.0
