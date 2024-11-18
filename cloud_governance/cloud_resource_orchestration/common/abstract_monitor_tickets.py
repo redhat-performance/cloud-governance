@@ -1,12 +1,12 @@
 from abc import abstractmethod, ABC
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import typeguard
 
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
 from cloud_governance.cloud_resource_orchestration.utils.elastic_search_queries import ElasticSearchQueries
 from cloud_governance.cloud_resource_orchestration.utils.constant_variables import FIRST_CRO_ALERT, SECOND_CRO_ALERT, \
-    CLOSE_JIRA_TICKET, JIRA_ISSUE_NEW_STATE, DATE_FORMAT
+    CLOSE_JIRA_TICKET, DATE_FORMAT
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.jira.jira_operations import JiraOperations
 from cloud_governance.common.logger.init_logger import logger
@@ -20,6 +20,7 @@ class AbstractMonitorTickets(ABC):
     """
     This Abstract class perform the operations for monitoring tickets
     """
+    CLOUD_GOVERNANCE_ES_MAIL_INDEX = 'cloud-governance-mail-messages'
 
     def __init__(self):
         super().__init__()
@@ -52,7 +53,8 @@ class AbstractMonitorTickets(ABC):
         in_progress_tickets_query = self.__elasticsearch_queries.get_all_in_progress_tickets(
             match_conditions=match_conditions, fields=fields)
         in_progress_tickets_list = self.__es_operations.fetch_data_by_es_query(query=in_progress_tickets_query,
-                                                                               es_index=self.__es_index_cro, filter_path='hits.hits._source')
+                                                                               es_index=self.__es_index_cro,
+                                                                               filter_path='hits.hits._source')
         return in_progress_tickets_list
 
     @abstractmethod
@@ -96,7 +98,8 @@ class AbstractMonitorTickets(ABC):
         :return:
         """
         ticket_extended = False
-        sub_ticket_ids = self.__jira_operations.get_budget_extend_tickets(ticket_id=ticket_id, ticket_state='inprogress')
+        sub_ticket_ids = self.__jira_operations.get_budget_extend_tickets(ticket_id=ticket_id,
+                                                                          ticket_state='inprogress')
         if sub_ticket_ids:
             total_budget_to_extend = self.__jira_operations.get_total_extend_budget(sub_ticket_ids=sub_ticket_ids)
             if string_equal_ignore_case(self.__cloud_name, 'AWS'):
@@ -142,19 +145,21 @@ class AbstractMonitorTickets(ABC):
 
     @typeguard.typechecked
     @logger_time_stamp
-    def __close_and_update_ticket_data_in_es(self, ticket_id: str):
+    def __close_and_update_ticket_data_in_es(self, ticket_id: str, region_name: str = ''):
         """
         This method close the ticket and update in ElasticSearch
         :return:
         """
-        data = {'timestamp': datetime.utcnow(), 'ticket_id_state': 'closed'}
+        data = {'timestamp': datetime.now(timezone.utc), 'ticket_id_state': 'closed'}
+        self.notify_ticket_closed(ticket_id=ticket_id, region_name=region_name)
+        self.__jira_operations.move_issue_state(ticket_id, state='CLOSED')
         if self.__es_operations.check_elastic_search_connection():
             self.__es_operations.update_elasticsearch_index(index=self.__es_index_cro, id=ticket_id, metadata=data)
-            self.__jira_operations.move_issue_state(ticket_id, state='CLOSED')
 
     @typeguard.typechecked
     @logger_time_stamp
-    def _monitor_ticket_duration(self, ticket_id: str, region_name: str, duration: int, completed_duration: int, **kwargs):
+    def _monitor_ticket_duration(self, ticket_id: str, region_name: str, duration: int, completed_duration: int,
+                                 **kwargs):
         """
         This method monitors the ticket duration
         :param ticket_id:
@@ -171,19 +176,55 @@ class AbstractMonitorTickets(ABC):
                                                           current_duration=duration)
             if not ticket_extended:
                 if remaining_duration == FIRST_CRO_ALERT:
-                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=FIRST_CRO_ALERT, ticket_id=ticket_id)
+                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=FIRST_CRO_ALERT,
+                                                                                  ticket_id=ticket_id)
                     message_type = 'first_duration_alert'
                 elif remaining_duration == SECOND_CRO_ALERT:
-                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=SECOND_CRO_ALERT, ticket_id=ticket_id)
+                    subject, body = self.__mail_message.cro_monitor_alert_message(user=user, days=SECOND_CRO_ALERT,
+                                                                                  ticket_id=ticket_id)
                     message_type = 'second_duration_alert'
                 else:
                     if remaining_duration <= CLOSE_JIRA_TICKET:
-                        self.__close_and_update_ticket_data_in_es(ticket_id=ticket_id)
+                        self.__close_and_update_ticket_data_in_es(ticket_id=ticket_id, region_name=region_name)
                         subject, body = self.__mail_message.cro_send_closed_alert(user, ticket_id)
                         message_type = 'ticket_closed_alert'
         if subject and body:
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
                                               message_type=message_type)
+
+    def get_budget_exceed_alert_times(self, user: str):
+        """
+        This method returns the number of times alerts send to an user
+        :return:
+        """
+        current_date = datetime.now(timezone.utc).date()
+        start_date = current_date - timedelta(days=10)
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"term": {"To.keyword": user}},
+                        {"term": {"MessageType.keyword": "budget_exceed_alert"}},
+                        {
+                            "range": {
+                                "timestamp": {
+                                    "gte": start_date,
+                                    "lte": current_date,
+                                    "format": "yyyy-MM-dd"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "size": 10,
+            "sort": {"timestamp": "desc"}
+        }
+        response = self.__es_operations.fetch_data_by_es_query(query=query,
+                                                               es_index=self.CLOUD_GOVERNANCE_ES_MAIL_INDEX,
+                                                               search_size=10,
+                                                               limit_to_size=True)
+        return len(response)
 
     @typeguard.typechecked
     @logger_time_stamp
@@ -200,7 +241,8 @@ class AbstractMonitorTickets(ABC):
         remaining_budget = budget - used_budget
         threshold_budget = budget - (budget * (self.__ticket_over_usage_limit / 100))
         subject = body = None
-        if threshold_budget >= remaining_budget > 0:
+        alerted_times = self.get_budget_exceed_alert_times(user=user)
+        if threshold_budget >= remaining_budget > 0 and alerted_times < 3:
             ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
                                                          current_budget=budget)
             if not ticket_extended:
@@ -208,14 +250,14 @@ class AbstractMonitorTickets(ABC):
                                                                                     ticket_id=ticket_id,
                                                                                     used_budget=used_budget,
                                                                                     remain_budget=remaining_budget)
-        elif remaining_budget <= 0:
+        elif remaining_budget <= 0 and alerted_times == 2:
             ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
                                                          current_budget=budget)
             if not ticket_extended:
                 subject, body = self.__mail_message.cro_monitor_budget_remain_high_alert(user=user, budget=budget,
-                                                                                     ticket_id=ticket_id,
-                                                                                     used_budget=used_budget,
-                                                                                     remain_budget=remaining_budget)
+                                                                                         ticket_id=ticket_id,
+                                                                                         used_budget=used_budget,
+                                                                                         remain_budget=remaining_budget)
         if subject and body:
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
                                               message_type='budget_exceed_alert')
@@ -238,7 +280,7 @@ class AbstractMonitorTickets(ABC):
                 duration = int(source_data.get('duration', 0))
                 used_budget = int(source_data.get('actual_cost', 0))
                 ticket_start_date = datetime.strptime(source_data.get('ticket_opened_date'), DATE_FORMAT).date()
-                completed_duration = (datetime.utcnow().date() - ticket_start_date).days
+                completed_duration = (datetime.now(timezone.utc).date() - ticket_start_date).days
                 self._monitor_ticket_budget(ticket_id=ticket_id, region_name=region_name, budget=budget,
                                             used_budget=used_budget,
                                             user_cro=source_data.get('user_cro'),
@@ -248,6 +290,15 @@ class AbstractMonitorTickets(ABC):
                                               user_cro=source_data.get('user_cro'),
                                               approved_manager=source_data.get('approved_manager')
                                               )
+
+    def notify_ticket_closed(self, ticket_id: str, region_name: str = ''):
+        """
+        This method notify ticket closed alert
+        :param region_name:
+        :param ticket_id:
+        :return:
+        """
+        pass
 
     def monitor_tickets(self):
         """

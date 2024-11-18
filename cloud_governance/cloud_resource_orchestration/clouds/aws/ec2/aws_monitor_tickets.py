@@ -85,13 +85,20 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                     if not self.__es_operations.verify_elastic_index_doc_id(index=self.es_cro_index, doc_id=ticket_id):
                         if ticket_status == self.REFINEMENT:
                             ticket_status = 'manager-approved'
-                        source = {'cloud_name': description.get('CloudName'), 'account_name': description.get('AccountName').replace('OPENSHIFT-', ''),
+                        source = {'cloud_name': description.get('CloudName'),
+                                  'account_name': description.get('AccountName').replace('OPENSHIFT-', ''),
                                   'region_name': description.get('Region'), 'user': '',
-                                  'user_cro': description.get('EmailAddress').split('@')[0], 'user_cost': 0, 'ticket_id': ticket_id, 'ticket_id_state': ticket_status.lower(),
-                                  'estimated_cost': description.get('CostEstimation'), 'instances_count': 0, 'monitored_days': 0,
-                                  'ticket_opened_date': description.get('TicketOpenedDate').date(), 'duration': description.get('Days'), 'approved_manager': '',
-                                  'user_manager': '', 'project': description.get('Project'), 'owner': f'{description.get("FirstName")} {description.get("LastName")}'.upper(), 'total_spots': 0,
-                                  'total_ondemand': 0, 'AllocatedBudget': [], 'instances_list': [], 'instance_types_list': []}
+                                  'user_cro': description.get('EmailAddress').split('@')[0], 'user_cost': 0,
+                                  'ticket_id': ticket_id, 'ticket_id_state': ticket_status.lower(),
+                                  'estimated_cost': description.get('CostEstimation'), 'instances_count': 0,
+                                  'monitored_days': 0,
+                                  'ticket_opened_date': description.get('TicketOpenedDate').date(),
+                                  'duration': description.get('Days'), 'approved_manager': '',
+                                  'user_manager': '', 'project': description.get('Project'),
+                                  'owner': f'{description.get("FirstName")} {description.get("LastName")}'.upper(),
+                                  'total_spots': 0,
+                                  'total_ondemand': 0, 'AllocatedBudget': [], 'instances_list': [],
+                                  'instance_types_list': []}
                         self.__es_operations.upload_to_elasticsearch(index=self.es_cro_index, data=source, id=ticket_id)
                     current_date = datetime.now().date()
                     ticket_opened_date = description.get('TicketOpenedDate').date()
@@ -112,22 +119,30 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                             elif ticket_opened_days >= self.__manager_escalation_days + 2:
                                 to = self.__global_admin_name
                                 extra_message = f"<b>Missing manager approval.<br />The user {user} is waiting for approval for last {ticket_opened_days} days.<br/>Please review the below details and approve/reject"
-                            subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to, request_user=user, cloud_name=self.__cloud_name, ticket_id=ticket_id, description=description, extra_message=extra_message)
+                            subject, body = self.__mail_message.cro_request_for_manager_approval(manager=to,
+                                                                                                 request_user=user,
+                                                                                                 cloud_name=self.__cloud_name,
+                                                                                                 ticket_id=ticket_id,
+                                                                                                 description=description,
+                                                                                                 extra_message=extra_message)
                         else:  # alert user if doesn't add tag name
                             user_tickets.setdefault(user, []).append(f"{ticket_id} : {description.get('Project')}")
             if user_tickets:
                 for user, ticket_ids in user_tickets.items():
-                    active_instances = self.__ec2_operations.get_active_instances(ignore_tag='TicketId', tag_value=user, tag_name='User')
+                    active_instances = self.__ec2_operations.get_active_instances(ignore_tag='TicketId', tag_value=user,
+                                                                                  tag_name='User')
                     if active_instances:
                         for region, instances_list in active_instances.items():
                             active_instances_ids = {region: [instance.get('InstanceId') for instance in instances_list]}
                             to = user
                             cc = self.__default_admins
-                            subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user, ticket_ids=ticket_ids)
+                            subject, body = self.__mail_message.cro_send_user_alert_to_add_tags(user=user,
+                                                                                                ticket_ids=ticket_ids)
                             with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as filename:
                                 filename.write(json.dumps(active_instances_ids))
                                 filename.flush()
-                                self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body, mime_type='html', filename=filename.name)
+                                self.__postfix.send_email_postfix(to=to, cc=cc, subject=subject, content=body,
+                                                                  mime_type='html', filename=filename.name)
 
     @logger_time_stamp
     def __track_tickets(self):
@@ -136,7 +151,8 @@ class AWSMonitorTickets(AbstractMonitorTickets):
         :return:
         """
         self.__send_ticket_status_alerts(ticket_status=self.NEW, tickets=self.get_tickets(ticket_status=self.NEW))
-        self.__send_ticket_status_alerts(ticket_status=self.REFINEMENT, tickets=self.get_tickets(ticket_status=self.REFINEMENT))
+        self.__send_ticket_status_alerts(ticket_status=self.REFINEMENT,
+                                         tickets=self.get_tickets(ticket_status=self.REFINEMENT))
 
     def update_budget_tag_to_resources(self, region_name: str, ticket_id: str, updated_budget: int):
         """
@@ -187,7 +203,8 @@ class AWSMonitorTickets(AbstractMonitorTickets):
                         previous_duration = get_tag_value_by_name(tags=resource.get('Tags'), tag_name=tag_to_be_updated)
                 updated_duration += int(float(previous_duration))
                 update_tags_dict = {tag_to_be_updated: str(updated_duration)}
-                tagging_operations.tag_resources_list(resources_list=resource_arn_list, update_tags_dict=update_tags_dict)
+                tagging_operations.tag_resources_list(resources_list=resource_arn_list,
+                                                      update_tags_dict=update_tags_dict)
             else:
                 logger.info('No AWS resources to update the costs')
         except Exception as err:
@@ -243,6 +260,38 @@ class AWSMonitorTickets(AbstractMonitorTickets):
             group by 1, 2
             """
         return query
+
+    def notify_ticket_closed(self, ticket_id: str, region_name: str = ''):
+        """
+        This method deletes the tag of the resources
+        :param region_name:
+        :param ticket_id:
+        :return:
+        """
+        self.delete_tags_to_resource(ticket_id, region_name)
+
+    def delete_tags_to_resource(self, ticket_id: str, region_name: str):
+        """
+        This method deletes the TicketId tag of the resources
+        :param region_name:
+        :param ticket_id:
+        :return:
+        """
+        try:
+            tag_to_be_deleted = ['Duration', 'TicketId', 'EstimatedCost', 'ApprovedManager']
+            tagging_operations = AWSTaggingOperations(region_name=region_name)
+            resources_list_to_update = tagging_operations.get_resources_list(tag_name='TicketId', tag_value=ticket_id)
+            if resources_list_to_update:
+                resource_arn_list = []
+                for resource in resources_list_to_update:
+                    resource_arn_list.append(resource.get('ResourceARN'))
+                tagging_operations.untag_resources_list(resources_list=resource_arn_list,
+                                                        delete_tag_keys_list=tag_to_be_deleted)
+            else:
+                logger.info('No AWS resources tags were deleted')
+        except Exception as err:
+            logger.error(err)
+            raise err
 
     @logger_time_stamp
     def run(self):
