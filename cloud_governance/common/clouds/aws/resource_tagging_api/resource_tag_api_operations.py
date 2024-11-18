@@ -46,3 +46,16 @@ class ResourceTagAPIOperations:
         except Exception as err:
             logger.error(err)
             raise err
+
+    def untag_resources(self, resource_arn_list: list, delete_tags_keys: list):
+        """
+        This method untags list to the given resource arn's
+        :param resource_arn_list:
+        :param delete_tags_keys:
+        :return:
+        """
+        try:
+            self.__client.untag_resources(ResourceARNList=resource_arn_list, TagKeys=delete_tags_keys)
+        except Exception as err:
+            logger.error(err)
+            raise err

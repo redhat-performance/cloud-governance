@@ -1,5 +1,3 @@
-from abc import ABC
-
 import typeguard
 
 from cloud_governance.cloud_resource_orchestration.clouds.common.abstract_tagging_operations import \
@@ -10,7 +8,7 @@ from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 
 class AWSTaggingOperations(AbstractTaggingOperations):
     """
-    This class is performs the tagging operations on AWS
+    This class is performing the tagging operations on AWS
     """
 
     def __init__(self, region_name: str):
@@ -27,6 +25,16 @@ class AWSTaggingOperations(AbstractTaggingOperations):
         """
         self.__resource_tag_api_operations.tag_resources(resource_arn_list=resources_list,
                                                          update_tags_dict=update_tags_dict)
+
+    def untag_resources_list(self, resources_list: list, delete_tag_keys_list: list):
+        """
+        This method untags the resources
+        :param resources_list:
+        :param delete_tag_keys_list:
+        :return:
+        """
+        self.__resource_tag_api_operations.untag_resources(resource_arn_list=resources_list,
+                                                           delete_tags_keys=delete_tag_keys_list)
 
     @typeguard.typechecked
     @logger_time_stamp

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from cloud_governance.cloud_resource_orchestration.common.cro_object import CroObject
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
@@ -11,7 +11,7 @@ from cloud_governance.main.environment_variables import environment_variables
 class RunCRO:
     """This class monitors cro activities"""
 
-    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.utcnow().date()}'
+    PERSISTENT_RUN_DOC_ID = f'cro_run_persistence-{datetime.now(timezone.utc).date()}'
     PERSISTENT_RUN_INDEX = 'cloud_resource_orchestration_persistence_run'
 
     def __init__(self):
@@ -37,7 +37,9 @@ class RunCRO:
                 f'last_run_{self.__account.lower()}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
         else:
             self.__es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX,
-                                                            metadata={f'last_run_{self.__account.lower()}': datetime.utcnow()},
+                                                            metadata={
+                                                                f'last_run_{self.__account.lower()}':
+                                                                    datetime.now(timezone.utc)},
                                                             id=self.PERSISTENT_RUN_DOC_ID)
 
     @logger_time_stamp
