@@ -33,7 +33,15 @@ class TaggingOperations:
         tags = []
         for tag in user_tags:
             if tag not in resource_tags:
-                tags.append(tag)
+                if ',' in tag:
+                    multiple_tags = []
+                    for multiple_tag in tag.split(','):
+                        key, value = multiple_tag.split(':')
+                        multiple_tags.append(f"{key.strip()}:{value.strip()}")
+                    tags.extend(multiple_tags)
+                else:
+                    key, value = tag.split(':')
+                    tags.append(f"{key.strip()}:{value.strip()}")
         return tags
 
     def _filter_remove_tags(self, user_tags: list, resource_tags: list):
@@ -58,4 +66,4 @@ class TaggingOperations:
         @param tags:
         @return:
         """
-        return self._sl_client.call(softlayer_name,softlayer_method, tags, id=resource_id)
+        return self._sl_client.call(softlayer_name, softlayer_method, tags, id=resource_id)

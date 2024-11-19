@@ -31,6 +31,7 @@ class IBMAccount:
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__API_USERNAME = self.__environment_variables_dict.get('IBM_API_USERNAME', '')
         self.__API_KEY = self.__environment_variables_dict.get('IBM_API_KEY', '')
+        self.__sl_client = None
         try:
             if self.__API_KEY and self.__API_USERNAME:
                 self.__sl_client = SoftLayer.create_client_from_env(username=self.__API_USERNAME,

@@ -148,6 +148,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['IBM_API_KEY'] = EnvironmentVariables.get_env('IBM_API_KEY', '')
         self._environment_variables_dict['USAGE_REPORTS_APIKEY'] = EnvironmentVariables.get_env('USAGE_REPORTS_APIKEY',
                                                                                                 '')
+        self._environment_variables_dict['IBM_CUSTOM_TAGS_LIST'] = EnvironmentVariables.get_env('IBM_CUSTOM_TAGS_LIST',
+                                                                                                '')
         self._environment_variables_dict['IBM_CLOUD_API_KEY'] = EnvironmentVariables.get_env('IBM_CLOUD_API_KEY', '')
 
         if (self._environment_variables_dict['USAGE_REPORTS_APIKEY'] or

@@ -55,12 +55,12 @@ input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME,
                   'log_level': "INFO", 'policy': 'tag_baremetal', "PUBLIC_CLOUD_NAME": "IBM", "tag_custom": tag_custom}
 
 baremetal_cmd = get_podman_run_cmd(volume_mounts=volume_mounts_targets, **input_env_keys)
-run_cmd(baremetal_cmd)
+# run_cmd(baremetal_cmd)
 
 run_cmd("echo Run IBM tag Virtual Machines")
 input_env_keys['policy'] = 'tag_vm'
 virtual_machine_cmd = get_podman_run_cmd(volume_mounts=volume_mounts_targets, **input_env_keys)
-run_cmd(virtual_machine_cmd)
+# run_cmd(virtual_machine_cmd)
 
 # Run tag resources
 run_cmd("echo Run tag resources command")
@@ -68,5 +68,7 @@ podman_run_cmd = get_podman_run_cmd(policy="tag_resources", account=account,
                                     IBM_CLOUD_API_KEY=IBM_CLOUD_API_KEY,
                                     IBM_CUSTOM_TAGS_LIST=IBM_CUSTOM_TAGS_LIST,
                                     PUBLIC_CLOUD_NAME="IBM",
-                                    IBM_ACCOUNT_ID=IBM_ACCOUNT_ID_PERFORMANCE_SCALE)
+                                    IBM_ACCOUNT_ID=IBM_ACCOUNT_ID_PERFORMANCE_SCALE,
+                                    IBM_API_USERNAME=IBM_API_USERNAME,
+                                    IBM_API_KEY=IBM_API_KEY, )
 run_cmd(podman_run_cmd)

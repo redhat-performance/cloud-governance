@@ -1,5 +1,6 @@
 from functools import wraps
 
+from cloud_governance.common.clouds.ibm.classic.classic_operations import ClassicOperations
 from cloud_governance.common.clouds.ibm.developer_tools.schematic_operations import SchematicOperations
 from cloud_governance.common.clouds.ibm.tagging.global_tagging_operations import GlobalTaggingOperations
 from cloud_governance.common.clouds.ibm.vpc.vpc_infra_operations import VpcInfraOperations
@@ -31,11 +32,14 @@ class TagResources:
         self.vpc_infra_operations = VpcInfraOperations()
         self.tag_operations = GlobalTaggingOperations()
         self.schematic_operations = SchematicOperations()
+        self._classic_operations = ClassicOperations()
         self.__env_config = self.vpc_infra_operations.env_config
         self.__ibm_custom_tags_list = self.__env_config.IBM_CUSTOM_TAGS_LIST \
-            if hasattr(self.__env_config, 'IBM_CUSTOM_TAGS_LIST') else None
+            if hasattr(self.__env_config, 'IBM_CUSTOM_TAGS_LIST') \
+            else self.__env_config.environment_variables_dict.get('IBM_CUSTOM_TAGS_LIST')
         self.resource_to_tag = self.__env_config.RESOURCE_TO_TAG \
-            if hasattr(self.__env_config, 'RESOURCE_TO_TAG') else None
+            if hasattr(self.__env_config, 'RESOURCE_TO_TAG') \
+            else self.__env_config.environment_variables_dict.get('RESOURCE_TO_TAG')
 
     @get_resources_wrapper
     @logger_time_stamp
@@ -155,6 +159,24 @@ class TagResources:
         return self.vpc_infra_operations.get_all_baremetal_servers()
 
     @logger_time_stamp
+    def get_classic_baremetals_crn(self):
+        """
+        This method returns all classic baremetals crn's'
+        :return:
+        """
+        hardware_ids = self._classic_operations.get_hardware_ids()
+        return hardware_ids
+
+    @logger_time_stamp
+    def get_classic_virtual_machines_crn(self):
+        """
+        This method returns all classic baremetals crn's'
+        :return:
+        """
+        virtual_machine_ids = self._classic_operations.get_virtual_machine_ids()
+        return virtual_machine_ids
+
+    @logger_time_stamp
     def tag_all_vpc_resources(self):
         """
         This method tags all Virtual PrivateCloud Resources
@@ -178,7 +200,9 @@ class TagResources:
             "load_balancers",
             "schematics_workspaces",
             "baremetal_servers",
-            "images"
+            "images",
+            "classic_baremetals",
+            "classic_virtual_machines"
         ]
         if self.resource_to_tag and self.resource_to_tag in vpc_resources:
             vpc_resources = [self.resource_to_tag]
@@ -188,8 +212,18 @@ class TagResources:
         for vpc_resource in vpc_resources:
             message = 'tagged are added to all resources'
             resources_crn = getattr(self, f'get_{vpc_resource}_crn')()
-            logger.info(f"Started the tagging operation for {vpc_resource}")
-            ok, errors = self.tag_operations.update_tags(resources_crn, tags=tags_list)
+            if vpc_resource == 'classic_baremetals':
+                for resource in resources_crn:
+                    ok, errors = self._classic_operations.update_baremetal_tags(tags=tags_list,
+                                                                                hardware_id=resource.get('id'))
+            elif vpc_resource == 'classic_virtual_machines':
+                for resource in resources_crn:
+                    ok, errors = self._classic_operations.update_virtual_machine_tags(tags=tags_list,
+                                                                                      virtual_machine_id=
+                                                                                      resource.get('id'))
+            else:
+                logger.info(f"Started the tagging operation for {vpc_resource}")
+                ok, errors = self.tag_operations.update_tags(resources_crn, tags=tags_list)
             if not ok:
                 message = 'Unable to tag all resources'
                 logger.info(f'{message}, please find the servers that are not tagged: {errors}')
