@@ -55,7 +55,7 @@ def test_zombie_snapshots():
         'Tags'],
                                    tag_name='DaysCount')
     assert get_tag_value_from_tags(tags=zombie_snapshots._ec2_operations.get_snapshots()[0]['Tags'],
-                                   tag_name='cost-savings') == 'true'
+                                   tag_name='cost-savings') == 'zombie_snapshots'
 
 
 @mock_ec2

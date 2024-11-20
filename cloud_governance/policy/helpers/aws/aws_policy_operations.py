@@ -18,6 +18,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
     def __init__(self):
         super().__init__()
         self._region = self._environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
+        self.policy_name = self._environment_variables_dict.get('policy')
         self._cloud_name = 'AWS'
         self._ec2_client = get_boto3_client(client='ec2', region_name=self._region)
         self._s3_client = get_boto3_client('s3', region_name=self._region)
@@ -27,7 +28,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self._ec2_operations = EC2Operations(region=self._region)
         self._cloudwatch = CloudWatchOperations(region=self._region)
         self._resource_pricing = ResourcesPricing()
-        self.cost_savings_tag = [{'Key': 'cost-savings', 'Value': 'true'}]
+        self.cost_savings_tag = [{'Key': 'cost-savings', 'Value': self.policy_name}]
 
     def get_tag_name_from_tags(self, tags: list, tag_name: str) -> str:
         """

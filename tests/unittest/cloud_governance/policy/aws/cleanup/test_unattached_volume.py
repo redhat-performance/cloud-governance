@@ -40,7 +40,7 @@ def test_unattached_volume_dry_run_yes():
     assert response.get('ResourceAction') == 'False'
     assert response.get('SkipPolicy') == 'NA'
     assert get_tag_value_from_tags(tags=volume_run._get_all_volumes()[0]['Tags'],
-                                   tag_name='cost-savings') == 'true'
+                                   tag_name='cost-savings') == 'unattached_volume'
 
 
 @mock_ec2
