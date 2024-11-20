@@ -27,7 +27,7 @@ def test_unused_nat_gateway_dry_run_yes():
     assert len(response) == 1
     assert response[0]['CleanUpDays'] == 0
     assert get_tag_value_from_tags(tags=unused_nat_gateway._ec2_operations.get_nat_gateways()[0]['Tags'],
-                                   tag_name='cost-savings') == 'true'
+                                   tag_name='cost-savings') == 'unused_nat_gateway'
 
 
 @mock_cloudwatch
