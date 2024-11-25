@@ -12,5 +12,5 @@ def test_tag_all_vpc_resources():
     environment_variables.IBM_CUSTOM_TAGS_LIST = "cost-center: test"
     environment_variables.IBM_ACCOUNT_ID = "test"
     tag_resources = TagResources()
-    res = tag_resources.tag_all_vpc_resources()
+    res = tag_resources.tag_all_resources()
     assert res.get('messages').get('virtual_servers')
