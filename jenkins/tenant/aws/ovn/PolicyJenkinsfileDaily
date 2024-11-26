@@ -1,0 +1,64 @@
+accounts_list = ['ovn-team': ""]
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/athiru/centos-stream8-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        contact1 = "athiruma@redhat.com"
+        contact2 = "athiruma@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Policies the Daily polices') {
+            steps {
+                 script {
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key')]) {
+                        env.account_name = "${account}"
+                        env.ES_INDEX = "cloud-governance-es-index-tenant-ovn"
+                        sh 'python3 jenkins/tenant/aws/ovn/run_policies.py'
+                                        }
+                    }
+                }
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}"
+            }
+          }
+    }
+}
