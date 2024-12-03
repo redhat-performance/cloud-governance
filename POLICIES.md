@@ -57,16 +57,11 @@ This tool support the following policies:
 * [tag_resources](./cloud_governance/policy/ibm/tag_resources.py): Tag IBM resources
   list of supported IBM Resources
 
+- resource_instances
 - virtual_servers
-- volumes
-- floating_ips
-- vpcs
-- virtual_network_interfaces
-- security_groups
-- public_gateways
-- vpc_endpoint_gateways
-- load_balancers
 - schematics_workspaces
+- classic_baremetals
+- classic_virtual_machines
 
 Environment Variables required:
 
@@ -75,3 +70,20 @@ Environment Variables required:
 | IBM_CUSTOM_TAGS_LIST       | string | pass string with separated with comma. i.e: "cost-center: test, env: test" |
 | RESOURCE_TO_TAG (optional) | string | pass the resource name to tag. ex: virtual_servers                         |
 | IBM_CLOUD_API_KEY          | string | IBM Cloud API Key                                                          |
+| IBM_API_KEY                | string | IBM Classic infrastructure key ( SoftLayer )                               |
+| IBM_API_USERNAME           | string | IBM API Username ( SoftLayer )                                             |
+| IBM_ACCOUNT_ID             | string | IBM Account Id                                                             |
+
+  ```shell
+  # Run tag_resources policy in IBM Cloud
+  podman run --rm --name cloud-governance \
+  -e PUBLIC_CLOUD_NAME="IBM" \
+  -e policy="tag_resources" \
+  -e account="${ACCOUNT_NAME}" \
+  -e IBM_CLOUD_API_KEY="${IBM_CLOUD_API_KEY}" \
+  -e IBM_CUSTOM_TAGS_LIST="cost-center:675, env:test" \
+  -e IBM_ACCOUNT_ID="${IBM_ACCOUNT_ID}" \
+  -e IBM_API_USERNAME="${IBM_API_USERNAME}" \
+  -e IBM_API_KEY="${IBM_API_KEY}" \
+  quay.io/cloud-governance/cloud-governance:latest
+  ```
