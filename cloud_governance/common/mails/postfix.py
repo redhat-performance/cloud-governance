@@ -145,18 +145,22 @@ class Postfix:
                             date_key = datetime.datetime.now().strftime("%Y%m%d%H")
                             if self.__policy_output:
                                 self.__s3_operations.upload_file(file_name_path=kwargs['filename'],
-                                                                 bucket=self.bucket_name, key=f'{self.key}/{self.__policy}/{date_key}',
+                                                                 bucket=self.bucket_name,
+                                                                 key=f'{self.key}/{self.__policy}/{date_key}',
                                                                  upload_file=file_name)
                                 s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
                                 content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
                         es_data = kwargs.get('es_data')
-                        data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content, 'Account': self.__account.upper(), 'MessageType': kwargs.get('message_type', 'alert')}
+                        data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content,
+                                'Account': self.__account.upper(), 'MessageType': kwargs.get('message_type', 'alert')}
                         if es_data:
                             data.update(es_data)
                         if kwargs.get('resource_id'):
                             data['resource_id'] = kwargs['resource_id']
                         if kwargs.get('extra_purse'):
                             data['extra_purse'] = round(kwargs['extra_purse'], 3)
+                        if kwargs.get('remaining_budget'):
+                            data['remaining_budget'] = kwargs['remaining_budget']
                         if self.__es_host:
                             self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
                             logger.warn(f'Uploaded to es index: {self.__es_index}')
