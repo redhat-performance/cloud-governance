@@ -1,9 +1,13 @@
 from datetime import datetime, timedelta
 
+import pytest
+
 from cloud_governance.common.clouds.gcp.google_account import GoogleAccount
 from cloud_governance.main.environment_variables import environment_variables
 
 
+# Case 55659104: The database table is not updated
+@pytest.mark.skip(reason="Data is not being exported to the database")
 def test_query_list():
     """
     This method test fetching of the big queries data
