@@ -192,13 +192,13 @@ class AbstractMonitorTickets(ABC):
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
                                               message_type=message_type)
 
-    def get_budget_exceed_alert_times(self, user: str):
+    def get_budget_exceed_alert_times(self, user: str, remaining_budget: int):
         """
-        This method returns the number of times alerts send to an user
+        This method returns the number of times alerts send to a user
         :return:
         """
         current_date = datetime.now(timezone.utc).date()
-        start_date = current_date - timedelta(days=10)
+        start_date = current_date - timedelta(days=15)
         query = {
             "query": {
                 "bool": {
@@ -224,7 +224,10 @@ class AbstractMonitorTickets(ABC):
                                                                es_index=self.CLOUD_GOVERNANCE_ES_MAIL_INDEX,
                                                                search_size=10,
                                                                limit_to_size=True)
-        return len(response)
+        if response:
+            if 'remaining_budget' in response[0]['_source']:
+                return remaining_budget < int(response[0]['_source'].get('remaining_budget')), len(response)
+        return True, len(response)
 
     @typeguard.typechecked
     @logger_time_stamp
@@ -241,8 +244,8 @@ class AbstractMonitorTickets(ABC):
         remaining_budget = budget - used_budget
         threshold_budget = budget - (budget * (self.__ticket_over_usage_limit / 100))
         subject = body = None
-        alerted_times = self.get_budget_exceed_alert_times(user=user)
-        if threshold_budget >= remaining_budget > 0 and alerted_times < 3:
+        alert_user, total_alerts = self.get_budget_exceed_alert_times(user=user, remaining_budget=remaining_budget)
+        if threshold_budget >= remaining_budget > 0 and alert_user and total_alerts < 2:
             ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
                                                          current_budget=budget)
             if not ticket_extended:
@@ -250,7 +253,7 @@ class AbstractMonitorTickets(ABC):
                                                                                     ticket_id=ticket_id,
                                                                                     used_budget=used_budget,
                                                                                     remain_budget=remaining_budget)
-        elif remaining_budget <= 0 and alerted_times == 2:
+        elif remaining_budget <= 0 and alert_user and total_alerts == 1:
             ticket_extended = self.extend_tickets_budget(ticket_id=ticket_id, region_name=region_name,
                                                          current_budget=budget)
             if not ticket_extended:
@@ -260,7 +263,7 @@ class AbstractMonitorTickets(ABC):
                                                                                          remain_budget=remaining_budget)
         if subject and body:
             self.__postfix.send_email_postfix(to=user, cc=cc, subject=subject, content=body, mime_type='html',
-                                              message_type='budget_exceed_alert')
+                                              message_type='budget_exceed_alert', remaining_budget=remaining_budget)
 
     @logger_time_stamp
     def _monitor_in_progress_tickets(self):
