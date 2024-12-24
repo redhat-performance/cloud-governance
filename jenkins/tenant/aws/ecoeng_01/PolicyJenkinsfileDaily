@@ -77,8 +77,6 @@ pipeline {
                                         string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
                                         string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
                         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
-                        env.POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
-                        if (account == "blueprints")
                         env.POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
                         env.account_name = "${account}"
                         env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
