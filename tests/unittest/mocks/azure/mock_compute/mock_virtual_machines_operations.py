@@ -14,12 +14,15 @@ class MockVirtualMachine(VirtualMachine):
 
         if not kwargs.get('time_created'):
             self.time_created = CURRENT_DATE_TIME
+        else:
+            self.time_created = kwargs.get('time_created')
         if not kwargs.get('hardware_profile'):
             self.hardware_profile = HardwareProfile(vm_size='Standard_D2s_v3')
+        else:
+            self.hardware_profile = kwargs.get('hardware_profile')
 
 
 class MockVirtualMachinesOperations:
-
     VIRTUAL_MACHINE = 'virtualMachines'
 
     def __init__(self):
