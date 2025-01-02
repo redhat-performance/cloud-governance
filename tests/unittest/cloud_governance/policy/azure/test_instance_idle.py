@@ -30,7 +30,9 @@ def test_instance_idle():
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
-    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast')
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
+    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
+                                                                      time_created=time_created)
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
                                          timeseries=[TimeSeriesElement(data=[
@@ -63,7 +65,9 @@ def test_instance_idle__check_not_idle():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
-    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast')
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
+    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
+                                                                      time_created=time_created)
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
@@ -98,7 +102,9 @@ def test_instance_idle__skip_cluster():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
-    compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast', tags=tags)
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
+    compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast', tags=tags,
+                                                           time_created=time_created)
     instance_idle = InstanceIdle()
     response = instance_idle.run()
     assert len(response) == 0
@@ -117,7 +123,9 @@ def test_instance_idle__dryrun_no():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
-    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast', tags=tags)
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
+    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
+                                                                      tags=tags, time_created=time_created)
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
@@ -152,7 +160,9 @@ def test_instance_idle__dryrun_no_delete():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
-    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast', tags=tags)
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
+    instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
+                                                                      tags=tags, time_created=time_created)
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
@@ -189,8 +199,9 @@ def test_instance_idle__skips_delete():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
     instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
-                                                                      tags=tags)
+                                                                      tags=tags, time_created=time_created)
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
@@ -219,7 +230,7 @@ def test_instance_idle__skips_delete():
 @mock_monitor
 def test_instance_idle__set_counter_zero():
     """
-    This method tests  unused_nat_gateway to set days counter to 0
+    This method tests unused_nat_gateway to set days counter to 0
     :return:
     :rtype:
     """
@@ -227,8 +238,9 @@ def test_instance_idle__set_counter_zero():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['policy'] = 'instance_idle'
     compute_client = ComputeManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
+    time_created = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(8)
     instance = compute_client.virtual_machines.begin_create_or_update(vm_name='test-unitest', location='useast',
-                                                                      tags=tags)
+                                                                      tags=tags, time_created=time_created)
     monitor_client = MonitorManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
     monitor_client.metrics.create_metric(resource_id=instance.id, type='VirtualMachine', name='test-cpu-metric',
                                          unit='Percentage CPU',
