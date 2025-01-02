@@ -66,6 +66,16 @@
 					{% else %}
 						{% if col == 'PublicCloud' %}
 							<td>{{ record[col] or 'AWS' }}</td>
+						{% elif col == 'policy' %}
+							{% if record[col] == 'ec2_stop' %}
+								<td>{{ record[col] }} - {{ record['StoppedDate'].split(" ")[0] }}</td>
+							{% elif record[col] == 'database_idle' %}
+								<td>{{ record[col] }} - {{ record['CreateDate'].split(" ")[0] }}</td>
+							{% elif record[col] == 'instance_idle' %}
+								<td>{{ record[col] }} - {{ record['LaunchTime'].split("T")[0] }}</td>
+							{% else %}
+								<td>{{ record[col] }}</td>
+							{% endif %}
 						{% elif col == 'RegionName' %}
 							<td>{{ record[col] or record['region_name'] }}</td>
 						{% elif 'kubernetes.io/cluster' in record[col] %}
