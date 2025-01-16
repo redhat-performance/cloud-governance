@@ -72,6 +72,8 @@ class EnvironmentVariables:
 
         self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(
             EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
+        if not hasattr(self, 'POLICIES_LIST'):
+            self.POLICIES_LIST = EnvironmentVariables.get_env('POLICIES_LIST')
 
         self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS',
                                                                                                            True)

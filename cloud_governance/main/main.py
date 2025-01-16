@@ -14,10 +14,13 @@ from cloud_governance.policy.policy_operations.azure.azure_policy_runner import 
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp, logger
 from cloud_governance.policy.policy_operations.aws.tag_cluster.run_tag_cluster_resouces import tag_cluster_resource, \
     remove_cluster_resources_tags
-from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import tag_non_cluster_resource, \
+from cloud_governance.policy.policy_operations.aws.tag_non_cluster.run_tag_non_cluster_resources import \
+    tag_non_cluster_resource, \
     remove_tag_non_cluster_resource, tag_na_resources
-from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, run_validate_iam_user_tags
-from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import zombie_cluster_resource
+from cloud_governance.policy.policy_operations.aws.tag_user.run_tag_iam_user import tag_iam_user, \
+    run_validate_iam_user_tags
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.run_zombie_cluster_resources import \
+    zombie_cluster_resource
 from cloud_governance.policy.policy_operations.gcp.gcp_policy_runner import GcpPolicyRunner
 from cloud_governance.policy.policy_operations.gitleaks.gitleaks import GitLeaks
 from cloud_governance.policy.policy_operations.ibm.ibm_operations.ibm_policy_runner import IBMPolicyRunner
@@ -25,8 +28,8 @@ from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.main.es_uploader import ESUploader
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.validate_zombies import ValidateZombies
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import ZombieNonClusterPolicies
-
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.zombie_non_cluster_polices import \
+    ZombieNonClusterPolicies
 
 environment_variables_dict = environment_variables.environment_variables_dict
 log_level = environment_variables_dict.get('log_level', 'INFO').upper()
@@ -197,138 +200,151 @@ def main():
     :return: the action output
     """
     # environment variables - get while running the docker
-    region_env = environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
-    dry_run = environment_variables_dict.get('dry_run', 'yes')
+    policies_list = environment_variables.POLICIES_LIST
+    if not policies_list:
+        policies_list = [environment_variables_dict.get('policy').strip()]
+    else:
+        if isinstance(policies_list, str):
+            policies_list = policies_list.split(',')
+    logger.info(f"Running polices: {policies_list}")
+    for policy in policies_list:
+        environment_variables_dict['policy'] = policy.strip()
+        region_env = environment_variables_dict.get('AWS_DEFAULT_REGION', 'us-east-2')
+        dry_run = environment_variables_dict.get('dry_run', 'yes')
 
-    account = environment_variables_dict.get('account', '')
-    policy = environment_variables_dict.get('policy', '')
-    upload_data_es = environment_variables_dict.get('upload_data_es', '')
-    es_host = environment_variables_dict.get('es_host', '')
-    es_port = environment_variables_dict.get('es_port', '')
-    es_index = environment_variables_dict.get('es_index', '')
-    es_doc_type = environment_variables_dict.get('es_doc_type', '')
-    bucket = environment_variables_dict.get('bucket', '')
-    main_operations = MainOperations()
-    response = main_operations.run()
-    if not response:
-        if environment_variables_dict.get('COMMON_POLICIES'):
-            run_common_policies()
-        elif environment_variables_dict.get('CLOUD_RESOURCE_ORCHESTRATION'):
-            run_cloud_resource_orchestration()
-        else:
-            non_cluster_polices_runner = None
-            is_non_cluster_polices_runner = policy in environment_variables_dict.get('aws_non_cluster_policies')
-            if is_non_cluster_polices_runner:
-                non_cluster_polices_runner = ZombieNonClusterPolicies()
-
-            ibm_classic_infrastructure_policy_runner = None
-            is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
-            if not is_tag_ibm_classic_infrastructure_runner:
-                if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'IBM':
-                    is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('cost_policies')
-            if is_tag_ibm_classic_infrastructure_runner:
-                ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
-
-            is_cost_explorer_policies_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AWS':
-                cost_explorer_policies_runner = None
-                is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
-                if is_cost_explorer_policies_runner:
-                    cost_explorer_policies_runner = CostReportPolicies()
-
-            is_azure_policy_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AZURE':
-                azure_cost_policy_runner = None
-                is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
-                if is_azure_policy_runner:
-                    azure_cost_policy_runner = AzurePolicyRunner()
-
-            is_gcp_policy_runner = ''
-            if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'GCP':
-                gcp_cost_policy_runner = None
-                is_gcp_policy_runner = policy in environment_variables_dict.get('cost_policies')
-                if is_gcp_policy_runner:
-                    gcp_cost_policy_runner = GcpPolicyRunner()
-
-            @logger_time_stamp
-            def run_non_cluster_polices_runner():
-                """
-                This method run the aws non-cluster policies
-                @return:
-                """
-                non_cluster_polices_runner.run()
-
-            def run_tag_ibm_classic_infrastructure_runner():
-                """
-                This method run the IBM policies
-                @return:
-                """
-                ibm_classic_infrastructure_policy_runner.run()
-
-            @logger_time_stamp
-            def run_cost_explorer_policies_runner():
-                """
-                This method run the aws cost_explorer policies
-                @return:
-                """
-                cost_explorer_policies_runner.run()
-
-            @logger_time_stamp
-            def run_azure_policy_runner():
-                """
-                This method run the azure policies
-                @return:
-                """
-                azure_cost_policy_runner.run()
-
-            @logger_time_stamp
-            def run_gcp_policy_runner():
-                """
-                This method run the gcp policies
-                """
-                gcp_cost_policy_runner.run()
-
-            # 1. ELK Uploader
-            if upload_data_es:
-                input_data = {'es_host': es_host,
-                              'es_port': int(es_port),
-                              'es_index': es_index,
-                              'es_doc_type': es_doc_type,
-                              'es_add_items': {'account': account},
-                              'bucket': bucket,
-                              'logs_bucket_key': 'logs',
-                              's3_file_name': 'resources.json',
-                              'region': region_env,
-                              'policy': policy,
-                              }
-                elk_uploader = ESUploader(**input_data)
-                elk_uploader.upload_to_es(account=account)
-            # 2. POLICY
-            elif is_non_cluster_polices_runner:
-                run_non_cluster_polices_runner()
-            elif is_tag_ibm_classic_infrastructure_runner:
-                run_tag_ibm_classic_infrastructure_runner()
-            elif is_cost_explorer_policies_runner:
-                run_cost_explorer_policies_runner()
-            elif is_azure_policy_runner:
-                run_azure_policy_runner()
-            elif is_gcp_policy_runner:
-                run_gcp_policy_runner()
+        account = environment_variables_dict.get('account', '')
+        policy = environment_variables_dict.get('policy', '')
+        upload_data_es = environment_variables_dict.get('upload_data_es', '')
+        es_host = environment_variables_dict.get('es_host', '')
+        es_port = environment_variables_dict.get('es_port', '')
+        es_index = environment_variables_dict.get('es_index', '')
+        es_doc_type = environment_variables_dict.get('es_doc_type', '')
+        bucket = environment_variables_dict.get('bucket', '')
+        main_operations = MainOperations()
+        response = main_operations.run()
+        if not response:
+            if environment_variables_dict.get('COMMON_POLICIES'):
+                run_common_policies()
+            elif environment_variables_dict.get('CLOUD_RESOURCE_ORCHESTRATION'):
+                run_cloud_resource_orchestration()
             else:
-                if not policy:
-                    logger.exception(f'Missing Policy name: "{policy}"')
-                    raise Exception(f'Missing Policy name: "{policy}"')
-                if region_env == 'all':
-                    # must be set for boto3 client default region
-                    # environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
-                    ec2 = boto3.client('ec2')
-                    regions_data = ec2.describe_regions()
-                    for region in regions_data['Regions']:
-                        # logger.info(f"region: {region['RegionName']}")
-                        environment_variables_dict['AWS_DEFAULT_REGION'] = region['RegionName']
-                        run_policy(account=account, policy=policy, region=region['RegionName'], dry_run=dry_run)
+                non_cluster_polices_runner = None
+                is_non_cluster_polices_runner = policy in environment_variables_dict.get('aws_non_cluster_policies')
+                if is_non_cluster_polices_runner:
+                    non_cluster_polices_runner = ZombieNonClusterPolicies()
+
+                ibm_classic_infrastructure_policy_runner = None
+                is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get('ibm_policies')
+                if not is_tag_ibm_classic_infrastructure_runner:
+                    if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                            'PUBLIC_CLOUD_NAME').upper() == 'IBM':
+                        is_tag_ibm_classic_infrastructure_runner = policy in environment_variables_dict.get(
+                            'cost_policies')
+                if is_tag_ibm_classic_infrastructure_runner:
+                    ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
+
+                is_cost_explorer_policies_runner = ''
+                if environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AWS':
+                    cost_explorer_policies_runner = None
+                    is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
+                    if is_cost_explorer_policies_runner:
+                        cost_explorer_policies_runner = CostReportPolicies()
+
+                is_azure_policy_runner = ''
+                if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                        'PUBLIC_CLOUD_NAME').upper() == 'AZURE':
+                    azure_cost_policy_runner = None
+                    is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
+                    if is_azure_policy_runner:
+                        azure_cost_policy_runner = AzurePolicyRunner()
+
+                is_gcp_policy_runner = ''
+                if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
+                        'PUBLIC_CLOUD_NAME').upper() == 'GCP':
+                    gcp_cost_policy_runner = None
+                    is_gcp_policy_runner = policy in environment_variables_dict.get('cost_policies')
+                    if is_gcp_policy_runner:
+                        gcp_cost_policy_runner = GcpPolicyRunner()
+
+                @logger_time_stamp
+                def run_non_cluster_polices_runner():
+                    """
+                    This method run the aws non-cluster policies
+                    @return:
+                    """
+                    non_cluster_polices_runner.run()
+
+                def run_tag_ibm_classic_infrastructure_runner():
+                    """
+                    This method run the IBM policies
+                    @return:
+                    """
+                    ibm_classic_infrastructure_policy_runner.run()
+
+                @logger_time_stamp
+                def run_cost_explorer_policies_runner():
+                    """
+                    This method run the aws cost_explorer policies
+                    @return:
+                    """
+                    cost_explorer_policies_runner.run()
+
+                @logger_time_stamp
+                def run_azure_policy_runner():
+                    """
+                    This method run the azure policies
+                    @return:
+                    """
+                    azure_cost_policy_runner.run()
+
+                @logger_time_stamp
+                def run_gcp_policy_runner():
+                    """
+                    This method run the gcp policies
+                    """
+                    gcp_cost_policy_runner.run()
+
+                # 1. ELK Uploader
+                if upload_data_es:
+                    input_data = {'es_host': es_host,
+                                  'es_port': int(es_port),
+                                  'es_index': es_index,
+                                  'es_doc_type': es_doc_type,
+                                  'es_add_items': {'account': account},
+                                  'bucket': bucket,
+                                  'logs_bucket_key': 'logs',
+                                  's3_file_name': 'resources.json',
+                                  'region': region_env,
+                                  'policy': policy,
+                                  }
+                    elk_uploader = ESUploader(**input_data)
+                    elk_uploader.upload_to_es(account=account)
+                # 2. POLICY
+                elif is_non_cluster_polices_runner:
+                    run_non_cluster_polices_runner()
+                elif is_tag_ibm_classic_infrastructure_runner:
+                    run_tag_ibm_classic_infrastructure_runner()
+                elif is_cost_explorer_policies_runner:
+                    run_cost_explorer_policies_runner()
+                elif is_azure_policy_runner:
+                    run_azure_policy_runner()
+                elif is_gcp_policy_runner:
+                    run_gcp_policy_runner()
                 else:
-                    run_policy(account=account, policy=policy, region=region_env, dry_run=dry_run)
+                    if not policy:
+                        logger.exception(f'Missing Policy name: "{policy}"')
+                        raise Exception(f'Missing Policy name: "{policy}"')
+                    if region_env == 'all':
+                        # must be set for boto3 client default region
+                        # environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
+                        ec2 = boto3.client('ec2')
+                        regions_data = ec2.describe_regions()
+                        for region in regions_data['Regions']:
+                            # logger.info(f"region: {region['RegionName']}")
+                            environment_variables_dict['AWS_DEFAULT_REGION'] = region['RegionName']
+                            run_policy(account=account, policy=policy, region=region['RegionName'], dry_run=dry_run)
+                    else:
+                        run_policy(account=account, policy=policy, region=region_env, dry_run=dry_run)
 
 
 if __name__ == '__main__':
