@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: postfix
+    envType: production
+  name: postfix
+spec:
+  containers:
+    - env:
+        - name: POSTFIX_RELAY_DOMAINS
+          value: redhat.com
+        - name: POSTFIX_RELAY_HOST
+          value: smtp.corp.redhat.com
+      image: quay.io/athiru/postfix:v0.3
+      name: postfix
+      ports:
+        - containerPort: 25
+      resources: { }
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postfix
+    envType: production
+  name: postfix
+spec:
+  ports:
+    - name: postfix-tcp
+      port: 30002
+      protocol: TCP
+      targetPort: 25
+  selector:
+    app: postfix
+    envType: production
