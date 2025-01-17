@@ -15,6 +15,7 @@ repos:
     hooks:
       - id: check-json
       - id: check-yaml
+        exclude: pod_yaml/postfix_pod.yml
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-added-large-files
