@@ -74,7 +74,10 @@ class EnvironmentVariables:
             EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
         if not hasattr(self, 'POLICIES_LIST'):
             self.POLICIES_LIST = EnvironmentVariables.get_env('POLICIES_LIST')
-
+        if not hasattr(self, 'POSTFIX_HOST'):
+            self.POSTFIX_HOST = EnvironmentVariables.get_env('POSTFIX_HOST', 'localhost')
+        if not hasattr(self, 'POSTFIX_PORT'):
+            self.POSTFIX_PORT = int(EnvironmentVariables.get_env('POSTFIX_PORT', '25'))
         self._environment_variables_dict['PRINT_LOGS'] = EnvironmentVariables.get_boolean_from_environment('PRINT_LOGS',
                                                                                                            True)
         if not self._environment_variables_dict['AWS_DEFAULT_REGION']:

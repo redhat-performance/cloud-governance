@@ -42,6 +42,8 @@ class Postfix:
         self.__email_alert = self.__environment_variables_dict.get('EMAIL_ALERT')
         self.__mail_to = self.__environment_variables_dict.get('EMAIL_TO')
         self.__mail_cc = self.__environment_variables_dict.get('EMAIL_CC')
+        self.__POSTFIX_HOST = environment_variables.POSTFIX_HOST
+        self.__POSTFIX_PORT = environment_variables.POSTFIX_PORT
         self.bucket_name, self.key = self.get_bucket_name()
         self.__es_index = 'cloud-governance-mail-messages'
         if self.__es_host:
@@ -130,9 +132,8 @@ class Postfix:
             else:
                 msg.attach(MIMEText(content))
             email_string = msg.as_string()
-            email_host = 'localhost'
             try:
-                with smtplib.SMTP(email_host) as s:
+                with smtplib.SMTP(self.__POSTFIX_HOST, self.__POSTFIX_PORT) as s:
                     try:
                         logger.debug(email_string)
                         s.send_message(msg)
