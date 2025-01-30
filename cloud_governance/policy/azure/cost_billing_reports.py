@@ -27,7 +27,8 @@ class CostBillingReports:
         self.gdrive_operations = GoogleDriveOperations()
         self.__gsheet_id = self.__environment_variables_dict.get('SPREADSHEET_ID')
         self.update_to_gsheet = UploadToGsheet()
-        self.__cost_center, self.__allocated_budget, self.__years, self.__owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=self.azure_operations.subscription_id, dir_path='/tmp')
+        self.__cost_center, self.__allocated_budget, self.__years, self.__owner = self.update_to_gsheet.get_cost_center_budget_details(
+            account_id=self.azure_operations.subscription_id, dir_path='/tmp')
         self.__common_data = self.get_common_data()
 
     def get_common_data(self):
@@ -37,7 +38,7 @@ class CostBillingReports:
         """
         upload_data = {}
         upload_data['AccountId'] = self.azure_operations.subscription_id
-        upload_data['Account'] = self.azure_operations.account_name+'-'+self.azure_operations.cloud_name.title()
+        upload_data['Account'] = self.azure_operations.account_name + '-' + self.azure_operations.cloud_name.title()
         upload_data['Budget'] = 0
         upload_data['AllocatedBudget'] = 0
         upload_data['CostCenter'] = int(self.__cost_center)
@@ -46,7 +47,9 @@ class CostBillingReports:
         return upload_data
 
     @logger_time_stamp
-    def get_data_from_costs(self, cost_data_rows: list, cost_data_columns: list, cost_type: str, cost_billing_data: dict, subscription_id: str = '', account_name: str = '', cost_center: int = 0):
+    def get_data_from_costs(self, cost_data_rows: list, cost_data_columns: list, cost_type: str,
+                            cost_billing_data: dict, subscription_id: str = '', account_name: str = '',
+                            cost_center: int = 0):
         """
         This method get the data from the cost
         @param cost_billing_data:
@@ -64,7 +67,8 @@ class CostBillingReports:
         if cost_center > 0:
             common_data['CostCenter'] = cost_center
         if subscription_id:
-            cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=subscription_id, dir_path='/tmp')
+            cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(
+                account_id=subscription_id, dir_path='/tmp')
             if cost_center:
                 common_data['CostCenter'] = int(cost_center)
                 common_data['Owner'] = owner
@@ -85,7 +89,8 @@ class CostBillingReports:
                     common_data['Account'] = item[key]
                 elif column.get('name') == 'SubscriptionId':
                     common_data['AccountId'] = item[key]
-                    cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(account_id=item[key], dir_path='/tmp')
+                    cost_center, allocated_budget, years, owner = self.update_to_gsheet.get_cost_center_budget_details(
+                        account_id=item[key], dir_path='/tmp')
                     if cost_center:
                         common_data['CostCenter'] = int(cost_center)
                         common_data['Owner'] = owner
@@ -132,14 +137,15 @@ class CostBillingReports:
             cost_center = int(profile.get('display_name').split('(CC ')[-1].split(')')[0])
             self.__common_data['CostCenter'] = cost_center
             filters = {
-                'grouping': [{'type':'Dimension', 'name': 'SubscriptionName'},
+                'grouping': [{'type': 'Dimension', 'name': 'SubscriptionName'},
                              {'type': 'Dimension', 'name': 'SubscriptionId'}]
             }
             usage_data = self.cost_mgmt_operations.get_usage(scope=scope, **filters)
             subscription_ids = []
             if usage_data.get('rows'):
                 subscription_ids = [[id[3], id[2]] for id in usage_data.get('rows')]
-                self.get_data_from_costs(cost_data_rows=usage_data.get('rows'), cost_data_columns=usage_data.get('columns'), cost_type='Actual',
+                self.get_data_from_costs(cost_data_rows=usage_data.get('rows'),
+                                         cost_data_columns=usage_data.get('columns'), cost_type='Actual',
                                          cost_billing_data=cost_billing_data)
             for subscription in subscription_ids:
                 query_filter = {
@@ -161,14 +167,21 @@ class CostBillingReports:
         """
         cost_billing_data = {}
         if not self.__total_account:
-            scope = self.azure_operations.get_billing_profiles_list(subscription_id=self.azure_operations.subscription_id)
+            scope = self.azure_operations.scope
             if scope:
                 usage_data = self.cost_mgmt_operations.get_usage(scope=scope)
                 forecast_data = self.cost_mgmt_operations.get_forecast(scope=self.azure_operations.scope)
                 if usage_data:
-                    self.get_data_from_costs(cost_data_rows=usage_data.get('rows'), cost_data_columns=usage_data.get('columns'), cost_type='Actual', cost_billing_data=cost_billing_data)
+                    self.get_data_from_costs(cost_data_rows=usage_data.get('rows'),
+                                             cost_data_columns=usage_data.get('columns'), cost_type='Actual',
+                                             cost_billing_data=cost_billing_data,
+                                             subscription_id=self.azure_operations.subscription_id,
+                                             )
                 if forecast_data:
-                    self.get_data_from_costs(cost_data_rows=forecast_data.get('rows'), cost_data_columns=forecast_data.get('columns'), cost_type='Forecast', cost_billing_data=cost_billing_data, subscription_id=self.azure_operations.subscription_id)
+                    self.get_data_from_costs(cost_data_rows=forecast_data.get('rows'),
+                                             cost_data_columns=forecast_data.get('columns'), cost_type='Forecast',
+                                             cost_billing_data=cost_billing_data,
+                                             subscription_id=self.azure_operations.subscription_id)
             else:
                 logger.warning(f"No billing scopes found in the subscription: {self.azure_operations.subscription_id}")
         else:

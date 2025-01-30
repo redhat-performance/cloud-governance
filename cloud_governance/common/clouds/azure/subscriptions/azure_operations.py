@@ -21,7 +21,8 @@ class AzureOperations:
         self.__subscription_client = SubscriptionClient(credential=self.__default_creds)
         self.cost_mgmt_client = CostManagementClient(credential=self.__default_creds)
         self.subscription_id, self.account_name = self.__get_subscription_id()
-        self.billing_client = BillingManagementClient(credential=self.__default_creds, subscription_id=self.subscription_id)
+        self.billing_client = BillingManagementClient(credential=self.__default_creds,
+                                                      subscription_id=self.subscription_id)
         self.__account_id = self.__environment_variables_dict.get('AZURE_ACCOUNT_ID')
         self.cloud_name = 'AZURE'
         self.scope = f'subscriptions/{self.subscription_id}'
@@ -60,9 +61,5 @@ class AzureOperations:
         billing_profiles = []
         responses = self.billing_client.billing_profiles.list_by_billing_account(self.__account_id)
         for response in responses:
-            if subscription_id:
-                if subscription_id == response.subscriptionId:
-                    return response.id
-            else:
-                billing_profiles.append(response.id)
+            billing_profiles.append(response.id)
         return billing_profiles
