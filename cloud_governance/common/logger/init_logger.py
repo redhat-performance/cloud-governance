@@ -13,7 +13,9 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # log for output only
-log_path = os.getcwd()
+log_path = '/tmp'
+if os.environ.get('LOG_FILE_PATH'):
+    log_path = os.environ.get('LOG_FILE_PATH')
 fileHandler = logging.FileHandler(filename=f'{log_path}/cloud_governance.log', mode='w+')
 fileHandler.setFormatter(fmt=formatter)
 # logger.addHandler(fileHandler)
