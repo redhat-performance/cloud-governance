@@ -25,6 +25,15 @@ pipeline {
         COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+
+        CLOUDABILITY_API = credentials('cloudability_api')
+        CLOUDABILITY_API_REPORTS_PATH = credentials('cloudability_api_reports_path')
+        CLOUDABILITY_METRICS = credentials('cloudability_metrics')
+        CLOUDABILITY_VIEW_ID = credentials('cloudability_view_id')
+        APPITO_KEY_ACCESS = credentials('appito_key_access')
+        APPITO_KEY_SECRET = credentials('appito_key_secret')
+        APPITO_ENVID = credentials('appito_envid')
+
         contact1 = "ebattat@redhat.com"
         contact2 = "athiruma@redhat.com"
     }
