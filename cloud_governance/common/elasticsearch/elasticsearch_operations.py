@@ -27,16 +27,20 @@ class ElasticSearchOperations:
     MIN_SEARCH_RESULTS = 100
     DEFAULT_ES_BULK_LIMIT = 5000
 
-    def __init__(self, es_host: str = None, es_port: str = None, region: str = '', bucket: str = '', logs_bucket_key: str = '',
+    def __init__(self, es_host: str = None, es_port: str = None, region: str = '', bucket: str = '',
+                 logs_bucket_key: str = '',
                  timeout: int = 2000):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_host = es_host if es_host else self.__environment_variables_dict.get('es_host')
         self.__es_port = es_port if es_port else self.__environment_variables_dict.get('es_port')
         self.__region = region
-        self.__timeout = int(self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get('ES_TIMEOUT') else timeout
+        self.__timeout = int(
+            self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get(
+            'ES_TIMEOUT') else timeout
         self.__account = self.__environment_variables_dict.get('account')
         try:
-            self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout, max_retries=2)
+            self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout,
+                                      max_retries=2)
         except Exception as err:
             self.__es = None
 
@@ -141,7 +145,8 @@ class ElasticSearchOperations:
         if 'policy' not in data:
             data['policy'] = self.__environment_variables_dict.get('policy')
         # Upload data to elastic search server
-        if 'account' not in map(str.lower, data.keys()):
+        if 'account' not in map(str.lower, data.keys()) \
+                and 'AccountName' not in data.keys():
             data['account'] = self.__account
         if data.get('index-id'):
             kwargs['id'] = data.get('index-id')
@@ -226,7 +231,8 @@ class ElasticSearchOperations:
 
     @typechecked()
     def fetch_data_by_es_query(self, es_index: str, query: dict = None, start_datetime: datetime = None,
-                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = '', search_size: int = 100, limit_to_size: bool = False,
+                               end_datetime: datetime = None, result_agg: bool = False, group_by: str = '',
+                               search_size: int = 100, limit_to_size: bool = False,
                                filter_path: str = ''):
         """
         This method fetches the data in between range, if you need aggregation results pass you own query with aggegation
@@ -247,7 +253,8 @@ class ElasticSearchOperations:
                 if start_datetime and end_datetime:
                     query = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
             if query:
-                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h', filter_path=filter_path)
+                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h',
+                                            filter_path=filter_path)
                 if result_agg:
                     es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
                 else:
@@ -319,6 +326,8 @@ class ElasticSearchOperations:
                     item['_id'] = item.get(kwargs.get('id'))
                 if item.get('index-id'):
                     item['_id'] = item.get('index-id')
+                if item.get('IndexId'):
+                    item['_id'] = item.get('IndexId')
                 if not item.get('timestamp'):
                     if 'CurrentDate' in item:
                         item['timestamp'] = datetime.strptime(item.get('CurrentDate'), "%Y-%m-%d")
@@ -327,7 +336,7 @@ class ElasticSearchOperations:
                 item['_index'] = index
                 if item.get('AccountId'):
                     item['AccountId'] = str(item.get('AccountId'))
-                if 'account' not in item:
+                if 'account' not in item and 'AccountName' not in item:
                     item['account'] = self.__account
                 if 'DryRun' not in item:
                     item['DryRun'] = self.__environment_variables_dict.get('dry_run')
