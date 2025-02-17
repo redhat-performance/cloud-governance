@@ -11,7 +11,8 @@ COST_USAGE_REPORT_DIMENSIONS = {
     'category4': 'CostCenter',
     'vendor_account_name': 'AccountName',
     'vendor': 'PublicCloudName',
-    'vendor_account_identifier': 'AccountId'
+    'vendor_account_identifier': 'AccountId',
+    'tag26': 'ResourcePlanId'
 }
 
 COST_USAGE_REPORT_METRICS = {

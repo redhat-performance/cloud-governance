@@ -24,6 +24,7 @@ class CostUsageReportData:
     PublicCloudName: str
     Cost: float
     timestamp: datetime
+    ResourcePlanId: str
     IndexId: str = ""
     ReportGenerate: str = ""
 
