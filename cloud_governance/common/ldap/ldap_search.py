@@ -1,14 +1,18 @@
+import os
+
 import ldap
 # installation for rhel/centos - python3.9
 # sudo dnf install -y python39-devel openldap-devel gcc
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.utils.api_requests import APIRequests
 
 
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
         self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
+        self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
 
     def __get_manager_name(self, manager_data: str):
         """
@@ -62,9 +66,14 @@ class LdapSearch:
 
     def get_user_details(self, user_name):
         """
-        This method return the ldap results and organize data
+        This method returns the ldap results and organizes data
         @param user_name:
         @return:
         """
+        if self.__perf_services_url:
+            api_request = APIRequests()
+            api_url = self.__perf_services_url + f"/ldap/{user_name}"
+            response = api_request.get(api_url)
+            return response
         user_data = self.__get_details(user_name=user_name)
         return self.__organise_user_details(data=user_data)

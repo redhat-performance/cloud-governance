@@ -325,6 +325,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['CLOUDABILITY_DIMENSIONS'] = EnvironmentVariables.get_env(
             'CLOUDABILITY_DIMENSIONS', 'date,category4,vendor_account_name,vendor_account_identifier,vendor')
 
+        self._environment_variables_dict['PERF_SERVICES_URL'] = EnvironmentVariables.get_env('PERF_SERVICES_URL', '')
+
     @staticmethod
     def to_bool(arg, def_val: bool = None):
         if isinstance(arg, bool):
