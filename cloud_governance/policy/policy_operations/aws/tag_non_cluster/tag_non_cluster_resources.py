@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.utils.configs import INSTANCE_START_PREFIX
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.non_cluster_operations import NonClusterOperations
 
 
@@ -36,7 +37,8 @@ class TagNonClusterResources(NonClusterOperations):
         @param tags:
         @return:
         """
-        username = self.get_username(start_time=launch_time, resource_id=instance_id, resource_type='AWS::EC2::Instance', tags=tags)
+        username = self.get_username(start_time=launch_time, resource_id=instance_id,
+                                     resource_type='AWS::EC2::Instance', tags=tags)
         search_tags = []
         user_tags = []
         if not username:
@@ -73,8 +75,10 @@ class TagNonClusterResources(NonClusterOperations):
                     if add_tags:
                         if self.dry_run == 'no':
                             try:
-                                self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[instance_id], tags=add_tags)
-                                logger.info(f'Added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
+                                self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags,
+                                                             resource_ids=[instance_id], tags=add_tags)
+                                logger.info(
+                                    f'Added tags to instance: {instance_id} total: {len(add_tags)} tags: {add_tags}')
                             except Exception as err:
                                 logger.info(err)
                         instances_ids.append(instance_id)
@@ -94,7 +98,8 @@ class TagNonClusterResources(NonClusterOperations):
             volume_id = volume.get('VolumeId')
             tags = volume.get('Tags')
             if not self.validate_existing_tag(tags=tags):
-                username = self.get_username(start_time=volume.get('CreateTime'), resource_id=volume_id, resource_type='AWS::EC2::Volume', tags=tags)
+                username = self.get_username(start_time=volume.get('CreateTime'), resource_id=volume_id,
+                                             resource_type='AWS::EC2::Volume', tags=tags)
                 search_tags = []
                 if not username:
                     get_tags, username = self._get_tags_fom_attachments(attachments=volume.get('Attachments'))
@@ -120,8 +125,10 @@ class TagNonClusterResources(NonClusterOperations):
                 if volume_tags:
                     if self.dry_run == 'no':
                         try:
-                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[volume_id], tags=volume_tags)
-                            logger.info(f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
+                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags,
+                                                         resource_ids=[volume_id], tags=volume_tags)
+                            logger.info(
+                                f'added tags to volume_id: {volume_id} total: {len(volume_tags)}  tags: {volume_tags}')
                         except Exception as err:
                             logger.info(err)
                     volume_ids.append(volume_id)
@@ -141,24 +148,33 @@ class TagNonClusterResources(NonClusterOperations):
             snapshot_id = snapshot.get('SnapshotId')
             tags = snapshot.get('Tags')
             if not self.validate_existing_tag(tags=tags):
-                username = self.get_username(start_time=snapshot.get('StartTime'), resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot', tags=tags)
+                username = self.get_username(start_time=snapshot.get('StartTime'), resource_id=snapshot_id,
+                                             resource_type='AWS::EC2::Snapshot', tags=tags)
                 if 'vm_import_image' in username:
                     start_time = snapshot.get('StartTime') + timedelta(seconds=5)
                     end_time = start_time + timedelta(minutes=30)
-                    assume_username = self.get_username(start_time=start_time, resource_id=snapshot_id, resource_type='AWS::EC2::Snapshot', tags=tags, end_time=end_time)
+                    assume_username = self.get_username(start_time=start_time, resource_id=snapshot_id,
+                                                        resource_type='AWS::EC2::Snapshot', tags=tags,
+                                                        end_time=end_time)
                     if assume_username:
                         username = assume_username
                 search_tags = []
                 if not username:
                     if snapshot.get('Description') and 'Created' in snapshot.get('Description'):
-                        image_tags, username = self._get_tags_from_snapshot_description_images(description=snapshot.get('Description'))
+                        image_tags, username = self._get_tags_from_snapshot_description_images(
+                            description=snapshot.get('Description'))
                         if not username:
-                            instance_id = snapshot.get('Description').split(" ")[2].split("(")[1][:-1]
-                            instances = self._get_instances_data(instance_id)
-                            if instances:
-                                for item in instances:
-                                    if item.get('InstanceId') == instance_id:
-                                        item_tags, username = self._get_tags_from_instance_item(instance_item=item)
+                            if INSTANCE_START_PREFIX in snapshot.get('Description'):
+                                try:
+                                    instance_id = snapshot.get('Description').split(" ")[2].split("(")[1][:-1]
+                                    instances = self._get_instances_data(instance_id)
+                                    if instances:
+                                        for item in instances:
+                                            if item.get('InstanceId') == instance_id:
+                                                item_tags, username = self._get_tags_from_instance_item(
+                                                    instance_item=item)
+                                except Exception as err:
+                                    logger.info(err)
                 else:
                     search_tags.extend(self._append_input_tags())
                 if username:
@@ -179,8 +195,10 @@ class TagNonClusterResources(NonClusterOperations):
                 if snapshot_tags:
                     if self.dry_run == 'no':
                         try:
-                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[snapshot_id], tags=snapshot_tags)
-                            logger.info(f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
+                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags,
+                                                         resource_ids=[snapshot_id], tags=snapshot_tags)
+                            logger.info(
+                                f'added tags to snapshots: {snapshot_id} total: {len(snapshot_tags)} tags: {snapshot_tags}')
                         except Exception as err:
                             logger.info(err)
                     snapshot_ids.append(snapshot_id)
@@ -203,7 +221,8 @@ class TagNonClusterResources(NonClusterOperations):
             image_name = image.get('Name')
             start_time = datetime.fromisoformat(image.get('CreationDate')[:-1] + '+00:00')
             if not self.validate_existing_tag(tags=tags):
-                username = self.get_username(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami', tags=tags, resource_name=image_name)
+                username = self.get_username(start_time=start_time, resource_id=image_id, resource_type='AWS::EC2::Ami',
+                                             tags=tags, resource_name=image_name)
                 search_tags = []
                 search_tags.extend(self._append_input_tags())
                 if username:
@@ -223,7 +242,8 @@ class TagNonClusterResources(NonClusterOperations):
                 if image_tags:
                     if self.dry_run == 'no':
                         try:
-                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags, resource_ids=[image_id], tags=image_tags)
+                            self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags,
+                                                         resource_ids=[image_id], tags=image_tags)
                             logger.info(f'added tags to image: {image_id} total: {len(image_tags)} tags: {image_tags}')
                         except Exception as err:
                             logger.info(err)
