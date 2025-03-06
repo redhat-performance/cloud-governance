@@ -2,6 +2,7 @@ from typing import Callable
 
 import typeguard
 
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -46,8 +47,11 @@ class Utils:
         :param tags_name:
         :return:
         """
-        if tags_name == 'Tags':
-            client_method(Resources=resource_ids, Tags=tags)
+        try:
+            if tags_name == 'Tags':
+                client_method(Resources=resource_ids, Tags=tags)
+        except Exception as e:
+            logger.error(e)
 
     @logger_time_stamp
     def __split_run_bulks(self, iterable: list, limit: int = 1):
@@ -72,9 +76,11 @@ class Utils:
         :return:
         """
         if tags:
-            bulk_resource_ids_list = self.__split_run_bulks(iterable=resource_ids, limit=self.__update_tag_bulks)  # split the aws resource_ids into batches
+            bulk_resource_ids_list = self.__split_run_bulks(iterable=resource_ids,
+                                                            limit=self.__update_tag_bulks)  # split the aws resource_ids into batches
             co = 0
-            cpu_based_resource_ids_list = self.__split_run_bulks(iterable=bulk_resource_ids_list, limit=self.__update_tag_bulks)
+            cpu_based_resource_ids_list = self.__split_run_bulks(iterable=bulk_resource_ids_list,
+                                                                 limit=self.__update_tag_bulks)
             for cpu_based_resource_ids_list in cpu_based_resource_ids_list:
                 for resource_ids_list in cpu_based_resource_ids_list:
                     self.__tag_resources(client_method, resource_ids_list, tags)
@@ -85,7 +91,7 @@ class Utils:
     @typeguard.typechecked
     def iter_client_function(func_name: Callable, output_tag: str, iter_tag_name: str, **kwargs):
         """
-        This method fetch all Items of the resource i.e: EC2, IAM
+        This method fetches all Items of the resource i.e: EC2, IAM
         :param func_name:
         :param output_tag:
         :param iter_tag_name:
