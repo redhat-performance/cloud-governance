@@ -1,4 +1,5 @@
 import datetime
+import os
 import smtplib
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
@@ -12,6 +13,7 @@ from cloud_governance.common.logger.init_logger import logger
 
 # https://github.com/redhat-performance/quads/blob/master/quads/tools/postman.py
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.common.utils.api_requests import APIRequests
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -45,7 +47,9 @@ class Postfix:
         self.__POSTFIX_HOST = environment_variables.POSTFIX_HOST
         self.__POSTFIX_PORT = environment_variables.POSTFIX_PORT
         self.bucket_name, self.key = self.get_bucket_name()
+        self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
         self.__es_index = 'cloud-governance-mail-messages'
+        self.__api_request = APIRequests()
         if self.__es_host:
             self.__es_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port)
         if self.__policy_output:
@@ -74,7 +78,7 @@ class Postfix:
 
     def prettify_to(self, to: Union[str, list]):
         """
-        This method prettify to
+        This method prettifies to
         :param to:
         :type to:
         :return:
@@ -89,7 +93,7 @@ class Postfix:
 
     def prettify_cc(self, cc: Union[str, list], to: str = ''):
         """
-        This method prettify cc
+        This method prettifies cc
         :param to:
         :type to:
         :param cc:
@@ -103,6 +107,48 @@ class Postfix:
         to = self.prettify_to(to=to).split(',')
         return ','.join(list(set(cc_unique_values) - set(to)))
 
+    def __save_to_elastic(self, **kwargs):
+        """
+        This method uploads data to elasticsearch
+        :param kwargs:
+        :return:
+        """
+        es_data = kwargs.get('es_data')
+        data = {'Policy': self.__policy,
+                'Account': self.__account.upper(),
+                'MessageType': kwargs.get('message_type', 'alert')}
+        if es_data:
+            data.update(es_data)
+        if kwargs.get('resource_id'):
+            data['resource_id'] = kwargs['resource_id']
+        if kwargs.get('extra_purse'):
+            data['extra_purse'] = round(kwargs['extra_purse'], 3)
+        if kwargs.get('remaining_budget'):
+            data['remaining_budget'] = kwargs['remaining_budget']
+        if self.__es_host:
+            self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
+            logger.info(f'Uploaded to es index: {self.__es_index}')
+        else:
+            logger.info('Error missing the es_host')
+
+    def __save_to_s3(self, content: str, **kwargs):
+        """
+        This method save mail message to s3 bucket
+        :return:
+        """
+        if kwargs.get('filename'):
+            file_name = kwargs['filename'].split('/')[-1]
+            date_key = datetime.datetime.now().strftime("%Y%m%d%H")
+            if self.__policy_output:
+                self.__s3_operations.upload_file(file_name_path=kwargs['filename'],
+                                                 bucket=self.bucket_name,
+                                                 key=f'{self.key}/{self.__policy}/{date_key}',
+                                                 upload_file=file_name)
+                s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
+                content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
+                logger.info("File Saved to S3")
+        self.__save_to_elastic(**kwargs)
+
     @logger_time_stamp
     def send_email_postfix(self, subject: str, to: any, cc: list, content: str, **kwargs):
         if self.__email_alert:
@@ -112,65 +158,56 @@ class Postfix:
                 cc = self.__mail_cc
             if not self.__ldap_search.get_user_details(user_name=to):
                 cc.append('athiruma@redhat.com')
-            msg = MIMEMultipart('alternative')
-            msg["Subject"] = subject
-            msg["From"] = "%s <%s>" % (
-                'cloud-governance',
-                "@".join(["noreply-cloud-governance", 'redhat.com']),
-            )
-            msg["To"] = self.prettify_to(to)
-            msg["Cc"] = self.prettify_cc(cc=cc, to=to)
-            # msg.add_header("Reply-To", self.reply_to)
-            # msg.add_header("User-Agent", self.reply_to)
-            if kwargs.get('filename'):
-                attachment = MIMEText(open(kwargs['filename']).read())
-                attachment.add_header('Content-Disposition', 'attachment',
-                                      filename=kwargs['filename'].split('/')[-1])
-                msg.attach(attachment)
-            if kwargs.get('mime_type'):
-                msg.attach(MIMEText(content, kwargs.get('mime_type')))
+            response = {'ok': True}
+            to = self.prettify_to(to)
+            cc = self.prettify_cc(cc)
+            kwargs.setdefault('es_data', {}).update({'To': to, 'Cc': cc, 'Message': content})
+            if self.__perf_services_url:
+                body = {
+                    "cc": cc,
+                    "to": to,
+                    "subject": subject,
+                    "mail_body": content,
+                }
+                if kwargs.get('filename'):
+                    body['file_content'] = open(kwargs['filename']).read()
+                    body['filename'] = kwargs['filename'].split('/')[-1]
+                api_url = self.__perf_services_url + f"/postfix/send_mail"
+                response = self.__api_request.post(api_url, json=body)
+                response = response.json()
             else:
-                msg.attach(MIMEText(content))
-            email_string = msg.as_string()
-            try:
-                with smtplib.SMTP(self.__POSTFIX_HOST, self.__POSTFIX_PORT) as s:
-                    try:
-                        logger.debug(email_string)
-                        s.send_message(msg)
-                        if isinstance(to, str):
-                            logger.warn(f'Mail sent successfully to {to}@redhat.com')
-                        elif isinstance(to, list):
-                            logger.warn(f'Mail sent successfully to {", ".join(to)}@redhat.com')
-                        if kwargs.get('filename'):
-                            file_name = kwargs['filename'].split('/')[-1]
-                            date_key = datetime.datetime.now().strftime("%Y%m%d%H")
-                            if self.__policy_output:
-                                self.__s3_operations.upload_file(file_name_path=kwargs['filename'],
-                                                                 bucket=self.bucket_name,
-                                                                 key=f'{self.key}/{self.__policy}/{date_key}',
-                                                                 upload_file=file_name)
-                                s3_path = f'{self.__policy_output}/logs/{self.__policy}/{date_key}/{file_name}'
-                                content += f'\n\nresource_file_path: s3://{s3_path}\n\n'
-                        es_data = kwargs.get('es_data')
-                        data = {'Policy': self.__policy, 'To': to, 'Cc': cc, 'Message': content,
-                                'Account': self.__account.upper(), 'MessageType': kwargs.get('message_type', 'alert')}
-                        if es_data:
-                            data.update(es_data)
-                        if kwargs.get('resource_id'):
-                            data['resource_id'] = kwargs['resource_id']
-                        if kwargs.get('extra_purse'):
-                            data['extra_purse'] = round(kwargs['extra_purse'], 3)
-                        if kwargs.get('remaining_budget'):
-                            data['remaining_budget'] = kwargs['remaining_budget']
-                        if self.__es_host:
-                            self.__es_operations.upload_to_elasticsearch(data=data, index=self.__es_index)
-                            logger.warn(f'Uploaded to es index: {self.__es_index}')
-                        else:
-                            logger.warn('Error missing the es_host')
-                    except smtplib.SMTPException as ex:
-                        logger.error(f'Error while sending mail, {ex}')
-                        return False
+                msg = MIMEMultipart('alternative')
+                msg["Subject"] = subject
+                msg["From"] = "%s <%s>" % (
+                    'cloud-governance',
+                    "@".join(["noreply-cloud-governance", 'redhat.com']),
+                )
+                msg["To"] = to
+                msg["Cc"] = cc
+                # msg.add_header("Reply-To", self.reply_to)
+                # msg.add_header("User-Agent", self.reply_to)
+                if kwargs.get('filename'):
+                    attachment = MIMEText(open(kwargs['filename']).read())
+                    attachment.add_header('Content-Disposition', 'attachment',
+                                          filename=kwargs['filename'].split('/')[-1])
+                    msg.attach(attachment)
+                if kwargs.get('mime_type'):
+                    msg.attach(MIMEText(content, kwargs.get('mime_type')))
+                else:
+                    msg.attach(MIMEText(content))
+                try:
+                    with smtplib.SMTP(self.__POSTFIX_HOST, self.__POSTFIX_PORT) as s:
+                        try:
+                            s.send_message(msg)
+                        except smtplib.SMTPException as ex:
+                            logger.error(f'Error while sending mail, {ex}')
+                    response = {
+                        'ok': True
+                    }
+                except Exception as err:
+                    logger.error(f'Some error occurred, {err}')
+            if isinstance(response, dict) and response.get('ok'):
+                logger.info(f'Mail sent successfully to {to}')
+                self.__save_to_s3(content, **kwargs)
                 return True
-            except Exception as err:
-                logger.error(f'Some error occurred, {err}')
-                return False
+            return False
