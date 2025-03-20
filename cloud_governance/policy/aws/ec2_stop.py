@@ -3,7 +3,8 @@ import operator
 
 from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.logger.init_logger import logger
-from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
+from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import \
+    NonClusterZombiePolicy
 from operator import ge
 
 
@@ -28,14 +29,17 @@ class EC2Stop(NonClusterZombiePolicy):
         This method list all stopped instances for more than 30 days and terminate if dry_run no
         @return:
         """
-        return self.__fetch_stop_instance(sign=ge, instance_days=self.FIRST_MAIL_NOTIFICATION_INSTANCE_DAYS, delete_instance_days=self.DELETE_INSTANCE_DAYS)
+        return self.__fetch_stop_instance(sign=ge, instance_days=self.FIRST_MAIL_NOTIFICATION_INSTANCE_DAYS,
+                                          delete_instance_days=self.DELETE_INSTANCE_DAYS)
 
     def __fetch_stop_instance(self, instance_days: int, delete_instance_days: int, sign: operator = ge):
         """
         This method list all stopped instances for more than 30 days and terminate if dry_run no
         @return:
         """
-        instances = self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])['Reservations']
+        instances = \
+            self._ec2_client.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])[
+                'Reservations']
         stopped_instances = []
         stopped_instance_tags = {}
         ec2_types = {}
@@ -51,20 +55,30 @@ class EC2Stop(NonClusterZombiePolicy):
                         stopped_time = datetime.datetime.now()
                     days = self._calculate_days(create_date=stopped_time)
                     user = self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User')
-                    stop_cost = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'), resource_type='ec2', resource_hours=(self.DAILY_HOURS * days))
+                    stop_cost = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'), resource_type='ec2',
+                                                  resource_hours=(self.DAILY_HOURS * days))
                     if days in (instance_days, self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS):
                         if days == self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS:
-                            delta_cost = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'), resource_type='ec2', resource_hours=(self.DAILY_HOURS * (days-self.FIRST_MAIL_NOTIFICATION_INSTANCE_DAYS)))
+                            delta_cost = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'),
+                                                           resource_type='ec2', resource_hours=(
+                                        self.DAILY_HOURS * (days - self.FIRST_MAIL_NOTIFICATION_INSTANCE_DAYS)))
                         else:
                             delta_cost = stop_cost
                         if user:
-                            self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id, days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, message_type='notification', stop_cost=stop_cost, delta_cost=delta_cost)
+                            self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time,
+                                                resource_id=instance_id, days=days,
+                                                ec2_type=resource.get("InstanceType"), instance_id=instance_id,
+                                                message_type='notification', stop_cost=stop_cost, delta_cost=delta_cost)
                         else:
                             logger.info('User is missing')
                     if days == self.DAYS_TO_NOTIFY_ADMINS:
-                        delta_charge = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'), resource_type='ec2', resource_hours=(self.DAILY_HOURS * (self.DAYS_TO_NOTIFY_ADMINS-self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS)))
-                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time, resource_id=instance_id,
-                                            days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id, admins=self._admins,
+                        delta_charge = self.get_ebs_cost(resource=resource.get('BlockDeviceMappings'),
+                                                         resource_type='ec2', resource_hours=(self.DAILY_HOURS * (
+                                    self.DAYS_TO_NOTIFY_ADMINS - self.SECOND_MAIL_NOTIFICATION_INSTANCE_DAYS)))
+                        self.__trigger_mail(tags=resource.get('Tags'), stopped_time=stopped_time,
+                                            resource_id=instance_id,
+                                            days=days, ec2_type=resource.get("InstanceType"), instance_id=instance_id,
+                                            admins=self._admins,
                                             message_type='notify-admin', stop_cost=stop_cost, delta_charge=delta_charge)
                     if sign(days, instance_days):
                         if days >= delete_instance_days:
@@ -78,7 +92,7 @@ class EC2Stop(NonClusterZombiePolicy):
                             'StoppedDate': str(resource.get('UsageOperationUpdateTime')),
                             'Name': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Name'),
                             'User': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='User'),
-                            'LaunchTime': str(resource.get('LaunchTime')),
+                            'ResourceLaunchTime': str(resource.get('LaunchTime')),
                             'Policy': self._get_tag_name_from_tags(tags=resource.get('Tags'), tag_name='Policy')})
         if self._dry_run == "no":
             for instance_id, tags in stopped_instance_tags.items():
@@ -99,7 +113,8 @@ class EC2Stop(NonClusterZombiePolicy):
                     #     logger.info(err)
         return stopped_instances
 
-    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '', ec2_type: str = '', instance_id: str = '', **kwargs):
+    def __trigger_mail(self, tags: list, stopped_time: str, resource_id: str, days: int, image_id: str = '',
+                       ec2_type: str = '', instance_id: str = '', **kwargs):
         """
         This method send triggering mail
         @param tags:
@@ -110,16 +125,25 @@ class EC2Stop(NonClusterZombiePolicy):
         """
         try:
             special_user_mails = self._literal_eval(self._special_user_mails)
-            user, instance_name = self._get_tag_name_from_tags(tags=tags, tag_name='User'), self._get_tag_name_from_tags(tags=tags, tag_name='Name')
+            user, instance_name = self._get_tag_name_from_tags(tags=tags,
+                                                               tag_name='User'), self._get_tag_name_from_tags(tags=tags,
+                                                                                                              tag_name='Name')
             to = user if user not in special_user_mails else special_user_mails[user]
             ldap_data = self._ldap.get_user_details(user_name=to)
             cc = []
-            subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days, image_id=image_id, delete_instance_days=self.DELETE_INSTANCE_DAYS, instance_name=instance_name, resource_id=resource_id, stopped_time=stopped_time, ec2_type=ec2_type, extra_purse=kwargs.get('stop_cost'))
+            subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days,
+                                                            image_id=image_id,
+                                                            delete_instance_days=self.DELETE_INSTANCE_DAYS,
+                                                            instance_name=instance_name, resource_id=resource_id,
+                                                            stopped_time=stopped_time, ec2_type=ec2_type,
+                                                            extra_purse=kwargs.get('stop_cost'))
             if not kwargs.get('admins'):
                 kwargs['admins'] = to
                 cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
             else:
                 kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
-            self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=cc, resource_id=instance_id, message_type=kwargs.get('message_type'), extra_purse=kwargs.get('delta_cost', 0))
+            self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=cc,
+                                          resource_id=instance_id, message_type=kwargs.get('message_type'),
+                                          extra_purse=kwargs.get('delta_cost', 0))
         except Exception as err:
             logger.info(err)
