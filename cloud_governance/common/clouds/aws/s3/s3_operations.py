@@ -27,7 +27,7 @@ class S3Operations:
         self.__report_file_name = report_file_name
         self.__resource_file_name = resource_file_name
         self.__report_file_full_path = os.path.join(os.path.dirname(__file__), self.__report_file_name)
-        self.__resources_file_full_path = os.path.join(os.path.dirname(__file__), self.__resource_file_name)
+        self.__resources_file_full_path = os.path.join('/tmp', self.__resource_file_name)
         if bucket and logs_bucket_key:
             self.__bucket, self.__logs_bucket_key = bucket, logs_bucket_key
 
@@ -383,7 +383,8 @@ class S3Operations:
         :return:
         """
         try:
-            return self.__s3_client.get_bucket_location(Bucket=bucket_name, **kwargs).get('LocationConstraint', self.__region)
+            return self.__s3_client.get_bucket_location(Bucket=bucket_name, **kwargs).get('LocationConstraint',
+                                                                                          self.__region)
         except Exception as err:
             logger.error(err)
             return self.__region
