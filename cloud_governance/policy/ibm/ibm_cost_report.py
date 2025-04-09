@@ -51,6 +51,8 @@ class IBMCostReport:
             hardware_tags = self.collect_tags_from_machines(
                 tags=self.classic_operations.get_hardware_tags(hardware_id=str(hardware.get('id'))))
             hardware_tags['fqdn'] = hardware.get('fullyQualifiedDomainName').lower()
+            if 'budget' not in hardware_tags:
+                hardware_tags['budget'] = self.__environment_variables_dict.get('account')
             collect_machines_data[hardware_tags['fqdn']] = hardware_tags
         return collect_machines_data
 
@@ -86,7 +88,8 @@ class IBMCostReport:
             if fqdn not in collect_machines_data:
                 user = [user for user in users if user in fqdn]
                 if user:
-                    user_tags = self.ibm_account.get_user_tags_from_gsheet(username=f'{user[0]}@redhat.com', user_email='yes')
+                    user_tags = self.ibm_account.get_user_tags_from_gsheet(username=f'{user[0]}@redhat.com',
+                                                                           user_email='yes')
                     invoice_data[fqdn].update(self.collect_tags_from_machines(user_tags))
         return invoice_data
 
@@ -112,15 +115,17 @@ class IBMCostReport:
         collect_machines_data = self.get_hardware_data()
         collect_machines_data.update(self.get_virtual_machine_data())
         invoice_data = self.get_invoice_data(collect_machines_data=collect_machines_data)
-        cost_invoice_resource_data = self.concatenate_dictionaries(resource_data=collect_machines_data, invoice_data=invoice_data)
+        cost_invoice_resource_data = self.concatenate_dictionaries(resource_data=collect_machines_data,
+                                                                   invoice_data=invoice_data)
         for tag_name in self.owned_tags:
             cost_list_items = []
             for _, data in cost_invoice_resource_data.items():
-                if data[tag_name] != 0 or tag_name == 'budget':
+                if data.get(tag_name) != 0 or tag_name == 'budget':
                     cost_list_items.append({
                         tag_name.capitalize(): data[tag_name],
                         'Cost': data['cost'],
                         'Budget': self._elastic_upload.account
                     })
-            self._elastic_upload.es_upload_data(items=cost_list_items, es_index=f'{self._elastic_upload.es_index}-{tag_name.lower()}')
+            self._elastic_upload.es_upload_data(items=cost_list_items,
+                                                es_index=f'{self._elastic_upload.es_index}-{tag_name.lower()}')
         return True
