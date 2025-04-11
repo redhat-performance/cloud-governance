@@ -811,9 +811,13 @@ class TagClusterResources(TagClusterOperations):
                     for bucket in response['Buckets']:
                         # starts with cluster name
                         if bucket['Name'].startswith(cluster_key):
-                            bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
+                            try:
+                                bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
+                            except Exception as err:
+                                logger.info(err)
+                                bucket_tags = {}
                             if bucket_tags:
-                                bucket_tags = bucket_tags['TagSet']
+                                bucket_tags = bucket_tags.get('TagSet')
                                 # search that not exist permanent tags in the resource
                                 if not self.__validate_existing_tag(bucket_tags):
                                     add_tags = []
