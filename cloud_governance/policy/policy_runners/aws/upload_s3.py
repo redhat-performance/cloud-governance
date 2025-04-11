@@ -23,6 +23,9 @@ class UploadS3(AbstractUpload):
         """
         if self._policy_output:
             data = json.dumps(data, cls=JsonDateTimeEncoder)
-            self._s3operations.save_results_to_s3(policy=self._policy.replace('_', '-'),
-                                                  policy_output=self._policy_output, policy_result=data)
-            logger.info(f"Uploaded the data s3 Bucket: {self._policy_output}")
+            try:
+                self._s3operations.save_results_to_s3(policy=self._policy.replace('_', '-'),
+                                                      policy_output=self._policy_output, policy_result=data)
+                logger.info(f"Uploaded the data s3 Bucket: {self._policy_output}")
+            except Exception as err:
+                logger.error(f"Exection raised on uploading to s3, {err}")
