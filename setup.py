@@ -48,8 +48,8 @@ setup(
         'azure-mgmt-compute==30.1.0',
         'azure-mgmt-network==25.0.0',
         'azure-mgmt-monitor==6.0.2',
-        'boto3==1.26.4',  # required by c7n 0.9.14
-        'botocore==1.29.4',  # required by c7n 0.9.14
+        'boto3==1.33.1',
+        'botocore==1.33.8',
         'elasticsearch-dsl==7.4.0',
         'elasticsearch==7.13.4',  # opensearch 1.2.4 for elasticsearch
         'google-api-python-client==2.57.0',  # google drive
