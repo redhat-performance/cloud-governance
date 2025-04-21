@@ -27,19 +27,32 @@ class ElasticSearchOperations:
     MIN_SEARCH_RESULTS = 100
     DEFAULT_ES_BULK_LIMIT = 5000
 
-    def __init__(self, es_host: str = None, es_port: str = None, region: str = '', bucket: str = '',
+    def __init__(self,
+                 es_host: str = None,
+                 es_port: str = None,
+                 region: str = '',
+                 es_user: str = None,
+                 es_password: str = None,
+                 bucket: str = '',
                  logs_bucket_key: str = '',
                  timeout: int = 2000):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_host = es_host if es_host else self.__environment_variables_dict.get('es_host')
         self.__es_port = es_port if es_port else self.__environment_variables_dict.get('es_port')
+        self.__es_user = es_user if es_user else self.__environment_variables_dict.get('es_user')
+        self.__es_password = es_password if es_password else self.__environment_variables_dict.get('es_password')
         self.__region = region
         self.__timeout = int(
             self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get(
             'ES_TIMEOUT') else timeout
         self.__account = self.__environment_variables_dict.get('account')
         try:
-            self.__es = Elasticsearch([{'host': self.__es_host, 'port': self.__es_port}], timeout=self.__timeout,
+            add_host = {'host': self.__es_host, 'port': self.__es_port,
+                        'http_auth': f'{self.__es_user}:{self.__es_password}'}
+            if int(self.__es_port) == 443:
+                add_host['use_ssl'] = True
+            self.__es = Elasticsearch([add_host],
+                                      timeout=self.__timeout,
                                       max_retries=2)
         except Exception as err:
             self.__es = None
