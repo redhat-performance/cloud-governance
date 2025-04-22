@@ -92,13 +92,13 @@ class EnvironmentVariables:
             self._environment_variables_dict['account'] = self.get_aws_account_alias_name().upper().replace(
                 'OPENSHIFT-', '')
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
-
-        self._environment_variables_dict['aws_non_cluster_policies'] = ['instance_idle', 'ec2_stop', 'ebs_in_use',
-                                                                        'ebs_unattached', 's3_inactive',
-                                                                        'empty_roles', 'ip_unattached',
-                                                                        'unused_nat_gateway',
-                                                                        'zombie_snapshots', 'skipped_resources',
-                                                                        'monthly_report', 'optimize_resources_report']
+        # cost_usage_reports - athena queries on pair account, spot and graviton usage
+        self._environment_variables_dict['non_cluster_policies'] = ['instance_run', 'unattached_volume', 'cluster_run',
+                                                                    'ip_unattached', 'unused_nat_gateway', 'instance_idle',
+                                                                     'ec2_stop', 'ebs_in_use','database_idle', 's3_inactive',
+                                                                    'empty_roles', 'tag_resources', 'cost_usage_reports',
+                                                                    'zombie_snapshots', 'skipped_resources',
+                                                                    'monthly_report', 'optimize_resources_report']
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
@@ -130,6 +130,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')
         self._environment_variables_dict['end_date'] = EnvironmentVariables.get_env('end_date', '')
         self._environment_variables_dict['granularity'] = EnvironmentVariables.get_env('granularity', 'DAILY')
+        # ['User', 'Budget', 'Project', 'Manager']
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags',
                                                                                               '{}')
 

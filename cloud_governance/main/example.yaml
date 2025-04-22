@@ -21,12 +21,12 @@ ATHENA_TABLE_NAME: ""
 ATHENA_ACCOUNT_ACCESS_KEY: ""
 ATHENA_ACCOUNT_SECRET_KEY: ""
 
-aws_non_cluster_policies: [ 'instance_idle', 'ec2_stop', 'ebs_in_use',
-                            'ebs_unattached', 's3_inactive',
-                            'empty_roles', 'ip_unattached',
-                            'unused_nat_gateway',
-                            'zombie_snapshots', 'skipped_resources',
-                            'monthly_report', 'optimize_resources_report' ]
+non_cluster_policies: [ 'instance_run', 'unattached_volume', 'cluster_run',
+                        'ip_unattached', 'unused_nat_gateway', 'instance_idle',
+                        'ec2_stop', 'ebs_in_use', 'database_idle', 's3_inactive',
+                        'empty_roles', 'tag_resources', 'cost_usage_reports',
+                        'zombie_snapshots', 'skipped_resources',
+                        'monthly_report', 'optimize_resources_report' ]
 cost_policies: [ 'cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                  'cost_explorer_payer_billings', 'spot_savings_analysis' ]
 
