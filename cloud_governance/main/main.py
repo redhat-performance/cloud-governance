@@ -229,7 +229,7 @@ def main():
                 run_cloud_resource_orchestration()
             else:
                 non_cluster_polices_runner = None
-                is_non_cluster_polices_runner = policy in environment_variables_dict.get('aws_non_cluster_policies')
+                is_non_cluster_polices_runner = policy in environment_variables_dict.get('non_cluster_policies')
                 if is_non_cluster_polices_runner:
                     non_cluster_polices_runner = ZombieNonClusterPolicies()
 
