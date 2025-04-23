@@ -94,9 +94,11 @@ class EnvironmentVariables:
         self._environment_variables_dict['policy'] = EnvironmentVariables.get_env('policy', '')
         # cost_usage_reports - athena queries on pair account, spot and graviton usage
         self._environment_variables_dict['non_cluster_policies'] = ['instance_run', 'unattached_volume', 'cluster_run',
-                                                                    'ip_unattached', 'unused_nat_gateway', 'instance_idle',
-                                                                     'ec2_stop', 'ebs_in_use','database_idle', 's3_inactive',
-                                                                    'empty_roles', 'tag_resources', 'cost_usage_reports',
+                                                                    'ip_unattached', 'unused_nat_gateway',
+                                                                    'instance_idle',
+                                                                    'ec2_stop', 'ebs_in_use', 'database_idle',
+                                                                    's3_inactive',
+                                                                    'empty_roles',
                                                                     'zombie_snapshots', 'skipped_resources',
                                                                     'monthly_report', 'optimize_resources_report']
         es_index = 'cloud-governance-policy-es-index'
