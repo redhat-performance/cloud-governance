@@ -6,12 +6,6 @@ from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 
-# @todo add next token
-# response = client.get_servers()
-# results = response["serverList"]
-# while "NextToken" in response:
-#     response = client.get_servers(NextToken=response["NextToken"])
-#     results.extend(response["serverList"])
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_ec2_resources import DeleteEC2Resources
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_iam_resources import DeleteIAMResources
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_s3_resources import DeleteS3Resources
@@ -23,10 +17,10 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
     alert user after 4 days of cluster deleted. and delete the resources after 7 days of cluster deleted.
     """
 
-    def __init__(self, cluster_prefix: str = None, delete: bool = False, region: str = 'us-east-2',
+    def __init__(self, cluster_prefix: list = None, delete: bool = False, region: str = 'us-east-2',
                  cluster_tag: str = '', resource_name: str = '', force_delete: bool = False):
         super().__init__(region=region, force_delete=force_delete)
-        self.cluster_prefix = cluster_prefix
+        self.cluster_prefix = cluster_prefix if cluster_prefix is not None else []
         self.delete = delete
         self.cluster_tag = cluster_tag
         self.resource_name = resource_name
@@ -53,13 +47,15 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 if items.get('Instances'):
                     instances_list.append(items['Instances'])
             for instance in instances_list:
+
                 for item in instance:
-                    if item.get('InstanceId'):
-                        instance_id = item['InstanceId']
+                    instance_id = item.get('InstanceId')
                     if item.get('Tags'):
-                        for tag in item['Tags']:
-                            if tag['Key'].startswith(self.cluster_prefix) and tag.get('Value', '').lower() == 'owned':
-                                result_instance[instance_id] = tag['Key']
+                        ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                                   tags=item.get('Tags', []))
+                        if ok:
+                            result_instance[instance_id] = cluster_id
+
         return result_instance
 
     def _cluster_instance(self):
@@ -75,12 +71,11 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 instances_list.append(items['Instances'])
         for instance in instances_list:
             for item in instance:
-                if item.get('InstanceId'):
-                    instance_id = item['InstanceId']
-                if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if tag['Key'].startswith(self.cluster_prefix) and tag.get('Value', '').lower() == 'owned':
-                            result_instance[instance_id] = tag['Key']
+                instance_id = item['InstanceId']
+                ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                           tags=item.get('Tags', []))
+                if ok:
+                    result_instance[instance_id] = cluster_id
 
         return result_instance
 
@@ -98,20 +93,21 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             # skip when input_resource_id no found
             else:
                 continue
-            if resource.get(tags):
-                for tag in resource[tags]:
-                    if tag['Key'].startswith(self.cluster_prefix) and tag.get('Value', '').lower() == 'owned':
-                        # when input a specific cluster, return resource id of the input cluster
-                        for inner_tag in resource[tags]:
-                            if self.cluster_tag:
-                                if self.cluster_tag == inner_tag['Key']:
-                                    result_resources_key_id[resource_id] = tag['Key']
-                            elif self.resource_name:
-                                if self.resource_name == inner_tag['Value']:
-                                    result_resources_key_id[resource_id] = tag['Key']
-                            else:
+            tags_list = resource.get(tags, [])
+            if tags:
+                ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                           tags=tags_list)
+                if ok:
+                    result_resources_key_id[resource_id] = cluster_id
+                for tag in tags_list:
+                    if ok:
+                        if self.cluster_tag and self.cluster_tag == tag['Key']:
+                            result_resources_key_id[resource_id] = tag['Key']
+                            break
+                        else:
+                            if self.resource_name and self.resource_name == tag['Value']:
                                 result_resources_key_id[resource_id] = tag['Key']
-                        break
+                                break
         return result_resources_key_id
 
     def __extract_vpc_id_from_resource_data(self, zombie_id: str, resource_data: list, input_tag: str,
@@ -136,7 +132,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
 
     def __get_cluster_resources_by_vpc_id(self, vpc_id: str, resource_data: list, output_tag: str, input_tag: str = ''):
         """
-        this method list all the resources by vpc_id
+        this method lists all the resources by vpc_id
         :param vpc_id:
         :param resource_data:
         :param output_tag:
@@ -238,7 +234,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
 
     def zombie_cluster_snapshot(self, vpc_id: str = '', cluster_tag_vpc: str = ''):
         """
-        This method returns list of cluster's snapshot according to cluster tag name and cluster name data
+        This method returns the list of cluster's snapshot according to cluster tag name and cluster name data
         """
         snapshots_data = self.ec2_operations.get_snapshots()
         exist_snapshot = self.__get_cluster_resources(resources_list=snapshots_data, input_resource_id='SnapshotId')
@@ -463,16 +459,20 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             resource_id = resource['LoadBalancerName']
             tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id])
             for item in tags['TagDescriptions']:
-                if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if tag['Key'].startswith(self.cluster_prefix):
+                tags = item.get('Tags')
+                if tags:
+                    ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                               tags=tags)
+                    if ok:
+                        exist_load_balancer[resource_id] = cluster_id
+                    for tag in tags:
+                        if ok:
                             # when input a specific cluster, return resource id of the input cluster
                             if self.cluster_tag:
                                 if self.cluster_tag == tag['Key']:
                                     exist_load_balancer[resource_id] = tag['Key']
-                            else:
-                                exist_load_balancer[resource_id] = tag['Key']
-                            break
+                                    break
+
         zombies = self.__get_zombie_resources(exist_load_balancer)
         resources = self._get_tags_of_zombie_resources(resources=load_balancers_data,
                                                        resource_id_name='LoadBalancerName', zombies=zombies,
@@ -502,16 +502,20 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             resource_id = resource['LoadBalancerArn']
             tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id])
             for item in tags['TagDescriptions']:
-                if item.get('Tags'):
-                    for tag in item['Tags']:
-                        if tag['Key'].startswith(self.cluster_prefix):
+                tags = item.get('Tags', [])
+                if tags:
+                    ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                               tags=tags)
+                    if ok:
+                        exist_load_balancer[resource_id] = cluster_id
+                    for tag in tags:
+                        if ok:
                             # when input a specific cluster, return resource id of the input cluster
                             if self.cluster_tag:
                                 if self.cluster_tag == tag['Key']:
                                     exist_load_balancer[resource_id] = tag['Key']
-                            else:
-                                exist_load_balancer[resource_id] = tag['Key']
-                            break
+                                    break
+
         zombies = self.__get_zombie_resources(exist_load_balancer)
         resources = self._get_tags_of_zombie_resources(resources=load_balancers_data,
                                                        resource_id_name='LoadBalancerArn', zombies=zombies,
@@ -858,16 +862,19 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             if 'worker-role' in role_name or 'master-role' in role_name:
                 role_data = self.iam_client.get_role(RoleName=role_name)
                 data = role_data['Role']
-                if data.get('Tags'):
+                tags = data.get('Tags', [])
+                if tags:
+                    ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                               tags=tags)
+                    if ok:
+                        exist_role_name_tag[role_name] = cluster_id
                     for tag in data['Tags']:
-                        if tag['Key'].startswith(self.cluster_prefix):
+                        if ok:
                             # when input a specific cluster, return resource id of the input cluster
                             if self.cluster_tag:
                                 if self.cluster_tag == tag['Key']:
                                     exist_role_name_tag[role_name] = tag['Key']
-                            else:
-                                exist_role_name_tag[role_name] = tag['Key']
-                            break
+                                    break
         zombies = []
         cluster_left_out_days = {}
         if exist_role_name_tag:
@@ -900,16 +907,19 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             user_name = user['UserName']
             user_data = self.iam_client.get_user(UserName=user_name)
             data = user_data['User']
-            if data.get('Tags'):
-                for tag in data['Tags']:
-                    if tag['Key'].startswith(self.cluster_prefix):
+            tags = data.get('Tags', [])
+            if tags:
+                ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                           tags=tags)
+                if ok:
+                    exist_user_name_tag[user_name] = cluster_id
+                for tag in tags:
+                    if ok:
                         # when input a specific cluster, return resource id of the input cluster
                         if self.cluster_tag:
                             if self.cluster_tag == tag['Key']:
                                 exist_user_name_tag[user_name] = tag['Key']
-                        else:
-                            exist_user_name_tag[user_name] = tag['Key']
-                        break
+                                break
         zombies = self.__get_all_zombie_resources(exist_user_name_tag)
         resources = self._get_tags_of_zombie_resources(resources=users_data, resource_id_name='UserName',
                                                        zombies=zombies, aws_service='user')
@@ -944,15 +954,18 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     tags = self.s3_client.get_bucket_tagging(Bucket=bucket['Name'])
                 except Exception as e:  # continue when no bucket tags
                     continue
-                for tag in tags['TagSet']:
-                    if tag['Key'].startswith(self.cluster_prefix):
+                tags = tags.get('TagSet', [])
+                ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
+                                                           tags=tags)
+                if ok:
+                    exist_bucket_name_tag[bucket['Name']] = cluster_id
+                for tag in tags:
+                    if ok:
                         # when input a specific cluster, return resource id of the input cluster
                         if self.cluster_tag:
                             if self.cluster_tag == tag['Key']:
                                 exist_bucket_name_tag[bucket['Name']] = tag['Key']
-                        else:
-                            exist_bucket_name_tag[bucket['Name']] = tag['Key']
-                        break
+                                break
         zombies = self.__get_all_zombie_resources(exist_bucket_name_tag)
         resources = self._get_tags_of_zombie_resources(resources=response['Buckets'], resource_id_name='Name',
                                                        zombies=zombies, aws_service='bucket', aws_tag='TagSet')

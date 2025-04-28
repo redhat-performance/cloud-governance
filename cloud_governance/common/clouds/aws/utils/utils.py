@@ -107,3 +107,25 @@ class Utils:
                 resources = func_name(Marker=resources[iter_tag_name], **kwargs)
             resource_list.extend(resources[output_tag])
         return resource_list
+
+    @staticmethod
+    def is_cluster_resource(cluster_prefix: list, tags: list = None, tag: dict = None):
+        """
+        This method checks if the resource i.e: EC2, IAM is a cluster resource
+        Resources have the tags
+        :param tag:
+        :param cluster_prefix:
+        :param tags:
+        :return:
+        """
+        for prefix in cluster_prefix:
+            prefix = prefix.strip()
+            if tag:
+                if tag.get('Key').startswith(prefix):
+                    return True, tag.get('Key')
+            else:
+                if tags:
+                    for tag in tags:
+                        if tag.get('Key').startswith(prefix):
+                            return True, tag.get('Key')
+        return False, None

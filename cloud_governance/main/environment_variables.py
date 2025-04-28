@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 
 from ast import literal_eval
@@ -126,7 +127,16 @@ class EnvironmentVariables:
                                                                                                 '{}')
         self._environment_variables_dict['DAYS_TO_DELETE_RESOURCE'] = int(
             EnvironmentVariables.get_env('DAYS_TO_DELETE_RESOURCE', '7'))
-
+        try:
+            self._environment_variables_dict['CLUSTER_PREFIX'] = json.loads(EnvironmentVariables.get_env(
+                'CLUSTER_PREFIX',
+                '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]'
+            ))
+        except json.JSONDecodeError as err:
+            self._environment_variables_dict['CLUSTER_PREFIX'] = [
+                "kubernetes.io/cluster",
+                "sigs.k8s.io/cluster-api-provider-aws/cluster"
+            ]
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')

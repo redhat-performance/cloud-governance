@@ -27,6 +27,7 @@ class EC2Operations:
         self.ec2_client = get_boto3_client('ec2', region_name=region)
         self.get_full_list = Utils().get_details_resource_list
         self.utils = Utils(region=region)
+        self.cluster_prefix = self.__environment_variables_dict.get('CLUSTER_PREFIX')
 
     @logger_time_stamp
     @typeguard.typechecked
@@ -292,7 +293,8 @@ class EC2Operations:
             for item in resource:
                 if item.get('Tags'):
                     for tag in item.get('Tags'):
-                        if 'kubernetes.io/cluster/' in tag.get('Key'):
+                        ok, _ = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix, tag=tag)
+                        if ok:
                             found = True
                             break
             if found:
@@ -315,7 +317,8 @@ class EC2Operations:
             found = False
             if resource.get(tags):
                 for tag in resource.get(tags):
-                    if 'kubernetes.io/cluster/' in tag.get('Key'):
+                    ok, _ = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix, tag=tag)
+                    if ok:
                         found = True
                         break
             if found:
@@ -462,20 +465,21 @@ class EC2Operations:
 
     def is_cluster_resource(self, resource_id: str):
         """
-        This method checks tags have cluster key, if cluster return True else False
+        This method checks tags have a cluster key, if cluster return True else False
         @param resource_id:
         @return:
         """
         resource_tags = self.ec2_client.describe_tags(Filters=[{'Name': 'resource-id', 'Values': [resource_id]}])
         if resource_tags.get('Tags'):
             for tag in resource_tags['Tags']:
-                if 'kubernetes.io/cluster/' in tag.get('Key'):
+                ok, _ = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix, tag=tag)
+                if ok:
                     return True
         return False
 
     def get_ec2_list(self, instances_list: list):
         """
-        This method return all instances in one list by taking instances_list
+        This method returns all instances in one list by taking instances_list
         @param instances_list:
         @return:
         """
@@ -487,7 +491,7 @@ class EC2Operations:
 
     def get_tag(self, name: str, tags: list):
         """
-        This method get tag name fom the tags
+        This method get tag name from the tags
         @param name:
         @param tags:
         @return:
@@ -527,7 +531,12 @@ class EC2Operations:
     def get_tag_value_from_tags(self, tags: list, tag_name: str, cast_type: str = 'str',
                                 default_value: any = '') -> any:
         """
-        This method return the tag value inputted by tag_name
+        This method returns the tag value inputted by tag_name
+        :param tags:
+        :param tag_name:
+        :param cast_type:
+        :param default_value:
+        :return:
         """
         if tags:
             for tag in tags:
@@ -589,7 +598,7 @@ class EC2Operations:
 
     def tag_ec2_resources(self, client_method: Callable, tags: list, resource_ids: list):
         """
-        This method tag the ec2 resources with batch wise of 10
+        This method tags the ec2 resources with batch wise of 10
         :param client_method:
         :param tags:
         :param resource_ids:
@@ -604,7 +613,7 @@ class EC2Operations:
 
     def get_attached_time(self, volume_list: list):
         """
-        This method return the root volume attached time
+        This method returns the root volume attached time
         :param volume_list:
         :return:
         """
