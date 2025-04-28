@@ -136,12 +136,13 @@ run_cmd(
     f"""podman run --rm --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Git-leaks run on GitHub not related to any aws account
-run_cmd("echo Run Git-leaks")
+# run_cmd("echo Run Git-leaks")
+#
+# region = 'us-east-1'
+# policy = 'gitleaks'
+# run_cmd(
+#     f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{s3_bucket}/{LOGS}/$region" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-region = 'us-east-1'
-policy = 'gitleaks'
-run_cmd(
-    f"""podman run --rm --name cloud-governance -e policy="{policy}" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e AWS_DEFAULT_REGION="{region}" -e git_access_token="{GITHUB_TOKEN}" -e git_repo="https://github.com/redhat-performance" -e several_repos="yes" -e policy_output="s3://{s3_bucket}/{LOGS}/$region" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
-
+run_cmd("echo Run Aggregated Email Alert")
 run_cmd(
     f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
