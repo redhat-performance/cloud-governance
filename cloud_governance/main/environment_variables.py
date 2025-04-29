@@ -102,6 +102,7 @@ class EnvironmentVariables:
                                                                     'empty_roles',
                                                                     'zombie_snapshots', 'skipped_resources',
                                                                     'monthly_report', 'optimize_resources_report']
+        self._environment_variables_dict['cluster_policies'] = ['zombie_cluster_resource']
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
