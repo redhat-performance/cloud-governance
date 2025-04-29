@@ -2,7 +2,6 @@ from datetime import datetime
 
 import typeguard
 
-from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.main.environment_variables import environment_variables
@@ -16,7 +15,8 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 @typeguard.typechecked
 def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '',
                         resource_name: str = '', service_type: str = ' '):
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=delete,
+    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX')
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=cluster_prefix, delete=delete,
                                                       region=region, cluster_tag=cluster_tag,
                                                       resource_name=resource_name)
     zombie_cluster_resources_dict = {'zombie_cluster_volume': zombie_cluster_resources.zombie_cluster_volume,

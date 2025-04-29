@@ -92,7 +92,8 @@ container_env_dict = {
     "es_host": ES_HOST, "es_port": ES_PORT,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'special_user_mails': f"{special_user_mails}",
-    'account_admin': f"{account_admin}"
+    'account_admin': f"{account_admin}",
+    'CLUSTER_PREFIX': '["kubernetes.io/cluster","sigs.k8s.io/cluster-api-provider-aws/cluster"]'
 }
 
 

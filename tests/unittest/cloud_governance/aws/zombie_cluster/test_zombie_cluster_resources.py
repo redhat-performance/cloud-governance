@@ -13,7 +13,7 @@ def test_all_clusters():
 
 def test_cluster_instance():
     """
-    This method return all cluster instances, its a private method
+    This method returns all cluster instances, its a private method
     :return:
     """
     assert len(zombie_cluster_resources._cluster_instance()) >= 0
@@ -21,7 +21,7 @@ def test_cluster_instance():
 
 def test_zombie_cluster_volume():
     """
-    This method return all cluster volumes
+    This method returns all cluster volumes
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_volume()[0]) >= 0
@@ -29,7 +29,7 @@ def test_zombie_cluster_volume():
 
 def test_zombie_cluster_ami():
     """
-    This method return all cluster ami
+    This method returns all cluster ami
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_ami()[0]) >= 0
@@ -37,7 +37,7 @@ def test_zombie_cluster_ami():
 
 def test_cluster_snapshot():
     """
-    This method return all cluster snapshot
+    This method returns all cluster snapshot
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_snapshot()[0]) >= 0
@@ -45,7 +45,7 @@ def test_cluster_snapshot():
 
 def test_zombie_cluster_security_group():
     """
-    This method return all cluster security_group
+    This method returns all cluster security_group
     :return:
     """
     assert len(zombie_cluster_resources.zombie_cluster_security_group()[0]) >= 0

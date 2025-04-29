@@ -90,7 +90,8 @@ container_env_dict = {
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
-    'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN
+    'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN,
+    'CLUSTER_PREFIX': '["kubernetes.io/cluster","sigs.k8s.io/cluster-api-provider-aws/cluster"]'
 }
 
 
