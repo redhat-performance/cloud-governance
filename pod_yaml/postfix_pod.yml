@@ -12,7 +12,7 @@ spec:
           value: redhat.com
         - name: POSTFIX_RELAY_HOST
           value: smtp.corp.redhat.com
-      image: quay.io/athiru/postfix:v0.3
+      image: quay.io/cloud-governance/postfix:v0.3
       name: postfix
       ports:
         - containerPort: 25

@@ -5,7 +5,7 @@ pipeline {
     agent {
         docker {
             label 'cloud-governance-worker'
-            image 'quay.io/athiru/centos-stream8-podman:latest'
+            image 'quay.io/cloud-governance/centos-stream8-podman:latest'
             args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
     }

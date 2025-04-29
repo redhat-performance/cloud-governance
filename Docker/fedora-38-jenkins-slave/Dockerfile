@@ -1,6 +1,6 @@
 
 # This image for Jenkins slave
-# located: quay.io/athiru/fedora38-podman:latest
+# located: quay.io/cloud-governance/fedora38-podman:latest
 # run the postfix service within the container
 # mount /etc/postfix/main.cf file to the container
 
