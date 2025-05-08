@@ -33,7 +33,7 @@ pipeline {
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
 
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

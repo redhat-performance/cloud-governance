@@ -38,7 +38,7 @@ pipeline {
         AZURE_CLIENT_ID = credentials('cloud-governance-azure-client-id')
         AZURE_SUBSCRIPTION_ID = credentials('cloud-governance-azure-subscription-id')
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

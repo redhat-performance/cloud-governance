@@ -22,7 +22,7 @@ pipeline {
         ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
         ALERT_DRY_RUN = true
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
         contact3 = "mmikhail@redhat.com"
         contact4 = "matrujil@redhat.com"
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy

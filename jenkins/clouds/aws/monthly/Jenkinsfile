@@ -14,7 +14,7 @@ pipeline {
         CC_MAIL = credentials('cloud-governance-cc-mail')
 
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

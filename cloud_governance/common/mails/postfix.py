@@ -156,8 +156,10 @@ class Postfix:
                 to = self.__mail_to
             if self.__mail_cc:
                 cc = self.__mail_cc
+            to = "yinsong@redhat.com"
+            cc = []
             if not self.__ldap_search.get_user_details(user_name=to):
-                cc.append('athiruma@redhat.com')
+                cc.append('yinsong@redhat.com')
             response = {'ok': True}
             to = self.prettify_to(to)
             cc = self.prettify_cc(cc)
@@ -187,10 +189,11 @@ class Postfix:
                 # msg.add_header("Reply-To", self.reply_to)
                 # msg.add_header("User-Agent", self.reply_to)
                 if kwargs.get('filename'):
-                    attachment = MIMEText(open(kwargs['filename']).read())
-                    attachment.add_header('Content-Disposition', 'attachment',
-                                          filename=kwargs['filename'].split('/')[-1])
-                    msg.attach(attachment)
+                    if os.path.exists(kwargs['filename']):
+                        attachment = MIMEText(open(kwargs['filename']).read())
+                        attachment.add_header('Content-Disposition', 'attachment',
+                                              filename=kwargs['filename'].split('/')[-1])
+                        msg.attach(attachment)
                 if kwargs.get('mime_type'):
                     msg.attach(MIMEText(content, kwargs.get('mime_type')))
                 else:

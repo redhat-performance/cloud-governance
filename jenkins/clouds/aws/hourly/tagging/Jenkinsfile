@@ -18,7 +18,7 @@ pipeline {
         AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
         AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
