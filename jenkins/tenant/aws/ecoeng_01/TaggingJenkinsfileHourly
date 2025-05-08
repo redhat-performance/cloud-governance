@@ -16,7 +16,7 @@ pipeline {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
         contact3 = "mmikhail@redhat.com"
         contact4 = "matrujil@redhat.com"
     }

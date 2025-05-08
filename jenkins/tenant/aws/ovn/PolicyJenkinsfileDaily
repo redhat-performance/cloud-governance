@@ -15,8 +15,8 @@ pipeline {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
-        contact1 = "athiruma@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact1 = "ebattat@redhat.com"
+        contact2 = "yinsong@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

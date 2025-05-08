@@ -51,11 +51,13 @@ class CostOverUsage:
             if 'Instances' in resource:
                 if isinstance(resource['Instances'], list):
                     if resource.get('Instances')[0].get('LaunchTime'):
-                        resource['Instances'] = sorted(resource['Instances'], key=itemgetter('LaunchTime'), reverse=True)
+                        resource['Instances'] = sorted(resource['Instances'], key=itemgetter('LaunchTime'),
+                                                       reverse=True)
                     resource_sort_list = []
                     for item in resource['Instances']:
                         if resource_sort_list:
-                            if item['InstanceId'] not in [resource_dict['InstanceId'] for resource_dict in resource_sort_list]:
+                            if item['InstanceId'] not in [resource_dict['InstanceId'] for resource_dict in
+                                                          resource_sort_list]:
                                 resource_sort_list.append(item)
                         else:
                             resource_sort_list.append(item)
@@ -79,19 +81,24 @@ class CostOverUsage:
 
     def aws_user_usage(self, days: int, cost_usage: int):
         """
-        This method send mail when cost_usage is greater than given cost usage in last specified days
+        This method sends mail when cost_usage is greater than given cost usage in last specified days
         @param cost_usage:
         @param days:
         @return:
         """
         users = []
         cc = []
-        user_data = self._elastic_upload.elastic_search_operations.get_index_hits(days=days, index=self._elastic_upload.es_index)
+        user_data = self._elastic_upload.elastic_search_operations.get_index_hits(days=days,
+                                                                                  index=self._elastic_upload.es_index)
         user_data = self.aggregate_user_sum(user_data)
         for user_usage in user_data:
             user = user_usage['User']
             if user_usage['Cost'] > cost_usage:
-                used_instances = self.get_user_used_instances(user_used_list=user_usage['Instances'])
+                file_name = ""
+                if user_usage.get('Instances'):
+                    used_instances = self.get_user_used_instances(user_used_list=user_usage.get('Instances'))
+                    with open(file_name, 'w') as file:
+                        json.dump(used_instances, file, indent=4)
                 ignore_user_mails = self._elastic_upload.literal_eval(self.__ignore_mails)
                 if user not in ignore_user_mails:
                     special_user_mails = self._elastic_upload.literal_eval(self._elastic_upload.special_user_mails)
@@ -99,13 +106,16 @@ class CostOverUsage:
                     ldap_data = self.__ldap.get_user_details(user_name=to)
                     name = to
                     file_name = os.path.join('/tmp', f'{to}_resource.json')
-                    with open(file_name, 'w') as file:
-                        json.dump(used_instances, file, indent=4)
+
                     if ldap_data:
                         cc.append(f'{ldap_data.get("managerId")}@redhat.com')
                         name = ldap_data.get('displayName')
-                    subject, body = self._elastic_upload.mail_message.aws_user_over_usage_cost(user=to, user_usage=user_usage['Cost'], name=name, usage_cost=self.COST_USAGE_DOLLAR)
-                    self._elastic_upload.postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc, filename=file_name)
+                    subject, body = self._elastic_upload.mail_message.aws_user_over_usage_cost(user=to,
+                                                                                               user_usage=user_usage[
+                                                                                                   'Cost'], name=name,
+                                                                                               usage_cost=self.COST_USAGE_DOLLAR)
+                    self._elastic_upload.postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc,
+                                                                         filename=file_name)
                     users.append(to)
         return users
 

@@ -10,7 +10,7 @@ CLOSED = '41'
 JIRA_TOKEN = 'JIRA_TOKEN'
 JIRA_PROJECT = 'JIRA_PROJECT'
 JIRA_API_SERVER = 'JIRA_API_SERVER'
-CRO_ADMINS = ['athiruma@redhat.com', 'natashba@redhat.com', 'ebattat@redhat.com']
+CRO_ADMINS = ['yinsong@redhat.com', 'natashba@redhat.com', 'ebattat@redhat.com']
 
 
 def get_receive_mail_details(event_data):
@@ -43,7 +43,8 @@ def lambda_handler(event, context):
     :return:
     """
     try:
-        parameters = ssm_client.get_parameters(Names=[JIRA_TOKEN, JIRA_PROJECT, JIRA_API_SERVER], WithDecryption=True)['Parameters']
+        parameters = ssm_client.get_parameters(Names=[JIRA_TOKEN, JIRA_PROJECT, JIRA_API_SERVER], WithDecryption=True)[
+            'Parameters']
         if parameters:
             output_parameters = {}
             for parameter in parameters:
@@ -69,7 +70,8 @@ def lambda_handler(event, context):
                 if manager_mail in CRO_ADMINS:
                     jira_description += f'\nApprovedManager: {mail_result.get("from")}\n'
                     if action.upper() == APPROVED:
-                        issue.update(description=jira_description, comment=f'From: {manager_mail}\nApproved\nPlease refer to your manager, in case any issues')
+                        issue.update(description=jira_description,
+                                     comment=f'From: {manager_mail}\nApproved\nPlease refer to your manager, in case any issues')
                         jira_conn.transition_issue(issue=ticket_id, transition=REFINEMENT)
                         return {
                             'statusCode': 204,
@@ -77,13 +79,15 @@ def lambda_handler(event, context):
                         }
                     else:
                         if action.upper() == REJECT:
-                            jira_conn.transition_issue(issue=ticket_id, transition=CLOSED, comment=f'From: {manager_mail}\nRejected\nPlease refer to your manager, in case any issues')
+                            jira_conn.transition_issue(issue=ticket_id, transition=CLOSED,
+                                                       comment=f'From: {manager_mail}\nRejected\nPlease refer to your manager, in case any issues')
                         return {
                             'statusCode': 204,
                             'body': json.dumps(f'Rejected the TicketId: {ticket}, by Manager: {manager_mail}')
                         }
                 else:
-                    issue.update(comment=f'From: {manager_mail}\n{manager_mail.split("@")[0]} is not authorized to perform this action')
+                    issue.update(
+                        comment=f'From: {manager_mail}\n{manager_mail.split("@")[0]} is not authorized to perform this action')
                     return {
                         'statusCode': 500,
                         'body': json.dumps(f'{manager_mail} is not authorized to perform this action')

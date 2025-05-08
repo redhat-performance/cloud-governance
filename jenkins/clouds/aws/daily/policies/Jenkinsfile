@@ -25,7 +25,7 @@ pipeline {
         USERS_MANAGER_MAILS = credentials('cloud-governance-users-managers-mails')
         REPLY_TO = credentials('cloud-governance-reply-to')
         contact1 = "ebattat@redhat.com"
-        contact2 = "athiruma@redhat.com"
+        contact2 = "yinsong@redhat.com"
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
