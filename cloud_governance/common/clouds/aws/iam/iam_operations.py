@@ -5,6 +5,7 @@ import boto3
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from datetime import datetime, timezone
 
 
 class IAMOperations:
@@ -158,3 +159,141 @@ class IAMOperations:
             return True
         except Exception as err:
             raise err
+
+    def tag_user(self, user_name: str, tags: list):
+        """
+        This method tags the IAM user.
+        :param user_name: The name of the IAM user to tag.
+        :param tags: A list of tags to associate with the user.
+        :return: True if tagging is successful, otherwise raises an exception.
+        """
+        try:
+            self.iam_client.tag_user(UserName=user_name, Tags=tags)
+            return True
+        except Exception as err:
+            raise err
+
+    def get_iam_users_access_keys(self):
+        """
+        Retrieves IAM users and summarizes:
+            - Access key status (active/inactive)
+            - Access key age in days
+            - Access key last used in days (or "N/A" if never used)
+            - Tags (as a list of dictionaries)
+            - Most recent key usage: last_activity_days
+            - IAM client region (global context, since IAM is non-regional)
+            - IAM user unique ID: ResourceId
+
+        Returns:
+            dict: {
+                "username": {
+                    "Access key 1": [status, age_days, last_used_days],
+                    "Access key 2": [...],
+                    "last_activity_days": int or "N/A",
+                    "tags": [{"Key": "tag_key", "Value": "tag_value"}, ...],
+                    "region": "us-east-1",
+                    "ResourceId": "AIDAEXAMPLEUSERID"
+                },
+                ...
+            }
+        """
+        result = {}
+        now = datetime.now(timezone.utc)
+        region_name = self.iam_client.meta.region_name or "global"
+
+        paginator = self.iam_client.get_paginator('list_users')
+        for page in paginator.paginate():
+            for user in page['Users']:
+                username = user['UserName']
+                result[username] = {}
+                last_used_days_list = []
+
+                # Access keys
+                access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+                for idx, key in enumerate(access_keys, start=1):
+                    label = f"Access key {idx}"
+                    status = key['Status'].lower()
+                    age_days = (now - key['CreateDate']).days
+
+                    # Get access key last used
+                    try:
+                        response = self.iam_client.get_access_key_last_used(AccessKeyId=key['AccessKeyId'])
+                        last_used_date = response.get('AccessKeyLastUsed', {}).get('LastUsedDate')
+                        if last_used_date:
+                            last_used_days = (now - last_used_date).days
+                            last_used_days_list.append(last_used_days)
+                        else:
+                            last_used_days = "N/A"
+                    except Exception:
+                        last_used_days = "N/A"
+
+                    result[username][label] = [status, age_days, last_used_days]
+
+                # Most recent access key activity
+                result[username]["last_activity_days"] = min(last_used_days_list) if last_used_days_list else "N/A"
+
+                # Tags as list of dicts
+                try:
+                    tag_response = self.iam_client.list_user_tags(UserName=username)
+                    tags = tag_response.get('Tags', [])
+                except Exception:
+                    tags = []
+
+                result[username]["tags"] = tags
+                result[username]["region"] = region_name
+                result[username]["ResourceId"] = user.get('UserId')  # <-- Unique ID
+        return result
+
+    def has_active_access_keys(self, username):
+        """
+        Checks if the given IAM user has any active access keys.
+        When no user access key return False
+        Args:
+            username (str): IAM user name
+
+        Returns:
+            bool: True if any access key is active, False otherwise
+        """
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return False
+
+        for key in access_keys:
+            if key.get('Status') == 'Active':
+                return True
+        return False
+
+    def deactivate_user_access_keys(self, username):
+        """
+        Deactivates all active access keys for the given IAM user.
+
+        Args:
+            username (str): IAM user name
+        """
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return
+
+        for idx, key in enumerate(access_keys, start=1):
+            label = f"Access key {idx}"
+            current_status = key['Status'].lower()
+            access_key_id = key['AccessKeyId']
+
+            if current_status == 'active':
+                try:
+                    self.iam_client.update_access_key(
+                        UserName=username,
+                        AccessKeyId=access_key_id,
+                        Status='Inactive'
+                    )
+                    logger.info(f"{label} deactivated for user '{username}'")
+                except Exception as e:
+                    logger.error(f"Failed to deactivate {label} for user '{username}': {e}")
+            else:
+                logger.info(f"{label} is already inactive for user '{username}'")
+
+        logger.info(f"Deactivate access keys for user '{username}' have been processed.")
