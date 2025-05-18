@@ -42,7 +42,7 @@ class MainOperations:
             # @Todo support for all the aws policies, currently supports ec2_run as urgent requirement
             if self._policy in policies and self._policy in ["instance_run", "unattached_volume", "cluster_run",
                                                              "ip_unattached", "unused_nat_gateway", "instance_idle",
-                                                             "zombie_snapshots", "database_idle", "s3_inactive",
+                                                             "zombie_snapshots", "database_idle", "s3_inactive", "unused_access_key",
                                                              "empty_roles", "tag_resources", "cost_usage_reports"]:
                 source = policy_type
                 if Utils.equal_ignore_case(policy_type, self._public_cloud_name):

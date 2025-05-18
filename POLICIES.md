@@ -24,6 +24,7 @@ This tool support the following policies:
   monitoring the active connection count.
 * [s3_inactive](cloud_governance/policy/aws/s3_inactive.py): Identify the empty s3 buckets, causing the resource quota
   issues.
+* [unused_access_key](cloud_governance/policy/aws/unused_access_key.py): Identify user with unused active access key, causing the security issue
 * [empty_roles](cloud_governance/policy/aws/empty_roles.py): Identify the empty roles that do not have any attached
   policies to them.
 * [ebs_in_use](cloud_governance/policy/aws/ebs_in_use.py): list in use volumes.

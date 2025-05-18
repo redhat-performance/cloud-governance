@@ -47,7 +47,7 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
 exclude_global_cost_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
                                 'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
                                 'spot_savings_analysis']
-GLOBAL_POLICIES = ["s3_inactive", "empty_roles"]
+GLOBAL_POLICIES = ["s3_inactive", "empty_roles", "unused_access_key"]
 available_policies = get_policies(exclude_policies=exclude_global_cost_policies)
 
 
@@ -104,10 +104,10 @@ def run_policies(policies: list, dry_run: str = 'yes'):
         for policy in policies:
             container_env_dict.update({"AWS_DEFAULT_REGION": region, 'policy': policy})
             container_cmd = ''
-            if policy in ('empty_roles', 's3_inactive') and region == 'us-east-1':
+            if policy in ('empty_roles', 's3_inactive', 'unused_access_key') and region == 'us-east-1':
                 container_cmd = get_container_cmd(container_env_dict)
             else:
-                if policy not in ('empty_roles', 's3_inactive'):
+                if policy not in ('empty_roles', 's3_inactive', 'unused_access_key'):
                     container_cmd = get_container_cmd(container_env_dict)
             if container_cmd:
                 run_cmd(container_cmd)
