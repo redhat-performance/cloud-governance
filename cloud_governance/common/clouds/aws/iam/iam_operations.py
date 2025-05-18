@@ -5,9 +5,12 @@ import boto3
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from datetime import datetime, timezone
 
 
 class IAMOperations:
+
+    ACCESS_KEY_LABEL_MAP = {"access key 1": 0, "access key 2": 1}
 
     def __init__(self, iam_client=None):
         self.iam_client = iam_client if iam_client else get_boto3_client('iam')
@@ -158,3 +161,157 @@ class IAMOperations:
             return True
         except Exception as err:
             raise err
+
+    def tag_user(self, user_name: str, tags: list):
+        """
+        This method tags the IAM user.
+        :param user_name: The name of the IAM user to tag.
+        :param tags: A list of tags to associate with the user.
+        :return: True if tagging is successful, otherwise raises an exception.
+        """
+        try:
+            self.iam_client.tag_user(UserName=user_name, Tags=tags)
+            return True
+        except Exception as err:
+            raise err
+
+    def get_iam_users_access_keys(self):
+        """
+        Retrieves IAM users and summarizes:
+            - Access key status (active/inactive)
+            - Access key age in days
+            - Access key last used in days (or "N/A" if never used)
+            - Tags (as a list of dictionaries)
+            - Most recent key usage: last_activity_days
+            - IAM client region (global context, since IAM is non-regional)
+            - IAM user unique ID: ResourceId
+
+        Returns:
+            dict: {
+                "username": {
+                    "Access key 1": [status, age_days, last_used_days],
+                    "Access key 2": [...],
+                    "last_activity_days": int or "N/A",
+                    "tags": [{"Key": "tag_key", "Value": "tag_value"}, ...],
+                    "region": "us-east-1",
+                    "ResourceId": "AIDAEXAMPLEUSERID"
+                },
+                ...
+            }
+        """
+        result = {}
+        now = datetime.now(timezone.utc)
+        region_name = self.iam_client.meta.region_name or "global"
+
+        paginator = self.iam_client.get_paginator('list_users')
+        for page in paginator.paginate():
+            for user in page['Users']:
+                username = user['UserName']
+                result[username] = {}
+                # Access keys
+                access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+                for idx, key in enumerate(access_keys, start=1):
+                    label = f"Access key {idx}"
+                    status = key['Status'].lower()
+                    age_days = (now - key['CreateDate']).days
+
+                    # Get access key last used
+                    try:
+                        response = self.iam_client.get_access_key_last_used(AccessKeyId=key['AccessKeyId'])
+                        last_used_date = response.get('AccessKeyLastUsed', {}).get('LastUsedDate')
+                        if last_used_date:
+                            last_used_days = (now - last_used_date).days
+                        else:
+                            last_used_days = "N/A"
+                    except Exception:
+                        last_used_days = "N/A"
+
+                    result[username][label] = {'label': label, 'status': status, 'age_days': age_days, 'last_activity_days': last_used_days if last_used_days is not None else "N/A"}
+
+                # Tags as list of dicts
+                try:
+                    tag_response = self.iam_client.list_user_tags(UserName=username)
+                    tags = tag_response.get('Tags', [])
+                except Exception:
+                    tags = []
+
+                result[username]["tags"] = tags
+                result[username]["region"] = region_name
+                result[username]["ResourceId"] = user.get('UserId')  # <-- Unique ID
+
+        return result
+
+    def has_active_access_keys(self, username: str, access_key_label: str = None) -> bool:
+        """
+        Checks if the given IAM user has any active access keys.
+        Optionally filters by access key label ("Access Key 1" or "Access Key 2").
+
+        Args:
+            username (str): IAM user name
+            access_key_label (str): Label to filter access keys ("Access Key 1"/"Access Key 2")
+
+        Returns:
+            bool: True if any access key is active (and matches the label if provided), False otherwise
+        """
+        try:
+            keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return False
+
+        # Sort keys by CreateDate ascending (oldest first)
+        keys.sort(key=lambda k: k['CreateDate'])
+
+        if access_key_label:
+            idx = self.ACCESS_KEY_LABEL_MAP.get(access_key_label.lower())
+            if idx is None or idx >= len(keys):
+                return False
+            return keys[idx].get('Status') == 'Active'
+
+        return any(k.get('Status') == 'Active' for k in keys)
+
+    def deactivate_user_access_key(self, username: str, **kwargs):
+        """
+        Deactivates the specified access key for the given IAM user.
+
+        Args:
+            username (str): IAM user name
+            access_key_label (str): Access Key 1 or Access Key 2 (case-insensitive)
+        """
+        access_key_label = kwargs.get('access_key_label', '').lower()
+        if not access_key_label:
+            logger.warning("No access key label provided for deactivation.")
+            return
+
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return
+
+        # Sort keys by CreateDate ascending (oldest first) for consistent indexing
+        access_keys.sort(key=lambda k: k['CreateDate'])
+
+        idx = self.ACCESS_KEY_LABEL_MAP.get(access_key_label)
+        if idx is None or idx >= len(access_keys):
+            logger.warning(f"Access key label '{access_key_label}' not found for user '{username}'")
+            return
+
+        key_to_deactivate = access_keys[idx]
+        access_key_id = key_to_deactivate['AccessKeyId']
+        current_status = key_to_deactivate['Status'].lower()
+
+        if current_status == 'active':
+            try:
+                self.iam_client.update_access_key(
+                    UserName=username,
+                    AccessKeyId=access_key_id,
+                    Status='Inactive'
+                )
+                logger.info(f"Access key '{access_key_id}' deactivated for user '{username}'")
+            except Exception as e:
+                logger.error(f"Failed to deactivate access key '{access_key_id}' for user '{username}': {e}")
+        else:
+            logger.info(f"Access key '{access_key_id}' is already inactive for user '{username}'")
+
+        logger.info(f"Access key deactivation processed for user '{username}'.")

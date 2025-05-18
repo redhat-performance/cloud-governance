@@ -77,10 +77,10 @@ def run_policies(policies: list, dry_run: str = 'yes'):
         for policy in policies:
             container_env_dict.update({"AWS_DEFAULT_REGION": region, 'policy': policy})
             container_cmd = ''
-            if policy in ('empty_roles', 's3_inactive') and region == 'us-east-1':
+            if policy in ('empty_roles', 's3_inactive', 'unused_access_key') and region == 'us-east-1':
                 container_cmd = get_container_cmd(container_env_dict)
             else:
-                if policy not in ('empty_roles', 's3_inactive'):
+                if policy not in ('empty_roles', 's3_inactive', 'unused_access_key'):
                     container_cmd = get_container_cmd(container_env_dict)
             if container_cmd:
                 run_cmd(container_cmd)
