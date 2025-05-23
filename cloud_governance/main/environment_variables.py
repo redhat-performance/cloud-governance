@@ -277,7 +277,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['POLICY_ACTIONS_DAYS'] = literal_eval(
             EnvironmentVariables.get_env('POLICY_ACTIONS_DAYS', '[]'))
         self._environment_variables_dict['DEFAULT_ADMINS'] = literal_eval(
-            EnvironmentVariables.get_env('DEFAULT_ADMINS', '[]'))
+            EnvironmentVariables.get_env('DEFAULT_ADMINS', '["yinsong@redhat.com", "ebattat@redhat.com"]'))
         self._environment_variables_dict['KERBEROS_USERS'] = literal_eval(
             EnvironmentVariables.get_env('KERBEROS_USERS', '[]'))
         self._environment_variables_dict['POLICIES_TO_ALERT'] = literal_eval(

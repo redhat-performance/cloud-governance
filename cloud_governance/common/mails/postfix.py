@@ -156,10 +156,8 @@ class Postfix:
                 to = self.__mail_to
             if self.__mail_cc:
                 cc = self.__mail_cc
-            to = "yinsong@redhat.com"
-            cc = []
             if not self.__ldap_search.get_user_details(user_name=to):
-                cc.append('yinsong@redhat.com')
+                cc.extend(self.__default_admins)
             response = {'ok': True}
             to = self.prettify_to(to)
             cc = self.prettify_cc(cc)
