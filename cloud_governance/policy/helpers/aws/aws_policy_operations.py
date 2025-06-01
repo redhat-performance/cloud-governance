@@ -21,7 +21,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         self.policy_name = self._environment_variables_dict.get('policy')
         self._cloud_name = 'AWS'
         self._ec2_client = get_boto3_client(client='ec2', region_name=self._region)
-        self._s3_client = get_boto3_client('s3', region_name=self._region)
+        self._s3_client = get_boto3_client(client='s3', region_name=self._region)
         self._iam_operations = IAMOperations()
         self._rds_operations = RDSOperations(region_name=self._region)
         self._s3operations = S3Operations(region_name=self._region)
@@ -46,7 +46,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
                     return tag.get('Value').strip()
         return ''
 
-    def _delete_resource(self, resource_id: str):
+    def _delete_resource(self, resource_id: str, **kwargs):
         """
         This method deletes the resource by verifying the policy
         :param resource_id:
@@ -58,6 +58,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         try:
             if self._policy == 's3_inactive':
                 self._s3_client.delete_bucket(Bucket=resource_id)
+            elif self._policy == 'unused_access_key':
+                self._iam_operations.deactivate_user_access_key(username=resource_id, **kwargs)
             elif self._policy == 'empty_roles':
                 response = self._iam_operations.delete_role(role_name=resource_id)
             elif self._policy == 'unattached_volume':
@@ -147,6 +149,8 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         try:
             if self._policy == 's3_inactive':
                 self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
+            elif self._policy == 'unused_access_key':
+                self._iam_operations.tag_user(user_name=resource_id, tags=tags)
             elif self._policy == 'empty_roles':
                 self._iam_operations.tag_role(role_name=resource_id, tags=tags)
             elif self._policy in ('ip_unattached', 'unused_nat_gateway', 'zombie_snapshots', 'unattached_volume',
@@ -195,6 +199,29 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         """
         volumes = self._ec2_operations.get_volumes(**kwargs)
         return volumes
+
+    def _get_iam_users_access_keys(self) -> dict:
+        """
+        This method returns a list of user access keys with their age in days, last used time in days, user tags, and more.
+        :return: list of user access keys
+        """
+        return self._iam_operations.get_iam_users_access_keys()
+
+    def _has_active_access_keys(self, user_name: str, access_key_label: str) -> bool:
+        """
+        This method checks if the given IAM user has any active access keys.
+        :return:
+        :rtype:
+        """
+        return self._iam_operations.has_active_access_keys(username=user_name, access_key_label=access_key_label)
+
+    def _deactivate_access_key(self, user_name: str, access_key_label: str) -> bool:
+        """
+        This method checks if the given IAM user has any active access keys.
+        :return:
+        :rtype:
+        """
+        return self._iam_operations.deactivate_user_access_key(username=user_name, access_key_label=access_key_label)
 
     def _get_active_cluster_ids(self):
         """

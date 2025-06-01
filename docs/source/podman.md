@@ -7,7 +7,7 @@ sudo podman run --rm --name cloud-governance -e policy="instance_idle" -e AWS_AC
 # policy=ec2_run
 sudo podman run --rm --name cloud-governance -e policy="ec2_run" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes" -e policy_output="s3://bucket/logs" -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
 
-# select policy ['ec2_stop', 's3_inactive', 'empty_roles', 'ip_unattached', 'nat_gateway_unused', 'zombie_snapshots']
+# select policy ['ec2_stop', 's3_inactive', 'unused_access_key', 'empty_roles', 'ip_unattached', 'unused_nat_gateway', 'zombie_snapshots']
 sudo podman run --rm --name cloud-governance -e policy="policy" -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" -e AWS_DEFAULT_REGION="us-east-2" -e dry_run="yes"  -e log_level="INFO" "quay.io/cloud-governance/cloud-governance"
 
 # policy=ebs_unattached
