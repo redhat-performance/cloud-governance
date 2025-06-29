@@ -37,7 +37,8 @@ class MonthlyReport:
             'ip_unattached': 'Delete all the elastic_ips that are unused',
             'unused_nat_gateway': ' Delete all unused nat gateways',
             'zombie_snapshots': 'Delete all the snapshots which the AMI does not use',
-            's3_inactive': 'Delete the empty buckets which don’t have any content.',
+            's3_inactive': 'Delete the empty buckets which don’t have any content',
+            'unused_access_key': 'Deactivate user access keys that are still active but have not been used',
             'empty_roles': 'Delete the empty role which does\'t have any policies',
             'zombie_cluster_resource': 'Delete up the cluster resources which are not deleted while cleaning the cluster'
         }

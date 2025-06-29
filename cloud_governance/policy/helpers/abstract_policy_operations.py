@@ -111,7 +111,7 @@ class AbstractPolicyOperations(ABC):
         return 'NA'
 
     @abstractmethod
-    def _delete_resource(self, resource_id: str):
+    def _delete_resource(self, resource_id: str, **kwargs):
         """
         This method deletes the resource
         :param resource_id:
@@ -144,7 +144,7 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         if self._resource_id == resource_id and self._force_delete and self._dry_run == 'no':
-            self._delete_resource(resource_id=resource_id)
+            self._delete_resource(resource_id=resource_id, **kwargs)
             return True
         if not days_to_delete_resource:
             days_to_delete_resource = self._days_to_take_action
@@ -157,7 +157,7 @@ class AbstractPolicyOperations(ABC):
                 if clean_up_days >= days_to_delete_resource:
                     if self._dry_run == 'no':
                         if self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
-                            self._delete_resource(resource_id=resource_id)
+                            self._delete_resource(resource_id=resource_id, **kwargs)
                             cleanup_resources = True
         return cleanup_resources
 

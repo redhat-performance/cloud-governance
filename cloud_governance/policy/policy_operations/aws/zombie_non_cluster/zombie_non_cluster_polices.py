@@ -45,7 +45,7 @@ class ZombieNonClusterPolicies(NonClusterZombiePolicy):
                         logger.error('ElasticSearch host is not pingable, Please check ')
 
                     if self._policy_output:
-                        # if self._policy not in ('ec2_idle', 'ebs_in_use', 'ec2_run', 's3_inactive', 'zombie_snapshots', 'nat_gateway_unused'):
+                        # if self._policy not in ('ec2_idle', 'ebs_in_use', 'ec2_run', 's3_inactive', 'unused_access_key', 'zombie_snapshots', 'nat_gateway_unused'):
                         #     beautify_data = self._beautify_upload_data(upload_resource_data=response)
                         #     policy_result = {'count': len(beautify_data), self._policy: beautify_data}
                         logger.info(policy_result)

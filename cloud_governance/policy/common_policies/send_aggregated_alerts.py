@@ -163,7 +163,8 @@ class SendAggregatedAlerts:
                     if days >= days_to_take_action:
                         delete_date = datetime.utcnow().date().__str__()
                         alert_user = True
-                if record.get('policy') in ['empty_roles', 's3_inactive']:
+                # Cross region policies
+                if record.get('policy') in ['empty_roles', 's3_inactive', 'unused_access_key']:
                     record['RegionName'] = 'us-east-1'
                 if Utils.equal_ignore_case(dry_run, 'yes'):
                     record['DeleteDate'] = 'dry_run=yes'

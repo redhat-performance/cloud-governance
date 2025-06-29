@@ -37,6 +37,8 @@ class PolicyEsMetaData(dict):
     launch_time: str = ''
     running_days: int = ''
     create_date: str = ''
+    age_days: int = ''
+    last_activity_days: int = ''
 
     def __post_init__(self):
         """

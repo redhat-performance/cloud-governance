@@ -98,7 +98,7 @@ class EnvironmentVariables:
                                                                     'ip_unattached', 'unused_nat_gateway',
                                                                     'instance_idle',
                                                                     'ec2_stop', 'ebs_in_use', 'database_idle',
-                                                                    's3_inactive',
+                                                                    's3_inactive', 'unused_access_key',
                                                                     'empty_roles',
                                                                     'zombie_snapshots', 'skipped_resources',
                                                                     'monthly_report', 'optimize_resources_report']
