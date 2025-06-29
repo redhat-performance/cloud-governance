@@ -20,6 +20,7 @@ class SendAggregatedAlerts:
         self.__mail_to = self.__environment_variables.get('EMAIL_TO')  # testing purposes
         self.__mail_cc = self.__environment_variables.get('EMAIL_CC', [])
         self.__alert_dry_run = self.__environment_variables.get('ALERT_DRY_RUN')
+        self.__skip_policies_alert = self.__environment_variables.get('SKIP_POLICIES_ALERT')
         self.__mail_message = MailMessage()
         self.__postfix = Postfix()
         self.__es_operations = ElasticSearchOperations()
@@ -55,7 +56,7 @@ class SendAggregatedAlerts:
                                     "ebs_in_use",
                                     "instance_run", "cluster_run", "optimize_resource_report",
                                     "optimize_resources_report", "skipped_resources"
-                                ]
+                                ] + self.__skip_policies_alert
                             }
                         }
                     ],
