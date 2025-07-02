@@ -41,7 +41,7 @@ pipeline {
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
         POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
-        SKIP_POLICIES_ALERT = '["unused_access_key"]'
+        SKIP_POLICIES_ALERT = ["unused_access_key"]
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -80,7 +80,7 @@ pipeline {
                                         string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
                                         string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
                         if (account == 'industry-partners') {
-                            env.SKIP_POLICIES_ALERT = '[]'
+                            env.SKIP_POLICIES_ALERT = []
                         }
                         env.account_name = "${account}"
                         env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
