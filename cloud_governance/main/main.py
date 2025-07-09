@@ -254,7 +254,7 @@ def main():
                 if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
                         'PUBLIC_CLOUD_NAME').upper() == 'AZURE':
                     azure_cost_policy_runner = None
-                    is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies')
+                    is_azure_policy_runner = policy in environment_variables_dict.get('cost_policies') or environment_variables_dict.get('azure_policies')
                     if is_azure_policy_runner:
                         azure_cost_policy_runner = AzurePolicyRunner()
 

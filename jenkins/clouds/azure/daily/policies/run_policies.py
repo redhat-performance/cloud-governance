@@ -37,7 +37,7 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
     return custodian_policies
 
 
-GLOBAL_COST_POLICIES = ['cost_billing_reports']
+GLOBAL_COST_POLICIES = ['cost_billing_reports', 'tag_azure_resource_group']
 available_policies = get_policies(exclude_policies=GLOBAL_COST_POLICIES)
 
 
