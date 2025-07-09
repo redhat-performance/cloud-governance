@@ -1,0 +1,73 @@
+def accounts_list = ['perfscale']
+pipeline {
+    agent {
+        docker {
+            label 'cloud-governance-worker'
+            image 'quay.io/cloud-governance/centos-stream8-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        POLICIES_IN_ACTION = '[]'
+        AZURE_CLIENT_SECRET = credentials('cloud-governance-azure-client-secret')
+        AZURE_TENANT_ID = credentials('cloud-governance-azure-tenant-id')
+        AZURE_ACCOUNT_ID = credentials('cloud-governance-azure-account-id')
+        AZURE_CLIENT_ID = credentials('cloud-governance-azure-client-id')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        GLOBAL_TAGS = credentials('GLOBAL_TAGS')
+        contact2 = "yinsong@redhat.com"
+    }
+    stages {
+        stage('Checkout') { // Checkout (git clone ...) the projects repository
+          steps {
+            checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Azure Policies') {
+            steps {
+                 script {
+                    for (account in accounts_list ) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-azure-client-secret", variable: 'client_secret'),
+                                        string(credentialsId: "${account}-azure-client-id", variable: 'client_id'),
+                                        string(credentialsId: "${account}-azure-tenant-id", variable: 'tenant_id'),
+                                        string(credentialsId: "${account}-azure-subscription-id", variable: 'subscription_id'),
+                                        string(credentialsId: "${account}-azure-account-id", variable: 'account_id')]) {
+                            env.account_name = "Azure-${account}"
+                            sh 'python3 jenkins/clouds/azure/daily/policies/run_policies.py'
+                        }
+                    }
+                }
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    post {
+       always {
+           deleteDir()
+       }
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,
+                subject: msg,
+                to: "${contact2}"
+            }
+        }
+    }
+}
