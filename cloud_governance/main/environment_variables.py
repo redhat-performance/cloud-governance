@@ -408,6 +408,7 @@ class EnvironmentVariables:
 
 
 environment_variables = EnvironmentVariables()
+
 # env vars examples
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'
