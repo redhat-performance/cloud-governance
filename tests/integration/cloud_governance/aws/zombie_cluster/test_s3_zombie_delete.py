@@ -42,7 +42,7 @@ def test_s3_zombie_bucket_exists():
     :return:
     """
     create_s3_bucket()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
                                                       resource_name='zombie_cluster_s3_bucket', force_delete=True)
 
@@ -54,7 +54,7 @@ def test_s3_zombie_bucket_delete():
     This method delete the s3 zombie bucket
     :return:
     """
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag=f'kubernetes.io/cluster/{BUCKET_NAME}',
                                                       resource_name='zombie_cluster_s3_bucket', force_delete=True)
 

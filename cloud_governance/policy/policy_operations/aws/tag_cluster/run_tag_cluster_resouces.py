@@ -15,7 +15,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         action = 'read'
         dry_run = 'yes'
-    tag_cluster_resources = TagClusterResources(cluster_prefix='kubernetes.io/cluster/', cluster_name=cluster_name,
+    tag_cluster_resources = TagClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], cluster_name=cluster_name,
                                                 input_tags=mandatory_tags, region=region, dry_run=dry_run, cluster_only=cluster_only)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,

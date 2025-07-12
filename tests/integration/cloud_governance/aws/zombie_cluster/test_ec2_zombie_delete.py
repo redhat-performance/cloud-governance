@@ -26,7 +26,7 @@ def test_ec2_zombie_vpc_exists():
     :return:
     """
     create_vpc()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=False,
                                                       cluster_tag='kubernetes.io/cluster/integration-test-cluster',
                                                       region='us-east-2',
                                                       resource_name='zombie_cluster_vpc')
@@ -38,7 +38,7 @@ def test_ec2_zombie_vpc_delete():
     This method tests the zombie vpc delete
     :return:
     """
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/integration-test-cluster',
                                                       region='us-east-2',
                                                       resource_name='zombie_cluster_vpc', force_delete=True)

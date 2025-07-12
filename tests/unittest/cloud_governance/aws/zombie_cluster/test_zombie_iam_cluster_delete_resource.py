@@ -74,7 +74,7 @@ def test_delete_iam_cluster_role():
     iam_resource.add_role_to_instance_profile(InstanceProfileName='unittest-ocp-test-worker-profile',
                                               RoleName='unittest-ocp-test-worker-role')
 
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_role', force_delete=True)
     zombie_cluster_resources.zombie_cluster_role()
@@ -124,7 +124,7 @@ def test_not_delete_iam_cluster_role():
     iam_resource.add_role_to_instance_profile(InstanceProfileName='unittest-ocp-test-worker-profile',
                                               RoleName='unittest-ocp-test-worker-role')
 
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_role')
     zombie_cluster_resources.zombie_cluster_role()
@@ -152,7 +152,7 @@ def test_delete_iam_cluster_user():
         {'Key': 'Owner', 'Value': 'unitest'}
     ]
     iam_resource.create_user(UserName='unittest-ocp', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_user', force_delete=True)
     zombie_cluster_resources.zombie_cluster_user()
@@ -179,7 +179,7 @@ def test_not_delete_iam_cluster_user():
         {'Key': 'Owner', 'Value': 'unitest'}
     ]
     iam_resource.create_user(UserName='unittest-ocp', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_user')
     zombie_cluster_resources.zombie_cluster_user()

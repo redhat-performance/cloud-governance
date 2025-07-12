@@ -7,7 +7,7 @@ import boto3
 
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
 
-cluster_prefix = 'kubernetes.io/cluster/'
+cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]
 cluster_name = ''
 # cluster_name = 'ocs-test-jlhpd'
 # cluster_name = 'opc464-k7jml'
