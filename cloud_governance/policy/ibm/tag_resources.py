@@ -107,7 +107,8 @@ class TagResources:
             "classic_virtual_machines"
         ]
         if self.resource_to_tag:
-            vpc_resources = list(set(vpc_resources) & set(self.resource_to_tag.split(',')))
+            resources_to_tag = [resource.strip() for resource in self.resource_to_tag.split(',')]
+            vpc_resources = list(set(vpc_resources) & set(resources_to_tag))
         logger.info(f"Running tag operation on total of {len(vpc_resources)} resources")
         errors = messages = {}
         for vpc_resource in vpc_resources:
