@@ -182,6 +182,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['tag_remove_name'] = EnvironmentVariables.get_env('tag_remove_name', '')
         self._environment_variables_dict['tag_custom'] = EnvironmentVariables.get_env('tag_custom', '{}')
 
+        self._environment_variables_dict['RESOURCE_TO_TAG'] = EnvironmentVariables.get_env('RESOURCE_TO_TAG', '')
+
         # Common env vars
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')
         self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment(

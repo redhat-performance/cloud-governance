@@ -69,7 +69,7 @@ Environment Variables required:
 | KeyName                    | Value  | Description                                                                |
 |----------------------------|--------|----------------------------------------------------------------------------|
 | IBM_CUSTOM_TAGS_LIST       | string | pass string with separated with comma. i.e: "cost-center: test, env: test" |
-| RESOURCE_TO_TAG (optional) | string | pass the resource name to tag. ex: virtual_servers                         |
+| RESOURCE_TO_TAG (optional) | string | pass the resource names to tag. ex: "virtual_servers,resource_instances"   |
 | IBM_CLOUD_API_KEY          | string | IBM Cloud API Key                                                          |
 | IBM_API_KEY                | string | IBM Classic infrastructure key ( SoftLayer )                               |
 | IBM_API_USERNAME           | string | IBM API Username ( SoftLayer )                                             |
