@@ -1,4 +1,4 @@
-accounts_list = ['coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com"]
+accounts_list = ['ecoeng-sap': "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com"]
 pipeline {
     options {
         disableConcurrentBuilds()
@@ -25,8 +25,8 @@ pipeline {
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
-        POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
-        SKIP_POLICIES_ALERT = '["unused_access_key"]'
+        POLICIES_IN_ACTION = '["unused_access_key"]'
+        //SKIP_POLICIES_ALERT = '["unused_access_key"]'
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
