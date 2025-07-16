@@ -29,7 +29,7 @@ def test_force_delete_ec2_ami():
     image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
                                          InstanceId=instance_id, Name='test-image').get('ImageId')
     ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami', force_delete=True)
@@ -50,7 +50,7 @@ def test_not_delete_ec2_ami():
     image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
                                          InstanceId=instance_id, Name='test-image').get('ImageId')
     ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami')
@@ -72,7 +72,7 @@ def test_delete_ec2_ami_after_seven():
     image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
                                          InstanceId=instance_id, Name='test-image').get('ImageId')
     ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami')
@@ -94,7 +94,7 @@ def test_not_delete_ec2_ami_after_four():
     image_name = ec2_client.create_image(TagSpecifications=[{'ResourceType': 'image', 'Tags': tags}],
                                          InstanceId=instance_id, Name='test-image').get('ImageId')
     ec2_resource.instances.filter(InstanceIds=[instance_id]).terminate()
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_ami')
@@ -115,7 +115,7 @@ def test_force_delete_ec2_elastic_load_balancer():
         'InstancePort': 80, 'InstanceProtocol': 'HTTP',
         'LoadBalancerPort': 80, 'Protocol': 'HTTP'
     }], LoadBalancerName='test-load-balancer', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer', force_delete=True)
@@ -135,7 +135,7 @@ def test_not_delete_ec2_elastic_load_balancer():
         'InstancePort': 80, 'InstanceProtocol': 'HTTP',
         'LoadBalancerPort': 80, 'Protocol': 'HTTP'
     }], LoadBalancerName='test-load-balancer', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer')
@@ -155,7 +155,7 @@ def test_delete_ec2_elastic_load_balancer_after_seven_days():
         'InstancePort': 80, 'InstanceProtocol': 'HTTP',
         'LoadBalancerPort': 80, 'Protocol': 'HTTP'
     }], LoadBalancerName='test-load-balancer', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer')
@@ -176,7 +176,7 @@ def test_not_delete_ec2_elastic_load_balancer_after_four_days():
         'InstancePort': 80, 'InstanceProtocol': 'HTTP',
         'LoadBalancerPort': 80, 'Protocol': 'HTTP'
     }], LoadBalancerName='test-load-balancer', Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer')
@@ -198,7 +198,7 @@ def test_delete_ec2_elastic_load_balancer_v2():
     subnet_response = ec2_resource.create_subnet(CidrBlock='10.0.1.0/24', VpcId=vpc_response['Vpc']['VpcId'])
 
     elbv2.create_load_balancer(Name='test-load-balancer-v2', Tags=tags, Subnets=[subnet_response['Subnet']['SubnetId']])
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_load_balancer_v2', force_delete=True)
@@ -217,7 +217,7 @@ def test_delete_ebs_volume():
     ec2_client = boto3.client('ec2', region_name=region_name)
     volume = ec2_client.create_volume(AvailabilityZone='us-east-2', Size=123)
     ec2_client.create_tags(Resources=[volume['VolumeId']], Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_volume', force_delete=True)
@@ -235,7 +235,7 @@ def test_delete_snapshots():
     volume = ec2_client.create_volume(AvailabilityZone='us-east-2', Size=123)
     snapshots = ec2_client.create_snapshot(VolumeId=volume['VolumeId'])
     ec2_client.create_tags(Resources=[snapshots['SnapshotId']], Tags=tags)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_snapshot', force_delete=True)
@@ -255,7 +255,7 @@ def test_delete_ec2_vpc_endpoints():
     vpc_endpoint_id = ec2_client.create_vpc_endpoint(VpcEndpointType='Interface', VpcId=vpc_response['Vpc']['VpcId'],
                                                      TagSpecifications=[{'ResourceType': 'vpc', 'Tags': tags}],
                                                      ServiceName='com.amazonaws.us-east-2.s3').get('VpcEndpoint').get('VpcEndpointId')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_vpc_endpoint', force_delete=True)
@@ -276,7 +276,7 @@ def test_delete_dhcp_option_set():
                                                                'Values': ['10.2.5.1', '10.2.5.2']}])
     ec2_client.associate_dhcp_options(VpcId=vpc_response['Vpc']['VpcId'],
                                       DhcpOptionsId=dhcp['DhcpOptions']['DhcpOptionsId'])
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_dhcp_option', force_delete=True)
@@ -299,7 +299,7 @@ def test_delete_route_table():
     route_table_id = ec2_client.create_route_table(VpcId=vpc_id, TagSpecifications=[
         {'ResourceType': 'route-table', 'Tags': tags}]).get('RouteTable').get('RouteTableId')
     ec2_client.associate_route_table(RouteTableId=route_table_id, SubnetId=subnet1)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_route_table', force_delete=True)
@@ -321,7 +321,7 @@ def test_delete_security_group():
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_security_group', force_delete=True)
@@ -341,7 +341,7 @@ def test_delete_nat_gateway():
     subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
     nat_gateway_id = ec2_client.create_nat_gateway(TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}],
                                                    SubnetId=subnet1)['NatGateway']['NatGatewayId']
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_nat_gateway', force_delete=True)
@@ -360,7 +360,7 @@ def test_delete_network_acl():
     vpc_id = vpc_response['Vpc']['VpcId']
     network_acl_id = ec2_client.create_network_acl(VpcId=vpc_id, TagSpecifications=[{'ResourceType': 'network-acl',
                                                                                      'Tags': tags}])['NetworkAcl']['NetworkAclId']
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_network_acl', force_delete=True)
@@ -383,7 +383,7 @@ def test_delete_network_interface():
                                            GroupName='sg-testing')['GroupId']
     network_interface_id = ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1],
                                                                Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_network_interface', force_delete=True)
@@ -403,7 +403,7 @@ def test_delete_internet_gateway():
     ing_id = ec2_client.create_internet_gateway()['InternetGateway']['InternetGatewayId']
     ec2_client.create_tags(Resources=[ing_id], Tags=tags)
     ec2_client.attach_internet_gateway(InternetGatewayId=ing_id, VpcId=vpc_id)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_internet_gateway', force_delete=True)
@@ -424,7 +424,7 @@ def test_delete_subnet():
         'ResourceType': 'subnet', 'Tags': tags
     }])['Subnet']['SubnetId']
     ec2_client.create_network_interface(SubnetId=subnet1, Description='testing the internet gateway')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_subnet', force_delete=True)
@@ -450,7 +450,7 @@ def test_delete_elastic_ip():
     network_interface_id = ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1],
                                                                Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
     ec2_client.associate_address(NetworkInterfaceId=network_interface_id, AllocationId=allocation_id)
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_elastic_ip', force_delete=True)
@@ -512,7 +512,7 @@ def test_delete_vpc():
                                                                Description='testing the internet gateway')['NetworkInterface']['NetworkInterfaceId']
     ec2_client.associate_address(NetworkInterfaceId=network_interface_id, AllocationId=allocation_id)
 
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_vpc', force_delete=True)
@@ -534,7 +534,7 @@ def test_zombie_security_group_delete_after_seven_days():
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_security_group')
@@ -557,7 +557,7 @@ def test_zombie_security_group_not_delete_after_four_days():
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_security_group')
@@ -579,7 +579,7 @@ def test_zombie_security_group_force_delete():
                                            TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
                                            GroupName='sg-testing')['GroupId']
     ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       region=region_name,
                                                       resource_name='zombie_cluster_security_group', force_delete=True)

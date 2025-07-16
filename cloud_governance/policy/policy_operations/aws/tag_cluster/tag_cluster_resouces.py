@@ -16,7 +16,7 @@ class TagClusterResources(TagClusterOperations):
     SHORT_ID = 5
     NA_VALUE = 'NA'
 
-    def __init__(self, cluster_name: str = None, cluster_prefix: str = None, input_tags: dict = None,
+    def __init__(self, cluster_name: str = None, cluster_prefix: list = None, input_tags: dict = None,
                  region: str = 'us-east-2', dry_run: str = 'yes', cluster_only: bool = False):
         super().__init__(cluster_name=cluster_name, cluster_prefix=cluster_prefix, input_tags=input_tags, region=region,
                          dry_run=dry_run, cluster_only=cluster_only)
@@ -63,7 +63,7 @@ class TagClusterResources(TagClusterOperations):
                 if tag.get('Key') == 'api.openshift.com/name':
                     cluster_name = tag['Value']
                 else:
-                    if not cluster_name and self.cluster_prefix in tag.get('Key'):
+                    if not cluster_name and any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                         cluster_name = tag['Key']
             if cluster_name:
                 # cluster_name = cluster_id
@@ -85,7 +85,7 @@ class TagClusterResources(TagClusterOperations):
                 found = True
                 break
         for tag in tags:
-            if self.cluster_prefix in tag.get('Key'):
+            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                 cluster_name = tag['Key']
                 break
         if not found:
@@ -106,8 +106,8 @@ class TagClusterResources(TagClusterOperations):
                 for item in instance:
                     if item.get('Tags'):
                         for tag in item.get('Tags'):
-                            if self.cluster_prefix in tag.get('Key'):
-                                if tag.get('Key') == cluster_name:
+                            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                                if cluster_name in tag.get('Key'):
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
                                               instance_tag.get('Key') != 'Name']
                                     return [i_tag for i_tag in i_tags if i_tag.get('Key') != cluster_name]
@@ -149,7 +149,7 @@ class TagClusterResources(TagClusterOperations):
                 # search that not exist permanent tags in the resource
                 if not self.__validate_existing_tag(resource.get(tags)):
                     for tag in resource[tags]:
-                        if self.cluster_prefix in tag.get('Key'):
+                        if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                             if tag.get('Key') not in cluster_tags:
                                 cluster_tags[tag.get('Key')] = []
                                 cluster_ids[tag.get('Key')] = []
@@ -195,7 +195,7 @@ class TagClusterResources(TagClusterOperations):
                         all_tags.extend(vpc_data.get(vpc_id))
                         all_tags = self.__check_name_in_tags(tags=all_tags, resource_id=resource_id)
                         all_tags = self.__filter_resource_tags_by_add_tags(resource.get('Tags'), all_tags)
-                        cluster_tag = [tag for tag in vpc_data.get(vpc_id) if self.cluster_prefix in tag.get('Key')]
+                        cluster_tag = [tag for tag in vpc_data.get(vpc_id, []) if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix)]
                         if all_tags:
                             if self.cluster_name:
                                 if self.cluster_name in cluster_tag[0].get('Key'):
@@ -224,7 +224,7 @@ class TagClusterResources(TagClusterOperations):
             for resource in resources_list:
                 if resource.get(tags):
                     for tag in resource[tags]:
-                        if tag['Key'].startswith(f'{self.cluster_prefix}{self.cluster_name}'):
+                        if any(tag['Key'].startswith(f"{prefix}/{self.cluster_name}") for prefix in self.cluster_prefix):
                             return tag['Key']
         return ''
 
@@ -284,7 +284,7 @@ class TagClusterResources(TagClusterOperations):
                     # search that not exist permanent tags in the resource
                     if not self.__validate_existing_tag(tags):
                         for tag in tags:
-                            if self.cluster_prefix in tag.get('Key'):
+                            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 add_tags = self.__append_input_tags()
                                 add_tags.append(tag)
                                 cluster_name = tag.get('Key').split('/')[-1]
@@ -472,7 +472,7 @@ class TagClusterResources(TagClusterOperations):
                 if item.get('Tags'):
                     if not self.__validate_existing_tag(item.get('Tags')):
                         for tag in item['Tags']:
-                            if self.cluster_prefix in tag.get('Key'):
+                            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 all_tags = []
                                 instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                                 if not instance_tags:
@@ -520,7 +520,7 @@ class TagClusterResources(TagClusterOperations):
                 if item.get('Tags'):
                     if not self.__validate_existing_tag(item.get('Tags')):
                         for tag in item['Tags']:
-                            if self.cluster_prefix in tag.get('Key'):
+                            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 all_tags = []
                                 instance_tags = self.__get_cluster_tags_by_instance_cluster(cluster_name=tag.get('Key'))
                                 if not instance_tags:
@@ -576,7 +576,7 @@ class TagClusterResources(TagClusterOperations):
         for vpc in vpcs_data:
             if vpc.get('Tags'):
                 for tag in vpc.get('Tags'):
-                    if self.cluster_prefix in tag.get('Key'):
+                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                         vpc_ids[vpc.get('VpcId')] = [tag for tag in vpc.get('Tags') if tag.get('Key') != 'Name']
                         break
         return vpc_ids
@@ -688,7 +688,7 @@ class TagClusterResources(TagClusterOperations):
                                 role_data = role['Role']
                                 all_tags = []
                                 instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                    cluster_name=f'{self.cluster_prefix}{cluster_key}')
+                                    cluster_name=cluster_key)
                                 if not instance_tags:
                                     all_tags = self.__append_input_tags(role_data.get('Tags'))
                                 else:
@@ -738,7 +738,7 @@ class TagClusterResources(TagClusterOperations):
                                     if cluster_name in tag['Key']:
                                         all_tags = []
                                         instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                            cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                            cluster_name=cluster_name)
                                         if not instance_tags:
                                             all_tags = self.__append_input_tags(data.get('Tags'))
                                         all_tags.extend(instance_tags)
@@ -822,7 +822,7 @@ class TagClusterResources(TagClusterOperations):
                                 if not self.__validate_existing_tag(bucket_tags):
                                     add_tags = []
                                     instance_tags = self.__get_cluster_tags_by_instance_cluster(
-                                        cluster_name=f'{self.cluster_prefix}{cluster_name}')
+                                        cluster_name=cluster_name)
                                     if not instance_tags:
                                         add_tags = self.__append_input_tags(bucket_tags)
                                     add_tags.extend(instance_tags)

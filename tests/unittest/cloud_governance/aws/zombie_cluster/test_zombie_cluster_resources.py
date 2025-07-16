@@ -3,7 +3,7 @@ from unittest import skip
 # TEST DRY RUN: delete=False
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
-zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False,
+zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=False,
                                                   region='us-east-2')
 
 

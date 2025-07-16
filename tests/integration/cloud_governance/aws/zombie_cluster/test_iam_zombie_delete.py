@@ -22,11 +22,11 @@
 #     ]
 #     try:
 #         iam_resource.create_user(UserName=USER_NAME, Tags=tags)
-#         zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=False,
+#         zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=False,
 #                                                           cluster_tag=f'kubernetes.io/cluster/{USER_NAME}',
 #                                                           resource_name='zombie_cluster_user', force_delete=True)
 #         assert len(zombie_cluster_resources.zombie_cluster_user()) >= 1
-#         zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+#         zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
 #                                                           cluster_tag=f'kubernetes.io/cluster/{USER_NAME}',
 #                                                           resource_name='zombie_cluster_user', force_delete=True)
 #         zombie_cluster_resources.zombie_cluster_user()

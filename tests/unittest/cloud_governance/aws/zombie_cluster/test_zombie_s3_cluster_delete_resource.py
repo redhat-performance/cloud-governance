@@ -24,7 +24,7 @@ def test_not_zombie_s3_bucket_deletion():
     bucket_tagging.put(Tagging={
         'TagSet': tags
     })
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_s3_bucket')
     zombie_cluster_resources.zombie_cluster_s3_bucket()
@@ -51,7 +51,7 @@ def test_force_zombie_s3_bucket_deletion():
     bucket_tagging.put(Tagging={
         'TagSet': tags
     })
-    zombie_cluster_resources = ZombieClusterResources(cluster_prefix='kubernetes.io/cluster/', delete=True,
+    zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
                                                       cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
                                                       resource_name='zombie_cluster_s3_bucket', force_delete=True)
     zombie_cluster_resources.zombie_cluster_s3_bucket()
