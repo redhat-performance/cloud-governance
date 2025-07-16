@@ -70,7 +70,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper().strip()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
         self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
-
+        self._environment_variables_dict['GLOBAL_TAGS'] = literal_eval(EnvironmentVariables.get_env('GLOBAL_TAGS', "{}"))
         self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(
             EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
         if not hasattr(self, 'POLICIES_LIST'):
@@ -108,6 +108,7 @@ class EnvironmentVariables:
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
+        self._environment_variables_dict['azure_policies'] = ['tag_azure_resource_group']
         if self._environment_variables_dict['policy'] in self._environment_variables_dict['cost_policies']:
             es_index = 'cloud-governance-global-cost-billing-index'
 
@@ -150,10 +151,9 @@ class EnvironmentVariables:
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
         self._environment_variables_dict['AZURE_TENANT_ID'] = EnvironmentVariables.get_env('AZURE_TENANT_ID', '')
-        self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET',
-                                                                                               '')
-        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env(
-            'AZURE_SUBSCRIPTION_ID', '')
+        self._environment_variables_dict['AZURE_CLIENT_SECRET'] = EnvironmentVariables.get_env('AZURE_CLIENT_SECRET', '')
+        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env('AZURE_SUBSCRIPTION_ID', '')
+        self._environment_variables_dict['AZURE_SUBSCRIPTION_ID'] = EnvironmentVariables.get_env('AZURE_SUBSCRIPTION_ID', '')
         if self._environment_variables_dict['AZURE_CLIENT_ID'] and self._environment_variables_dict['AZURE_TENANT_ID'] \
                 and self._environment_variables_dict['AZURE_CLIENT_SECRET']:
             self._environment_variables_dict['PUBLIC_CLOUD_NAME'] = 'AZURE'
@@ -408,7 +408,6 @@ class EnvironmentVariables:
 
 
 environment_variables = EnvironmentVariables()
-
 # env vars examples
 # os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 # os.environ['AWS_DEFAULT_REGION'] = 'all'

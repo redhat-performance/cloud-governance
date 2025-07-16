@@ -17,6 +17,8 @@ pipeline {
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        GLOBAL_TAGS = credentials('GLOBAL_TAGS')
+        contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"
     }
     stages {
@@ -65,7 +67,7 @@ pipeline {
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
             """,
                 subject: msg,
-                to: "${contact2}"
+                to: "${contact1}, ${contact2}"
             }
         }
     }
