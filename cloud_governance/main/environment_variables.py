@@ -183,6 +183,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['tag_custom'] = EnvironmentVariables.get_env('tag_custom', '{}')
 
         # Common env vars
+        # when dry_run='no', choose FORCE_DELETE=True and update self._resource_id in abstract_policy_operations.py
         self._environment_variables_dict['dry_run'] = EnvironmentVariables.get_env('dry_run', 'yes')
         self._environment_variables_dict['FORCE_DELETE'] = EnvironmentVariables.get_boolean_from_environment(
             'FORCE_DELETE', False)
