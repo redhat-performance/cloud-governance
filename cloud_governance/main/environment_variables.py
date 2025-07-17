@@ -70,6 +70,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper().strip()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
         self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
+        self._environment_variables_dict['GLOBAL_TAGS'] = literal_eval(
+            EnvironmentVariables.get_env('GLOBAL_TAGS', "{}"))
 
         self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(
             EnvironmentVariables.get_env('DAYS_TO_TAKE_ACTION', "7"))
