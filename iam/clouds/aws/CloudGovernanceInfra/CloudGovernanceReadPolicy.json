@@ -83,6 +83,7 @@
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [
+        "iam:GetAccessKeyLastUsed",
         "iam:GetRole",
         "iam:GetUser",
         "iam:GetUserPolicy",

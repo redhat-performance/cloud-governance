@@ -21,15 +21,12 @@ class UnusedAccessKey(AWSPolicyOperations):
                 if 'access key' in access_key_label.lower():
                     last_activity_days = access_key_data['last_activity_days']
                     age_days = access_key_data['age_days']
-                    # if access key last_activity_days is "N/A", use age_days
-                    if last_activity_days == "N/A":
-                        last_activity_days = age_days
                     region = user_data['region']
                     user_name = username
                     tags = user_data.get('Tags', [])
                     cleanup_result = False
                     cleanup_days = 0
-                    if int(last_activity_days) >= UNUSED_ACCESS_KEY_DAYS and self._has_active_access_keys(user_name, access_key_label) and self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+                    if last_activity_days and int(last_activity_days) >= UNUSED_ACCESS_KEY_DAYS and self._has_active_access_keys(user_name, access_key_label) and self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
                         cleanup_days = self.get_clean_up_days_count(tags=tags)
                         cleanup_result = self.verify_and_delete_resource(resource_id=user_name, tags=tags,
                                                                          clean_up_days=cleanup_days, access_key_label=access_key_label)

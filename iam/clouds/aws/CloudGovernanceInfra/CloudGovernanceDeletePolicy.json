@@ -124,6 +124,7 @@
         "iam:DeleteRolePolicy",
         "iam:DeleteUserPolicy",
         "iam:DetachRolePolicy",
+        "iam:GetAccessKeyLastUsed",
         "iam:GetRole",
         "iam:GetUser",
         "iam:GetUserPolicy",
@@ -138,6 +139,7 @@
         "iam:RemoveRoleFromInstanceProfile",
         "iam:TagRole",
         "iam:TagUser",
+        "iam:UpdateAccessKey",
         "iam:UntagRole",
         "iam:UntagUser"
       ],
