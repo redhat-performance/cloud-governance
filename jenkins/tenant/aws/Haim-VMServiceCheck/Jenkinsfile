@@ -1,0 +1,93 @@
+
+def ES_PORT = "9200"
+def GRAFANA_PORT = "3000"
+def KIBANA_PORT = "5601"
+def BUILD_STRING =""
+pipeline {
+    agent {
+        label 'cloud-governance-worker'
+    }
+    environment {
+        HAIM_HOST = credentials('haim-cloud-governance-elasticsearch-url')
+        HAIM_ADMIN_EMAILS = credentials('haim_admin_emails')
+    }
+    stages {
+        stage('Verify Elasticsearch') {
+            steps {
+                script {
+                    def fullUrl = "http://${HAIM_HOST}:${ES_PORT}"
+                    def buildUrl = "curl -s -o /dev/null -w '%{http_code}' ${fullUrl}"
+                    def status_code = sh(script: buildUrl, returnStatus: true)
+
+                    echo "Status code: ${status_code}"
+
+                    if (status_code != 0) {
+                        BUILD_STRING = "${BUILD_STRING}ElasticSearch is not responding.\n"
+                        echo "ElasticSearch is not responding."
+                    }
+                }
+            }
+        }
+        stage('Verify Grafana') {
+            steps {
+                script {
+                    def fullUrl = "http://${HAIM_HOST}:${GRAFANA_PORT}"
+                    def buildUrl = "curl -s -o /dev/null -w '%{http_code}' ${fullUrl}"
+                    def status_code = sh(script: buildUrl, returnStatus: true)
+                    echo "Status code: ${status_code}"
+
+                    if (status_code != 0) {
+                        BUILD_STRING = "${BUILD_STRING}Grafana is not responding.\n"
+                        echo "Grafana is not responding."
+                    }
+                }
+            }
+        }
+        stage('Verify Kibana') {
+            steps {
+                script {
+                    def fullUrl = "http://${HAIM_HOST}:${KIBANA_PORT}/app/home"
+                    def buildUrl = "curl -s -o /dev/null -w '%{http_code}' ${fullUrl}"
+                    def status_code = sh(script: buildUrl, returnStatus: true)
+                    echo "Status code: ${status_code}"
+
+                    if (status_code != 0) {
+                        BUILD_STRING = "${BUILD_STRING}Kibana is not responding.\n"
+                        echo "Kibana is not responding."
+                    }
+                }
+            }
+        }
+        stage('Send Email Alert and Trigger Reboot') {
+            steps {
+                script {
+                    if (BUILD_STRING != "") {
+                        def msg = "Haim VM CloudGovernance Services are not responding"
+
+                        emailext body: """\
+Hi,
+Below CloudGovernance Services are not available/responding.
+
+${BUILD_STRING}
+
+VMName: ${HAIM_HOST}
+User: root
+Contact: hhalbfin@redhat.com
+
+Thanks,
+Cloud-Governance Team
+                        """,
+                        subject: msg,
+                        to: "${HAIM_ADMIN_EMAILS}"
+
+                        echo "Sent an email"
+
+                        // Trigger the reboot pipeline
+                        echo "Triggering Haim-VM-reboot pipeline"
+                        build job: 'Haim-VM-reboot', wait: false
+                    }
+                }
+            }
+        }
+    }
+}

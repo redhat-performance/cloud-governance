@@ -1,0 +1,22 @@
+pipeline {
+    agent {
+        label 'haim-cloud-governance-worker'
+    }
+    stages {
+        stage('Log and Reboot') {
+            steps {
+                script {
+                    echo "✅ Reboot scheduled at: ${new Date()}"
+                    sh 'sudo reboot'
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            echo "❌ Expected failure due to reboot. Triggering next job..."
+            // Trigger the second job after reboot
+            // build job: 'Haim-VM-Fix-DNS-After-Reboot', wait: false
+        }
+    }
+}
