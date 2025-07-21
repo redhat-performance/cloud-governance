@@ -222,11 +222,14 @@ class IAMOperations:
                         if last_used_date:
                             last_used_days = (now - last_used_date).days
                         else:
-                            last_used_days = "N/A"
+                            # when no last used date is available, get the age of the key
+                            last_used_days = age_days
                     except Exception:
-                        last_used_days = "N/A"
+                        # Set None in case of error to avoid deletion, not "N/A" because it will take age time
+                        logger.error(f"Failed to get last used date for access key")
+                        last_used_days = None
 
-                    result[username][label] = {'label': label, 'status': status, 'age_days': age_days, 'last_activity_days': last_used_days if last_used_days is not None else "N/A"}
+                    result[username][label] = {'label': label, 'status': status, 'age_days': age_days, 'last_activity_days': last_used_days}
 
                 # Tags as list of dicts
                 try:
