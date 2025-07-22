@@ -1,5 +1,5 @@
 account = ['industry-partners', 'verticals-ui', 'special-projects', 'edgeinfra', 'specialprojects-qe',
-           'ecoeng-sap', 'sysdeseng', 'appeng-ai', 'certification-pipeline', 'ecoengverticals-qe',
+           'ecoeng-sap', 'sysdeseng', 'certification-pipeline', 'ecoengverticals-qe',
            'emerge-partner', 'telco5g-ci', 'partnerlab', 'blueprints']
 pipeline {
     options {
