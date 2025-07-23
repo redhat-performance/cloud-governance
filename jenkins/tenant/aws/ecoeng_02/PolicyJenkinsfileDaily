@@ -1,4 +1,5 @@
 accounts_list = ['appeng': "mmikhail@redhat.com, matrujil@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'appeng-ai': "matrujil@redhat.com, mmikhail@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
                  'fsi-partner': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, vbelouso@redhat.com, nnaamneh@redhat.com, ebattat@redhat.com, hhalbfin@redhat.com",
                  'fsi-ecosystem': "mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
                 ]
@@ -28,7 +29,7 @@ pipeline {
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
-        POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
+        POLICIES_IN_ACTION = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
         SKIP_POLICIES_ALERT = '["unused_access_key"]'
     }
     stages {
