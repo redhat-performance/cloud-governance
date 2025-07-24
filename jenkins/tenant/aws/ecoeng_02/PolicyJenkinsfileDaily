@@ -87,7 +87,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
+            """,subject: msg, to: "${env.contact1}, ${env.contact2}, ${env.contact3}, ${env.contact4}"
             }
           }
     }
