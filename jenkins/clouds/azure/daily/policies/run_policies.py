@@ -7,6 +7,7 @@ AZURE_TENANT_ID = os.environ['tenant_id']
 AZURE_ACCOUNT_ID = os.environ['account_id']
 AZURE_CLIENT_ID = os.environ['client_id']
 AZURE_SUBSCRIPTION_ID = os.environ['subscription_id']
+GLOBAL_TAGS = os.environ['GLOBAL_TAGS']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 7)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
@@ -37,7 +38,7 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
     return custodian_policies
 
 
-GLOBAL_COST_POLICIES = ['cost_billing_reports']
+GLOBAL_COST_POLICIES = ['cost_billing_reports', 'tag_azure_resource_group']
 available_policies = get_policies(exclude_policies=GLOBAL_COST_POLICIES)
 
 
@@ -81,6 +82,7 @@ container_env_dict = {
     "es_host": ES_HOST, "es_port": ES_PORT,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource,
+    'GLOBAL_TAGS': GLOBAL_TAGS
 }
 
 
@@ -103,3 +105,8 @@ run_policies(policies=policies_not_action)
 run_cmd('echo "Running the CloudGovernance policies with dry_run=no" ')
 run_cmd(f"echo Polices list: {policies_in_action}")
 run_policies(policies=policies_in_action, dry_run='no')
+
+# Running the tagging once a day
+
+run_cmd('echo "Running the tagging" ')
+run_policies(policies=['tag_azure_resource_group'])
