@@ -1,4 +1,6 @@
-accounts_list = ['ecoeng-sap': "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com"]
+accounts_list = ['ecoeng-sap': "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'sysdeseng': "scollier@redhat.com, hhalbfin@redhat.com, mavazque@redhat.com"]
+
 pipeline {
     options {
         disableConcurrentBuilds()
