@@ -24,6 +24,7 @@ class AzureOperations:
         self.billing_client = BillingManagementClient(credential=self.__default_creds,
                                                       subscription_id=self.subscription_id)
         self.__account_id = self.__environment_variables_dict.get('AZURE_ACCOUNT_ID')
+        self.global_tags = self.__environment_variables_dict.get('GLOBAL_TAGS')
         self.cloud_name = 'AZURE'
         self.scope = f'subscriptions/{self.subscription_id}'
 
