@@ -116,21 +116,54 @@ class CloudTrailOperations:
                         return [event.get('Username'), event]
         return ['', '']
 
+    def __extract_username_from_arn(self, arn: str, user_type: str):
+        """
+        Extract username from ARN based on userIdentity type.
+        @param arn: The ARN from userIdentity
+        @param user_type: The userIdentity type (IAMUser, AssumedRole, FederatedUser, etc.)
+        @return: username or empty string
+        """
+        if not arn or '/' not in arn:
+            return ''
+
+        # ARN formats:
+        # IAMUser: arn:aws:iam::account:user/[path/]username
+        # AssumedRole: arn:aws:sts::account:assumed-role/role-name/session-name
+        # FederatedUser: arn:aws:sts::account:federated-user/username
+        # Root: arn:aws:iam::account:root (no slash, return 'root')
+
+        parts = arn.split('/')
+        if len(parts) < 2:
+            # No username in ARN (e.g., root user)
+            return parts[-1] if parts else ''
+
+        # Last part is always the username/session-name
+        return parts[-1]
+
     def __check_event_is_assumed_role(self, cloudtrail_event: str):
         """
-        This method checks if it assumed_role, if it is return the username and its event from role.
+        This method extracts username from userIdentity ARN for IAM users and AssumedRole users.
+        For SAML SSO (AssumedRole), it extracts the username from the session name in the ARN.
+        For IAM users, it extracts the username from the ARN path.
         @param cloudtrail_event:
-        @return:
+        @return: [username, event] or [False, '']
         """
         try:
             cloudtrail_event = json.loads(cloudtrail_event)
-            if cloudtrail_event.get('userIdentity').get('type') == "AssumedRole":
-                role_name = cloudtrail_event.get('userIdentity').get('sessionContext').get('sessionIssuer').get('arn')
-                assumerole_username, event = self.__get_username_by_role(role_name, "CreateRole", "AWS::IAM::Role")
-                if not assumerole_username:
-                    arn = cloudtrail_event.get('userIdentity').get('arn')
-                    assumerole_username, event = self.__ger_username_from_arn(resource_arn=arn)
-                return [assumerole_username, event]
+            user_identity = cloudtrail_event.get('userIdentity', {})
+            user_type = user_identity.get('type')
+            arn = user_identity.get('arn')
+
+            # Handle supported user types by extracting from ARN
+            if user_type in ('AssumedRole', 'IAMUser', 'FederatedUser'):
+                username = self.__extract_username_from_arn(arn, user_type)
+                if username:
+                    return [username, cloudtrail_event]
+
+            # For Root or other types without proper ARN
+            if user_type == 'Root':
+                return ['root', cloudtrail_event]
+
             return [False, '']
         except Exception as err:
             return [False, '']
