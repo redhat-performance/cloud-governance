@@ -140,16 +140,16 @@ class CloudTrailOperations:
         # Last part is always the username/session-name
         return parts[-1]
 
-    def __check_event_is_assumed_role(self, cloudtrail_event: str):
+    def __check_event_is_assumed_role(self, cloudtrail_event_str: str):
         """
         This method extracts username from userIdentity ARN for IAM users and AssumedRole users.
         For SAML SSO (AssumedRole), it extracts the username from the session name in the ARN.
         For IAM users, it extracts the username from the ARN path.
-        @param cloudtrail_event:
-        @return: [username, event] or [False, '']
+        @param cloudtrail_event_str: JSON string of CloudTrailEvent
+        @return: [username, parsed_event] or [False, '']
         """
         try:
-            cloudtrail_event = json.loads(cloudtrail_event)
+            cloudtrail_event = json.loads(cloudtrail_event_str)
             user_identity = cloudtrail_event.get('userIdentity', {})
             user_type = user_identity.get('type')
             arn = user_identity.get('arn')
@@ -158,11 +158,12 @@ class CloudTrailOperations:
             if user_type in ('AssumedRole', 'IAMUser', 'FederatedUser'):
                 username = self.__extract_username_from_arn(arn, user_type)
                 if username:
-                    return [username, cloudtrail_event]
+                    # Return parsed event wrapped in a dict with CloudTrailEvent key for consistency
+                    return [username, {'CloudTrailEvent': cloudtrail_event_str}]
 
             # For Root or other types without proper ARN
             if user_type == 'Root':
-                return ['root', cloudtrail_event]
+                return ['root', {'CloudTrailEvent': cloudtrail_event_str}]
 
             return [False, '']
         except Exception as err:
