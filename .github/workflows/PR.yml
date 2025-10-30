@@ -7,6 +7,7 @@ on:
   pull_request_target:
     types: [ labeled, synchronize ]
     branches: [ main ]
+  workflow_dispatch:
 
 concurrency:
   group: pr-queue
