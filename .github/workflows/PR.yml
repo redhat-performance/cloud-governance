@@ -36,11 +36,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
           # ldap requirements
           sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev -y
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -149,21 +150,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
           # ldap requirements
           sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev -y
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Configure AWS credentials for pytest
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -257,21 +253,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
           # ldap requirements
           sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev -y
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Configure AWS credentials for pytest
         uses: aws-actions/configure-aws-credentials@v4
         with:
