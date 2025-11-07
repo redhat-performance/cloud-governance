@@ -16,8 +16,6 @@ class EmptyRoles(AWSPolicyOperations):
     def run_policy_operations(self):
         """
         This method returns all Empty roles.
-        It includes logic to check and remove the role from instance profiles
-        to prevent DeleteConflict errors.
         :return:
         :rtype:
         """
