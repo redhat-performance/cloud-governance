@@ -318,3 +318,47 @@ class IAMOperations:
             logger.info(f"Access key '{access_key_id}' is already inactive for user '{username}'")
 
         logger.info(f"Access key deactivation processed for user '{username}'.")
+
+    def get_instance_profiles_for_role(self, role_name: str):
+        """
+        This method returns instance profiles associated with a given IAM role.
+        :param role_name: The name of the IAM role.
+        :return: A list of instance profiles.
+        """
+        instance_profiles = []
+        try:
+            # list_instance_profiles_for_role is paginated, use Utils to handle pagination
+            instance_profiles = self.utils.get_details_resource_list(
+                func_name=self.iam_client.list_instance_profiles_for_role,
+                input_tag='InstanceProfiles',
+                check_tag='Marker',
+                RoleName=role_name
+            )
+        except Exception as err:
+            logger.error(f"Failed to list instance profiles for role '{role_name}': {err}")
+        return instance_profiles
+
+    def remove_role_from_instance_profiles(self, role_name: str):
+        """
+        This method removes the specified IAM role from all associated instance profiles.
+        :param role_name: The name of the role to remove.
+        :return: True if removal from all profiles is successful, False otherwise.
+        """
+        instance_profiles = self.get_instance_profiles_for_role(role_name=role_name)
+        if not instance_profiles:
+            return True
+
+        success = True
+        for ip in instance_profiles:
+            instance_profile_name = ip.get('InstanceProfileName')
+            try:
+                self.iam_client.remove_role_from_instance_profile(
+                    InstanceProfileName=instance_profile_name,
+                    RoleName=role_name
+                )
+                logger.info(f"Successfully removed role '{role_name}' from instance profile '{instance_profile_name}'")
+            except Exception as err:
+                logger.error(
+                    f"Failed to remove role '{role_name}' from instance profile '{instance_profile_name}': {err}")
+                success = False
+        return success
