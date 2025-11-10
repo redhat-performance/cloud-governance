@@ -1,5 +1,4 @@
-from unittest import skip
-
+import pytest
 # TEST DRY RUN: delete=False
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
@@ -155,7 +154,7 @@ def test_zombie_cluster_role():
     assert len(zombie_cluster_resources.zombie_cluster_role()[0]) >= 0
 
 
-@skip(reason='Skipping the zombie cluster user')
+@pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_zombie_cluster_user():
     """
     This method return all zombie cluster user, scan cluster in all regions

@@ -1,6 +1,5 @@
 import json
-from unittest import skip
-
+import pytest
 from moto import mock_iam, mock_ec2
 import boto3
 
@@ -140,7 +139,7 @@ def test_not_delete_iam_cluster_role():
 
 @mock_ec2
 @mock_iam
-@skip(reason='Skipping the zombie cluster user')
+@pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_delete_iam_cluster_user():
     """
     This method tests the user has successfully deleted or not
@@ -167,7 +166,7 @@ def test_delete_iam_cluster_user():
 
 @mock_ec2
 @mock_iam
-@skip(reason='Skipping the zombie cluster user')
+@pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_not_delete_iam_cluster_user():
     """
     This method tests the user has not deleted
