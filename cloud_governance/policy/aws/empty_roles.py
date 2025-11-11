@@ -15,7 +15,7 @@ class EmptyRoles(AWSPolicyOperations):
 
     def run_policy_operations(self):
         """
-        This method returns all Empty buckets
+        This method returns all Empty roles.
         :return:
         :rtype:
         """
@@ -33,7 +33,33 @@ class EmptyRoles(AWSPolicyOperations):
             try:
                 if not cluster_tag and len(inline_policies) == 0 and len(attached_policies) == 0 and \
                     self.get_skip_policy_value(tags=tags) not in ('NOTDELETE', 'SKIP'):
+
                     cleanup_days = self.get_clean_up_days_count(tags=tags)
+                    # Step 1: Remove role from all instance profiles if attached (for empty roles)
+                    instance_profiles = self._iam_operations.get_instance_profiles_for_role(role_name=role_name)
+                    detachment_success = True
+                    if instance_profiles:
+                        logger.info(
+                            f"Role '{role_name}' is empty (no policies) but attached to instance profile(s): "
+                            f"{[ip['InstanceProfileName'] for ip in instance_profiles]}. Detaching now...")
+
+                        # Call the new method to handle detachment if dry_run = 'no'
+                        if self._dry_run == 'no':
+                            detachment_success = self._iam_operations.remove_role_from_instance_profiles(
+                                role_name=role_name)
+                            logger.warning(f"LIVE RUN: Detachment attempted. Success: {detachment_success}")
+                        else:
+                            logger.info(f"DRY RUN: Skipping actual detachment of role '{role_name}'.")
+
+                        if not detachment_success:
+                            # Skip deletion if detachment failed
+                            logger.info(
+                                f"Failed to detach role '{role_name}' from all instance profiles. Skipping deletion.")
+                            self.update_resource_day_count_tag(resource_id=role_name, cleanup_days=cleanup_days,
+                                                               tags=tags)
+                            continue
+
+                    # Step 2: Proceed with deletion
                     cleanup_result = self.verify_and_delete_resource(resource_id=role_name, tags=tags,
                                                                      clean_up_days=cleanup_days)
                     resource_data = self._get_es_schema(resource_id=role_name,
@@ -50,8 +76,10 @@ class EmptyRoles(AWSPolicyOperations):
                                                         resource_state="Empty",
                                                         unit_price=0)
                     empty_roles.append(resource_data)
+
                 if not cleanup_result:
                     self.update_resource_day_count_tag(resource_id=role_name, cleanup_days=cleanup_days, tags=tags)
+
             except Exception as e:
                 logger.error(f'Exception raised while processing the empty roles operation on {role_name}, {e}')
         return empty_roles
