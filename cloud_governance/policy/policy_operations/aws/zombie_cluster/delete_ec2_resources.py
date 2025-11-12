@@ -269,7 +269,19 @@ class DeleteEC2Resources:
                                 if ip_permission.get('UserIdGroupPairs'):
                                     for user_id_group_pair in ip_permission.get('UserIdGroupPairs'):
                                         if user_id_group_pair.get('GroupId') == resource_id:
-                                            ingress_rule = {'FromPort': ip_permission.get('FromPort'), 'IpProtocol': ip_permission.get('IpProtocol'), 'IpRanges': ip_permission.get('IpRanges'), 'Ipv6Ranges': ip_permission.get('Ipv6Ranges'), 'PrefixListIds': ip_permission.get('PrefixListIds'), 'ToPort': ip_permission.get('ToPort'), 'UserIdGroupPairs': [user_id_group_pair]}
+                                            ingress_rule = {
+                                                'IpProtocol': ip_permission.get('IpProtocol'),
+                                                'IpRanges': ip_permission.get('IpRanges'),
+                                                'Ipv6Ranges': ip_permission.get('Ipv6Ranges'),
+                                                'PrefixListIds': ip_permission.get('PrefixListIds'),
+                                                'UserIdGroupPairs': [user_id_group_pair]
+                                            }
+                                            from_port = ip_permission.get('FromPort')
+                                            to_port = ip_permission.get('ToPort')
+                                            if from_port is not None:
+                                                ingress_rule['FromPort'] = from_port
+                                            if to_port is not None:
+                                                ingress_rule['ToPort'] = to_port
                                             self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ingress_rule])
                                             logger.info(f'Removed the Ingress rules of Security Group {vpc_security_group.get("GroupId")} :: {ingress_rule}')
                     else:
@@ -281,7 +293,13 @@ class DeleteEC2Resources:
                                         if ip_permission.get('UserIdGroupPairs'):
                                             for user_id_group_pair in ip_permission.get('UserIdGroupPairs'):
                                                 if user_id_group_pair.get('GroupId') == resource_id:
-                                                    self.client.revoke_security_group_ingress(GroupId=vpc_security_group.get('GroupId'), IpPermissions=[ip_permission])
+                                                    cleaned_ip_permission = {k: v for k, v in ip_permission.items() if
+                                                                             v is not None}
+                                                    cleaned_ip_permission['UserIdGroupPairs'] = [user_id_group_pair]
+
+                                                    self.client.revoke_security_group_ingress(
+                                                        GroupId=vpc_security_group.get('GroupId'),
+                                                        IpPermissions=[cleaned_ip_permission])
                                                     logger.info(f'Removed the Ingress rules of Security Group {resource_id} from {vpc_security_group.get("GroupId")}')
             network_interfaces = self.ec2_operations.get_network_interface()
             network_interface_ids = self.__get_cluster_references(resource_id=vpc_id, resource_list=network_interfaces,

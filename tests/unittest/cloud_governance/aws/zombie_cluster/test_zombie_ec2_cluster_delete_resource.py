@@ -585,3 +585,90 @@ def test_zombie_security_group_force_delete():
                                                       resource_name='zombie_cluster_security_group', force_delete=True)
     zombie_cluster_resources.zombie_cluster_security_group()
     assert not EC2Operations(region_name).find_security_group(sg1)
+
+
+@mock_ec2
+def test_delete_security_group_with_all_traffic_rule():
+    """
+    This method tests the successful deletion of a security group when the referencing rule in the
+    default SG is 'All Traffic' (Protocol -1), which leads to None for FromPort/ToPort.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_id = vpc_response['Vpc']['VpcId']
+    subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    # 1. Cluster SG (to be deleted)
+    sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing All Traffic rule fix',
+                                           TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
+                                           GroupName='sg-all-traffic-test')['GroupId']
+
+    # 2. Default SG (to be modified)
+    default_sg_id = ec2_client.describe_security_groups(
+        Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}, {'Name': 'group-name', 'Values': ['default']}]
+    )['SecurityGroups'][0]['GroupId']
+
+    # 3. Add an "All Traffic" rule (Protocol -1) to the default SG referencing the cluster SG
+    ec2_client.authorize_security_group_ingress(
+        GroupId=default_sg_id,
+        IpPermissions=[{
+            'IpProtocol': '-1',  # All protocols
+            'UserIdGroupPairs': [{'GroupId': sg1}]
+        }]
+    )
+
+    ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
+
+    zombie_cluster_resources = ZombieClusterResources(
+        cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
+        cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+        region=region_name,
+        resource_name='zombie_cluster_security_group', force_delete=True)
+
+    zombie_cluster_resources.zombie_cluster_security_group()
+    assert not EC2Operations(region_name).find_security_group(sg1)
+
+
+@mock_ec2
+def test_delete_security_group_with_icmp_rule():
+    """
+    This method tests the successful deletion of a security group when the referencing rule in the
+    default SG is 'ICMP' (Protocol 1), which leads to None for FromPort/ToPort in some rules.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    vpc_id = vpc_response['Vpc']['VpcId']
+    subnet1 = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    # 1. Cluster SG (to be deleted)
+    sg1 = ec2_client.create_security_group(VpcId=vpc_id, Description='Testing ICMP rule fix',
+                                           TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}],
+                                           GroupName='sg-icmp-test')['GroupId']
+
+    # 2. Default SG (to be modified)
+    default_sg_id = ec2_client.describe_security_groups(
+        Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}, {'Name': 'group-name', 'Values': ['default']}]
+    )['SecurityGroups'][0]['GroupId']
+
+    # 3. Add an "All ICMP" rule (Protocol 1, Type/Code -1/-1) to the default SG referencing the cluster SG
+    # For ICMP, FromPort is Type, ToPort is Code. Using -1 for both means "All ICMP".
+    ec2_client.authorize_security_group_ingress(
+        GroupId=default_sg_id,
+        IpPermissions=[{
+            'IpProtocol': 'icmp',
+            'FromPort': -1,
+            'ToPort': -1,
+            'UserIdGroupPairs': [{'GroupId': sg1}]
+        }]
+    )
+
+    ec2_client.create_network_interface(SubnetId=subnet1, Groups=[sg1], Description='Created for testing')
+
+    zombie_cluster_resources = ZombieClusterResources(
+        cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=True,
+        cluster_tag='kubernetes.io/cluster/unittest-test-cluster',
+        region=region_name,
+        resource_name='zombie_cluster_security_group', force_delete=True)
+
+    zombie_cluster_resources.zombie_cluster_security_group()
+    assert not EC2Operations(region_name).find_security_group(sg1)
