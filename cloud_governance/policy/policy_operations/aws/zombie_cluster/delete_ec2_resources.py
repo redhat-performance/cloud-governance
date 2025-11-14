@@ -381,10 +381,8 @@ class DeleteEC2Resources:
                 network_interface = network_interface_data[0]
                 tags = network_interface.get('TagSet', [])
                 if self.cluster_tag and not self.__is_cluster_resource(tags, self.cluster_tag):
-                    logger.info(f'Network interface {resource_id} is not a cluster resource. Skipping deletion.')
                     return
             else:
-                logger.warning(f'Network interface {resource_id} not found in resource list. Skipping deletion.')
                 return
 
             descriptions = self.__get_cluster_references(resource_id=resource_id, resource_list=resource_list,
