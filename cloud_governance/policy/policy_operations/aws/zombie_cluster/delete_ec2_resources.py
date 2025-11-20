@@ -399,7 +399,15 @@ class DeleteEC2Resources:
                 self.client.delete_network_interface(NetworkInterfaceId=resource_id)
                 logger.info(f'delete_network_interface: {resource_id}')
         except Exception as err:
-            logger.exception(f'Cannot disassociate_address: {resource_id}, {err}')
+            error_message = str(err)
+            if 'OperationNotPermitted' in error_message and 'device index 0' in error_message.lower():
+                logger.info(f'Skipping deletion of network interface {resource_id}: primary interface (device index 0) '
+                          f'cannot be detached.')
+            elif 'OperationNotPermitted' in error_message:
+                logger.info(f'Skipping deletion of network interface {resource_id}: cannot detach network interface '
+                          f'attached to an active instance.')
+            else:
+                logger.exception(f'Cannot delete_network_interface: {resource_id}, {err}')
 
     def __delete_efs(self, resource_id: str):
         """
