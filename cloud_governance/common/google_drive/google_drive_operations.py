@@ -33,7 +33,8 @@ class GoogleDriveOperations:
         @return:
         """
         try:
-            if not self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id):
+            sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id)
+            if sheet_id is None:
                 create_worksheet_meta_data = {
                     'requests': [{
                         'addSheet': {
@@ -112,7 +113,7 @@ class GoogleDriveOperations:
                 if 'title' in sheet['properties'].keys():
                     if sheet['properties']['title'] == sheet_name:
                         return sheet['properties']['sheetId']
-        return ''
+        return None
 
     @logger_time_stamp
     def delete_rows(self, spreadsheet_id: str, sheet_name: str, row_number: int):
