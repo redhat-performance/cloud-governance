@@ -33,7 +33,8 @@ class GoogleDriveOperations:
         @return:
         """
         try:
-            if not self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id):
+            sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id)
+            if sheet_id == '':
                 create_worksheet_meta_data = {
                     'requests': [{
                         'addSheet': {
