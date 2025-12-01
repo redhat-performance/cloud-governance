@@ -1,7 +1,7 @@
 ### ecoeng_01 - dry_run=no
 
 **POLICIES_IN_ACTION
-** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
+** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
 
 - Run zombie_cluster_resource in blueprints
 
@@ -18,6 +18,12 @@ Accounts:
 - **verticals-ui**: "brotman@redhat.com, hhalbfin@redhat.com",
 - **special-projects**: "chen.yosef@redhat.com, hhalbfin@redhat.com",
 - **edgeinfra**: "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com",
-- **specialprojects-qe**: "augol@redhat.com, hhalbfin@redhat.com"
-- **partnerlab**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com"
-- **blueprints**: "abeekhof@redhat.com, hhalbfin@redhat.com"
+- **specialprojects-qe**: "augol@redhat.com, hhalbfin@redhat.com",
+- **partnerlab**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+- **blueprints**: "abeekhof@redhat.com, hhalbfin@redhat.com",
+- **edgeinfra-ci**: "rfreiman@redhat.com, hhalbfin@redhat.com",
+- **ecoeng-flightctl**:  "ayogev@redhat.com, hhalbfin@redhat.com",
+- **partners-eng**: "hhalbfin@redhat.com",
+- **fusionaccess**: "abeekhof@redhat.com,  hhalbfin@redhat.com",
+- **ecoeng-assistedci**: "alkaplan@redhat.com, dmanor@redhat.com, hhalbfin@redhat.com",
+- **medik8s-ci**: "ushkalim@redhat.com,  hhalbfin@redhat.com"
