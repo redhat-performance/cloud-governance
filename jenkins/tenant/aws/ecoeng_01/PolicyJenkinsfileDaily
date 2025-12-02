@@ -11,7 +11,13 @@ accounts_list = ['industry-partners': "hhalbfin@redhat.com",
                  'specialprojects-qe': "augol@redhat.com, hhalbfin@redhat.com",
                  'partnerlab': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com",
                  'blueprints': "abeekhof@redhat.com, hhalbfin@redhat.com",
-                 'coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com"
+                 'coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com",
+                 'edgeinfra-ci': "rfreiman@redhat.com, hhalbfin@redhat.com",
+                 'ecoeng-flightctl': "ayogev@redhat.com, hhalbfin@redhat.com",
+                 'partners-eng': "hhalbfin@redhat.com",
+                 'fusionaccess': "abeekhof@redhat.com,  hhalbfin@redhat.com",
+                 'ecoeng-assistedci': "alkaplan@redhat.com, dmanor@redhat.com, hhalbfin@redhat.com",
+                 'medik8s-ci': "ushkalim@redhat.com,  hhalbfin@redhat.com"
                  ]
 pipeline {
     options {

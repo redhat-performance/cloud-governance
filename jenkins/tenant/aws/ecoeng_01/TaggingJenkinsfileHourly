@@ -1,6 +1,7 @@
 account = ['industry-partners', 'verticals-ui', 'special-projects', 'edgeinfra', 'specialprojects-qe',
            'ecoeng-sap', 'sysdeseng', 'certification-pipeline', 'ecoengverticals-qe',
-           'emerge-partner', 'telco5g-ci', 'partnerlab', 'blueprints']
+           'emerge-partner', 'telco5g-ci', 'partnerlab', 'blueprints', 'edgeinfra-ci',
+           'ecoeng-flightctl', 'partners-eng', 'fusionaccess', 'ecoeng-assistedci', 'medik8s-ci']
 pipeline {
     options {
         disableConcurrentBuilds()
