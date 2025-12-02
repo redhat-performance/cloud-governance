@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -66,7 +66,7 @@ jobs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -120,7 +120,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
@@ -196,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -243,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -266,7 +266,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -316,7 +316,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -337,7 +337,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -361,7 +361,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.14' ]
+        python-version: [ '3.12' ]
     needs: [ unittest, terraform_apply, integration, pypi_upload, pypi_validate, public_quay_upload, private_quay_upload ]
     steps:
       - uses: actions/checkout@v4

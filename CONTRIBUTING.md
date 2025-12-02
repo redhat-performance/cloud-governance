@@ -18,7 +18,7 @@ git clone --single-branch --branch main https://github.com/redhat-performance/cl
 ```
 cd cloud-governance/
 git checkout -b <name_of_change>
-python3.14 -m venv .venv
+python3.9 -m venv .venv
 source ./.venv/bin/activate
 pip install -r requirmenets.txt
 ```
