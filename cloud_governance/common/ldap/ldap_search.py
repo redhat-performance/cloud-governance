@@ -1,8 +1,8 @@
 import os
 
 import ldap
-# installation for rhel/centos - python3.9
-# sudo dnf install -y python39-devel openldap-devel gcc
+# installation for rhel/centos - python3.14
+# sudo dnf install -y python314-devel openldap-devel gcc
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.api_requests import APIRequests

@@ -25,11 +25,11 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12'
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14'
     ],
 
     zip_safe=False,
@@ -71,7 +71,7 @@ setup(
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'requests==2.32.2',  # rest api & lambda
         'retry==0.9.2',
-        'setuptools',  # Requires for python3.12
+        'setuptools',  # Required for python3.14
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'sphinx==5.0.0',  # readthedocs

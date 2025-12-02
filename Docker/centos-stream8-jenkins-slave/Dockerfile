@@ -5,7 +5,7 @@
 
 FROM quay.io/centos/centos:stream8
 
-RUN dnf update -y &&  dnf install -y podman python3.9 git redis wget postfix
+RUN dnf update -y &&  dnf install -y podman python3.14 git redis wget postfix
 RUN printf "#!/bin/bash\npostfix start\ncat" > run.sh
 RUN chmod 777 run.sh
 

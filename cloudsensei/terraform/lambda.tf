@@ -22,7 +22,7 @@ module "lambda_function_existing_package_local" {
     ES_SERVER = var.ES_SERVER
     SEND_AGG_MAIL = var.SEND_AGG_MAIL
   }
-  runtime = "python3.9"
+  runtime = "python3.14"
   local_existing_package = "./../CloudSensei.zip"
   handler = "lambda_function.lambda_handler"
   create_package = false

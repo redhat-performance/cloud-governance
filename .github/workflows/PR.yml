@@ -26,7 +26,7 @@ jobs:
     needs: [ approve ]
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.12' ]
+        python-version: [ '3.14' ]
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
     steps:
@@ -126,7 +126,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
@@ -197,7 +197,7 @@ jobs:
     needs: [ approve, unittest, terraform_apply, integration ]
     strategy:
       matrix:
-        python-version: [ '3.12' ]
+        python-version: [ '3.14' ]
     if: success() || failure()
     runs-on: ubuntu-latest
     steps:
@@ -247,7 +247,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
     steps:
       - uses: actions/checkout@v4
         with:
