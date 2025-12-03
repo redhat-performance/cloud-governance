@@ -5,12 +5,8 @@
 
 FROM quay.io/centos/centos:stream9
 
-RUN dnf update -y && \
-    dnf install -y epel-release && \
-    dnf install -y podman python3.12 git redis wget postfix
-
-RUN printf "#!/bin/bash\npostfix start\nexec \"\$@\"" > run.sh
+RUN dnf update -y &&  dnf install -y podman python3.14 git redis wget postfix
+RUN printf "#!/bin/bash\npostfix start\ncat" > run.sh
 RUN chmod 777 run.sh
 
 ENTRYPOINT ["/run.sh"]
-CMD ["cat"]
