@@ -102,7 +102,7 @@ flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statist
 ```
 
 ### Testing Strategy
-- **Unit Tests**: `pytest -v tests/unittest` - Python 3.8-3.12 matrix
+- **Unit Tests**: `pytest -v tests/unittest` - Python 3.9-3.13 matrix
 - **Integration Tests**: `pytest -v tests/integration` - Requires AWS/Azure/GCP credentials and ElasticSearch
 - **E2E Tests**: Cross-region policy validation using containerized deployments
 - **Coverage**: Uses coveralls.io for coverage reporting
