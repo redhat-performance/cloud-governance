@@ -2,7 +2,7 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
-__version__ = '1.1.399'
+__version__ = '1.1.400'
 
 here = path.abspath(path.dirname(__file__))
 
@@ -25,11 +25,11 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12'
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13'
     ],
 
     zip_safe=False,
