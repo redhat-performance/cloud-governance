@@ -6,7 +6,8 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/cloud-governance/centos-stream9-podman:latest'
-            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+            args  '-u root --privileged'  // Temporarily remove main.cf mount to test
+            alwaysPull true
         }
     }
     environment {

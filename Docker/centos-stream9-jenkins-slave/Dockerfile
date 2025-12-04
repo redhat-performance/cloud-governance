@@ -9,20 +9,13 @@ RUN dnf update -y && \
     dnf install -y epel-release && \
     dnf install -y podman python3.12 git redis wget postfix
 
-# Create run.sh - make postfix optional, always execute Jenkins' command
+# Create run.sh - simplified, always exec
 RUN cat > /run.sh << 'EOF'
 #!/bin/bash
-# Start postfix only if main.cf exists and is valid (ignore all errors)
-if [ -f /etc/postfix/main.cf ]; then
-  postfix start >/dev/null 2>&1 || true
-fi
-# Always execute the command passed by Jenkins (cat to keep container alive)
-# If no command passed, default to cat
-if [ $# -eq 0 ]; then
-  exec cat
-else
-  exec "$@"
-fi
+# Start postfix only if main.cf exists as a file (not directory)
+[ -f /etc/postfix/main.cf ] && postfix start >/dev/null 2>&1 || true
+# Always execute Jenkins' command (cat)
+exec "$@"
 EOF
 RUN chmod +x /run.sh
 
