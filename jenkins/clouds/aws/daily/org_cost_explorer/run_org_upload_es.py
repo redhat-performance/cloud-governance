@@ -1,4 +1,33 @@
 import os
+import subprocess
+
+def run_shell_cmd(cmd: str):
+    """
+    This method run the shell command
+    :param cmd:
+    :type cmd:
+    :return:
+    :rtype:
+    """
+    # Use subprocess.run instead of os.system for better process management in CentOS Stream 9
+    subprocess.run(cmd, shell=True, check=False)
+
+
+def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = ''):
+    """
+    This method returns the shell command
+    :param mounted_volumes:
+    :type mounted_volumes:
+    :param env_variables:
+    :type env_variables:
+    :param policy:
+    :type policy:
+    :return:
+    :rtype:
+    """
+    inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
+    return (f'podman run --rm --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
+            f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}')
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
@@ -28,7 +57,7 @@ APPITO_KEY_ACCESS = os.environ['APPITO_KEY_ACCESS']
 APPITO_KEY_SECRET = os.environ['APPITO_KEY_SECRET']
 APPITO_ENVID = os.environ['APPITO_ENVID']
 
-os.system('echo "Updating the Org level cost billing reports"')
+run_shell_cmd('echo "Updating the Org level cost billing reports"')
 
 # Cost Explorer upload to ElasticSearch
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
@@ -42,11 +71,11 @@ combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 
 common_input_vars['es_index'] = 'cloud-governance-clouds-billing-reports'
 common_envs = list(map(combine_vars, common_input_vars.items()))
-os.system(
+run_shell_cmd(
     f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-os.system('echo "Run the Spot Analysis report over the account using AWS Athena"')
-os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
+run_shell_cmd('echo "Run the Spot Analysis report over the account using AWS Athena"')
+run_shell_cmd(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
 -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_ATHIRUMA_BOT}" \
 -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT}" \
 -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" \
@@ -59,35 +88,6 @@ os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_an
 CONTAINER_NAME = "cloud-governance"
 COST_ES_INDEX = "cloud-governance-clouds-billing-reports"
 CLOUDABILITY_POLICY = 'cloudability_cost_reports'
-
-
-def run_shell_cmd(cmd: str):
-    """
-    This method run the shell command
-    :param cmd:
-    :type cmd:
-    :return:
-    :rtype:
-    """
-    os.system(cmd)
-
-
-def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = ''):
-    """
-    This method returns the shell command
-    :param mounted_volumes:
-    :type mounted_volumes:
-    :param env_variables:
-    :type env_variables:
-    :param policy:
-    :type policy:
-    :return:
-    :rtype:
-    """
-    inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
-    return (f'podman run --rm --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
-            f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}')
-
 
 common_env_vars = {
     'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': COST_ES_INDEX,
