@@ -1,5 +1,19 @@
 import os
 import subprocess
+import time
+
+def run_shell_cmd(cmd: str):
+    """
+    This method run the shell command
+    :param cmd:
+    :type cmd:
+    :return:
+    :rtype:
+    """
+    # Use subprocess.run instead of os.system for better process management in CentOS Stream 9
+    subprocess.run(cmd, shell=True, check=False)
+    # Small delay to allow podman cleanup to complete
+    time.sleep(0.5)
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
@@ -48,7 +62,7 @@ input_vars_to_container = [{'account': 'perf-dept', 'AWS_ACCESS_KEY_ID': AWS_ACC
                            {'account': 'psap', 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID_DELETE_PSAP,
                             'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY_DELETE_PSAP, 'PUBLIC_CLOUD_NAME': 'AWS'}]
 
-subprocess.run('echo Run CloudResourceOrchestration in pre active region', shell=True, check=False)
+run_shell_cmd('echo Run CloudResourceOrchestration in pre active region')
 
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO',
                      'LDAP_HOST_NAME': LDAP_HOST_NAME,
@@ -70,11 +84,10 @@ common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'CRO_ES_INDEX': CRO
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
-    subprocess.run(f"""echo Running on Account {input_vars.get("account").upper()}""", shell=True, check=False)
+    run_shell_cmd(f"""echo Running on Account {input_vars.get("account").upper()}""")
     envs = list(map(combine_vars, input_vars.items()))
-    subprocess.run(
-        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""",
-        shell=True, check=False)
+    run_shell_cmd(
+        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
 AZURE_CLIENT_SECRET = os.environ['AZURE_CLIENT_SECRET']
@@ -82,7 +95,7 @@ AZURE_TENANT_ID = os.environ['AZURE_TENANT_ID']
 AZURE_CLIENT_ID = os.environ['AZURE_CLIENT_ID']
 AZURE_SUBSCRIPTION_ID = os.environ['AZURE_SUBSCRIPTION_ID']
 
-subprocess.run("echo Running the Azure CRO", shell=True, check=False)
+run_shell_cmd("echo Running the Azure CRO")
 azure_cro_env = {
     'AZURE_ACCOUNT_ID': AZURE_ACCOUNT_ID, 'AZURE_CLIENT_ID': AZURE_CLIENT_ID,
     'AZURE_TENANT_ID': AZURE_TENANT_ID, 'AZURE_CLIENT_SECRET': AZURE_CLIENT_SECRET,
@@ -94,4 +107,4 @@ azure_cro_env.update(common_env_vars)
 envs = list(map(combine_vars, azure_cro_env.items()))
 azure_cro = """ podman run --net="host" --rm --name cloud_resource_orchestration """
 azure_cro += f" -e {' -e '.join(envs)}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
-subprocess.run(azure_cro, shell=True, check=False)
+run_shell_cmd(azure_cro)
