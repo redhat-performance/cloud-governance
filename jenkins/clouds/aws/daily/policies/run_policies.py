@@ -1,6 +1,4 @@
 import os
-import subprocess
-import time
 from ast import literal_eval
 
 access_key = os.environ['access_key']
@@ -64,8 +62,7 @@ def run_cmd(cmd: str):
     :return:
     :rtype:
     """
-    subprocess.run(cmd, shell=True, check=False)
-    time.sleep(0.5)
+    os.system(cmd)
 
 
 def get_container_cmd(env_dict: dict):
