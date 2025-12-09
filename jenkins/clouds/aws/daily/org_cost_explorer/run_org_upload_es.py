@@ -9,7 +9,6 @@ def run_shell_cmd(cmd: str):
     :return:
     :rtype:
     """
-    # Use subprocess.run instead of os.system for better process management in CentOS Stream 9
     subprocess.run(cmd, shell=True, check=False)
 
 

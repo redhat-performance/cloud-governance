@@ -10,9 +10,7 @@ def run_shell_cmd(cmd: str):
     :return:
     :rtype:
     """
-    # Use subprocess.run instead of os.system for better process management in CentOS Stream 9
     subprocess.run(cmd, shell=True, check=False)
-    # Small delay to allow podman cleanup to complete
     time.sleep(0.5)
 
 AWS_ACCESS_KEY_ID_PERF = os.environ['AWS_ACCESS_KEY_ID_PERF']
