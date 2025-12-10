@@ -43,10 +43,10 @@ combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_input_vars['es_index'] = 'cloud-governance-clouds-billing-reports'
 common_envs = list(map(combine_vars, common_input_vars.items()))
 os.system(
-    f"""podman run --rm --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --net="host" --name cloud-governance -e policy="cost_explorer_payer_billings" -e AWS_ACCOUNT_ROLE="{AWS_ACCOUNT_ROLE}" -e account="PERF-DEPT" -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_DELETE_PERF}" -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_DELETE_PERF}" -e SPREADSHEET_ID="{COST_SPREADSHEET_ID}" -e {' -e '.join(common_envs)} -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 os.system('echo "Run the Spot Analysis report over the account using AWS Athena"')
-os.system(f"""podman run --rm --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
+os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
 -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_ATHIRUMA_BOT}" \
 -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT}" \
 -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" \
@@ -85,7 +85,7 @@ def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = 
     :rtype:
     """
     inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
-    return (f'podman run --rm --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
+    return (f'podman run --rm --net="host" --name {CONTAINER_NAME} -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
             f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}')
 
 

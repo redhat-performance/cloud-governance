@@ -59,7 +59,7 @@ def run_cmd(cmd: str):
 def get_container_cmd(env_dict: dict):
     env_list = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_dict.items())))
     container_name = "cloud-governance"
-    container_run_cmd = f"""podman run --rm --name "{container_name}" --net="host" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"""
+    container_run_cmd = f"""podman run --rm --net="host" --name "{container_name}" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"""
     return container_run_cmd
 
 
