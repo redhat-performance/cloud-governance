@@ -31,7 +31,7 @@ key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAM
 
 for keys in key_list:
     os.system(
-        f"""podman run --rm --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --rm --net="host" --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Cloudability reports
 # Cloudability env variables
@@ -57,7 +57,7 @@ def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = 
     :rtype:
     """
     inject_container_envs = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_variables.items())))
-    return (f'podman run --rm --name cloud-governance -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
+    return (f'podman run --rm --net="host" --name cloud-governance -e policy="{policy}" {inject_container_envs} {mounted_volumes} '
             f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}')
 
 
