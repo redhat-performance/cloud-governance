@@ -243,12 +243,18 @@ def main():
                 if is_tag_ibm_classic_infrastructure_runner:
                     ibm_classic_infrastructure_policy_runner = IBMPolicyRunner()
 
-                is_cost_explorer_policies_runner = ''
+                is_cost_explorer_policies_runner = False
+                logger.info(f"DEBUG: PUBLIC_CLOUD_NAME = {environment_variables_dict.get('PUBLIC_CLOUD_NAME')}")
+                logger.info(f"DEBUG: cost_policies = {environment_variables_dict.get('cost_policies')}")
+                logger.info(f"DEBUG: policy = {policy}")
                 if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get('PUBLIC_CLOUD_NAME').upper() == 'AWS':
                     cost_explorer_policies_runner = None
                     is_cost_explorer_policies_runner = policy in environment_variables_dict.get('cost_policies')
+                    logger.info(f"DEBUG: is_cost_explorer_policies_runner = {is_cost_explorer_policies_runner}")
                     if is_cost_explorer_policies_runner:
                         cost_explorer_policies_runner = CostReportPolicies()
+                else:
+                    logger.info(f"DEBUG: PUBLIC_CLOUD_NAME check failed - value was: {environment_variables_dict.get('PUBLIC_CLOUD_NAME')}")
 
                 is_azure_policy_runner = ''
                 if environment_variables_dict.get('PUBLIC_CLOUD_NAME') and environment_variables_dict.get(
