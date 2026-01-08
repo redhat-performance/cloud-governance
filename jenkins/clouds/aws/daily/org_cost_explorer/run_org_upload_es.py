@@ -58,6 +58,7 @@ os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="sp
 
 os.system('echo "Running yearly savings report"')
 os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
+-e PUBLIC_CLOUD_NAME="AWS" \
 -e es_host="{ES_HOST}" \
 -e es_port="{ES_PORT}" \
 -e es_index="cloud-governance-policy-es-index" \
