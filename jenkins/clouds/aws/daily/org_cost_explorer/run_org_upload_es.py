@@ -56,7 +56,7 @@ os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="sp
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 os.system('echo "Running yearly savings report"')
-os.system(f"""podman run --rm --net="host" --pull=always --name cloud-governance -e policy="yearly_savings_report" \
+os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
 -e PUBLIC_CLOUD_NAME="AWS" \
 -e es_host="{ES_HOST}" \
 -e es_port="{ES_PORT}" \
