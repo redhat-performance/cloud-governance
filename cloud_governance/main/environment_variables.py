@@ -105,7 +105,8 @@ class EnvironmentVariables:
         self._environment_variables_dict['cluster_policies'] = ['zombie_cluster_resource']
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
-                                                             'cost_explorer_payer_billings', 'spot_savings_analysis']
+                                                             'cost_explorer_payer_billings', 'spot_savings_analysis',
+                                                             'yearly_savings_report']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
         self._environment_variables_dict['azure_policies'] = ['tag_azure_resource_group']
@@ -147,6 +148,8 @@ class EnvironmentVariables:
         # ['User', 'Budget', 'Project', 'Manager']
         self._environment_variables_dict['cost_explorer_tags'] = EnvironmentVariables.get_env('cost_explorer_tags',
                                                                                               '{}')
+        self._environment_variables_dict['yearly_savings_start_date'] = EnvironmentVariables.get_env('yearly_savings_start_date', '')
+        self._environment_variables_dict['yearly_savings_end_date'] = EnvironmentVariables.get_env('yearly_savings_end_date', '')
         # AZURE Credentials
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')

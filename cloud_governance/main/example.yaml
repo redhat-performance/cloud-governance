@@ -28,7 +28,8 @@ non_cluster_policies: [ 'instance_run', 'unattached_volume', 'cluster_run',
                         'zombie_snapshots', 'skipped_resources',
                         'monthly_report', 'optimize_resources_report' ]
 cost_policies: [ 'cost_explorer', 'cost_over_usage', 'cost_billing_reports',
-                 'cost_explorer_payer_billings', 'spot_savings_analysis' ]
+                 'cost_explorer_payer_billings', 'spot_savings_analysis',
+                 'yearly_savings_report' ]
 
 policy_output: ""
 bucket: ""

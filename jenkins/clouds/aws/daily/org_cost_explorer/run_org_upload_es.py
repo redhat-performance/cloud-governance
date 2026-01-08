@@ -56,6 +56,14 @@ os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="sp
 -e ATHENA_TABLE_NAME="{ATHENA_TABLE_NAME}" \
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
+os.system('echo "Running yearly savings report"')
+os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
+-e es_host="{ES_HOST}" \
+-e es_port="{ES_PORT}" \
+-e es_index="cloud-governance-policy-es-index" \
+-e log_level="INFO" \
+{QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+
 CONTAINER_NAME = "cloud-governance"
 COST_ES_INDEX = "cloud-governance-clouds-billing-reports"
 CLOUDABILITY_POLICY = 'cloudability_cost_reports'
