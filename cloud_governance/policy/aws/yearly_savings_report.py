@@ -15,8 +15,6 @@ class YearlySavingsReport:
     Uses month-by-month queries and deduplication to avoid counting resources multiple times
     """
 
-    ES_INDEX = 'cloud-governance-yearly-saving'
-
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
@@ -24,6 +22,7 @@ class YearlySavingsReport:
         self.__elastic_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port) if self.__es_host else None
         self.__elastic_upload = ElasticUpload()
         self.__policy_es_index = self.__environment_variables_dict.get('es_index', 'cloud-governance-policy-es-index')
+        self.__yearly_savings_es_index = self.__environment_variables_dict.get('yearly_savings_es_index')
         # Check for custom date range from environment variables. This won't upload to ES.
         self.__custom_start_date = self.__environment_variables_dict.get('yearly_savings_start_date', '')
         self.__custom_end_date = self.__environment_variables_dict.get('yearly_savings_end_date', '')
@@ -341,16 +340,16 @@ class YearlySavingsReport:
                 data[f'month_{month_num}'] = round(all_months_data.get(month_num, 0), 3)
 
             try:
-                if self.__elastic_operations.verify_elastic_index_doc_id(index=self.ES_INDEX, doc_id=year_id):
+                if self.__elastic_operations.verify_elastic_index_doc_id(index=self.__yearly_savings_es_index, doc_id=year_id):
                     self.__elastic_operations.update_elasticsearch_index(
-                        index=self.ES_INDEX,
+                        index=self.__yearly_savings_es_index,
                         id=year_id,
                         metadata=data
                     )
                     logger.info(f"Updated yearly savings for year {year}")
                 else:
                     self.__elastic_operations.upload_to_elasticsearch(
-                        index=self.ES_INDEX,
+                        index=self.__yearly_savings_es_index,
                         data=data,
                         id=year_id
                     )
@@ -359,7 +358,7 @@ class YearlySavingsReport:
                 logger.warning(f"Update check failed, trying create: {e}")
                 try:
                     self.__elastic_operations.upload_to_elasticsearch(
-                        index=self.ES_INDEX,
+                        index=self.__yearly_savings_es_index,
                         data=data,
                         id=year_id
                     )
@@ -462,7 +461,7 @@ class YearlySavingsReport:
                     all_months_data=all_months_data,
                     total_annual_saving=total_annual_saving
                 )
-                logger.info(f'Successfully uploaded yearly savings to {self.ES_INDEX}')
+                logger.info(f'Successfully uploaded yearly savings to {self.__yearly_savings_es_index}')
                 return {
                     'status': 'success',
                     'records_uploaded': 1,

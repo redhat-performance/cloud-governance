@@ -150,6 +150,7 @@ class EnvironmentVariables:
                                                                                               '{}')
         self._environment_variables_dict['yearly_savings_start_date'] = EnvironmentVariables.get_env('yearly_savings_start_date', '')
         self._environment_variables_dict['yearly_savings_end_date'] = EnvironmentVariables.get_env('yearly_savings_end_date', '')
+        self._environment_variables_dict['yearly_savings_es_index'] = EnvironmentVariables.get_env('yearly_savings_es_index', 'cloud-governance-yearly-saving')
         # AZURE Credentials
         self._environment_variables_dict['AZURE_ACCOUNT_ID'] = EnvironmentVariables.get_env('AZURE_ACCOUNT_ID', '')
         self._environment_variables_dict['AZURE_CLIENT_ID'] = EnvironmentVariables.get_env('AZURE_CLIENT_ID', '')
