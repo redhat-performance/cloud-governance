@@ -77,25 +77,25 @@ pipeline {
                 }
             }
         }
-        // stage('Run Daily Policies') {
-        //     steps {
-        //          script {
-        //             for (account in accounts_list.keySet()) {
-        //                 echo "Running for account ${account.toUpperCase()}"
-        //                 withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
-        //                                 string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
-        //                                 string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
-        //                 if (account == 'industry-partners') {
-        //                     env.SKIP_POLICIES_ALERT = '[]'
-        //                 }
-        //                 env.account_name = "${account}"
-        //                 env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
-        //                 sh 'python3 jenkins/tenant/aws/common/run_policies.py'
-        //                                 }
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Run Daily Policies') {
+            steps {
+                 script {
+                    for (account in accounts_list.keySet()) {
+                        echo "Running for account ${account.toUpperCase()}"
+                        withCredentials([string(credentialsId: "${account}-aws-access-key-id", variable: 'access_key'),
+                                        string(credentialsId: "${account}-aws-secret-key-id", variable: 'secret_key'),
+                                        string(credentialsId: "${account}-s3-bucket", variable: 's3_bucket')]) {
+                        if (account == 'industry-partners') {
+                            env.SKIP_POLICIES_ALERT = '[]'
+                        }
+                        env.account_name = "${account}"
+                        env.ADMIN_MAIL_LIST = "${accounts_list[account]}"
+                        sh 'python3 jenkins/tenant/aws/common/run_policies.py'
+                                        }
+                    }
+                }
+            }
+        }
         stage('Finalize Cleanup') {
             steps {
                  sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
@@ -103,14 +103,14 @@ pipeline {
             }
         }
     }
-    // post {
-    //     failure {
-    //           script {
-    //             msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-    //             emailext body: """\
-    //         Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-    //         """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
-    //         }
-    //       }
-    // }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
+            }
+          }
+    }
 }

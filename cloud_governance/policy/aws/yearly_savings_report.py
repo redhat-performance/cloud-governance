@@ -15,6 +15,9 @@ class YearlySavingsReport:
     Uses month-by-month queries and deduplication to avoid counting resources multiple times
     """
 
+    NAT_GATEWAY_HOURLY_COST = 0.045
+    ELASTIC_IP_HOURLY_COST = 0.005
+
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
@@ -58,9 +61,9 @@ class YearlySavingsReport:
         remaining_days = (end_of_year - captured_date).days
 
         if policy_name == 'unused_nat_gateway':
-            savings = remaining_days * 24 * 0.045
+            savings = remaining_days * 24 * self.NAT_GATEWAY_HOURLY_COST
         elif policy_name == 'ip_unattached':
-            savings = remaining_days * 24 * 0.005
+            savings = remaining_days * 24 * self.ELASTIC_IP_HOURLY_COST
 
         return savings
 

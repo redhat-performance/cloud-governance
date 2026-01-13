@@ -15,9 +15,8 @@ AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_
 S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
-# QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-#                                                   'quay.io/cloud-governance/cloud-governance:latest')
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = 'quay.io/rh-ee-pragchau/cloud-governance:latest'
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+                                                  'quay.io/cloud-governance/cloud-governance:latest')
 
 # Cloudability env variables
 
