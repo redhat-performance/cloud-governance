@@ -23,6 +23,8 @@ class YearlySavingsReport:
         self.__elastic_upload = ElasticUpload()
         self.__policy_es_index = self.__environment_variables_dict.get('es_index', 'cloud-governance-policy-es-index')
         self.__yearly_savings_es_index = self.__environment_variables_dict.get('yearly_savings_es_index')
+        account = self.__environment_variables_dict.get('account', 'PERF-DEPT')
+        self.__account = account.upper().replace('OPENSHIFT-', '').replace('OPENSHIFT', '').strip()
         # Check for custom date range from environment variables. This won't upload to ES.
         self.__custom_start_date = self.__environment_variables_dict.get('yearly_savings_start_date', '')
         self.__custom_end_date = self.__environment_variables_dict.get('yearly_savings_end_date', '')
@@ -81,6 +83,13 @@ class YearlySavingsReport:
                             "term": {
                                 "PublicCloud.keyword": {
                                     "value": "AWS"
+                                }
+                            }
+                        },
+                        {
+                            "term": {
+                                "account.keyword": {
+                                    "value": self.__account
                                 }
                             }
                         }
@@ -325,7 +334,7 @@ class YearlySavingsReport:
         """
         try:
             current_date = datetime.now(timezone.utc).date()
-            year_id = str(year)
+            year_id = f"{year}-{self.__account}"
 
             data = {
                 'year': year,
@@ -333,7 +342,8 @@ class YearlySavingsReport:
                 'last_updated': current_date.isoformat(),
                 'timestamp': datetime.now(timezone.utc),
                 'policy': 'cloud_resource_orchestration',
-                'index_id': year_id
+                'index_id': year_id,
+                'account': self.__account
             }
 
             for month_num in range(1, 13):
