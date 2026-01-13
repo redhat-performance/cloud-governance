@@ -1,7 +1,5 @@
 import os
 
-from jenkins.tenant.aws.common.run_tagging import QUAY_CLOUD_GOVERNANCE_REPOSITORY
-
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
 ES_HOST = os.environ['ES_HOST']
