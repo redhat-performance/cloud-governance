@@ -69,14 +69,14 @@ pipeline {
             }
         }
     }
-    // post {
-    //     failure {
-    //           script {
-    //             msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-    //             emailext body: """\
-    //         Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-    //         """,subject: msg, to: "${contact1}, ${contact2}"
-    //         }
-    //       }
-    // }
+    post {
+        failure {
+              script {
+                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+                emailext body: """\
+            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+            """,subject: msg, to: "${contact1}, ${contact2}"
+            }
+          }
+    }
 }
