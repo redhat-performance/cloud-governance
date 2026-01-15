@@ -46,7 +46,7 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
 
 exclude_global_cost_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
                                 'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
-                                'spot_savings_analysis']
+                                'spot_savings_analysis', 'yearly_savings_report']
 GLOBAL_POLICIES = ["s3_inactive", "empty_roles", "unused_access_key"]
 available_policies = get_policies(exclude_policies=exclude_global_cost_policies)
 
