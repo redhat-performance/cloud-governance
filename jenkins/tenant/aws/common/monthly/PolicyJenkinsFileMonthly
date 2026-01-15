@@ -1,0 +1,79 @@
+accounts_list = ['industry-partners': "hhalbfin@redhat.com",
+                 'certification-pipeline': "matt.dorn@redhat.com, mhillsma@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'ecoengverticals-qe': "augol@redhat.com, hhalbfin@redhat.com",
+                 'emerge-partner': "jsalomon@redhat.com, ltomasbo@redhat.com, hhalbfin@redhat.com",
+                 'telco5g-ci': "yjoseph@redhat.com, hhalbfin@redhat.com, sshnaidm@redhat.com",
+                 'ecoeng-sap': "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
+                 'sysdeseng': "scollier@redhat.com, hhalbfin@redhat.com, mavazque@redhat.com",
+                 'verticals-ui': "brotman@redhat.com, hhalbfin@redhat.com",
+                 'special-projects': "chen.yosef@redhat.com, hhalbfin@redhat.com",
+                 'edgeinfra': "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com",
+                 'specialprojects-qe': "augol@redhat.com, hhalbfin@redhat.com",
+                 'partnerlab': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com",
+                 'blueprints': "abeekhof@redhat.com, hhalbfin@redhat.com",
+                 'coreos-training': "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com, mrhillsman@redhat.com",
+                 'edgeinfra-ci': "rfreiman@redhat.com, hhalbfin@redhat.com",
+                 'ecoeng-flightctl': "ayogev@redhat.com, hhalbfin@redhat.com",
+                 'partners-eng': "hhalbfin@redhat.com",
+                 'fusionaccess': "abeekhof@redhat.com,  hhalbfin@redhat.com",
+                 'ecoeng-assistedci': "alkaplan@redhat.com, dmanor@redhat.com, hhalbfin@redhat.com",
+                 'medik8s-ci': "ushkalim@redhat.com,  hhalbfin@redhat.com"
+                 ]
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    agent {
+        docker {
+            label 'haim-cloud-governance-worker'
+            image 'quay.io/cloud-governance/fedora38-podman:latest'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+        }
+    }
+    environment {
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        ES_HOST = credentials('haim-cloud-governance-elasticsearch-url')
+        ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
+        contact1 = "ebattat@redhat.com"
+        contact2 = "yinsong@redhat.com"
+    }
+    stages {
+        stage('Checkout') {
+           steps {
+                 checkout scm
+           }
+        }
+        stage('Initial Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+            }
+        }
+        stage('Run Yearly Savings Report') {
+            steps {
+                 script {
+                    for (account in accounts_list.keySet()) {
+                        echo "Running yearly savings report for account ${account.toUpperCase()}"
+                        env.account_name = "${account}"
+                        sh 'python3 jenkins/tenant/aws/common/monthly/run_yearly_savings_report.py'
+                    }
+                }
+            }
+        }
+        stage('Finalize Cleanup') {
+            steps {
+                 sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
+                 deleteDir()
+            }
+        }
+    }
+    // post {
+    //     failure {
+    //           script {
+    //             msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+    //             emailext body: """\
+    //         Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+    //         """,subject: msg, to: "${contact1}, ${contact2}"
+    //         }
+    //       }
+    // }
+}
