@@ -57,7 +57,7 @@ pipeline {
                     for (account in accounts_list.keySet()) {
                         echo "Running yearly savings report for account ${account.toUpperCase()}"
                         env.account_name = "${account}"
-                        sh 'python3 jenkins/tenant/aws/common/monthly/run_yearly_savings_report.py'
+                        sh 'python3 jenkins/tenant/aws/common/monthly/run_monthly_policies.py'
                     }
                 }
             }
