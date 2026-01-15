@@ -22,14 +22,3 @@ env_es_index = f'-e es_index="{ES_INDEX}"' if ES_INDEX else f'-e es_index="{cost
 os.system(f"""echo "Running the CloudGovernance CostExplorer Policies" """)
 os.system(
     f"""podman run --rm --name cloud-governance --net="host" -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" {env_es_index} -e es_port="{ES_PORT}"  -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
-
-# Add yearly savings report
-os.system(f"""echo "Running yearly savings report" """)
-os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
--e PUBLIC_CLOUD_NAME="AWS" \
--e account="{account_name}" \
--e es_host="{ES_HOST}" \
--e es_port="{ES_PORT}" \
--e es_index="cloud-governance-policy-es-index" \
--e log_level="INFO" \
-{QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
