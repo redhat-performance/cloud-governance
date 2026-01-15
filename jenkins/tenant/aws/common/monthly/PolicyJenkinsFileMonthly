@@ -23,6 +23,9 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
+    triggers {
+        cron('H H 1 * *')
+    }
     agent {
         docker {
             label 'haim-cloud-governance-worker'
