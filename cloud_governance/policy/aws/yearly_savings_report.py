@@ -344,7 +344,7 @@ class YearlySavingsReport:
                 'total_saving': round(total_annual_saving, 3),
                 'last_updated': current_date.isoformat(),
                 'timestamp': datetime.now(timezone.utc),
-                'policy': 'cloud_resource_orchestration',
+                'policy': 'yearly_savings_report',
                 'index_id': year_id,
                 'account': self.__account
             }
