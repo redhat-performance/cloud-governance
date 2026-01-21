@@ -19,7 +19,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Red Hat',
-    author_email='ebattat@redhat.com, athiruma@redhat.com',
+    author_email='ebattat@redhat.com, pragchau@redhat.com',
     url='https://github.com/redhat-performance/cloud-governance',
     license="Apache License 2.0",
     classifiers=[

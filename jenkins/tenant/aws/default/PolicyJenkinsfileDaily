@@ -19,6 +19,7 @@ pipeline {
         ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
         contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"
+        contact3 = "pragchau@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

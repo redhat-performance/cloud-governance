@@ -54,7 +54,7 @@ class NonClusterZombiePolicy:
         self.__email_alert = self.__environment_variables_dict.get(
             'EMAIL_ALERT') if self.__environment_variables_dict.get('EMAIL_ALERT') else False
         self.__manager_email_alert = self.__environment_variables_dict.get('MANAGER_EMAIL_ALERT')
-        self._admins = ['yinsong@redhat.com', 'ebattat@redhat.com']
+        self._admins = ['yinsong@redhat.com', 'ebattat@redhat.com', 'pragchau@redhat.com']
         self._es_upload = ElasticUpload()
         self.resource_pricing = ResourcesPricing()
         self._es_operations = ElasticSearchOperations()
