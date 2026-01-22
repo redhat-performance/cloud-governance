@@ -13,8 +13,8 @@ def test_aggregate_user_sum_instances():
     test_df = [
         {'User': 'test1', 'Cost': 9, 'Instances': [{'InstanceId': 1234}]},
         {'User': 'test1', 'Cost': 9, 'Instances': [{'InstanceId': 1234}]},
-        {'User': 'test2', 'Cost': 14, 'Instances': []},
-        {'User': 'test2', 'Cost': 19, 'Instances': []}
+        {'User': 'test2', 'Cost': 14},
+        {'User': 'test2', 'Cost': 19}
     ]
     expected_df = [
         {'User': 'test1', 'Cost': 18, 'Instances': [{'InstanceId': 1234}]},
