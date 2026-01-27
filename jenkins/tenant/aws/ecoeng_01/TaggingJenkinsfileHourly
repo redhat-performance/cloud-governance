@@ -20,6 +20,7 @@ pipeline {
         contact2 = "yinsong@redhat.com"
         contact3 = "mmikhail@redhat.com"
         contact4 = "matrujil@redhat.com"
+        contact5 = "pragchau@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -60,7 +61,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}, ${contact5}"
             }
           }
     }

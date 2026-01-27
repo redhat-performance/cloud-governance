@@ -16,6 +16,7 @@ pipeline {
         account_name = "appeng"
         contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"
+        contact3 = "pragchau@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository

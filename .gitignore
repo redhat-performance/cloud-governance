@@ -133,6 +133,8 @@ gen
 *.tfstate.backup
 #Module directory
 .terraform/
+iam/clouds/aws/payer_roles/terrafom_create_role/terraform.tfvars
+iam/clouds/aws/payer_roles/CloudGovernanceCostExplorerReadRole.json
 
 
 # Created by .ignore support plugin (hsz.mobi)

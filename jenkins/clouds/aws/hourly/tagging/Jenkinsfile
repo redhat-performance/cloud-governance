@@ -19,6 +19,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
         contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"
+        contact3 = "pragchau@redhat.com"
     }
     stages {
         stage('Checkout') { // Checkout (git clone ...) the projects repository
@@ -49,7 +50,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}"
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}"
             }
           }
     }

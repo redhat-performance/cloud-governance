@@ -3,7 +3,7 @@ import os
 USAGE_REPORTS_APIKEY = os.environ['USAGE_REPORTS_APIKEY']
 IBM_ACCOUNT_ID = os.environ['IBM_ACCOUNT_ID']
 TO_MAIL = ['natashba@redhat.com']
-CC_MAIL = ['yinsong@redhat.com', 'ebattat@redhat.com']
+CC_MAIL = ['yinsong@redhat.com', 'ebattat@redhat.com', 'pragchau@redhat.com']
 USAGE_REPORTS_AUTHTYPE = 'iam'
 MAXIMUM_THRESHOLD = 1000
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',

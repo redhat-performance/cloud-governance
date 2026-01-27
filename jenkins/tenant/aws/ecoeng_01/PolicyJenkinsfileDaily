@@ -43,6 +43,7 @@ pipeline {
         contact2 = "yinsong@redhat.com"
         contact3 = "mmikhail@redhat.com"
         contact4 = "matrujil@redhat.com"
+        contact5 = "pragchau@redhat.com"
         // Find the all available policies: https://github.com/redhat-performance/cloud-governance/tree/main/cloud_governance/policy
         // By default, all policies are running in dry_run="yes" mode and the whole list can be found in run_policies.py
         // POLICIES_IN_ACTION: Policies that run in the dry_run="no" mode
@@ -109,7 +110,7 @@ pipeline {
                 msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
                 emailext body: """\
             Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}"
+            """,subject: msg, to: "${contact1}, ${contact2}, ${contact3}, ${contact4}, ${contact5}"
             }
           }
     }

@@ -10,7 +10,7 @@ CLOSED = '41'
 JIRA_TOKEN = 'JIRA_TOKEN'
 JIRA_PROJECT = 'JIRA_PROJECT'
 JIRA_API_SERVER = 'JIRA_API_SERVER'
-CRO_ADMINS = ['yinsong@redhat.com', 'natashba@redhat.com', 'ebattat@redhat.com']
+CRO_ADMINS = ['yinsong@redhat.com', 'natashba@redhat.com', 'ebattat@redhat.com', 'pragchau@redhat.com']
 
 
 def get_receive_mail_details(event_data):
