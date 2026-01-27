@@ -17,8 +17,17 @@ class MonthlyReport:
         self._es_index = 'cloud-governance-mail-messages'
         self._es_host = self.__environment_variables_dict.get('es_host', '')
         self._es_port = self.__environment_variables_dict.get('es_port', '')
-        self._to_mail = literal_eval(self.__environment_variables_dict.get('to_mail', '[]'))
-        self._to_cc = literal_eval(self.__environment_variables_dict.get('cc_mail', '[]'))
+        to_mail_str = self.__environment_variables_dict.get('to_mail', '').strip()
+        if to_mail_str in ('[]', ''):
+            self._to_mail = []
+        else:
+            self._to_mail = [x.strip() for x in to_mail_str.split(',') if x.strip()]
+
+        cc_mail_str = self.__environment_variables_dict.get('cc_mail', '').strip()
+        if cc_mail_str in ('[]', ''):
+            self._to_cc = []
+        else:
+            self._to_cc = [x.strip() for x in cc_mail_str.split(',') if cc_mail_str.strip()]
         if self._es_host:
             self._elastic_operations = ElasticSearchOperations(es_host=self._es_host, es_port=self._es_port)
         self._postfix_mail = Postfix()
