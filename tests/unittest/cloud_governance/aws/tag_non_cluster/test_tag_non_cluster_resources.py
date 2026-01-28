@@ -9,7 +9,7 @@ from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_clust
 
 mandatory_tags = {'test': 'ec2-update'}
 region_name = 'us-east-2'
-tag_resources = TagNonClusterResources(input_tags=mandatory_tags, dry_run='no')
+# Do not instantiate at module level: __init__ calls IAM list_users. Each test creates its own under mocks.
 os.environ['SLEEP_SECONDS'] = '0'
 
 

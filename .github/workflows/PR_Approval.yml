@@ -34,9 +34,4 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Unittest with pytest
-        env:
-            # Dummy credentials so boto3 doesn't fail during test collection
-            AWS_ACCESS_KEY_ID: 'test_key'
-            AWS_SECRET_ACCESS_KEY: 'test_secret'
-            AWS_DEFAULT_REGION: 'us-east-2'
         run: python -m pytest -v tests/unittest
