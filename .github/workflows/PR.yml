@@ -1,72 +1,19 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: PR
+name: PR CI - Integration/E2E
 
 on:
-  pull_request_target:
-    types: [ labeled, synchronize ]
-    branches: [ main ]
+  workflow_run:
+    workflows: ["PR Approval - Unittest"]
+    types: [completed]
 
 concurrency:
   group: pr-queue
   cancel-in-progress: false
 
 jobs:
-  approve: # First step
-    # minimize potential vulnerabilities
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Approve
-        run: echo For security reasons, all pull requests need to be approved first before running any automated CI.
-  unittest:
-    name: unittest
-    runs-on: ubuntu-latest
-    needs: [ approve ]
-    strategy:
-      matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          # ldap requirements
-          sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
-          python -m pip install --upgrade pip
-          pip install flake8 pytest pytest-cov
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Configure AWS credentials for pytest
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.REGION }}
-      - name: 📃 Unittest tests with pytest
-        env:
-          BUCKET: ${{ secrets.BUCKET }}
-          REGION: ${{ secrets.REGION }}
-        run: |
-          python -m pytest -v tests/unittest
-
   terraform_apply:
     name: terraform_apply
-    needs: [ approve, unittest ]
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests != ''
     strategy:
       matrix:
         python-version: [ '3.13' ]
@@ -75,12 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Configure AWS credentials for pytest
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
@@ -121,8 +69,9 @@ jobs:
 
   integration:
     name: integration
-    needs: [ approve, unittest, terraform_apply ]
+    needs: [terraform_apply]
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests != ''
     strategy:
       max-parallel: 1
       matrix:
@@ -143,7 +92,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -152,18 +102,12 @@ jobs:
         run: |
           # ldap requirements
           sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          sudo apt-get install -y build-essential python3-dev libldap2-dev libsasl2-dev
           python -m pip install --upgrade pip
-          pip install flake8 pytest pytest-cov
+          pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Configure AWS credentials for pytest
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
@@ -176,7 +120,7 @@ jobs:
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_CONTENTS" > "$RUNNER_PATH/gcp_service.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_PATH/gcp_service.json" >> "$GITHUB_ENV"
-      - name: 📃 Integration tests with pytest
+      - name: Integration tests with pytest
         env:
           BUCKET: ${{ secrets.BUCKET }}
           REGION: ${{ secrets.REGION }}
@@ -189,26 +133,26 @@ jobs:
           AZURE_ACCOUNT_ID: ${{ secrets.AZURE_ACCOUNT_ID }}
           GCP_DATABASE_NAME: ${{ secrets.GCP_DATABASE_NAME }}
           GCP_DATABASE_TABLE_NAME: ${{ secrets.GCP_DATABASE_TABLE_NAME }}
-        run: |
-          python -m pytest -v tests/integration
+        run: python -m pytest -v tests/integration
 
   terraform_destroy:
     name: terraform_destroy
-    needs: [ approve, unittest, terraform_apply, integration ]
+    needs: [terraform_apply, integration]
+    runs-on: ubuntu-latest
+    if: (github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests != '') && (success() || failure())
     strategy:
       matrix:
         python-version: [ '3.13' ]
-    if: success() || failure()
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Configure AWS credentials for pytest
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
@@ -238,20 +182,21 @@ jobs:
           REGION_NAME: ${{ secrets.TERRAFORM_REGION }}
         run: |
           cd terraform/aws_instance
-          # terraform destroy/
           terragrunt destroy -auto-approve 1> /dev/null
 
   e2e:
     name: e2e
-    needs: [ approve, unittest, terraform_apply, integration ]
+    needs: [terraform_apply, integration]
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests != ''
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -260,24 +205,18 @@ jobs:
         run: |
           # ldap requirements
           sudo apt update -y
-          sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
+          sudo apt-get install -y build-essential python3-dev libldap2-dev libsasl2-dev
           python -m pip install --upgrade pip
-          pip install flake8 pytest pytest-cov
+          pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Configure AWS credentials for pytest
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.REGION }}
-      - name: 📃 E2E test
+      - name: E2E test
         env:
           AWS_DEFAULT_REGION: ${{ secrets.REGION }}
           policy: ${{ secrets.POLICY }}
