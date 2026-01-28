@@ -2,33 +2,31 @@
 import json
 import os
 
-from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3
+import pytest
+from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3, mock_elb, mock_elbv2
 import boto3
 
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
 
-cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]
+cluster_prefix = ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]
 cluster_name = ''
-# cluster_name = 'ocs-test-jlhpd'
-# cluster_name = 'opc464-k7jml'
-
 os.environ['SLEEP_SECONDS'] = '0'
-# input tags
 mandatory_tags = {}
-# mandatory_tags = {
-#   "Name": "test-opc464",
-#   "Owner": "Eli Battat",
-#   "Email": "ebattat@redhat.com",
-#   "Purpose": "test",
-#   "Date": strftime("%Y/%m/%d %H:%M:%S")
-# }
-# print(strftime("%Y/%m/%d %H:%M:%S", gmtime()))
-
-tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
-                                            input_tags=mandatory_tags, region='us-east-2')
 
 
-def test_init_cluster_name():
+@pytest.fixture(scope="module")
+def tag_cluster_resources():
+    """Create TagClusterResources under mocks so __init__ (IAM list_users, EC2, etc.) does not hit real AWS."""
+    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+        yield TagClusterResources(
+            cluster_prefix=cluster_prefix,
+            cluster_name=cluster_name,
+            input_tags=mandatory_tags,
+            region='us-east-2',
+        )
+
+
+def test_init_cluster_name(tag_cluster_resources):
     """
     This method search for full cluster key stamp according to part of cluster name
     :return:
@@ -36,7 +34,7 @@ def test_init_cluster_name():
     assert len(tag_cluster_resources._TagClusterResources__init_cluster_name()) >= 0
 
 
-def test_cluster_instance():
+def test_cluster_instance(tag_cluster_resources):
     """
     This method return all cluster instances
     :return:
@@ -44,7 +42,7 @@ def test_cluster_instance():
     assert len(tag_cluster_resources.cluster_instance()) >= 0
 
 
-def test_cluster_volume():
+def test_cluster_volume(tag_cluster_resources):
     """
     This method return all cluster volumes
     :return:
@@ -52,7 +50,7 @@ def test_cluster_volume():
     assert len(tag_cluster_resources.cluster_volume()) >= 0
 
 
-def test_cluster_ami():
+def test_cluster_ami(tag_cluster_resources):
     """
     This method return all cluster ami
     :return:
@@ -60,7 +58,7 @@ def test_cluster_ami():
     assert len(tag_cluster_resources.cluster_ami()) >= 0
 
 
-def test_cluster_snapshot():
+def test_cluster_snapshot(tag_cluster_resources):
     """
     This method return all cluster snapshot
     :return:
@@ -68,7 +66,7 @@ def test_cluster_snapshot():
     assert len(tag_cluster_resources.cluster_snapshot()) >= 0
 
 
-def test_cluster_security_group():
+def test_cluster_security_group(tag_cluster_resources):
     """
     This method return all cluster security_group
     :return:
@@ -76,7 +74,7 @@ def test_cluster_security_group():
     print(tag_cluster_resources.cluster_security_group())
 
 
-def test_cluster_elastic_ip():
+def test_cluster_elastic_ip(tag_cluster_resources):
     """
     This method return all cluster elastic_ip
     :return:
@@ -84,7 +82,7 @@ def test_cluster_elastic_ip():
     assert len(tag_cluster_resources.cluster_elastic_ip()) >= 0
 
 
-def test_cluster_network_interface():
+def test_cluster_network_interface(tag_cluster_resources):
     """
     This method return all cluster network_interface
     :return:
@@ -92,7 +90,7 @@ def test_cluster_network_interface():
     assert len(tag_cluster_resources.cluster_network_interface()) >= 0
 
 
-def test_cluster_load_balancer():
+def test_cluster_load_balancer(tag_cluster_resources):
     """
     This method return all cluster load_balancer
     :return:
@@ -100,7 +98,7 @@ def test_cluster_load_balancer():
     assert len(tag_cluster_resources.cluster_load_balancer()) >= 0
 
 
-def test_cluster_load_balancer_v2():
+def test_cluster_load_balancer_v2(tag_cluster_resources):
     """
     This method return all cluster load_balancer
     :return:
@@ -108,7 +106,7 @@ def test_cluster_load_balancer_v2():
     assert len(tag_cluster_resources.cluster_load_balancer_v2()) >= 0
 
 
-def test_cluster_vpc():
+def test_cluster_vpc(tag_cluster_resources):
     """
     This method return all cluster cluster_vpc
     :return:
@@ -116,7 +114,7 @@ def test_cluster_vpc():
     assert len(tag_cluster_resources.cluster_vpc()) >= 0
 
 
-def test_cluster_subnet():
+def test_cluster_subnet(tag_cluster_resources):
     """
     This method return all cluster cluster_subnet
     :return:
@@ -124,7 +122,7 @@ def test_cluster_subnet():
     assert len(tag_cluster_resources.cluster_subnet()) >= 0
 
 
-def test_cluster_route_table():
+def test_cluster_route_table(tag_cluster_resources):
     """
     This method return all cluster route_table
     :return:
@@ -132,7 +130,7 @@ def test_cluster_route_table():
     assert len(tag_cluster_resources.cluster_route_table()) >= 0
 
 
-def test_cluster_internet_gateway():
+def test_cluster_internet_gateway(tag_cluster_resources):
     """
     This method return all cluster internet_gateway
     :return:
@@ -140,7 +138,7 @@ def test_cluster_internet_gateway():
     assert len(tag_cluster_resources.cluster_internet_gateway()) >= 0
 
 
-def test_cluster_dhcp_option():
+def test_cluster_dhcp_option(tag_cluster_resources):
     """
     This method return all cluster dhcp_option
     :return:
@@ -148,7 +146,7 @@ def test_cluster_dhcp_option():
     assert len(tag_cluster_resources.cluster_dhcp_option()) >= 0
 
 
-def test_cluster_vpc_endpoint():
+def test_cluster_vpc_endpoint(tag_cluster_resources):
     """
     This method return all cluster vpc_endpoint
     :return:
@@ -156,7 +154,7 @@ def test_cluster_vpc_endpoint():
     assert len(tag_cluster_resources.cluster_vpc_endpoint()) >= 0
 
 
-def test_cluster_nat_gateway():
+def test_cluster_nat_gateway(tag_cluster_resources):
     """
     This method return all cluster nat_gateway
     :return:
@@ -164,7 +162,7 @@ def test_cluster_nat_gateway():
     assert len(tag_cluster_resources.cluster_nat_gateway()) >= 0
 
 
-def test_cluster_network_acl():
+def test_cluster_network_acl(tag_cluster_resources):
     """
     This method return all cluster network_acl
     :return:
@@ -172,7 +170,7 @@ def test_cluster_network_acl():
     assert len(tag_cluster_resources.cluster_network_acl()) >= 0
 
 
-def test_cluster_role():
+def test_cluster_role(tag_cluster_resources):
     """
     This method return all cluster role
     :return:
@@ -180,7 +178,7 @@ def test_cluster_role():
     assert len(tag_cluster_resources.cluster_role()) >= 0
 
 
-def test_cluster_user():
+def test_cluster_user(tag_cluster_resources):
     """
     This method return all cluster role
     :return:
@@ -188,7 +186,7 @@ def test_cluster_user():
     print(tag_cluster_resources.cluster_user())
 
 
-def test_cluster_s3_bucket():
+def test_cluster_s3_bucket(tag_cluster_resources):
     """
     This method return all cluster s3_bucket
     :return:
