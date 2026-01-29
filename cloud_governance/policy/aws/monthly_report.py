@@ -69,17 +69,32 @@ class MonthlyReport:
             logger.info('es_host is missing')
         return []
 
+    @staticmethod
+    def _normalize_account_key(account_name: str) -> str:
+        """Normalize account name from ES to match prepare_data keys (e.g. PERFSCALE -> PERF-SCALE)."""
+        if not account_name:
+            return account_name
+        key = account_name.upper().strip()
+        if key == 'PERFSCALE':
+            return 'PERF-SCALE'
+        if key == 'PERF-DEPT':
+            return 'PERF-DEPT'
+        return key
+
     def send_monthly_report(self):
         """
         This method send monthly report to the user
         @return:
         """
         monthly_data = self.get_monthly_report_data()
-        prepare_data = {"Perf-Dept".upper(): [], "Perf-Scale".upper(): []}
+        prepare_data = {"PERF-DEPT": [], "PERF-SCALE": []}
         for data in monthly_data:
-            account_name = data['Account']
+            account_name = (data.get('Account') or '').strip()
             if account_name:
-                prepare_data[account_name].append({
+                key = self._normalize_account_key(account_name)
+                if key not in prepare_data:
+                    prepare_data[key] = []
+                prepare_data[key].append({
                     "Policy": data['Policy'],
                     "Alerts": len(data['MessageType'])
                 })
