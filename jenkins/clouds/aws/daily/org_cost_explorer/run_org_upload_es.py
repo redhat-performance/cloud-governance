@@ -15,8 +15,9 @@ AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT = os.environ['AWS_SECRET_ACCESS_KEY_ATHIRUMA_
 S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+# QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
+#                                                   'quay.io/cloud-governance/cloud-governance:latest')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = 'quay.io/rh-ee-pragchau/cloud-governance:latest'
 
 # Cloudability env variables
 
@@ -55,6 +56,21 @@ os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="sp
 -e ATHENA_DATABASE_NAME="{ATHENA_DATABASE_NAME}" \
 -e ATHENA_TABLE_NAME="{ATHENA_TABLE_NAME}" \
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+
+os.system('echo "Running yearly savings report for all accounts"')
+accounts = ['PSAP', 'PERFSCALE', 'PERF-DEPT']
+
+for account in accounts:
+    os.system(f'echo "Running yearly savings report for account {account}"')
+    os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
+-e PUBLIC_CLOUD_NAME="AWS" \
+-e account="{account}" \
+-e es_host="{ES_HOST}" \
+-e es_port="{ES_PORT}" \
+-e es_index="cloud-governance-policy-es-index" \
+-e log_level="INFO" \
+{QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+
 
 CONTAINER_NAME = "cloud-governance"
 COST_ES_INDEX = "cloud-governance-clouds-billing-reports"
