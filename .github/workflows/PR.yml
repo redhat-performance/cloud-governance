@@ -1,19 +1,46 @@
 name: PR CI - Integration/E2E
 
 on:
-  workflow_run:
-    workflows: ["PR Approval - Unittest"]
-    types: [completed]
+  pull_request_review:
+    types: [submitted]
+
+# Global lock-down
+permissions:
+  contents: read
 
 concurrency:
-  group: pr-queue
+  group: pr-queue-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
+  # SECURITY GATEKEEPER
+  security-check:
+    name: security-check
+    runs-on: ubuntu-latest
+    if: >
+      github.event.review.state == 'approved' &&
+      (github.event.review.author_association == 'MEMBER' || github.event.review.author_association == 'OWNER')
+    outputs:
+      safe_sha: ${{ steps.verify.outputs.sha }}
+    steps:
+      - name: Verify Reviewed Commit
+        id: verify
+        run: |
+          REVIEWED_SHA="${{ github.event.review.commit_id }}"
+          CURRENT_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # BLOCKER: If the code changed since the review, fail immediately.
+          if [[ "$REVIEWED_SHA" != "$CURRENT_SHA" ]]; then
+            echo "::error::Security Risk: The reviewed commit ($REVIEWED_SHA) is not the latest commit ($CURRENT_SHA). Re-review required."
+            exit 1
+          fi
+
+          echo "sha=$REVIEWED_SHA" >> $GITHUB_OUTPUT
+
   terraform_apply:
     name: terraform_apply
+    needs: [security-check]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && length(github.event.workflow_run.pull_requests) > 0
     strategy:
       matrix:
         python-version: [ '3.13' ]
@@ -22,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.security-check.outputs.safe_sha }}
           persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -69,9 +96,8 @@ jobs:
 
   integration:
     name: integration
-    needs: [terraform_apply]
+    needs: [security-check, terraform_apply]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && length(github.event.workflow_run.pull_requests) > 0
     strategy:
       max-parallel: 1
       matrix:
@@ -92,7 +118,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.security-check.outputs.safe_sha }}
           persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -137,16 +163,16 @@ jobs:
 
   terraform_destroy:
     name: terraform_destroy
-    needs: [terraform_apply, integration]
+    needs: [security-check, terraform_apply, integration]
     runs-on: ubuntu-latest
-    if: (github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && length(github.event.workflow_run.pull_requests) > 0) && (success() || failure())
+    if: success() || failure()
     strategy:
       matrix:
         python-version: [ '3.13' ]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.security-check.outputs.safe_sha }}
           persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -186,16 +212,15 @@ jobs:
 
   e2e:
     name: e2e
-    needs: [terraform_apply, integration]
+    needs: [security-check, terraform_apply, integration]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && length(github.event.workflow_run.pull_requests) > 0
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.security-check.outputs.safe_sha }}
           persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
