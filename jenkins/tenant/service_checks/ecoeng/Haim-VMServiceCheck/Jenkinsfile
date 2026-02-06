@@ -78,7 +78,7 @@ Thanks,
 Cloud-Governance Team
                         """,
                         subject: msg,
-                        to: "${HAIM_ADMIN_EMAILS}"
+                        to: "${HAIM_ADMIN_EMAILS}, pragchau@redhat.com"
 
                         echo "Sent an email"
 
