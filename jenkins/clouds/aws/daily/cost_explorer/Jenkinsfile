@@ -3,7 +3,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/cloud-governance/fedora38-podman:latest'
-            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged --entrypoint=\'\''
         }
     }
     environment {
@@ -39,6 +39,7 @@ pipeline {
                     sh '''
                         set -e
                         echo "Assuming role via OIDC..."
+                        command -v aws >/dev/null 2>&1 || { dnf install -y awscli 2>/dev/null || pip3 install --break-system-packages awscli 2>/dev/null || true; }
                         eval $(aws sts assume-role-with-web-identity \
                             --role-arn "${AWS_OIDC_ROLE_ARN}" \
                             --role-session-name "jenkins-cost-explorer-${BUILD_NUMBER}" \
@@ -69,15 +70,15 @@ print('export AWS_SESSION_TOKEN=' + repr(c['SessionToken']))
        always {
            deleteDir()
        }
-        failure {
-              script {
-                msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
-                emailext body: """\
-            Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
-            """,
-                subject: msg,
-                to: "${contact1}, ${contact2}, ${contact3}"
-            }
-        }
+        // failure {
+        //       script {
+        //         msg = "Build error for ${env.JOB_NAME} ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+        //         emailext body: """\
+        //     Jenkins job: ${env.BUILD_URL}\nSee the console output for more details:  ${env.BUILD_URL}consoleFull\n\n
+        //     """,
+        //         subject: msg,
+        //         to: "${contact1}, ${contact2}, ${contact3}"
+        //     }
+        // }
     }
 }
