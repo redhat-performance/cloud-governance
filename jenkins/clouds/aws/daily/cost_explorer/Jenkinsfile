@@ -8,22 +8,8 @@ pipeline {
     }
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
-        AWS_ACCESS_KEY_ID_PERF = credentials('cloud-governance-aws-access-key-id-perf')
-        AWS_SECRET_ACCESS_KEY_PERF = credentials('cloud-governance-aws-secret-access-key-perf')
-        AWS_ACCESS_KEY_ID_DELETE_PERF = credentials('cloud-governance-aws-access-key-id-delete-perf')
-        AWS_SECRET_ACCESS_KEY_DELETE_PERF = credentials('cloud-governance-aws-secret-access-key-delete-perf')
-        BUCKET_PERF = credentials('cloud-governance-bucket-perf')
-        AWS_ACCESS_KEY_ID_PSAP = credentials('cloud-governance-aws-access-key-id-psap')
-        AWS_SECRET_ACCESS_KEY_PSAP = credentials('cloud-governance-aws-secret-access-key-psap')
-        AWS_ACCESS_KEY_ID_DELETE_PSAP = credentials('cloud-governance-aws-access-key-id-delete-psap')
-        AWS_SECRET_ACCESS_KEY_DELETE_PSAP = credentials('cloud-governance-aws-secret-access-key-delete-psap')
-        BUCKET_PSAP = credentials('cloud-governance-bucket-psap')
-        AWS_ACCESS_KEY_ID_RH_PERF = credentials('cloud-governance-aws-access-key-id-rh-perf')
-        AWS_SECRET_ACCESS_KEY_RH_PERF = credentials('cloud-governance-aws-secret-access-key-rh-perf')
-        BUCKET_RH_PERF = credentials('cloud-governance-bucket-rh-perf')
-        AWS_ACCESS_KEY_ID_DELETE_PERF_SCALE = credentials('cloud-governance-aws-access-key-id-delete-perf-scale')
-        AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
-        BUCKET_PERF_SCALE = credentials('cloud-governance-bucket-perf_scale')
+        // OIDC: role ARN for AssumeRoleWithWebIdentity (issuer: https://cloud-governance-oidc-keys.s3.us-east-1.amazonaws.com)
+        AWS_OIDC_ROLE_ARN = 'arn:aws:iam::452958939641:role/cloud-governance-oidc-jenkins-role'
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
@@ -47,9 +33,29 @@ pipeline {
                  sh '''if [[ "$(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null)" != "" ]]; then podman rmi -f $(podman images -q ${QUAY_CLOUD_GOVERNANCE_REPOSITORY} 2> /dev/null); fi'''
             }
         }
-        stage('Upload ElasticSearch') {
+        stage('Assume Role (OIDC) and Upload ElasticSearch') {
             steps {
-                sh 'python3 jenkins/clouds/aws/daily/cost_explorer/run_upload_es.py'
+                withCredentials([string(credentialsId: 'jenkins-oidc-token', variable: 'OIDC_TOKEN')]) {
+                    sh '''
+                        set -e
+                        echo "Assuming role via OIDC..."
+                        eval $(aws sts assume-role-with-web-identity \
+                            --role-arn "${AWS_OIDC_ROLE_ARN}" \
+                            --role-session-name "jenkins-cost-explorer-${BUILD_NUMBER}" \
+                            --web-identity-token "${OIDC_TOKEN}" \
+                            --duration-seconds 3600 \
+                            --output json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+c = d['Credentials']
+print('export AWS_ACCESS_KEY_ID=' + repr(c['AccessKeyId']))
+print('export AWS_SECRET_ACCESS_KEY=' + repr(c['SecretAccessKey']))
+print('export AWS_SESSION_TOKEN=' + repr(c['SessionToken']))
+")
+                        echo "Assume role succeeded; running upload script..."
+                        python3 jenkins/clouds/aws/daily/cost_explorer/run_upload_es.py
+                    '''
+                }
             }
         }
         stage('Finalize Cleanup') {
