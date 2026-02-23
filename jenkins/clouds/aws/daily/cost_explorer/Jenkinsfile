@@ -8,8 +8,9 @@ pipeline {
     }
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
-        // OIDC: role ARN for AssumeRoleWithWebIdentity (issuer: https://cloud-governance-oidc-keys.s3.us-east-1.amazonaws.com)
-        AWS_OIDC_ROLE_ARN = 'arn:aws:iam::452958939641:role/cloud-governance-oidc-jenkins-role'
+        AWS_OIDC_ROLE_ARN = credentials('cloud-governance-oidc-role-arn')
+        PSAP_ASSUME_ROLE_ARN = credentials('cloud-governance-psap-assume-role-arn')
+        PERFSCALE_ASSUME_ROLE_ARN = credentials('cloud-governance-perfscale-assume-role-arn')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
@@ -38,22 +39,65 @@ pipeline {
                 withCredentials([string(credentialsId: 'jenkins-oidc-token', variable: 'OIDC_TOKEN')]) {
                     sh '''
                         set -e
-                        echo "Assuming role via OIDC..."
+                        echo "Assuming role via OIDC (perf-dept)..."
                         command -v aws >/dev/null 2>&1 || { dnf install -y awscli 2>/dev/null || pip3 install --break-system-packages awscli 2>/dev/null || true; }
-                        eval $(aws sts assume-role-with-web-identity \
+                        CREDS_FILE=$(mktemp)
+                        AWS_ERR=$(mktemp)
+                        trap "rm -f ${CREDS_FILE} ${AWS_ERR}" EXIT
+                        if ! aws sts assume-role-with-web-identity \
                             --role-arn "${AWS_OIDC_ROLE_ARN}" \
                             --role-session-name "jenkins-cost-explorer-${BUILD_NUMBER}" \
                             --web-identity-token "${OIDC_TOKEN}" \
                             --duration-seconds 3600 \
-                            --output json | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
+                            --output json > "${CREDS_FILE}" 2>"${AWS_ERR}"; then
+                            echo "OIDC assume-role failed:"
+                            cat "${AWS_ERR}"
+                            echo ""
+                            echo "Ensure OIDC provider and JWKS are correctly set up for the issuer URL."
+                            exit 1
+                        fi
+                        eval $(python3 -c "
+import json
+with open('${CREDS_FILE}') as f:
+    d = json.load(f)
 c = d['Credentials']
 print('export AWS_ACCESS_KEY_ID=' + repr(c['AccessKeyId']))
 print('export AWS_SECRET_ACCESS_KEY=' + repr(c['SecretAccessKey']))
 print('export AWS_SESSION_TOKEN=' + repr(c['SessionToken']))
 ")
-                        echo "Assume role succeeded; running upload script..."
+                        [ -n "${AWS_ACCESS_KEY_ID}" ] || { echo "Credentials not set after assume-role."; exit 1; }
+                        echo "OIDC assume-role succeeded (perf-dept)."
+                        if [ -n "${PSAP_ASSUME_ROLE_ARN}" ]; then
+                            echo "Assuming role in psap account..."
+                            if ! aws sts assume-role --role-arn "${PSAP_ASSUME_ROLE_ARN}" --role-session-name "jenkins-psap-${BUILD_NUMBER}" --output json > "${CREDS_FILE}" 2>"${AWS_ERR}"; then
+                                echo "PSAP assume-role failed:"; cat "${AWS_ERR}"; exit 1
+                            fi
+                            eval $(python3 -c "
+import json
+with open('${CREDS_FILE}') as f:
+    d = json.load(f)
+c = d['Credentials']
+print('export AWS_ACCESS_KEY_ID_PSAP=' + repr(c['AccessKeyId']))
+print('export AWS_SECRET_ACCESS_KEY_PSAP=' + repr(c['SecretAccessKey']))
+print('export AWS_SESSION_TOKEN_PSAP=' + repr(c['SessionToken']))
+")
+                        fi
+                        if [ -n "${PERFSCALE_ASSUME_ROLE_ARN}" ]; then
+                            echo "Assuming role in perf-scale account..."
+                            if ! aws sts assume-role --role-arn "${PERFSCALE_ASSUME_ROLE_ARN}" --role-session-name "jenkins-perfscale-${BUILD_NUMBER}" --output json > "${CREDS_FILE}" 2>"${AWS_ERR}"; then
+                                echo "PERFSCALE assume-role failed:"; cat "${AWS_ERR}"; exit 1
+                            fi
+                            eval $(python3 -c "
+import json
+with open('${CREDS_FILE}') as f:
+    d = json.load(f)
+c = d['Credentials']
+print('export AWS_ACCESS_KEY_ID_PERFSCALE=' + repr(c['AccessKeyId']))
+print('export AWS_SECRET_ACCESS_KEY_PERFSCALE=' + repr(c['SecretAccessKey']))
+print('export AWS_SESSION_TOKEN_PERFSCALE=' + repr(c['SessionToken']))
+")
+                        fi
+                        echo "Running upload script..."
                         python3 jenkins/clouds/aws/daily/cost_explorer/run_upload_es.py
                     '''
                 }
