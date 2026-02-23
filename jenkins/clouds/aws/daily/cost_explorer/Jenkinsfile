@@ -67,6 +67,8 @@ print('export AWS_SESSION_TOKEN=' + repr(c['SessionToken']))
 ")
                         [ -n "${AWS_ACCESS_KEY_ID}" ] || { echo "Credentials not set after assume-role."; exit 1; }
                         echo "OIDC assume-role succeeded (perf-dept)."
+                        echo "=== Validating identity (perf-dept OIDC) ==="
+                        aws sts get-caller-identity
                         if [ -n "${PSAP_ASSUME_ROLE_ARN}" ]; then
                             echo "Assuming role in psap account..."
                             if ! aws sts assume-role --role-arn "${PSAP_ASSUME_ROLE_ARN}" --role-session-name "jenkins-psap-${BUILD_NUMBER}" --output json > "${CREDS_FILE}" 2>"${AWS_ERR}"; then
@@ -81,6 +83,8 @@ print('export AWS_ACCESS_KEY_ID_PSAP=' + repr(c['AccessKeyId']))
 print('export AWS_SECRET_ACCESS_KEY_PSAP=' + repr(c['SecretAccessKey']))
 print('export AWS_SESSION_TOKEN_PSAP=' + repr(c['SessionToken']))
 ")
+                            echo "=== Validating identity (psap cross-account) ==="
+                            ( export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID_PSAP}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_PSAP}" AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN_PSAP}"; aws sts get-caller-identity )
                         fi
                         if [ -n "${PERFSCALE_ASSUME_ROLE_ARN}" ]; then
                             echo "Assuming role in perf-scale account..."
@@ -96,6 +100,8 @@ print('export AWS_ACCESS_KEY_ID_PERFSCALE=' + repr(c['AccessKeyId']))
 print('export AWS_SECRET_ACCESS_KEY_PERFSCALE=' + repr(c['SecretAccessKey']))
 print('export AWS_SESSION_TOKEN_PERFSCALE=' + repr(c['SessionToken']))
 ")
+                            echo "=== Validating identity (perf-scale cross-account) ==="
+                            ( export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID_PERFSCALE}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_PERFSCALE}" AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN_PERFSCALE}"; aws sts get-caller-identity )
                         fi
                         echo "Running upload script..."
                         python3 jenkins/clouds/aws/daily/cost_explorer/run_upload_es.py
