@@ -7,6 +7,7 @@ on:
 # Global lock-down
 permissions:
   contents: read
+  id-token: write   # <--- REQUIRED FOR OIDC
 
 concurrency:
   group: pr-queue-${{ github.event.pull_request.number }}
@@ -29,7 +30,6 @@ jobs:
           REVIEWED_SHA="${{ github.event.review.commit_id }}"
           CURRENT_SHA="${{ github.event.pull_request.head.sha }}"
 
-          # BLOCKER: If the code changed since the review, fail immediately.
           if [[ "$REVIEWED_SHA" != "$CURRENT_SHA" ]]; then
             echo "::error::Security Risk: The reviewed commit ($REVIEWED_SHA) is not the latest commit ($CURRENT_SHA). Re-review required."
             exit 1
@@ -55,12 +55,14 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+
+      # UPDATED STEP: OIDC Configuration
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # <--- NEW SECRET
           aws-region: ${{ secrets.REGION }}
+
       - name: Install terraform and terragrunt
         run: |
           # Install Terrafrom
@@ -133,12 +135,14 @@ jobs:
           pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
+
+      # UPDATED STEP: OIDC Configuration
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # <--- NEW SECRET
           aws-region: ${{ secrets.REGION }}
+
       - name: Set GCP credentials for pytest
         env:
           GOOGLE_APPLICATION_CREDENTIALS_CONTENTS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
@@ -178,12 +182,14 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+
+      # UPDATED STEP: OIDC Configuration
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # <--- NEW SECRET
           aws-region: ${{ secrets.REGION }}
+
       - name: Get Cache of the Terraform State File
         uses: actions/cache@v4
         with:
@@ -235,12 +241,14 @@ jobs:
           pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
+
+      # UPDATED STEP: OIDC Configuration
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # <--- NEW SECRET
           aws-region: ${{ secrets.REGION }}
+
       - name: E2E test
         env:
           AWS_DEFAULT_REGION: ${{ secrets.REGION }}
