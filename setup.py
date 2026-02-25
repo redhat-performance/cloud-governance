@@ -60,7 +60,7 @@ setup(
         'ibm-cloud-sdk-core==3.22.1',
         'ibm-cos-sdk==2.13.6',
         'ibm-platform-services==0.60.0',
-        'ibm-schematics==1.1.0',
+        'ibm-schematics==1.0.1',
         'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
         'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
