@@ -10,7 +10,7 @@ elasticsearch-dsl==7.4.0
 freezegun==1.5.1
 ibm-cloud-sdk-core==3.18.0
 ibm-platform-services==0.27.0
-ibm-schematics==1.1.0
+ibm-schematics==1.0.1
 ibm-vpc==0.21.0
 moto==4.0.1
 numpy<=1.26.4
