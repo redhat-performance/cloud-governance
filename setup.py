@@ -61,7 +61,7 @@ setup(
         'ibm-cos-sdk==2.13.6',
         'ibm-platform-services==0.60.0',
         'ibm-schematics==1.0.1',
-        'ibm-vpc==0.21.0',
+        'ibm-vpc==0.26.3',
         'myst-parser==1.0.0',  # readthedocs
         'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
         'oauthlib~=3.1.1',  # required by jira

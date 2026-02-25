@@ -11,7 +11,7 @@ freezegun==1.5.1
 ibm-cloud-sdk-core==3.22.1
 ibm-platform-services==0.60.0
 ibm-schematics==1.0.1
-ibm-vpc==0.21.0
+ibm-vpc==0.26.3
 moto==4.0.1
 numpy<=1.26.4
 oauthlib~=3.1.1
