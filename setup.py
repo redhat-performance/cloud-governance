@@ -52,15 +52,15 @@ setup(
         'boto3==1.33.1',
         'botocore==1.33.8',
         'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.13.4',
-        'google-api-python-client==2.57.0',
-        'google-auth-httplib2==0.1.0',
-        'google-auth-oauthlib==0.5.2',
-        'google-cloud-bigquery==3.5.0',
-        'google-cloud-billing==1.9.1',
+        'elasticsearch==7.13.4',  # opensearch 1.2.4 for elasticsearch
+        'google-api-python-client==2.57.0',  # google drive
+        'google-auth-httplib2==0.1.0',  # google drive
+        'google-auth-oauthlib==0.5.2',  # google drive
+        'google-cloud-bigquery==3.5.0',  # google cloud cost
+        'google-cloud-billing==1.9.1',  # google cloud cost
         'ibm-cloud-sdk-core==3.18.0',
         'ibm-cos-sdk==2.13.6',
-        'ibm-platform-services==0.27.0',
+        'ibm-platform-services==0.27.0',  # IBM Usage reports
         'ibm-schematics==1.0.1',
         'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
@@ -78,7 +78,7 @@ setup(
         'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
-        'urllib3==1.26.19'
+        'urllib3==1.26.19'  # required by jira
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
