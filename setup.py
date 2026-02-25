@@ -48,18 +48,18 @@ setup(
         'azure-mgmt-compute==30.1.0',
         'azure-mgmt-network==25.0.0',
         'azure-mgmt-monitor==6.0.2',
-        'boto3==1.33.1',
-        'botocore==1.33.8',
+        'boto3==1.35.0',
+        'botocore==1.35.0',
         'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.13.4',  # opensearch 1.2.4 for elasticsearch
-        'google-api-python-client==2.57.0',  # google drive
-        'google-auth-httplib2==0.1.0',  # google drive
-        'google-auth-oauthlib==0.5.2',  # google drive
-        'google-cloud-bigquery==3.5.0',  # google cloud cost
-        'google-cloud-billing==1.9.1',  # google cloud cost
-        'ibm-cloud-sdk-core==3.18.0',
+        'elasticsearch==7.17.13',
+        'google-api-python-client==2.57.0',
+        'google-auth-httplib2==0.1.0',
+        'google-auth-oauthlib==0.5.2',
+        'google-cloud-bigquery==3.5.0',
+        'google-cloud-billing==1.9.1',
+        'ibm-cloud-sdk-core==3.22.1',
         'ibm-cos-sdk==2.13.6',
-        'ibm-platform-services==0.27.0',  # IBM Usage reports
+        'ibm-platform-services==0.60.0',
         'ibm-schematics==1.1.0',
         'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
@@ -77,7 +77,7 @@ setup(
         'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
-        'urllib3==1.26.19'  # required by jira
+        'urllib3>=2.1.0,<3.0.0'
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],
