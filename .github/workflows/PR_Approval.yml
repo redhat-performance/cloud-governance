@@ -31,6 +31,8 @@ jobs:
           sudo apt-get install -y build-essential python3-dev libldap2-dev libsasl2-dev
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
+          pip install "setuptools<82"
+          pip install --no-build-isolation ibm-cloud-sdk-core==3.18.0
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
       - name: Lint with flake8
