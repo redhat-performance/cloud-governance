@@ -22,6 +22,7 @@ setup(
     author_email='ebattat@redhat.com, pragchau@redhat.com',
     url='https://github.com/redhat-performance/cloud-governance',
     license="Apache License 2.0",
+    python_requires='>=3.9',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
@@ -48,20 +49,20 @@ setup(
         'azure-mgmt-compute==30.1.0',
         'azure-mgmt-network==25.0.0',
         'azure-mgmt-monitor==6.0.2',
-        'boto3==1.35.0',
-        'botocore==1.35.0',
+        'boto3==1.33.1',
+        'botocore==1.33.8',
         'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.17.13',
+        'elasticsearch==7.13.4',
         'google-api-python-client==2.57.0',
         'google-auth-httplib2==0.1.0',
         'google-auth-oauthlib==0.5.2',
         'google-cloud-bigquery==3.5.0',
         'google-cloud-billing==1.9.1',
-        'ibm-cloud-sdk-core==3.22.1',
+        'ibm-cloud-sdk-core==3.18.0',
         'ibm-cos-sdk==2.13.6',
-        'ibm-platform-services==0.60.0',
+        'ibm-platform-services==0.27.0',
         'ibm-schematics==1.0.1',
-        'ibm-vpc==0.26.3',
+        'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
         'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
         'oauthlib~=3.1.1',  # required by jira
@@ -71,13 +72,13 @@ setup(
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'requests==2.32.2',  # rest api & lambda
         'retry==0.9.2',
-        'setuptools',  # Requires for python3.12
+        'setuptools',  # CI: setuptools<82 for IBM sdist builds on 3.9
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'sphinx==5.0.0',  # readthedocs
         'typeguard==2.13.3',  # checking types
         'typing==3.7.4.3',
-        'urllib3>=2.1.0,<3.0.0'
+        'urllib3==1.26.19'
     ],
 
     setup_requires=['pytest', 'pytest-runner', 'wheel', 'coverage'],

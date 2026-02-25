@@ -30,6 +30,8 @@ jobs:
           sudo apt update -y
           sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
           python -m pip install --upgrade pip
+          pip install "setuptools<82"
+          pip install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
@@ -145,6 +147,8 @@ jobs:
           sudo apt update -y
           sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev vim -y
           python -m pip install --upgrade pip
+          pip install "setuptools<82"
+          pip install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi

@@ -4,14 +4,14 @@ azure-mgmt-billing==6.0.0
 azure-mgmt-costmanagement==3.0.0
 azure-mgmt-monitor==6.0.2
 azure-mgmt-subscription==3.1.1
-boto3==1.35.0
-elasticsearch==7.17.13
+boto3==1.33.1
+elasticsearch==7.13.4
 elasticsearch-dsl==7.4.0
 freezegun==1.5.1
-ibm-cloud-sdk-core==3.22.1
-ibm-platform-services==0.60.0
+ibm-cloud-sdk-core==3.18.0
+ibm-platform-services==0.27.0
 ibm-schematics==1.0.1
-ibm-vpc==0.26.3
+ibm-vpc==0.21.0
 moto==4.0.1
 numpy<=1.26.4
 oauthlib~=3.1.1
@@ -24,4 +24,4 @@ retry==0.9.2
 setuptools
 SoftLayer==6.0.0
 typeguard==2.13.3
-urllib3>=2.1.0,<3.0.0
+urllib3==1.26.19
