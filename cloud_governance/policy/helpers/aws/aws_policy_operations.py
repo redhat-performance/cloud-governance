@@ -81,6 +81,14 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             logger.error(f'Exception raised: {err}: {resource_id}')
             raise err
 
+    def _delete_inactive_access_key(self, user_name: str, access_key_label: str):
+        """
+        Deletes an access key that was previously deactivated by this policy (and tagged with
+        UnusedAccessKeyNInactiveDate). Used when the key has been inactive for more than
+        DELETE_ACCESS_KEY_DAYS.
+        """
+        self._iam_operations.delete_user_access_key(username=user_name, access_key_label=access_key_label)
+
     def __remove_tag_key_aws(self, tags: list):
         """
         This method returns the tags that does not contain key startswith aws:

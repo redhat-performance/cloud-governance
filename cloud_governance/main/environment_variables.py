@@ -121,6 +121,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['user_tags'] = EnvironmentVariables.get_env('user_tags', '')
         self._environment_variables_dict['user_tag_operation'] = EnvironmentVariables.get_env('user_tag_operation', '')
         self._environment_variables_dict['username'] = EnvironmentVariables.get_env('username', '')
+        self._environment_variables_dict['DELETE_INACTIVE_KEYS_WITHOUT_TAG'] = EnvironmentVariables.get_env('DELETE_INACTIVE_KEYS_WITHOUT_TAG', 'false').lower() == 'true'
         self._environment_variables_dict['remove_tags'] = EnvironmentVariables.get_env('remove_tags', '')
         self._environment_variables_dict['resource'] = EnvironmentVariables.get_env('resource', '')
         self._environment_variables_dict['cluster_tag'] = EnvironmentVariables.get_env('cluster_tag', '')

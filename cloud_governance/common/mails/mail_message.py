@@ -105,6 +105,29 @@ Best Regards
 Cloud-governance Team""".strip()
         return subject, body
 
+    def unused_access_key_reminder(self, name: str, user: str, account: str, age_days: int, key_label: str,
+                                   reminder_number: int, deactivate_days: int = 90):
+        """
+        Reminder mail for IAM access key rotation (key age > reminder_days and <= deactivate_days).
+        """
+        subject = f'cloud-governance alert: Rotate AWS IAM access key ({key_label}) – reminder {reminder_number}/2'
+        body = f"""
+Hi {name},
+
+Your AWS IAM user "{user}" in account {account} has an access key ({key_label}) that is {age_days} days old.
+Please rotate this access key before it is automatically deactivated.
+
+The key will be deactivated after {deactivate_days} days from creation if no action is taken.
+This is reminder {reminder_number} of 2.
+
+To avoid deactivation, create a new access key and update your applications, then deactivate or delete the old key.
+
+{self.RESTRICTION}
+
+Best Regards,
+Cloud-governance Team""".strip()
+        return subject, body
+
     def aws_user_over_usage_cost(self, user: str, usage_cost: int, name: str, user_usage: int):
         """
         This method send subject, body to over usage cost
