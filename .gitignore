@@ -221,3 +221,6 @@ empty_test_environment_variables.py
 cloudsensei/.env.txt
 .vscode
 env.yaml
+
+# macOS
+.DS_Store

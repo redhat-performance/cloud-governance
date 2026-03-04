@@ -3,6 +3,7 @@ import os.path
 from jinja2 import Environment, FileSystemLoader
 
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.utils.configs import DELETE_ACCESS_KEY_DAYS
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -118,6 +119,7 @@ Your AWS IAM user "{user}" in account {account} has an access key ({key_label}) 
 Please rotate this access key before it is automatically deactivated.
 
 The key will be deactivated after {deactivate_days} days from creation if no action is taken.
+Keys older than {DELETE_ACCESS_KEY_DAYS} days (including deactivated ones) will be permanently deleted.
 This is reminder {reminder_number} of 2.
 
 To avoid deactivation, create a new access key and update your applications, then deactivate or delete the old key.
