@@ -175,6 +175,53 @@ class IAMOperations:
         except Exception as err:
             raise err
 
+    def untag_user(self, user_name: str, tag_keys: list):
+        """
+        Removes the given tag keys from the IAM user.
+        :param user_name: The name of the IAM user.
+        :param tag_keys: List of tag key names to remove (e.g. ['UnusedAccessKey1InactiveDate']).
+        """
+        if not tag_keys:
+            return
+        try:
+            self.iam_client.untag_user(UserName=user_name, TagKeys=tag_keys)
+            logger.info(f"Untagged user '{user_name}': {tag_keys}")
+        except Exception as err:
+            logger.error(f"Failed to untag user '{user_name}': {err}")
+            raise err
+
+    def delete_user_access_key(self, username: str, access_key_label: str):
+        """
+        Deletes the specified access key for the given IAM user and removes the
+        UnusedAccessKeyNInactiveDate tag (so we only delete keys we had deactivated).
+        :param username: IAM user name.
+        :param access_key_label: "Access key 1" or "Access key 2" (case-insensitive).
+        """
+        access_key_label_lower = access_key_label.lower()
+        if not access_key_label_lower or 'access key' not in access_key_label_lower:
+            logger.warning("Invalid access key label for deletion.")
+            return
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            raise
+        access_keys.sort(key=lambda k: k['CreateDate'])
+        idx = self.ACCESS_KEY_LABEL_MAP.get(access_key_label_lower)
+        if idx is None or idx >= len(access_keys):
+            logger.warning(f"Access key label '{access_key_label}' not found for user '{username}'")
+            return
+        key_num = access_key_label_lower.split()[-1]
+        inactive_tag_key = f"UnusedAccessKey{key_num}InactiveDate"
+        access_key_id = access_keys[idx]['AccessKeyId']
+        try:
+            self.iam_client.delete_access_key(UserName=username, AccessKeyId=access_key_id)
+            logger.info(f"Deleted access key '{access_key_id}' for user '{username}'")
+        except Exception as e:
+            logger.error(f"Failed to delete access key '{access_key_id}' for user '{username}': {e}")
+            raise
+        self.untag_user(username, [inactive_tag_key])
+
     def get_iam_users_access_keys(self):
         """
         Retrieves IAM users and summarizes:
@@ -312,6 +359,11 @@ class IAMOperations:
                     Status='Inactive'
                 )
                 logger.info(f"Access key '{access_key_id}' deactivated for user '{username}'")
+                # Tag the user so we only delete keys we deactivated (after DELETE_ACCESS_KEY_DAYS)
+                key_num = access_key_label.split()[-1]
+                inactive_tag_key = f"UnusedAccessKey{key_num}InactiveDate"
+                inactive_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                self.tag_user(username, [{'Key': inactive_tag_key, 'Value': inactive_date}])
             except Exception as e:
                 logger.error(f"Failed to deactivate access key '{access_key_id}' for user '{username}': {e}")
         else:

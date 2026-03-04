@@ -3,6 +3,7 @@ import os.path
 from jinja2 import Environment, FileSystemLoader
 
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.utils.configs import DELETE_ACCESS_KEY_DAYS
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -102,6 +103,30 @@ If you already filled the tags, please ignore the mail.
 {self.RESTRICTION}
 
 Best Regards
+Cloud-governance Team""".strip()
+        return subject, body
+
+    def unused_access_key_reminder(self, name: str, user: str, account: str, age_days: int, key_label: str,
+                                   reminder_number: int, deactivate_days: int = 90):
+        """
+        Reminder mail for IAM access key rotation (key age > reminder_days and <= deactivate_days).
+        """
+        subject = f'cloud-governance alert: Rotate AWS IAM access key ({key_label}) – reminder {reminder_number}/2'
+        body = f"""
+Hi {name},
+
+Your AWS IAM user "{user}" in account {account} has an access key ({key_label}) that is {age_days} days old.
+Please rotate this access key before it is automatically deactivated.
+
+The key will be deactivated after {deactivate_days} days from creation if no action is taken.
+Keys older than {DELETE_ACCESS_KEY_DAYS} days (including deactivated ones) will be permanently deleted.
+This is reminder {reminder_number} of 2.
+
+To avoid deactivation, create a new access key and update your applications, then deactivate or delete the old key.
+
+{self.RESTRICTION}
+
+Best Regards,
 Cloud-governance Team""".strip()
         return subject, body
 
