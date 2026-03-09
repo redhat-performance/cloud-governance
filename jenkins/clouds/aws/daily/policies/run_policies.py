@@ -21,7 +21,7 @@ GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
 # QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
 #                                                   'quay.io/cloud-governance/cloud-governance:latest')
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = 'quay.io/cloud-governance/rh-ee-pragchau:latest'
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = 'quay.io/rh-ee-pragchau/cloud-governance:latest'
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):
