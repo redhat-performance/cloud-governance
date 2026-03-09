@@ -86,8 +86,11 @@ class SendAggregatedAlerts:
         """
         if policy_es_data:
             df = pandas.DataFrame(policy_es_data)
-            df.sort_values(inplace=True, by=['policy'])
-            df.fillna(value='', inplace=True)
+            policy_col = 'policy' if 'policy' in df.columns else 'Policy'
+            sort_col = policy_col if policy_col in df.columns else df.columns[0]
+            df.sort_values(inplace=True, by=[sort_col])
+            # Avoid fillna(value='') on numeric columns (pandas 2.x+ raises LossySetitemError)
+            df = df.astype(object).fillna('')
             df.drop_duplicates(subset='ResourceId', inplace=True)
             return df.to_dict(orient="records")
         return policy_es_data
