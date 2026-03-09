@@ -90,7 +90,8 @@ class SendAggregatedAlerts:
         policy_col = 'policy' if 'policy' in df.columns else 'Policy'
         sort_col = policy_col if policy_col in df.columns else df.columns[0]
         df.sort_values(inplace=True, by=[sort_col])
-        df.fillna(value='', inplace=True)
+        # Avoid fillna(value='') on numeric columns (pandas 2.x+ raises LossySetitemError)
+        df = df.astype(object).fillna('')
         access_key_policies = ['unused_access_key', 'delete_access_key']
         mask = df[policy_col].str.lower().isin(access_key_policies)
         df_other = df[~mask].drop_duplicates(subset='ResourceId', keep='first')
