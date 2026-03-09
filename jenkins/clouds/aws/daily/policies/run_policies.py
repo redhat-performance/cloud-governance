@@ -115,26 +115,26 @@ def run_policies(policies: list, dry_run: str = 'yes'):
 
 # Running the polices in dry_run=yes
 
-run_cmd(f"echo Running the cloud_governance policies with dry_run=yes")
-run_cmd(f"echo Polices list: {policies_not_action}")
-run_policies(policies=policies_not_action)
+# run_cmd(f"echo Running the cloud_governance policies with dry_run=yes")
+# run_cmd(f"echo Polices list: {policies_not_action}")
+# run_policies(policies=policies_not_action)
 
-# Running the polices in dry_run=no
+# # Running the polices in dry_run=no
 
-run_cmd('echo "Running the CloudGovernance policies with dry_run=no" ')
-run_cmd(f"echo Polices list: {policies_in_action}")
-run_policies(policies=policies_in_action, dry_run='no')
+# run_cmd('echo "Running the CloudGovernance policies with dry_run=no" ')
+# run_cmd(f"echo Polices list: {policies_in_action}")
+# run_policies(policies=policies_in_action, dry_run='no')
 
-# Update AWS IAM User tags from the spreadsheet
+# # Update AWS IAM User tags from the spreadsheet
 
-run_cmd(f"""echo "Running the tag_iam_user" """)
-run_cmd(
-    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+# run_cmd(f"""echo "Running the tag_iam_user" """)
+# run_cmd(
+#     f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-# Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
+# # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
-run_cmd(
-    f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+# run_cmd(
+#     f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Git-leaks run on GitHub not related to any aws account
 # run_cmd("echo Run Git-leaks")
