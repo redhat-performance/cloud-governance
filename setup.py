@@ -22,6 +22,7 @@ setup(
     author_email='ebattat@redhat.com, pragchau@redhat.com',
     url='https://github.com/redhat-performance/cloud-governance',
     license="Apache License 2.0",
+    python_requires='>=3.9',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
@@ -60,7 +61,7 @@ setup(
         'ibm-cloud-sdk-core==3.18.0',
         'ibm-cos-sdk==2.13.6',
         'ibm-platform-services==0.27.0',  # IBM Usage reports
-        'ibm-schematics==1.1.0',
+        'ibm-schematics==1.0.1',
         'ibm-vpc==0.21.0',
         'myst-parser==1.0.0',  # readthedocs
         'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
