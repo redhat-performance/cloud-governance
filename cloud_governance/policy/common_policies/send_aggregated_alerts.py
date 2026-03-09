@@ -80,17 +80,23 @@ class SendAggregatedAlerts:
 
     def __remove_duplicates(self, policy_es_data: list):
         """
-        This method removes the duplicate  data
-        :return:
-        :rtype:
+        This method removes the duplicate data.
+        For unused_access_key and delete_access_key, one user can have two keys, so we do not
+        deduplicate by ResourceId (username); for all other policies we keep one record per ResourceId.
         """
-        if policy_es_data:
-            df = pandas.DataFrame(policy_es_data)
-            df.sort_values(inplace=True, by=['policy'])
-            df.fillna(value='', inplace=True)
-            df.drop_duplicates(subset='ResourceId', inplace=True)
-            return df.to_dict(orient="records")
-        return policy_es_data
+        if not policy_es_data:
+            return policy_es_data
+        df = pandas.DataFrame(policy_es_data)
+        policy_col = 'policy' if 'policy' in df.columns else 'Policy'
+        sort_col = policy_col if policy_col in df.columns else df.columns[0]
+        df.sort_values(inplace=True, by=[sort_col])
+        df.fillna(value='', inplace=True)
+        access_key_policies = ['unused_access_key', 'delete_access_key']
+        mask = df[policy_col].str.lower().isin(access_key_policies)
+        df_other = df[~mask].drop_duplicates(subset='ResourceId', keep='first')
+        df_access_keys = df[mask]
+        df = pandas.concat([df_other, df_access_keys], ignore_index=True)
+        return df.to_dict(orient="records")
 
     def __group_by_policy(self, policy_data: list):
         """
@@ -165,7 +171,7 @@ class SendAggregatedAlerts:
                         delete_date = datetime.utcnow().date().__str__()
                         alert_user = True
                 # Cross region policies
-                if record.get('policy') in ['empty_roles', 's3_inactive', 'unused_access_key']:
+                if record.get('policy') in ['empty_roles', 's3_inactive', 'unused_access_key', 'delete_access_key']:
                     record['RegionName'] = 'us-east-1'
                 if Utils.equal_ignore_case(dry_run, 'yes'):
                     record['DeleteDate'] = 'dry_run=yes'

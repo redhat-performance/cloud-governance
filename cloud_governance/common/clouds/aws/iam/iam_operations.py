@@ -190,37 +190,53 @@ class IAMOperations:
             logger.error(f"Failed to untag user '{user_name}': {err}")
             raise err
 
-    def delete_user_access_key(self, username: str, access_key_label: str):
+    def delete_user_access_key(
+        self,
+        username: str,
+        access_key_label: str,
+        remove_inactive_tag: bool = True,
+        access_key_id: str = None,
+    ):
         """
-        Deletes the specified access key for the given IAM user and removes the
-        UnusedAccessKeyNInactiveDate tag (so we only delete keys we had deactivated).
+        Deletes the specified access key for the given IAM user. Optionally removes the
+        UnusedAccessKeyNInactiveDate tag (only when this policy had set it by deactivating the key).
         :param username: IAM user name.
         :param access_key_label: "Access key 1" or "Access key 2" (case-insensitive).
+        :param remove_inactive_tag: If True, remove UnusedAccessKeyNInactiveDate after delete.
+            Set False when the key was not deactivated by this policy (e.g. manually deactivated).
+        :param access_key_id: Optional. When provided, delete this key by ID instead of resolving by
+            label.
         """
-        access_key_label_lower = access_key_label.lower()
+        access_key_label_lower = (access_key_label or '').lower()
         if not access_key_label_lower or 'access key' not in access_key_label_lower:
             logger.warning("Invalid access key label for deletion.")
             return
-        try:
-            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
-        except Exception as e:
-            logger.error(f"Failed to list access keys for user '{username}': {e}")
-            raise
-        access_keys.sort(key=lambda k: k['CreateDate'])
-        idx = self.ACCESS_KEY_LABEL_MAP.get(access_key_label_lower)
-        if idx is None or idx >= len(access_keys):
-            logger.warning(f"Access key label '{access_key_label}' not found for user '{username}'")
-            return
         key_num = access_key_label_lower.split()[-1]
         inactive_tag_key = f"UnusedAccessKey{key_num}InactiveDate"
-        access_key_id = access_keys[idx]['AccessKeyId']
+
+        if not access_key_id:
+            try:
+                access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+            except Exception as e:
+                logger.error(f"Failed to list access keys for user '{username}': {e}")
+                raise
+            access_keys.sort(key=lambda k: k['CreateDate'])
+            idx = self.ACCESS_KEY_LABEL_MAP.get(access_key_label_lower)
+            if idx is None or idx >= len(access_keys):
+                logger.warning(f"Access key label '{access_key_label}' not found for user '{username}'")
+                return
+            access_key_id = access_keys[idx]['AccessKeyId']
+
         try:
             self.iam_client.delete_access_key(UserName=username, AccessKeyId=access_key_id)
             logger.info(f"Deleted access key '{access_key_id}' for user '{username}'")
         except Exception as e:
             logger.error(f"Failed to delete access key '{access_key_id}' for user '{username}': {e}")
             raise
-        self.untag_user(username, [inactive_tag_key])
+        tag_keys_to_remove = [access_key_id]
+        if remove_inactive_tag:
+            tag_keys_to_remove.append(inactive_tag_key)
+        self.untag_user(username, tag_keys_to_remove)
 
     def get_iam_users_access_keys(self):
         """
@@ -255,8 +271,8 @@ class IAMOperations:
             for user in page['Users']:
                 username = user['UserName']
                 result[username] = {}
-                # Access keys
                 access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+                access_keys = sorted(access_keys, key=lambda k: k['CreateDate'])
                 for idx, key in enumerate(access_keys, start=1):
                     label = f"Access key {idx}"
                     status = key['Status'].lower()
@@ -276,7 +292,13 @@ class IAMOperations:
                         logger.error(f"Failed to get last used date for access key")
                         last_used_days = None
 
-                    result[username][label] = {'label': label, 'status': status, 'age_days': age_days, 'last_activity_days': last_used_days}
+                    result[username][label] = {
+                        'label': label,
+                        'status': status,
+                        'age_days': age_days,
+                        'last_activity_days': last_used_days,
+                        'access_key_id': key['AccessKeyId'],
+                    }
 
                 # Tags as list of dicts
                 try:

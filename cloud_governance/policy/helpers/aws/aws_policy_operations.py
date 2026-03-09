@@ -59,7 +59,16 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             if self._policy == 's3_inactive':
                 self._s3_client.delete_bucket(Bucket=resource_id)
             elif self._policy == 'unused_access_key':
+                action = "deactivated"
                 self._iam_operations.deactivate_user_access_key(username=resource_id, **kwargs)
+            elif self._policy == 'delete_access_key':
+                action = "deleted"
+                self._delete_inactive_access_key(
+                    user_name=resource_id,
+                    access_key_label=kwargs.get('access_key_label'),
+                    remove_inactive_tag=kwargs.get('remove_inactive_tag', True),
+                    access_key_id=kwargs.get('access_key_id'),
+                )
             elif self._policy == 'empty_roles':
                 response = self._iam_operations.delete_role(role_name=resource_id)
             elif self._policy == 'unattached_volume':
@@ -81,13 +90,26 @@ class AWSPolicyOperations(AbstractPolicyOperations):
             logger.error(f'Exception raised: {err}: {resource_id}')
             raise err
 
-    def _delete_inactive_access_key(self, user_name: str, access_key_label: str):
+    def _delete_inactive_access_key(
+        self,
+        user_name: str,
+        access_key_label: str,
+        remove_inactive_tag: bool = True,
+        access_key_id: str = None,
+    ):
         """
         Deletes an access key that was previously deactivated by this policy (and tagged with
         UnusedAccessKeyNInactiveDate). Used when the key has been inactive for more than
         DELETE_ACCESS_KEY_DAYS.
+        :param remove_inactive_tag: If True, remove the UnusedAccessKeyNInactiveDate tag after delete.
+            Pass False when the key was not deactivated by this policy (e.g. DELETE_INACTIVE_KEYS_WITHOUT_TAG).
         """
-        self._iam_operations.delete_user_access_key(username=user_name, access_key_label=access_key_label)
+        self._iam_operations.delete_user_access_key(
+            username=user_name,
+            access_key_label=access_key_label,
+            remove_inactive_tag=remove_inactive_tag,
+            access_key_id=access_key_id,
+        )
 
     def __remove_tag_key_aws(self, tags: list):
         """
@@ -157,7 +179,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         try:
             if self._policy == 's3_inactive':
                 self._s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
-            elif self._policy == 'unused_access_key':
+            elif self._policy in ('unused_access_key', 'delete_access_key'):
                 self._iam_operations.tag_user(user_name=resource_id, tags=tags)
             elif self._policy == 'empty_roles':
                 self._iam_operations.tag_role(role_name=resource_id, tags=tags)
