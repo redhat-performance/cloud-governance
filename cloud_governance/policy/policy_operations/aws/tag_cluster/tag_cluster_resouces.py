@@ -15,6 +15,8 @@ class TagClusterResources(TagClusterOperations):
 
     SHORT_ID = 5
     NA_VALUE = 'NA'
+    # Tag key prefixes we never propagate from one resource to others
+    TAGS_DO_NOT_PROPAGATE_PREFIXES = ('kubernetes.io/', 'sigs.k8s.io/')
 
     def __init__(self, cluster_name: str = None, cluster_prefix: list = None, input_tags: dict = None,
                  region: str = 'us-east-2', dry_run: str = 'yes', cluster_only: bool = False):
@@ -109,8 +111,12 @@ class TagClusterResources(TagClusterOperations):
                             if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 if cluster_name in tag.get('Key'):
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
-                                              instance_tag.get('Key') != 'Name']
-                                    return [i_tag for i_tag in i_tags if i_tag.get('Key') != cluster_name]
+                                              instance_tag.get('Key') != 'Name' and
+                                              not any((instance_tag.get('Key') or '').startswith(prefix)
+                                                      for prefix in self.cluster_prefix) and
+                                              not (instance_tag.get('Key') or '').startswith(
+                                                  self.TAGS_DO_NOT_PROPAGATE_PREFIXES)]
+                                    return i_tags
         return []
 
     def get_date_from_date(self, date_time: datetime):
