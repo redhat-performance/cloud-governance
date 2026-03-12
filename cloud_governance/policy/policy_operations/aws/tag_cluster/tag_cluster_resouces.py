@@ -2,6 +2,7 @@ from datetime import datetime
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_operations import TagClusterOperations
 
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import \
@@ -109,8 +110,13 @@ class TagClusterResources(TagClusterOperations):
                             if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 if cluster_name in tag.get('Key'):
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
-                                              instance_tag.get('Key') != 'Name']
-                                    return [i_tag for i_tag in i_tags if i_tag.get('Key') != cluster_name]
+                                              instance_tag.get('Key') != 'Name' and
+                                              not any((instance_tag.get('Key') or '').startswith(prefix)
+                                                      for prefix in self.cluster_prefix) and
+                                              not (instance_tag.get('Key') or '').startswith(
+                                                  environment_variables.environment_variables_dict.get(
+                                                      'TAGS_DO_NOT_PROPAGATE_PREFIXES', ('kubernetes.io/', 'sigs.k8s.io/')))]
+                                    return i_tags
         return []
 
     def get_date_from_date(self, date_time: datetime):
