@@ -2,6 +2,7 @@ from datetime import datetime
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_operations import TagClusterOperations
 
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import \
@@ -15,8 +16,6 @@ class TagClusterResources(TagClusterOperations):
 
     SHORT_ID = 5
     NA_VALUE = 'NA'
-    # Tag key prefixes we never propagate from one resource to others
-    TAGS_DO_NOT_PROPAGATE_PREFIXES = ('kubernetes.io/', 'sigs.k8s.io/')
 
     def __init__(self, cluster_name: str = None, cluster_prefix: list = None, input_tags: dict = None,
                  region: str = 'us-east-2', dry_run: str = 'yes', cluster_only: bool = False):
@@ -115,7 +114,8 @@ class TagClusterResources(TagClusterOperations):
                                               not any((instance_tag.get('Key') or '').startswith(prefix)
                                                       for prefix in self.cluster_prefix) and
                                               not (instance_tag.get('Key') or '').startswith(
-                                                  self.TAGS_DO_NOT_PROPAGATE_PREFIXES)]
+                                                  environment_variables.environment_variables_dict.get(
+                                                      'TAGS_DO_NOT_PROPAGATE_PREFIXES', ('kubernetes.io/', 'sigs.k8s.io/')))]
                                     return i_tags
         return []
 
