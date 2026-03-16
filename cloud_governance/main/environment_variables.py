@@ -69,8 +69,6 @@ class EnvironmentVariables:
         # parameters for running policies
         self._environment_variables_dict['account'] = EnvironmentVariables.get_env('account', '').upper().strip()
         self._environment_variables_dict['AWS_DEFAULT_REGION'] = EnvironmentVariables.get_env('AWS_DEFAULT_REGION', '')
-        self._environment_variables_dict['TAGS_DO_NOT_PROPAGATE_PREFIXES'] = literal_eval(
-            EnvironmentVariables.get_env('TAGS_DO_NOT_PROPAGATE_PREFIXES', "('kubernetes.io/', 'sigs.k8s.io/')"))
         self._environment_variables_dict['log_level'] = EnvironmentVariables.get_env('log_level', 'INFO')
         self._environment_variables_dict['GLOBAL_TAGS'] = literal_eval(EnvironmentVariables.get_env('GLOBAL_TAGS', "{}"))
         self._environment_variables_dict['DAYS_TO_TAKE_ACTION'] = int(
@@ -142,6 +140,8 @@ class EnvironmentVariables:
                 "kubernetes.io/cluster",
                 "sigs.k8s.io/cluster-api-provider-aws/cluster"
             ]
+        prefixes = tuple(p.split('/', 1)[0] + '/' for p in self._environment_variables_dict['CLUSTER_PREFIX'])
+        self._environment_variables_dict['TAGS_DO_NOT_PROPAGATE_PREFIXES'] = prefixes
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')
