@@ -140,8 +140,6 @@ class EnvironmentVariables:
                 "kubernetes.io/cluster",
                 "sigs.k8s.io/cluster-api-provider-aws/cluster"
             ]
-        prefixes = tuple(p.split('/', 1)[0] + '/' for p in self._environment_variables_dict['CLUSTER_PREFIX'])
-        self._environment_variables_dict['TAGS_DO_NOT_PROPAGATE_PREFIXES'] = prefixes
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')
