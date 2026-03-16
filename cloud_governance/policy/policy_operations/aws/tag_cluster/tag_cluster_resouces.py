@@ -110,8 +110,7 @@ class TagClusterResources(TagClusterOperations):
                             if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                                 if cluster_name in tag.get('Key'):
                                     # Propagation-blocked prefixes derived from CLUSTER_PREFIX (e.g. kubernetes.io/, sigs.k8s.io/)
-                                    cluster_prefix = environment_variables.environment_variables_dict.get(
-                                        'CLUSTER_PREFIX', ['kubernetes.io/cluster', 'sigs.k8s.io/cluster-api-provider-aws/cluster'])
+                                    cluster_prefix = environment_variables.environment_variables_dict['CLUSTER_PREFIX']
                                     no_propagate_prefixes = tuple(p.split('/', 1)[0] + '/' for p in cluster_prefix)
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
                                               instance_tag.get('Key') != 'Name' and
