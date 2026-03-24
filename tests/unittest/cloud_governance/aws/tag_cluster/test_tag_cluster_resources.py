@@ -1,6 +1,7 @@
 # TEST DRY RUN: mandatory_tags = None
 import json
 import os
+from unittest.mock import patch
 
 import pytest
 from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3, mock_elb, mock_elbv2
@@ -236,3 +237,108 @@ def test_cluster_ec2():
     tag_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
                                         input_tags=mandatory_tags, region='us-east-2')
     assert len(tag_resources.cluster_instance()) == 3
+
+
+# --- Hypershift / tag_cluster propagation (PR #976): do not propagate kubernetes.io/ or sigs.k8s.io/ tags ---
+
+CLUSTER_STAMP_KEY = 'kubernetes.io/cluster/hyper2-unittest'
+
+
+def test_get_cluster_tags_for_propagation_excludes_cluster_and_k8s_sigs_tags():
+    """
+    Tags returned for propagation must not include kubernetes.io/cluster, other kubernetes.io/*,
+    sigs.k8s.io/*, or Name — only governance-style tags (e.g. User) should propagate.
+    """
+    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+        tcr = TagClusterResources(
+            cluster_prefix=cluster_prefix,
+            cluster_name=cluster_name,
+            input_tags=mandatory_tags,
+            region='us-east-2',
+        )
+        fake_instance = [{
+            'InstanceId': 'i-hyper2test',
+            'Tags': [
+                {'Key': CLUSTER_STAMP_KEY, 'Value': 'owned'},
+                {
+                    'Key': 'sigs.k8s.io/cluster-api-provider-aws/cluster/hyper2-unittest',
+                    'Value': 'owned',
+                },
+                {'Key': 'kubernetes.io/role/worker', 'Value': 'true'},
+                {'Key': 'User', 'Value': 'alice'},
+                {'Key': 'Manager', 'Value': 'bob'},
+                {'Key': 'Name', 'Value': 'hypershift-node-1'},
+            ],
+        }]
+        with patch.object(tcr, '_get_instances_data', return_value=[fake_instance]):
+            result = tcr._TagClusterResources__get_cluster_tags_by_instance_cluster(CLUSTER_STAMP_KEY)
+
+    assert result == [
+        {'Key': 'User', 'Value': 'alice'},
+        {'Key': 'Manager', 'Value': 'bob'},
+    ]
+    assert not any(t['Key'].startswith('kubernetes.io/') for t in result)
+    assert not any(t['Key'].startswith('sigs.k8s.io/') for t in result)
+    assert not any(t['Key'] == 'Name' for t in result)
+
+
+def test_get_cluster_tags_for_propagation_empty_when_only_cluster_system_tags():
+    """If the instance has only cluster stamp and k8s/sigs system tags (plus Name), nothing should propagate."""
+    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+        tcr = TagClusterResources(
+            cluster_prefix=cluster_prefix,
+            cluster_name=cluster_name,
+            input_tags=mandatory_tags,
+            region='us-east-2',
+        )
+        fake_instance = [{
+            'InstanceId': 'i-onlysys',
+            'Tags': [
+                {'Key': CLUSTER_STAMP_KEY, 'Value': 'owned'},
+                {
+                    'Key': 'sigs.k8s.io/cluster-api-provider-aws/cluster/hyper2-unittest',
+                    'Value': 'owned',
+                },
+                {'Key': 'kubernetes.io/role/master', 'Value': 'true'},
+                {'Key': 'Name', 'Value': 'cp-0'},
+            ],
+        }]
+        with patch.object(tcr, '_get_instances_data', return_value=[fake_instance]):
+            result = tcr._TagClusterResources__get_cluster_tags_by_instance_cluster(CLUSTER_STAMP_KEY)
+
+    assert result == []
+
+
+def test_get_cluster_tags_for_propagation_uses_cluster_prefix_from_environment_variables():
+    """
+    no_propagate_prefixes must follow CLUSTER_PREFIX in environment_variables (same derivation as production).
+    """
+    from cloud_governance.main.environment_variables import environment_variables
+
+    custom_prefixes = ['api.openshift.com/cluster', 'kubernetes.io/cluster']
+    original = environment_variables.environment_variables_dict['CLUSTER_PREFIX']
+    try:
+        environment_variables.environment_variables_dict['CLUSTER_PREFIX'] = custom_prefixes
+        with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+            tcr = TagClusterResources(
+                cluster_prefix=custom_prefixes,
+                cluster_name=cluster_name,
+                input_tags=mandatory_tags,
+                region='us-east-2',
+            )
+            stamp = 'api.openshift.com/cluster/hyper2-unittest'
+            fake_instance = [{
+                'InstanceId': 'i-custom',
+                'Tags': [
+                    {'Key': stamp, 'Value': 'owned'},
+                    {'Key': 'api.openshift.com/something-else', 'Value': 'x'},
+                    {'Key': 'User', 'Value': 'carol'},
+                ],
+            }]
+            with patch.object(tcr, '_get_instances_data', return_value=[fake_instance]):
+                result = tcr._TagClusterResources__get_cluster_tags_by_instance_cluster(stamp)
+        # api.openshift.com/ and kubernetes.io/ blocked; User kept
+        assert result == [{'Key': 'User', 'Value': 'carol'}]
+        assert not any(t['Key'].startswith('api.openshift.com/') for t in result)
+    finally:
+        environment_variables.environment_variables_dict['CLUSTER_PREFIX'] = original
