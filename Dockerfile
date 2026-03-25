@@ -14,8 +14,10 @@ RUN apt-get update \
      && mv gitleaks /usr/local/bin/ \
      && gitleaks --version
 
-# install & run cloud-governance (--no-cache-dir for take always the latest)
-RUN python -m pip --no-cache-dir install --upgrade pip && pip --no-cache-dir install cloud-governance --upgrade
+# Pin setuptools<82 so pkg_resources is available when building ibm-cloud-sdk-core
+RUN python -m pip --no-cache-dir install --upgrade pip "setuptools>=58,<82" wheel && \
+    pip --no-cache-dir install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0 ibm-schematics==1.0.1 && \
+    pip --no-cache-dir install cloud-governance --upgrade
 RUN pip3 --no-cache-dir install --upgrade awscli
 ADD cloud_governance/policy /usr/local/cloud_governance/policy/
 COPY cloud_governance/main/main.py /usr/local/cloud_governance/main.py
