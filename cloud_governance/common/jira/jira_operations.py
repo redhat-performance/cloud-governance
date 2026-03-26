@@ -31,10 +31,18 @@ class JiraOperations:
         self.__jira_url = self.__environment_variables_dict.get('JIRA_URL').strip()
         self.__jira_username = self.__environment_variables_dict.get('JIRA_USERNAME').strip()
         self.__jira_token = self.__environment_variables_dict.get('JIRA_TOKEN').strip()
+        self.__jira_password = self.__environment_variables_dict.get('JIRA_PASSWORD', '').strip()
         self.__jira_queue = self.__environment_variables_dict.get('JIRA_QUEUE').strip()
         self.__cache_temp_dir = self.__environment_variables_dict.get('TEMPORARY_DIRECTORY', '').strip()
         self.__loop = asyncio.new_event_loop()
-        self.__jira_object = Jira(url=self.__jira_url, username=self.__jira_username, token=self.__jira_token, ticket_queue=self.__jira_queue, loop=self.__loop)
+        self.__jira_object = Jira(
+            url=self.__jira_url,
+            username=self.__jira_username,
+            password=self.__jira_password or None,
+            token=self.__jira_token or None,
+            ticket_queue=self.__jira_queue,
+            loop=self.__loop,
+        )
 
     @typeguard.typechecked
     @logger_time_stamp

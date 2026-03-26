@@ -2,8 +2,16 @@ from datetime import datetime, timedelta
 from functools import wraps
 from unittest.mock import patch
 
-
 from cloud_governance.common.jira.jira_operations import JiraOperations
+from cloud_governance.main.environment_variables import environment_variables
+
+# Jira() is still constructed with real credentials; CI often has no JIRA_* env vars.
+_JIRA_STANDIN_KEYS = ('JIRA_USERNAME', 'JIRA_URL', 'JIRA_QUEUE')
+_JIRA_STANDIN_DEFAULTS = {
+    'JIRA_USERNAME': 'mock@example.com',
+    'JIRA_URL': 'https://mock.atlassian.net',
+    'JIRA_QUEUE': 'MOCK',
+}
 
 
 def get_ticket_response():
@@ -94,10 +102,19 @@ def mock_jira(method):
         @param kwargs:
         @return:
         """
-        with patch.object(JiraOperations, 'get_issue', mock_get_issue),\
-                patch.object(JiraOperations, 'move_issue_state', mock_move_issue_state), \
-                patch.object(JiraOperations, 'get_all_issues', mock_get_all_issues):
-            result = method(*args, **kwargs)
-        return result
+        env = environment_variables.environment_variables_dict
+        saved_jira = {k: env.get(k, '') for k in _JIRA_STANDIN_KEYS}
+        try:
+            for key, default in _JIRA_STANDIN_DEFAULTS.items():
+                if not (env.get(key) or '').strip():
+                    env[key] = default
+            with patch.object(JiraOperations, 'get_issue', mock_get_issue),\
+                    patch.object(JiraOperations, 'move_issue_state', mock_move_issue_state), \
+                    patch.object(JiraOperations, 'get_all_issues', mock_get_all_issues):
+                result = method(*args, **kwargs)
+            return result
+        finally:
+            for key in _JIRA_STANDIN_KEYS:
+                env[key] = saved_jira[key]
 
     return method_wrapper
