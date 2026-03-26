@@ -1,7 +1,9 @@
-account = ['industry-partners', 'verticals-ui', 'special-projects', 'edgeinfra', 'specialprojects-qe',
-           'ecoeng-sap', 'sysdeseng', 'certification-pipeline', 'ecoengverticals-qe',
-           'emerge-partner', 'telco5g-ci', 'partnerlab', 'blueprints', 'edgeinfra-ci',
-           'ecoeng-flightctl', 'partners-eng', 'fusionaccess', 'ecoeng-assistedci', 'medik8s-ci']
+// Gradual rollout after tag_cluster Hypershift fix: single account only. Restore full list when ready.
+// Full list was: industry-partners, verticals-ui, special-projects, edgeinfra, specialprojects-qe,
+// ecoeng-sap, sysdeseng, certification-pipeline, ecoengverticals-qe, emerge-partner, telco5g-ci,
+// partnerlab, blueprints, edgeinfra-ci, ecoeng-flightctl, partners-eng, fusionaccess,
+// ecoeng-assistedci, medik8s-ci
+account = ['blueprints']
 pipeline {
     options {
         disableConcurrentBuilds()
