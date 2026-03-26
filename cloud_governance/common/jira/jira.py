@@ -1,6 +1,7 @@
 
 import asyncio
 import logging
+from urllib.parse import quote
 
 import aiohttp
 import urllib3
@@ -31,26 +32,47 @@ class Jira(object):
             self.username = username
             self.ticket_queue = ticket_queue
             self.password = password
+            self.token = token
+            self._auth = None
             if not loop:
                 self.loop = asyncio.new_event_loop()
                 self.new_loop = True
             else:
                 self.loop = loop
                 self.new_loop = False
-            self.token = token
-            if not self.token:
-                if self.password:
-                    payload = BasicAuth(self.username, self.password)
-                else:
+
+            # Jira Cloud API tokens use HTTP Basic auth (email + token), same as curl -u user:token
+            if self.token:
+                if not self.username:
                     logger.error(
-                        "Basic Authentication expected as no token was found but password is missing"
+                        "Basic Authentication with API token requires JIRA_USERNAME (email)"
                     )
-                    raise JiraException
+                    raise JiraException(
+                        "Basic Authentication with API token requires JIRA_USERNAME (email)"
+                    )
+                self._auth = BasicAuth(self.username, self.token)
+            elif self.password:
+                if not self.username:
+                    logger.error(
+                        "Basic Authentication requires JIRA_USERNAME"
+                    )
+                    raise JiraException(
+                        "Basic Authentication requires JIRA_USERNAME"
+                    )
+                self._auth = BasicAuth(self.username, self.password)
             else:
-                payload = "Bearer: %s" % self.token
-            self.headers = {"Authorization": payload}
-        except:
-            pass
+                logger.error(
+                    "Basic Authentication expected: set JIRA_TOKEN or JIRA_PASSWORD"
+                )
+                raise JiraException(
+                    "Basic Authentication expected: set JIRA_TOKEN or JIRA_PASSWORD"
+                )
+            self.headers = {"Accept": "application/json"}
+        except JiraException:
+            raise
+        except Exception as ex:
+            logger.error("Failed to initialize Jira client: %s", ex)
+            raise JiraException from ex
 
     def __exit__(self):
         if self.new_loop:
@@ -60,6 +82,7 @@ class Jira(object):
         logger.debug("GET: %s" % endpoint)
         try:
             async with aiohttp.ClientSession(
+                auth=self._auth,
                 headers=self.headers,
                 loop=self.loop,
             ) as session:
@@ -81,14 +104,19 @@ class Jira(object):
         logger.debug("POST: {%s:%s}" % (endpoint, payload))
         try:
             async with aiohttp.ClientSession(
-                headers=self.headers, loop=self.loop
+                auth=self._auth,
+                headers=self.headers,
+                loop=self.loop,
             ) as session:
                 async with session.post(
                     self.url + endpoint,
                     json=payload,
                     verify_ssl=False,
                 ) as response:
-                    data = await response.json(content_type="application/json")
+                    if response.status == 204:
+                        data = {}
+                    else:
+                        data = await response.json(content_type="application/json")
         except Exception as ex:
             logger.debug(ex)
             logger.error("There was something wrong with your request.")
@@ -98,13 +126,17 @@ class Jira(object):
             return data
         if response.status == 404:
             logger.error("Resource not found: %s" % self.url + endpoint)
+        else:
+            logger.error(data)
         return False
 
     async def put_request(self, endpoint, payload):
         logger.debug("POST: {%s:%s}" % (endpoint, payload))
         try:
             async with aiohttp.ClientSession(
-                headers=self.headers, loop=self.loop
+                auth=self._auth,
+                headers=self.headers,
+                loop=self.loop,
             ) as session:
                 async with session.put(
                     self.url + endpoint,
@@ -158,11 +190,37 @@ class Jira(object):
         response = await self.post_request(endpoint, data)
         return response
 
+    async def _resolve_watcher_to_account_id(self, watcher):
+        """
+        Jira Cloud expects an Atlassian accountId in the watchers POST body (JSON string),
+        not an email. Resolve email or short username via REST v2 user search.
+        """
+        if not watcher or not str(watcher).strip():
+            return None
+        w = str(watcher).strip()
+        user = await self.get_user_by_email(w)
+        if user and user.get("accountId"):
+            return user["accountId"]
+        if "@" not in w:
+            user = await self.get_user_by_email(f"{w}@redhat.com")
+            if user and user.get("accountId"):
+                return user["accountId"]
+        logger.error("Could not resolve Jira accountId for watcher: %s", w)
+        return None
+
     async def add_watcher(self, ticket, watcher):
+        account_id = await self._resolve_watcher_to_account_id(watcher)
+        if not account_id:
+            return False
         issue_id = "%s-%s" % (self.ticket_queue, ticket)
         endpoint = "/issue/%s/watchers" % issue_id
-        logger.debug("POST transition: {%s:%s}" % (issue_id, watcher))
-        response = await self.post_request(endpoint, watcher)
+        logger.debug(
+            "POST watcher issue=%s accountId=%s (from %s)",
+            issue_id,
+            account_id,
+            watcher,
+        )
+        response = await self.post_request(endpoint, account_id)
         return response
 
     async def add_label(self, ticket, label):
@@ -221,15 +279,18 @@ class Jira(object):
         return result
 
     async def get_user_by_email(self, email):
-        endpoint = f"/user/search?username={email}"
+        endpoint = f"/user/search?query={quote(email)}"
         logger.debug("GET user: %s" % endpoint)
         result = await self.get_request(endpoint)
         if not result:
-            logger.error("User not found")
+            logger.error("User not found for query: %s", email)
             return None
+        el = email.lower()
         for user in result:
-            if user.get("emailAddress") == email:
+            if (user.get("emailAddress") or "").lower() == el:
                 return user
+        if len(result) == 1:
+            return result[0]
         return None
 
     async def get_pending_tickets(self):
