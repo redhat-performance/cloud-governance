@@ -56,7 +56,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -89,7 +89,7 @@ jobs:
           terragrunt apply -auto-approve 1> /dev/null
           echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_OUTPUT"
       - name: Cache the Terraform State File
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: terraform/aws_instance
           key: terraform-state-${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
@@ -136,7 +136,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -181,13 +181,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.REGION }}
       - name: Get Cache of the Terraform State File
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: terraform/aws_instance
           key: terraform-state-${{ needs.terraform_apply.outputs.INSTANCE_ID }}
@@ -240,7 +240,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}

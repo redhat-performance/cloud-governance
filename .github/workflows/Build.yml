@@ -43,7 +43,7 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Configure AWS credentials for pytest
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -77,7 +77,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for creating EC2 instance
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -111,7 +111,7 @@ jobs:
           terragrunt apply -auto-approve 1> /dev/null
           echo "INSTANCE_ID=$(terragrunt output -raw instance_id)" >> "$GITHUB_OUTPUT"
       - name: Cache the Terraform State File
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: terraform/aws_instance
           key: terraform-state-${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
@@ -160,7 +160,7 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Configure AWS credentials for pytest
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -209,13 +209,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Configure AWS credentials for pytest
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.REGION }}
       - name: Get Cache of the Terraform State File
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: terraform/aws_instance
           key: terraform-state-${{ needs.terraform_apply.outputs.INSTANCE_ID }}
