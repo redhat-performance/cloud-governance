@@ -1,4 +1,4 @@
-accounts_list = ['perf-dept' : "", 'perfscale': "", 'psap': ""]
+accounts_list = ['perf-dept': '', 'perfscale': '', 'psap': '']
 pipeline {
     options {
         disableConcurrentBuilds()
