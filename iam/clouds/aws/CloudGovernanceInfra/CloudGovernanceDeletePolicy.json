@@ -118,6 +118,7 @@
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [
+        "iam:DeleteAccessKey",
         "iam:DeleteInstanceProfile",
         "iam:DeletePolicy",
         "iam:DeleteRole",
@@ -136,6 +137,7 @@
         "iam:ListRoles",
         "iam:ListUserPolicies",
         "iam:ListUsers",
+        "iam:ListUserTags",
         "iam:RemoveRoleFromInstanceProfile",
         "iam:TagRole",
         "iam:TagUser",

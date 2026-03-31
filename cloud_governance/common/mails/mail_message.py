@@ -3,6 +3,7 @@ import os.path
 from jinja2 import Environment, FileSystemLoader
 
 from cloud_governance.common.ldap.ldap_search import LdapSearch
+from cloud_governance.common.utils.configs import DELETE_ACCESS_KEY_DAYS
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -104,6 +105,27 @@ If you already filled the tags, please ignore the mail.
 Best Regards
 Cloud-governance Team""".strip()
         return subject, body
+
+    def _get_unused_access_key_alert_message(self):
+        """
+        Returns the custom message for unused_access_key policy in aggregated alerts.
+        """
+        return (
+            f"For the IAM access keys listed below: please rotate these access keys before they are "
+            f"automatically deactivated. Keys will be deactivated after the grace period if no action is taken. "
+            f"Keys older than {DELETE_ACCESS_KEY_DAYS} days (including deactivated ones) will be permanently deleted. "
+            "To avoid deactivation, create a new access key and update your applications, then deactivate or delete the old key."
+        )
+
+    def _get_delete_access_key_alert_message(self):
+        """
+        Returns the custom message for delete_access_key policy in aggregated alerts.
+        """
+        return (
+            f"Your IAM access key age has exceeded {DELETE_ACCESS_KEY_DAYS} days. "
+            "The key(s) listed below are in the deletion grace period and will be permanently deleted "
+            "if no action is taken. Please rotate or remove these keys before the grace period ends."
+        )
 
     def aws_user_over_usage_cost(self, user: str, usage_cost: int, name: str, user_usage: int):
         """
@@ -517,5 +539,18 @@ Cloud-governance Team""".strip()
         template_loader = self.env_loader.get_template('policy_alert_agg_message.j2')
         columns = ['User', 'PublicCloud', 'policy', 'RegionName', 'ResourceId', 'Name', 'DeleteDate']
         context = {'records': policy_data, 'columns': columns, 'User': user, 'account': self.account, 'cloud_name': self.__public_cloud_name}
+        has_unused_access_key = any(
+            (r.get('policy') or r.get('Policy') or '').lower() == 'unused_access_key'
+            for r in (policy_data or [])
+        )
+        has_delete_access_key = any(
+            (r.get('policy') or r.get('Policy') or '').lower() == 'delete_access_key'
+            for r in (policy_data or [])
+        )
+        if has_unused_access_key:
+            context['unused_access_key_message'] = self._get_unused_access_key_alert_message()
+        if has_delete_access_key:
+            context['delete_access_key_days'] = DELETE_ACCESS_KEY_DAYS
+            context['delete_access_key_message'] = self._get_delete_access_key_alert_message()
         body = template_loader.render(context)
         return subject, body
