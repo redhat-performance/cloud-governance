@@ -550,6 +550,7 @@ Cloud-governance Team""".strip()
         if has_unused_access_key:
             context['unused_access_key_message'] = self._get_unused_access_key_alert_message()
         if has_delete_access_key:
+            context['delete_access_key_days'] = DELETE_ACCESS_KEY_DAYS
             context['delete_access_key_message'] = self._get_delete_access_key_alert_message()
         body = template_loader.render(context)
         return subject, body

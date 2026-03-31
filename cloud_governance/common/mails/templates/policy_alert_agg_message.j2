@@ -48,7 +48,7 @@
 		<p><strong>Unused access keys:</strong> {{ unused_access_key_message }}</p>
 		{% endif %}
 		{% if delete_access_key_message is defined and delete_access_key_message %}
-		<p><strong>Access keys pending deletion (age &gt; 120 days):</strong> {{ delete_access_key_message }}</p>
+		<p><strong>Access keys pending deletion (inactive, key age &gt; {{ delete_access_key_days }} days):</strong> {{ delete_access_key_message }}</p>
 		{% endif %}
 	</div>
 	<table class="table-hover">
