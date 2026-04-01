@@ -44,6 +44,12 @@
 	<div style="margin-bottom: 10px">
 		<p>You can find below your unused resources in the {{ cloud_name }} account ({{ account }}).</p>
 		<p>If you want to keep them, please add "Policy=Not_Delete" or "Policy=skip" tag for each resource</p>
+		{% if unused_access_key_message is defined and unused_access_key_message %}
+		<p><strong>Unused access keys:</strong> {{ unused_access_key_message }}</p>
+		{% endif %}
+		{% if delete_access_key_message is defined and delete_access_key_message %}
+		<p><strong>Access keys pending deletion (inactive, key age &gt; {{ delete_access_key_days }} days):</strong> {{ delete_access_key_message }}</p>
+		{% endif %}
 	</div>
 	<table class="table-hover">
 		<thead>

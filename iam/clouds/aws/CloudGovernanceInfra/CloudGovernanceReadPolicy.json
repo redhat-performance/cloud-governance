@@ -95,6 +95,7 @@
         "iam:ListRoles",
         "iam:ListUserPolicies",
         "iam:ListUsers",
+        "iam:ListUserTags",
         "iam:TagRole",
         "iam:TagUser",
         "iam:UntagRole",

@@ -24,7 +24,8 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
 
 exclude_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
                     'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
-                    'spot_savings_analysis', 'yearly_savings_report']
+                    'spot_savings_analysis', 'yearly_savings_report',
+                    'delete_access_key']
 available_policies = get_policies(exclude_policies=exclude_policies)
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
                                                   'quay.io/cloud-governance/cloud-governance')
@@ -77,6 +78,8 @@ podman run --rm --name "{container_name}" --net="host" {env_list} {env_es_index}
 policies_in_action = os.environ.get('POLICIES_IN_ACTION', [])
 if isinstance(policies_in_action, str):
     policies_in_action = literal_eval(policies_in_action)
+# POLICIES_IN_ACTION cannot run policies outside available_policies (e.g. tenant-excluded delete_access_key).
+policies_in_action = [p for p in policies_in_action if p in available_policies]
 policies_not_action = list(set(available_policies) - set(policies_in_action))
 
 regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'eu-north-1', 'eu-west-3', 'eu-west-2',

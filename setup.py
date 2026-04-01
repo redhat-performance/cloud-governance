@@ -2,7 +2,7 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
-__version__ = '1.1.416'
+__version__ = '1.1.417'
 
 here = path.abspath(path.dirname(__file__))
 
@@ -72,7 +72,7 @@ setup(
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python39-devel openldap-devel gcc
         'requests==2.32.2',  # rest api & lambda
         'retry==0.9.2',
-        'setuptools',  # Requires for python3.12
+        'setuptools',  # CI: setuptools<82 for IBM sdist builds on 3.9
         'SoftLayer==6.0.0',  # IBM SoftLayer
         'sphinx-rtd-theme==1.0.0',  # readthedocs
         'sphinx==5.0.0',  # readthedocs
