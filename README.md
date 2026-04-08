@@ -116,7 +116,7 @@ podman pull quay.io/cloud-governance/cloud-governance
 | IBM_API_USERNAME               |          | IBM Account Username                                                        |
 | IBM_API_KEY                    |          | IBM Account Classic Infrastructure key                                      |
 | IBM_CLOUD_API_KEY              |          | IBM Cloud API Key                                                           |
-| IBM_CUSTOM_TAGS_LIST           |          | pass string with separated with comma. i.e: "cost-center: test, env: test"  |
+| IBM_CUSTOM_TAGS_LIST           |          | pass string with separated with comma. i.e: "env: test, team: dev"          |
 
 ### AWS Configuration
 
