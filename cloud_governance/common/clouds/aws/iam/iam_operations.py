@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 class IAMOperations:
 
     ACCESS_KEY_LABEL_MAP = {"access key 1": 0, "access key 2": 1}
+    EXCLUDED_PROPAGATION_TAGS = {'cost-center'}
 
     def __init__(self, iam_client=None):
         self.iam_client = iam_client if iam_client else get_boto3_client('iam')
@@ -30,7 +31,8 @@ class IAMOperations:
         try:
             user = self.iam_client.get_user(UserName=username)['User']
             if user.get('Tags'):
-                return user.get('Tags')
+                return [tag for tag in user.get('Tags')
+                        if tag.get('Key', '').lower() not in self.EXCLUDED_PROPAGATION_TAGS]
             else:
                 return []
         except:
