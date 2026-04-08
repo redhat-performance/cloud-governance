@@ -192,7 +192,8 @@ class TagClusterResources(TagClusterOperations):
         @return:
         """
         result_resources_list = []
-        vpc_data = self.get_cluster_vpc()
+        vpcs_data = self.ec2_operations.get_vpcs()
+        vpc_data = self.get_cluster_vpc(vpcs_data=vpcs_data)
         for resource in resources_list:
             resource_id = resource[input_resource_id]
             if resource.get('VpcId'):
@@ -202,10 +203,15 @@ class TagClusterResources(TagClusterOperations):
                         all_tags.extend(vpc_data.get(vpc_id))
                         all_tags = self.__check_name_in_tags(tags=all_tags, resource_id=resource_id)
                         all_tags = self.__filter_resource_tags_by_add_tags(resource.get('Tags'), all_tags)
-                        cluster_tag = [tag for tag in vpc_data.get(vpc_id, []) if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix)]
+                        raw_vpc_tags = next(
+                            (v.get('Tags') for v in vpcs_data if v.get('VpcId') == vpc_id),
+                            None,
+                        ) or []
+                        cluster_tag = [t for t in raw_vpc_tags if
+                                       any(prefix in t.get('Key', '') for prefix in self.cluster_prefix)]
                         if all_tags:
                             if self.cluster_name:
-                                if self.cluster_name in cluster_tag[0].get('Key'):
+                                if cluster_tag and self.cluster_name in cluster_tag[0].get('Key', ''):
                                     if self.dry_run == 'no':
                                         self.utils.tag_aws_resources(client_method=self.ec2_client.create_tags,
                                                                      resource_ids=[resource_id], tags=all_tags)
@@ -572,19 +578,26 @@ class TagClusterResources(TagClusterOperations):
         self.cluster_network_acl()
         return sorted(vpc_ids)
 
-    def get_cluster_vpc(self):
+    def get_cluster_vpc(self, vpcs_data: list = None):
         """
         This method get cluster vpc ids and it's tags.
         Missing OpenShift Tags for it based on VPCs
         @return:
         """
-        vpcs_data = self.ec2_operations.get_vpcs()
+        if vpcs_data is None:
+            vpcs_data = self.ec2_operations.get_vpcs()
+        cluster_prefix = environment_variables.environment_variables_dict['CLUSTER_PREFIX']
+        no_propagate_prefixes = tuple(p.split('/', 1)[0] + '/' for p in cluster_prefix)
         vpc_ids = {}
         for vpc in vpcs_data:
             if vpc.get('Tags'):
                 for tag in vpc.get('Tags'):
                     if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
-                        vpc_ids[vpc.get('VpcId')] = [tag for tag in vpc.get('Tags') if tag.get('Key') != 'Name']
+                        vpc_ids[vpc.get('VpcId')] = [t for t in vpc.get('Tags') if
+                                                     t.get('Key') != 'Name' and
+                                                     not any((t.get('Key') or '').startswith(prefix)
+                                                             for prefix in self.cluster_prefix) and
+                                                     not (t.get('Key') or '').startswith(no_propagate_prefixes)]
                         break
         return vpc_ids
 
