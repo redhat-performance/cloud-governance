@@ -86,5 +86,5 @@ Environment Variables required:
   -e IBM_ACCOUNT_ID="${IBM_ACCOUNT_ID}" \
   -e IBM_API_USERNAME="${IBM_API_USERNAME}" \
   -e IBM_API_KEY="${IBM_API_KEY}" \
-  quay.io/cloud-governance/cloud-governance:latest
+  quay.io/rh_perfscale/cloud-governance:latest
   ```

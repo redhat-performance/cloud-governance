@@ -36,7 +36,7 @@ python setup.py sdist bdist_wheel
 ### Container Operations
 ```bash
 # Pull image
-podman pull quay.io/cloud-governance/cloud-governance
+podman pull quay.io/rh_perfscale/cloud-governance
 
 # Run policy (example)
 podman run --rm --name cloud-governance \
@@ -45,7 +45,7 @@ podman run --rm --name cloud-governance \
   -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
   -e AWS_DEFAULT_REGION="us-east-2" \
   -e dry_run="yes" \
-  "quay.io/cloud-governance/cloud-governance"
+  "quay.io/rh_perfscale/cloud-governance"
 ```
 
 ## Architecture
@@ -133,6 +133,6 @@ sudo apt-get install build-essential python3-dev libldap2-dev libsasl2-dev
 ```
 
 ### Container Publishing
-- Public: `quay.io/cloud-governance/cloud-governance:latest`
+- Public: `quay.io/rh_perfscale/cloud-governance:latest`
 - Private: Version-tagged releases for internal use
 - Multi-stage build process with version validation

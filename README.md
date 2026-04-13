@@ -1,5 +1,5 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/cloud-governance.svg)](https://pypi.org/project/cloud-governance/)
-[![Container Repository on Quay](https://quay.io/repository/projectquay/quay/status "Container Repository on Quay")](https://quay.io/repository/cloud-governance/cloud-governance?tab=tags)
+[![Container Repository on Quay](https://quay.io/repository/projectquay/quay/status "Container Repository on Quay")](https://quay.io/repository/rh_perfscale/cloud-governance?tab=tags)
 [![Actions Status](https://github.com/redhat-performance/cloud-governance/actions/workflows/Build.yml/badge.svg)](https://github.com/redhat-performance/cloud-governance/actions)[![Coverage Status](https://coveralls.io/repos/github/redhat-performance/cloud-governance/badge.svg?branch=main)](https://coveralls.io/github/redhat-performance/cloud-governance?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/cloud-governance/badge/?version=latest)](https://cloud-governance.readthedocs.io/en/latest/?badge=latest)
 [![python](https://img.shields.io/pypi/pyversions/cloud-governance.svg?color=%2334D058)](https://pypi.org/project/cloud-governance)
@@ -88,7 +88,7 @@ _**Table of Contents**_
 #### Download cloud-governance image from quay.io
 
 ```sh
-podman pull quay.io/cloud-governance/cloud-governance
+podman pull quay.io/rh_perfscale/cloud-governance
 ```
 
 #### Environment variables configurations:
@@ -142,7 +142,7 @@ Create IAM User with Read/Delete Permissions and create S3 bucket.
   -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
   -e AWS_DEFAULT_REGION="us-east-2" \
   -e dry_run="yes"  \
-   "quay.io/cloud-governance/cloud-governance"
+   "quay.io/rh_perfscale/cloud-governance"
 ```
 
 - Using involvement file config
@@ -164,7 +164,7 @@ es_index: ""
   podman run --rm --name cloud-governance \
   -v "env.yaml":"/tmp/env.yaml" \
   --net="host" \
-   "quay.io/cloud-governance/cloud-governance"
+   "quay.io/rh_perfscale/cloud-governance"
 ```
 
 ## Run Policy Using Pod
@@ -203,5 +203,5 @@ rm -rf *governance*
 #### Delete cloud-governance image
 
 ```sh
-sudo podman rmi quay.io/cloud-governance/cloud-governance
+sudo podman rmi quay.io/rh_perfscale/cloud-governance
 ```

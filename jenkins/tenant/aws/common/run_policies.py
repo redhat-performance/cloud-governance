@@ -27,8 +27,7 @@ exclude_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_repor
                     'spot_savings_analysis', 'yearly_savings_report',
                     'delete_access_key']
 available_policies = get_policies(exclude_policies=exclude_policies)
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 
 # available_policies: Run policies in dry_run="yes" mode

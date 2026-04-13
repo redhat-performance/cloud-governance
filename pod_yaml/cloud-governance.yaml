@@ -41,6 +41,6 @@ spec:
                 configMapKeyRef:
                   name: cloud-governance-config
                   key: cloud-governance.log_level
-          image: quay.io/cloud-governance/cloud-governance
+          image: quay.io/rh_perfscale/cloud-governance
           name: cloud-governance
       restartPolicy: OnFailure
