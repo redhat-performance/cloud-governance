@@ -13,8 +13,7 @@ LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/rh_perfscale/cloud-governance:latest')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):

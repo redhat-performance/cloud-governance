@@ -19,8 +19,7 @@ GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/rh_perfscale/cloud-governance:latest')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):

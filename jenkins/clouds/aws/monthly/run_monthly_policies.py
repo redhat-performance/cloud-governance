@@ -4,8 +4,7 @@ ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 TO_MAIL = os.environ['TO_MAIL']
 CC_MAIL = os.environ['CC_MAIL']
-QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/rh_perfscale/cloud-governance:latest')
+QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 LOGS = os.environ.get('LOGS', 'logs')
 
