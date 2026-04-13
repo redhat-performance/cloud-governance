@@ -2,7 +2,7 @@ import os
 from ast import literal_eval
 
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance')
+                                                  'quay.io/rh_perfscale/cloud-governance')
 
 
 # available_policies: Run policies in dry_run="yes" mode

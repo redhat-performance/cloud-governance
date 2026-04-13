@@ -9,7 +9,7 @@ ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 LOGS = os.environ.get('LOGS', 'logs')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 print('Run IBM Cost Invoice upload monthly')
 

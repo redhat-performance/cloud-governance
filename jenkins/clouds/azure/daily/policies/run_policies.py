@@ -14,7 +14,7 @@ LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 
 def get_policies(file_type: str = '.py', exclude_policies: list = None):

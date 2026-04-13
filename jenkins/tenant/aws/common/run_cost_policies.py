@@ -8,7 +8,7 @@ ES_PORT = os.environ['ES_PORT']
 ES_INDEX = os.environ.get('ES_INDEX', None)
 
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance')
+                                                  'quay.io/rh_perfscale/cloud-governance')
 
 cost_tags = ['PurchaseType', 'ChargeType', 'User', 'Budget', 'Project', 'Manager', 'Owner',
              'LaunchTime', 'Name', 'Email', 'Environment', 'User:Spot', 'cluster_id']

@@ -9,7 +9,7 @@ COST_SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 print('Running the Azure cost billing reports')
 input_vars_to_container = [{'account': 'perf-scale-azure', 'AZURE_CLIENT_ID': AZURE_CLIENT_ID,

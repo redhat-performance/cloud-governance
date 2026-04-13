@@ -11,7 +11,7 @@ LOGS = os.environ.get('LOGS', 'logs')
 account = os.environ['account']
 IBM_ACCOUNT_ID_PERFORMANCE_SCALE = os.environ['IBM_ACCOUNT_ID_PERFORMANCE_SCALE']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 
 def run_cmd(cmd):

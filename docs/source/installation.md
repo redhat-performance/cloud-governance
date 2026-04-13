@@ -4,7 +4,7 @@
 
 ```sh
 # Need to run it with root privileges
-sudo podman pull quay.io/cloud-governance/cloud-governance
+sudo podman pull quay.io/rh_perfscale/cloud-governance
 ```
 
 #### Environment variables description:

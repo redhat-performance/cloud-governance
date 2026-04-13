@@ -23,7 +23,7 @@ special_user_mails = os.environ['CLOUD_GOVERNANCE_SPECIAL_USER_MAILS']
 COST_SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 es_index_perf = 'cloud-governance-cost-explorer-perf'
 es_index_psap = 'cloud-governance-cost-explorer-psap'

@@ -15,7 +15,7 @@ LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 special_user_mails = os.environ['CLOUD_GOVERNANCE_SPECIAL_USER_MAILS']
 IGNORE_MAILS = os.environ['IGNORE_MAILS']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 es_index_perf = 'cloud-governance-cost-explorer-perf'
 es_index_psap = 'cloud-governance-cost-explorer-psap'

@@ -26,7 +26,7 @@ S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ.get('QUAY_CLOUD_GOVERNANCE_REPOSITORY',
-                                                  'quay.io/cloud-governance/cloud-governance:latest')
+                                                  'quay.io/rh_perfscale/cloud-governance:latest')
 
 es_index = CLOUD_RESOURCE_ORCHESTRATION_INDEX
 
