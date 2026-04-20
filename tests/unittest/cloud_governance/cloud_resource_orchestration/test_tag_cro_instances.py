@@ -8,6 +8,7 @@ from tests.unittest.cloud_governance.cloud_resource_orchestration.mocks.mock_jir
 AWS_DEFAULT_REGION = 'ap-south-1'
 
 
+@mock_jira
 @mock_aws
 def test_tag_cro_instances():
     """
