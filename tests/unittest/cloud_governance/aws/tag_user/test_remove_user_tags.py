@@ -1,10 +1,10 @@
 import boto3
-from moto import mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.policy_operations.aws.tag_user.remove_user_tags import RemoveUserTags
 
 
-@mock_iam
+@mock_aws
 def test_remove_user_tags():
     """
     This test tests for removing the tags of user

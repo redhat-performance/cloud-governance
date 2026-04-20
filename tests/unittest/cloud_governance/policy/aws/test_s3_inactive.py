@@ -1,7 +1,7 @@
 import tempfile
 
 import boto3
-from moto import mock_s3, mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
@@ -11,8 +11,7 @@ from tests.unittest.configs import DRY_RUN_YES, AWS_DEFAULT_REGION, TEST_USER_NA
     DEFAULT_AMI_ID, INSTANCE_TYPE_T2_MICRO
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive():
     """
     This method tests lists empty buckets
@@ -36,8 +35,7 @@ def test_s3_inactive():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@1"
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive_dry_run_yes():
     """
     This method tests collects empty buckets  on dry_run=yes
@@ -61,8 +59,7 @@ def test_s3_inactive_dry_run_yes():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive_delete():
     """
     This method tests delete s3 empty bucket
@@ -83,8 +80,7 @@ def test_s3_inactive_delete():
     assert len(response) == 1
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive_skip():
     """
     This method tests skip delete of the s3 empty bucket
@@ -108,8 +104,7 @@ def test_s3_inactive_skip():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive_contains_cluster_tag():
     """
     This method tests s3 bucket having the live cluster
@@ -137,8 +132,7 @@ def test_s3_inactive_contains_cluster_tag():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_s3_inactive_contains_data():
     """
     This method tests s3 bucket having the live cluster

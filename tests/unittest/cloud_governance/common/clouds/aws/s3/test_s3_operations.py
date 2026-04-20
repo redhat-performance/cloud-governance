@@ -14,10 +14,10 @@ from cloud_governance.main.main_oerations.main_operations import MainOperations
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    from moto import mock_s3, mock_iam, mock_ec2
+    from moto import mock_aws
 
 
-@mock_s3
+@mock_aws
 def test_upload_file():
     """ This test for testing upload data into s3 bucket"""
     expected_file_name = 'file.txt'
@@ -34,7 +34,7 @@ def test_upload_file():
         assert s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_file_name)
 
 
-@mock_s3
+@mock_aws
 def test_download_file():
     """ This test for testing upload data into s3 bucket"""
     expected_file_name = 'file.txt'
@@ -52,7 +52,7 @@ def test_download_file():
             assert os.path.exists(os.path.join(temp_local_directory2, expected_file_name))
 
 
-@mock_s3
+@mock_aws
 def test_upload_objects():
     """ This test for testing upload data into s3 bucket"""
     expected_files_list = ['file1.txt', 'file2.txt']
@@ -72,7 +72,7 @@ def test_upload_objects():
     assert sorted(actual_files_list) == sorted(expected_files_list)
 
 
-@mock_s3
+@mock_aws
 def test_upload_objects_no_key():
     """ This test for testing upload data into s3 bucket"""
     expected_files_list = ['file1.txt', 'file2.txt']
@@ -93,7 +93,7 @@ def test_upload_objects_no_key():
         assert sorted(actual_files_list) == sorted(expected_files_list)
 
 
-@mock_s3
+@mock_aws
 def test_download_objects():
     """ This test for testing upload data into s3 bucket"""
     expected_files_list = ['file1.txt', 'file2.txt']
@@ -112,7 +112,7 @@ def test_download_objects():
     assert sorted(actual_files_list) == sorted(expected_files_list)
 
 
-@mock_s3
+@mock_aws
 def test_download_objects_no_key():
     """ This test for testing upload data into s3 bucket"""
     expected_files_list = ['file1.txt', 'file2.txt']
@@ -132,7 +132,7 @@ def test_download_objects_no_key():
         assert sorted(actual_files_list) == sorted(expected_files_list)
 
 
-@mock_s3
+@mock_aws
 def test_file_exist():
     """ This test for testing upload data into s3 bucket"""
     expected_file_name = 'file.txt'
@@ -147,7 +147,7 @@ def test_file_exist():
         assert s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_file_name)
 
 
-@mock_s3
+@mock_aws
 def test_file_delete():
     """ This test for testing upload data into s3 bucket"""
     expected_file_name = 'file.txt'
@@ -163,7 +163,7 @@ def test_file_delete():
         assert not s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_file_name)
 
 
-@mock_s3
+@mock_aws
 def test_folder_delete():
     """ This test for testing upload data into s3 bucket"""
     expected_files_list = ['file1.txt', 'file2.txt']
@@ -180,9 +180,7 @@ def test_folder_delete():
         assert not s3operations.file_exist(bucket='ais-server', key='test-data', file_name=expected_files_list[1])
 
 
-@mock_iam
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_get_s3_latest_policy_file():
     region_name = 'us-east-1'
     bucket_name = 'test_s3_bucket'
@@ -209,9 +207,7 @@ def test_get_s3_latest_policy_file():
     assert s3_operations._S3Operations__get_s3_latest_policy_file(policy='instance-run', key_prefix=prefix)
 
 
-@mock_iam
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_get_last_s3_policy_content():
     region_name = 'us-east-1'
     bucket_name = 'test_s3_bucket'

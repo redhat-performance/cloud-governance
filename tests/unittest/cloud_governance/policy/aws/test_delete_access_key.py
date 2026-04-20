@@ -3,7 +3,7 @@ Unit tests for cloud_governance.policy.aws.delete_access_key.DeleteAccessKey.
 """
 from unittest.mock import patch
 
-from moto import mock_ec2, mock_s3, mock_iam
+from moto import mock_aws
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.delete_access_key import DeleteAccessKey
@@ -37,9 +37,7 @@ def _mock_iam_users_inactive_key(
     }
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_skips_active_keys():
     """Only inactive keys are considered; active keys are skipped."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -55,9 +53,7 @@ def test_delete_access_key_skips_active_keys():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_skips_when_age_at_or_below_threshold():
     """Inactive keys with age_days <= DELETE_ACCESS_KEY_DAYS are skipped."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -72,9 +68,7 @@ def test_delete_access_key_skips_when_age_at_or_below_threshold():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_includes_inactive_old_key_with_tag():
     """Inactive key with age > DELETE_ACCESS_KEY_DAYS and UnusedAccessKey1InactiveDate tag is included."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -96,9 +90,7 @@ def test_delete_access_key_includes_inactive_old_key_with_tag():
     assert result[0]['AgeDays'] == age_days
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_skips_inactive_old_key_without_tag_unless_flag():
     """Inactive key with age > threshold but no UnusedAccessKey1InactiveDate tag is skipped unless DELETE_INACTIVE_KEYS_WITHOUT_TAG."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -114,9 +106,7 @@ def test_delete_access_key_skips_inactive_old_key_without_tag_unless_flag():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_includes_inactive_old_key_without_tag_when_flag_set():
     """When DELETE_INACTIVE_KEYS_WITHOUT_TAG is True, inactive keys over threshold are included even without tag."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -137,9 +127,7 @@ def test_delete_access_key_includes_inactive_old_key_without_tag_when_flag_set()
     assert result[0]['AgeDays'] == age_days
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_empty_when_no_users():
     """When no IAM users have access keys, result is empty."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -153,9 +141,7 @@ def test_delete_access_key_empty_when_no_users():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_deletion_grace_days_capped():
     """Deletion grace days is min(age_days - DELETE_ACCESS_KEY_DAYS, DAYS_TO_TAKE_ACTION)."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'
@@ -175,9 +161,7 @@ def test_delete_access_key_deletion_grace_days_capped():
             assert call_kwargs['remove_inactive_tag'] is True
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_access_key_remove_inactive_tag_false_when_no_tag():
     """When key has no UnusedAccessKey1InactiveDate tag, verify_and_delete_resource is called with remove_inactive_tag=False."""
     environment_variables.environment_variables_dict['policy'] = 'delete_access_key'

@@ -1,5 +1,5 @@
 import boto3
-from moto import mock_ec2, mock_cloudtrail, mock_iam
+from moto import mock_aws
 
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.tag_cro_instances import TagCROInstances
 from cloud_governance.main.environment_variables import environment_variables
@@ -8,10 +8,8 @@ from tests.unittest.cloud_governance.cloud_resource_orchestration.mocks.mock_jir
 AWS_DEFAULT_REGION = 'ap-south-1'
 
 
-@mock_iam
-@mock_cloudtrail
 @mock_jira
-@mock_ec2
+@mock_aws
 def test_tag_cro_instances():
     """
     This method tests the tagging of cro instances

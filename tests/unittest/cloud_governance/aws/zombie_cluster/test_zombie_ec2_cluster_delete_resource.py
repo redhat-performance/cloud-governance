@@ -1,6 +1,6 @@
 import boto3
 import pytest
-from moto import mock_ec2, mock_elb, mock_elbv2, mock_s3
+from moto import mock_aws
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
@@ -16,7 +16,7 @@ DAYS = 7
 FOUR_DAYS = 4
 
 
-@mock_ec2
+@mock_aws
 def test_force_delete_ec2_ami():
     """
     This method tests the deletion of AMI image force
@@ -37,7 +37,7 @@ def test_force_delete_ec2_ami():
     assert not EC2Operations(region_name).find_ami(image_name)
 
 
-@mock_ec2
+@mock_aws
 def test_not_delete_ec2_ami():
     """
     This method tests the not deletion of AMI image
@@ -58,7 +58,7 @@ def test_not_delete_ec2_ami():
     assert EC2Operations(region_name).find_ami(image_name)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_ec2_ami_after_seven():
     """
     This method tests the deletion of AMI image after seven days
@@ -81,7 +81,7 @@ def test_delete_ec2_ami_after_seven():
     assert not EC2Operations(region_name).find_ami(image_name)
 
 
-@mock_ec2
+@mock_aws
 def test_not_delete_ec2_ami_after_four():
     """
     This method tests the not deletion of AMI image after four days
@@ -103,8 +103,7 @@ def test_not_delete_ec2_ami_after_four():
     assert EC2Operations(region_name).find_ami(image_name)
 
 
-@mock_ec2
-@mock_elb
+@mock_aws
 def test_force_delete_ec2_elastic_load_balancer():
     """
     This method tests the force deletion of Elastic Load Balancer
@@ -123,8 +122,7 @@ def test_force_delete_ec2_elastic_load_balancer():
     assert not EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
-@mock_ec2
-@mock_elb
+@mock_aws
 def test_not_delete_ec2_elastic_load_balancer():
     """
     This method tests the not deletion of Elastic Load Balancer
@@ -143,8 +141,7 @@ def test_not_delete_ec2_elastic_load_balancer():
     assert EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
-@mock_ec2
-@mock_elb
+@mock_aws
 def test_delete_ec2_elastic_load_balancer_after_seven_days():
     """
     This method tests the deletion of Elastic Load Balancer after seven days
@@ -164,8 +161,7 @@ def test_delete_ec2_elastic_load_balancer_after_seven_days():
     assert not EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
-@mock_ec2
-@mock_elb
+@mock_aws
 def test_not_delete_ec2_elastic_load_balancer_after_four_days():
     """
     This method tests the non deletion of Elastic Load Balancer after four days
@@ -185,8 +181,7 @@ def test_not_delete_ec2_elastic_load_balancer_after_four_days():
     assert EC2Operations(region_name).find_load_balancer(elb_name='test-load-balancer')
 
 
-@mock_ec2
-@mock_elbv2
+@mock_aws
 def test_delete_ec2_elastic_load_balancer_v2():
     """
     This method tests the deletion Elastic Load balancer V2
@@ -208,7 +203,7 @@ def test_delete_ec2_elastic_load_balancer_v2():
 
 
 @pytest.mark.skip(reason="Handled by ebs_unattached")
-@mock_ec2
+@mock_aws
 def test_delete_ebs_volume():
     """
     This method tests the deletion  of Volume
@@ -225,7 +220,7 @@ def test_delete_ebs_volume():
     assert EC2Operations(region_name).find_volume()
 
 
-@mock_ec2
+@mock_aws
 def test_delete_snapshots():
     """
     This method tests the deletion of Snapshots
@@ -243,8 +238,7 @@ def test_delete_snapshots():
     assert not EC2Operations(region_name).find_snapshots(snapshots['SnapshotId'])
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_delete_ec2_vpc_endpoints():
     """
     This method tests the deletion of VPC endpoints
@@ -263,7 +257,7 @@ def test_delete_ec2_vpc_endpoints():
     assert EC2Operations(region_name).find_vpc_endpoints(vpc_endpoint_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_dhcp_option_set():
     """
     This method tests the deletion of DHCP Options Sets
@@ -285,7 +279,7 @@ def test_delete_dhcp_option_set():
 
 
 @pytest.mark.skip(reason="Already created in VPC, Creating Route Table as Main Route Table by default")
-@mock_ec2
+@mock_aws
 def test_delete_route_table():
     """
     This method tests the deletion of route table in the vpc
@@ -307,7 +301,7 @@ def test_delete_route_table():
     assert not EC2Operations(region_name).find_route_table(route_table_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_security_group():
     """
     This methos tests the deletion of Security Groups
@@ -329,7 +323,7 @@ def test_delete_security_group():
     assert not EC2Operations(region_name).find_security_group(sg1)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_nat_gateway():
     """
     This method tests the deletion Nat Gateway
@@ -349,7 +343,7 @@ def test_delete_nat_gateway():
     assert EC2Operations(region_name).find_nat_gateway(nat_gateway_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_network_acl():
     """
     This method tests the deletion of Network ACL
@@ -368,7 +362,7 @@ def test_delete_network_acl():
     assert not EC2Operations(region_name).find_network_acl(network_acl_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_network_interface():
     """
     This method tests the deletion of Network Interface
@@ -391,7 +385,7 @@ def test_delete_network_interface():
     assert EC2Operations(region_name).find_network_interface(network_interface_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_internet_gateway():
     """
     This method tests the deletion of Internet Gateway
@@ -411,7 +405,7 @@ def test_delete_internet_gateway():
     assert not EC2Operations(region_name).find_internet_gateway(ing_id)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_subnet():
     """
     This method tests the deletion of Subnet
@@ -432,7 +426,7 @@ def test_delete_subnet():
     assert not EC2Operations(region_name).find_subnet(subnet1)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_elastic_ip():
     """
     This method tests the deletion of Elastic Ip
@@ -458,9 +452,7 @@ def test_delete_elastic_ip():
     assert EC2Operations(region_name).find_elastic_ip()
 
 
-@mock_ec2
-@mock_elb
-@mock_elbv2
+@mock_aws
 def test_delete_vpc():
     """
     This method tests the deletion VPC and its dependencies are deleted.
@@ -520,7 +512,7 @@ def test_delete_vpc():
     assert not EC2Operations(region_name).find_vpc('kubernetes.io/cluster/unittest-test-cluster')
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_security_group_delete_after_seven_days():
     """
     This method test the zombie resource delete
@@ -543,7 +535,7 @@ def test_zombie_security_group_delete_after_seven_days():
     assert not EC2Operations(region_name).find_security_group(sg1)
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_security_group_not_delete_after_four_days():
     """
     This method test the zombie resource not delete after four days
@@ -566,7 +558,7 @@ def test_zombie_security_group_not_delete_after_four_days():
     assert EC2Operations(region_name).find_security_group(sg1)
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_security_group_force_delete():
     """
     This method test the zombie resource delete
@@ -587,7 +579,7 @@ def test_zombie_security_group_force_delete():
     assert not EC2Operations(region_name).find_security_group(sg1)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_security_group_with_all_traffic_rule():
     """
     This method tests the successful deletion of a security group when the referencing rule in the
@@ -629,7 +621,7 @@ def test_delete_security_group_with_all_traffic_rule():
     assert not EC2Operations(region_name).find_security_group(sg1)
 
 
-@mock_ec2
+@mock_aws
 def test_delete_security_group_with_icmp_rule():
     """
     This method tests the successful deletion of a security group when the referencing rule in the

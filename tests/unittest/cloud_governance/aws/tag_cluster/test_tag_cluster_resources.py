@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from moto import mock_ec2, mock_cloudtrail, mock_iam, mock_s3, mock_elb, mock_elbv2
+from moto import mock_aws
 import boto3
 
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
@@ -18,7 +18,7 @@ mandatory_tags = {}
 @pytest.fixture(scope="module")
 def tag_cluster_resources():
     """Create TagClusterResources under mocks so __init__ (IAM list_users, EC2, etc.) does not hit real AWS."""
-    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+    with mock_aws():
         yield TagClusterResources(
             cluster_prefix=cluster_prefix,
             cluster_name=cluster_name,
@@ -195,10 +195,7 @@ def test_cluster_s3_bucket(tag_cluster_resources):
     assert len(tag_cluster_resources.cluster_s3_bucket()) >= 0
 
 
-@mock_s3
-@mock_iam
-@mock_cloudtrail
-@mock_ec2
+@mock_aws
 def test_cluster_ec2():
     """
     This method tests the add tags of cluster instance
@@ -249,7 +246,7 @@ def test_get_cluster_tags_for_propagation_excludes_cluster_and_k8s_sigs_tags():
     Tags returned for propagation must not include kubernetes.io/cluster, other kubernetes.io/*,
     sigs.k8s.io/*, or Name — only governance-style tags (e.g. User) should propagate.
     """
-    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+    with mock_aws():
         tcr = TagClusterResources(
             cluster_prefix=cluster_prefix,
             cluster_name=cluster_name,
@@ -284,7 +281,7 @@ def test_get_cluster_tags_for_propagation_excludes_cluster_and_k8s_sigs_tags():
 
 def test_get_cluster_tags_for_propagation_empty_when_only_cluster_system_tags():
     """If the instance has only cluster stamp and k8s/sigs system tags (plus Name), nothing should propagate."""
-    with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+    with mock_aws():
         tcr = TagClusterResources(
             cluster_prefix=cluster_prefix,
             cluster_name=cluster_name,
@@ -319,7 +316,7 @@ def test_get_cluster_tags_for_propagation_uses_cluster_prefix_from_environment_v
     original = environment_variables.environment_variables_dict['CLUSTER_PREFIX']
     try:
         environment_variables.environment_variables_dict['CLUSTER_PREFIX'] = custom_prefixes
-        with mock_ec2(), mock_iam(), mock_cloudtrail(), mock_s3(), mock_elb(), mock_elbv2():
+        with mock_aws():
             tcr = TagClusterResources(
                 cluster_prefix=custom_prefixes,
                 cluster_name=cluster_name,

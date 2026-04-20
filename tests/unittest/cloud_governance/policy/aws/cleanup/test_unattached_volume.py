@@ -1,5 +1,5 @@
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
@@ -8,7 +8,7 @@ from cloud_governance.policy.aws.cleanup.unattached_volume import UnattachedVolu
 region_name = 'us-east-2'
 
 
-@mock_ec2
+@mock_aws
 def test_unattached_volume_dry_run_yes_0_unattached():
     environment_variables.environment_variables_dict['dry_run'] = 'yes'
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = region_name
@@ -26,7 +26,7 @@ def test_unattached_volume_dry_run_yes_0_unattached():
                                        tag_name='cost-savings')
 
 
-@mock_ec2
+@mock_aws
 def test_unattached_volume_dry_run_yes():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = region_name
     environment_variables.environment_variables_dict['policy'] = 'unattached_volume'
@@ -43,7 +43,7 @@ def test_unattached_volume_dry_run_yes():
                                    tag_name='cost-savings') == 'unattached_volume'
 
 
-@mock_ec2
+@mock_aws
 def test_unattached_volume_dry_run_no():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = region_name
     environment_variables.environment_variables_dict['policy'] = 'unattached_volume'
@@ -60,7 +60,7 @@ def test_unattached_volume_dry_run_no():
     assert response.get('SkipPolicy') == 'NA'
 
 
-@mock_ec2
+@mock_aws
 def test_unattached_volume_dry_run_no_7_days_action():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = region_name
     environment_variables.environment_variables_dict['policy'] = 'unattached_volume'
@@ -76,7 +76,7 @@ def test_unattached_volume_dry_run_no_7_days_action():
     assert response.get('SkipPolicy') == 'NA'
 
 
-@mock_ec2
+@mock_aws
 def test_unattached_volume_dry_run_no_skip():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = region_name
     environment_variables.environment_variables_dict['policy'] = 'unattached_volume'
@@ -93,7 +93,7 @@ def test_unattached_volume_dry_run_no_skip():
     assert len(response) == 0
 
 
-@mock_ec2
+@mock_aws
 def test_check_exists_cluster():
     """
     This tests verify skip the existing cluster volume
