@@ -71,6 +71,7 @@ setup(
         'PyGitHub==1.55',  # gitleaks
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python3-devel openldap-devel gcc
         'protobuf==5.29.6',  # google-cloud transitive dep
+        'pytz',  # timezone handling (azure cost management, elasticsearch)
         'requests==2.33.1',  # rest api & lambda
         'retry==0.9.2',
         'setuptools',  # CI: setuptools<82 for IBM sdist builds
