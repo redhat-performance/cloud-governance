@@ -1,15 +1,13 @@
 import datetime
 
 import boto3
-from moto import mock_ec2, mock_s3, mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_verify_and_delete_resource_not_stopped():
     """
     This method tests verify_and_delete_resource
@@ -33,9 +31,7 @@ def test_verify_and_delete_resource_not_stopped():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_verify_and_delete_resource_stopped():
     """
     This method tests verify_and_delete_resource
@@ -62,9 +58,7 @@ def test_verify_and_delete_resource_stopped():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_verify_and_delete_resource_skip():
     """
     This method tests verify_and_delete_resource

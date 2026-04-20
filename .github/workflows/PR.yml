@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.13' ]
+        python-version: [ '3.14' ]
     outputs:
       INSTANCE_ID: ${{ steps.terraform_instance_id.outputs.INSTANCE_ID }}
     steps:
@@ -101,7 +101,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
@@ -131,7 +131,7 @@ jobs:
           sudo apt-get install -y build-essential python3-dev libldap2-dev libsasl2-dev
           python -m pip install --upgrade pip
           pip install "setuptools<82"
-          pip install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0
+          pip install ibm-cloud-sdk-core==3.24.4 ibm-platform-services==0.75.0 ibm-vpc==0.33.0
           pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi
@@ -170,7 +170,7 @@ jobs:
     if: success() || failure()
     strategy:
       matrix:
-        python-version: [ '3.13' ]
+        python-version: [ '3.14' ]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -218,7 +218,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -235,7 +235,7 @@ jobs:
           sudo apt-get install -y build-essential python3-dev libldap2-dev libsasl2-dev
           python -m pip install --upgrade pip
           pip install "setuptools<82"
-          pip install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0
+          pip install ibm-cloud-sdk-core==3.24.4 ibm-platform-services==0.75.0 ibm-vpc==0.33.0
           pip install pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f tests_requirements.txt ]; then pip install -r tests_requirements.txt; fi

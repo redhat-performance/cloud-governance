@@ -1,15 +1,13 @@
 import datetime
 
 import boto3
-from moto import mock_ec2, mock_s3, mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_tag_name_from_tags():
     """
     This method tests get_tag_name_from_tags method
@@ -22,9 +20,7 @@ def test_get_tag_name_from_tags():
     assert tag_value == "Unittest"
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_clean_up_days_count():
     """
     This method tests get_clean_up_days_count method
@@ -38,9 +34,7 @@ def test_get_clean_up_days_count():
     assert days_count == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_clean_up_days_count_already_exists():
     """
     This method tests get_clean_up_days_count method
@@ -55,9 +49,7 @@ def test_get_clean_up_days_count_already_exists():
     assert days_count == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_clean_up_days_count_already_updated_today():
     """
     This method tests get_clean_up_days_count method
@@ -72,9 +64,7 @@ def test_get_clean_up_days_count_already_updated_today():
     assert days_count == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_skip_policy_value_policy_tag():
     """
     This method tests get_skip_policy_value
@@ -88,9 +78,7 @@ def test_get_skip_policy_value_policy_tag():
     assert tag_value == "NotDelete".upper()
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_get_skip_policy_value_skip_tag():
     """
     This method tests get_skip_policy_value
@@ -104,9 +92,7 @@ def test_get_skip_policy_value_skip_tag():
     assert tag_value == "NotDelete".upper()
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_delete_resource():
     """
     This method tests _delete_resource
@@ -127,9 +113,7 @@ def test_delete_resource():
         assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_update_resource_day_count_tag():
     """
     This method tests update_resource_day_count_tag
@@ -154,9 +138,7 @@ def test_update_resource_day_count_tag():
         assert tag_value == str(datetime.datetime.utcnow().date()) + "@0"
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_update_resource_day_count_tag_exists_tag():
     """
     This method tests update_resource_tags
@@ -184,9 +166,7 @@ def test_update_resource_day_count_tag_exists_tag():
         assert tag_value == str(datetime.datetime.utcnow().date()) + "@2"
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_update_resource_day_count_tag_updated_tag_today():
     """
     This method tests update_resource_tags

@@ -2,7 +2,7 @@ import csv
 import os
 
 import boto3
-from moto import mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.policy_operations.aws.tag_user.tag_iam_user import TagUser
 
@@ -10,7 +10,7 @@ from cloud_governance.policy.policy_operations.aws.tag_user.tag_iam_user import 
 file_name = 'tag_user.csv'
 
 
-@mock_iam
+@mock_aws
 def test_generate_user_csv():
     """
     This method tests the csv file is generated or not
@@ -23,7 +23,7 @@ def test_generate_user_csv():
     assert os.path.exists(file_name)
 
 
-@mock_iam
+@mock_aws
 def test_update_user_tags():
     """
     This method tests the tags is updated or not

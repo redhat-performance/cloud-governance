@@ -5,7 +5,7 @@ from operator import le
 
 import boto3
 import pytest
-from moto import mock_cloudtrail, mock_ec2, mock_dynamodb, mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.policy_operations.aws.dynamodb_upload_data.upload_data_to_dynamodb import UploadDataToDynamoDb
 from cloud_governance.policy.aws.ec2_stop import EC2Stop
@@ -16,9 +16,7 @@ os.environ['TABLE_NAME'] = 'test_table'
 os.environ['dry_run'] = 'no'
 
 
-@mock_ec2
-@mock_cloudtrail
-@mock_dynamodb
+@mock_aws
 @pytest.mark.skip(reason="May be enabled in future")
 def test_upload_data_ec2_stop():
     """
@@ -54,10 +52,7 @@ def test_upload_data_ec2_stop():
 
 
 @pytest.mark.skip(reason="May be enabled in future")
-@mock_ec2
-@mock_cloudtrail
-@mock_dynamodb
-@mock_iam
+@mock_aws
 def test_upload_data_tag_non_cluster_resource():
     iam_client = boto3.client('iam')
     iam_client.create_user(UserName='cloud-governance-test', Tags=[{'Key': 'User', 'Value': 'cloud-governance-test'},
@@ -85,7 +80,7 @@ def test_upload_data_tag_non_cluster_resource():
     assert len(tag_resources.non_cluster_update_ec2()) == 1
 
 
-@mock_dynamodb
+@mock_aws
 def test_upload_data():
     """
     This method test data is uploaded to table correctly or not

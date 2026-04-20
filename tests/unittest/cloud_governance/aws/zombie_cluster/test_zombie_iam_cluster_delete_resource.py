@@ -1,6 +1,6 @@
 import json
 import pytest
-from moto import mock_iam, mock_ec2
+from moto import mock_aws
 import boto3
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
@@ -37,8 +37,7 @@ EC2_POLICY = {
 }
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_delete_iam_cluster_role():
     """
     This method tests the role is deleted or not
@@ -87,8 +86,7 @@ def test_delete_iam_cluster_role():
     assert not find
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_not_delete_iam_cluster_role():
     """
     This method tests the role is not deleted
@@ -137,8 +135,7 @@ def test_not_delete_iam_cluster_role():
     assert find
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 @pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_delete_iam_cluster_user():
     """
@@ -164,8 +161,7 @@ def test_delete_iam_cluster_user():
     assert not find
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 @pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_not_delete_iam_cluster_user():
     """

@@ -1,5 +1,5 @@
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.ip_unattached import IpUnattached
@@ -7,7 +7,7 @@ from tests.unittest.configs import AWS_DEFAULT_REGION, DRY_RUN_YES, DRY_RUN_NO, 
     INSTANCE_TYPE
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__verify_count_zero_dry_run_yes():
     """
     This method tests ip unattached, get the data and verify counter as 0
@@ -26,7 +26,7 @@ def test_ip_unattached__verify_count_zero_dry_run_yes():
     assert response[0]['CleanUpDays'] == 0
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__verify_count_increased_dry_run_no():
     """
     This method tests ip unattached, get the data and verify counter increased to 1
@@ -46,7 +46,7 @@ def test_ip_unattached__verify_count_increased_dry_run_no():
     assert response[0]['CleanUpDays'] == 1
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__verify_not_delete_on_dry_run_yes():
     """
     This method tests ip unattached, get the data and verify the resource not deleted on dry run yes
@@ -68,7 +68,7 @@ def test_ip_unattached__verify_not_delete_on_dry_run_yes():
     assert response[0]['CleanUpDays'] == 0
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__verify_delete_on_dry_run_no():
     """
     This method tests ip unattached, deletes the ip
@@ -90,7 +90,7 @@ def test_ip_unattached__verify_delete_on_dry_run_no():
     assert response[0]['ResourceState'] == 'Deleted'
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__skips_delete_on_dry_run_no():
     """
     This method tests ip unattached, skips delete if tags have Policy=skip
@@ -112,7 +112,7 @@ def test_ip_unattached__skips_delete_on_dry_run_no():
     assert len(response) == 0
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__skips_active_ip():
     """
     This method tests ip unattached, skips active ip
@@ -137,7 +137,7 @@ def test_ip_unattached__skips_active_ip():
     assert len(response) == 0
 
 
-@mock_ec2
+@mock_aws
 def test_ip_unattached__create_run_associate():
     """
     This method tests ip unattached, skips active ip
