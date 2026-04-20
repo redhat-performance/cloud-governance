@@ -1,6 +1,6 @@
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Union
 import re
 
@@ -128,7 +128,7 @@ class Utils:
         :rtype:
         """
         days = 1 if days == 0 else days
-        end_date = datetime.utcnow()
+        end_date = datetime.now(tz=timezone.utc)
         start_date = end_date - timedelta(days=days)
         return start_date, end_date
 

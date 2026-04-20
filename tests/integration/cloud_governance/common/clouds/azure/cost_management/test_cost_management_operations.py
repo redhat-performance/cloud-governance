@@ -11,7 +11,7 @@ def test_get_usage():
     @return:
     """
     cost_management_operations = CostManagementOperations()
-    end_date = datetime.datetime.utcnow() - datetime.timedelta(days=2)
+    end_date = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=2)
     start_date = end_date - datetime.timedelta(days=1)
     granularity = 'Daily'
     scope = cost_management_operations.azure_operations.get_billing_profiles_list()[0]
@@ -31,7 +31,7 @@ def test_get_forecast():
     @return:
     """
     cost_management_operations = CostManagementOperations()
-    end_date = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    end_date = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)
     start_date = end_date - datetime.timedelta(days=1)
     granularity = 'Daily'
     cost_forecast_data = cost_management_operations.get_forecast(scope=cost_management_operations.azure_operations.scope,

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import boto3
@@ -68,7 +68,7 @@ def test_zombie_snapshots_delete():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['policy'] = 'zombie_snapshots'
     tags = [{'Key': 'User', 'Value': TEST_USER_NAME},
-            {'Key': 'DaysCount', 'Value': f'{datetime.utcnow().date()}@7'}]
+            {'Key': 'DaysCount', 'Value': f'{datetime.now(tz=timezone.utc).date()}@7'}]
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
 
     # delete default snapshots and images
@@ -109,7 +109,7 @@ def test_zombie_snapshots_skip():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['policy'] = 'zombie_snapshots'
     tags = [{'Key': 'User', 'Value': TEST_USER_NAME}, {'Key': 'policy', 'Value': 'not-delete'},
-            {'Key': 'DaysCount', 'Value': f'{datetime.utcnow().date()}@7'}]
+            {'Key': 'DaysCount', 'Value': f'{datetime.now(tz=timezone.utc).date()}@7'}]
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
 
     # delete default snapshots and images
@@ -152,7 +152,7 @@ def test_zombie_snapshots_contains_cluster_tag():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['policy'] = 'zombie_snapshots'
     tags = [{'Key': 'User', 'Value': TEST_USER_NAME}, {'Key': 'policy', 'Value': 'not-delete'},
-            {'Key': 'DaysCount', 'Value': f'{datetime.utcnow().date()}@7'},
+            {'Key': 'DaysCount', 'Value': f'{datetime.now(tz=timezone.utc).date()}@7'},
             {'Key': 'kubernetes.io/cluster/test-zombie-cluster', 'Value': f'owned'}]
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
 
@@ -192,7 +192,7 @@ def test_zombie_snapshots_no_zombies():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['policy'] = 'zombie_snapshots'
     tags = [{'Key': 'User', 'Value': TEST_USER_NAME}, {'Key': 'policy', 'Value': 'not-delete'},
-            {'Key': 'DaysCount', 'Value': f'{datetime.utcnow().date()}@7'}]
+            {'Key': 'DaysCount', 'Value': f'{datetime.now(tz=timezone.utc).date()}@7'}]
     snapshot_id = 'mock_snapshot_id'
     image_id = 'mock_image_id'
 

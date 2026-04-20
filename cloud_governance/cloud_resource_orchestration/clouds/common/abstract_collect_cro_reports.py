@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import typeguard
 
@@ -116,7 +116,7 @@ class AbstractCollectCROReports(ABC):
             source['user_cro'] = instance_data[self.ZERO].get('user_cro')
         if instance_data[self.ZERO].get('user') and source.get('user') != instance_data[self.ZERO].get('user'):
             source['user'] = instance_data[self.ZERO].get('user')
-        source['timestamp'] = datetime.utcnow()
+        source['timestamp'] = datetime.now(tz=timezone.utc)
         if source.get('ticket_id_state') != 'in-progress':
             source['ticket_id_state'] = 'in-progress'
             source['approved_manager'] = instance_data[self.ZERO].get('approved_manager')

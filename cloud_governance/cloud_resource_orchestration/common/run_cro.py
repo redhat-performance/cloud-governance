@@ -34,7 +34,7 @@ class RunCRO:
         if not self.__es_operations.verify_elastic_index_doc_id(index=self.PERSISTENT_RUN_INDEX,
                                                                 doc_id=self.PERSISTENT_RUN_DOC_ID):
             self.__es_operations.upload_to_elasticsearch(index=self.PERSISTENT_RUN_INDEX, data={
-                f'last_run_{self.__account.lower()}': datetime.utcnow()}, id=self.PERSISTENT_RUN_DOC_ID)
+                f'last_run_{self.__account.lower()}': datetime.now(tz=timezone.utc)}, id=self.PERSISTENT_RUN_DOC_ID)
         else:
             self.__es_operations.update_elasticsearch_index(index=self.PERSISTENT_RUN_INDEX,
                                                             metadata={
@@ -56,7 +56,7 @@ class RunCRO:
                 last_run_time = source.get(f'last_run_{self.__account.lower()}')
                 if last_run_time:
                     last_updated_time = datetime.strptime(last_run_time, "%Y-%m-%dT%H:%M:%S.%f").date()
-                    if last_updated_time == datetime.utcnow().date():
+                    if last_updated_time == datetime.now(tz=timezone.utc).date():
                         first_run = False
             self.__environment_variables_dict.update({'CRO_FIRST_RUN': first_run})
             if first_run:

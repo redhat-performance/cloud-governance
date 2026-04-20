@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from elasticsearch import Elasticsearch
 
@@ -23,7 +23,7 @@ class ESOperations:
         :return:
         """
         if not data.get('timestamp'):
-            data['timestamp'] = datetime.utcnow()  # datetime.now()
+            data['timestamp'] = datetime.now(tz=timezone.utc)  # datetime.now()
         # Upload data to elastic search server
         try:
             self.__es.index(index=self.ES_INDEX, doc_type=self.ES_DOC, body=data, **kwargs)
