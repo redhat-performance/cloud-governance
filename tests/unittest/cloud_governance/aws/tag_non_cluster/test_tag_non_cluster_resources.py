@@ -3,7 +3,7 @@
 import os
 
 import boto3
-from moto import mock_ec2, mock_iam, mock_cloudtrail
+from moto import mock_aws
 
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.tag_non_cluster_resources import TagNonClusterResources
 
@@ -13,9 +13,7 @@ region_name = 'us-east-2'
 os.environ['SLEEP_SECONDS'] = '0'
 
 
-@mock_cloudtrail
-@mock_iam
-@mock_ec2
+@mock_aws
 def test_non_cluster_update_ec2():
     """
     This method tests the update tags to EC@ instance
@@ -30,9 +28,7 @@ def test_non_cluster_update_ec2():
     assert len(tag_resources.non_cluster_update_ec2()) == 3
 
 
-@mock_cloudtrail
-@mock_iam
-@mock_ec2
+@mock_aws
 def test_update_ami():
     """
     This method tests the update tags of AMI image
@@ -48,9 +44,7 @@ def test_update_ami():
     assert len(tag_resources.update_ami()) == 1
 
 
-@mock_cloudtrail
-@mock_iam
-@mock_ec2
+@mock_aws
 def test_update_volumes():
     """
     This method tests the Update the tags  of Volume
@@ -63,9 +57,7 @@ def test_update_volumes():
     assert len(tag_resources.update_volumes()) == 2
 
 
-@mock_cloudtrail
-@mock_iam
-@mock_ec2
+@mock_aws
 def test_update_snapshots():
     """
     This method tests updates the tags of Snapshots

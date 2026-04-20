@@ -3,7 +3,7 @@ from typing import Union
 from unittest.mock import patch
 
 import boto3
-from moto import mock_ec2, mock_cloudwatch
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
@@ -12,8 +12,7 @@ from tests.unittest.configs import AWS_DEFAULT_REGION, DRY_RUN_YES, DEFAULT_AMI_
     TEST_USER_NAME, DRY_RUN_NO, CURRENT_DATE
 
 
-@mock_cloudwatch
-@mock_ec2
+@mock_aws
 def test_instance_idle__instance_age_less_than_7():
     """
     This method tests instance_idle of less than DEFAULT_DAYs 7

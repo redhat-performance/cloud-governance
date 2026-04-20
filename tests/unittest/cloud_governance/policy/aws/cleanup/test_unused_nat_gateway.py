@@ -1,7 +1,7 @@
 import datetime
 
 import boto3
-from moto import mock_ec2, mock_cloudwatch
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
@@ -9,7 +9,7 @@ from cloud_governance.policy.aws.cleanup.unused_nat_gateway import UnUsedNatGate
 from tests.unittest.configs import AWS_DEFAULT_REGION, NAT_GATEWAY_NAMESPACE
 
 
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway_dry_run_yes():
     """
     This method tests the unused_nat_gateway collected by dry_run=yes
@@ -30,8 +30,7 @@ def test_unused_nat_gateway_dry_run_yes():
                                    tag_name='cost-savings') == 'unused_nat_gateway'
 
 
-@mock_cloudwatch
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway_dry_run_yes_collect_none():
     """
     This method tests the unused_nat_gateway not collected by dry_run=yes
@@ -56,9 +55,8 @@ def test_unused_nat_gateway_dry_run_yes_collect_none():
                     'Value': nat_gateway.get('NatGatewayId')
                 },
             ],
-            'Timestamp': datetime.datetime.utcnow(),
+            'Timestamp': datetime.datetime.utcnow() - datetime.timedelta(hours=12),
             'Value': 123.0,
-            'Values': [123.0],
             'Unit': 'Count',
         }
     ])
@@ -69,7 +67,7 @@ def test_unused_nat_gateway_dry_run_yes_collect_none():
                                    tag_name='cost-savings') == ''
 
 
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway_dry_run_no():
     """
     This method verifies the data is collecting by dry_run = no
@@ -89,7 +87,7 @@ def test_unused_nat_gateway_dry_run_no():
     assert response.get('CleanUpDays') == 1
 
 
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway___dry_run_no_7_days_action_delete():
     """
     This method tests the deletion of unused_nat_gateway
@@ -111,7 +109,7 @@ def test_unused_nat_gateway___dry_run_no_7_days_action_delete():
     assert response.get('ResourceAction') == 'True'
 
 
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway___dry_run_no_skips_delete():
     """
     This method tests skip deletion of unused_nat_gateway
@@ -131,7 +129,7 @@ def test_unused_nat_gateway___dry_run_no_skips_delete():
     assert len(response) == 0
 
 
-@mock_ec2
+@mock_aws
 def test_unused_nat_gateway___dry_run_no_skips_active_cluster_resource():
     """
     This method tests the skip collection of unused_nat_gateway

@@ -2,15 +2,15 @@ import os
 from operator import le
 
 import boto3
-from moto import mock_ec2, mock_cloudtrail
+from moto import mock_aws
 
 from cloud_governance.policy.aws.ec2_stop import EC2Stop
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 
 
-# @mock_cloudtrail
-# @mock_ec2
+# @mock_aws
+# @mock_aws
 # def test_ec2_stop():
 #     """
 #     This method tests, termination of stopped instance more than 30 days and create an image, snapshot
@@ -30,8 +30,7 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 #     assert len(snapshots) == len(amis)
 
 
-@mock_cloudtrail
-@mock_ec2
+@mock_aws
 def test_ec2_stop_not_delete():
     """
     This method tests,not termination of stopped instance more than 30 days and create an image, snapshot using Policy=NOT_DELETE

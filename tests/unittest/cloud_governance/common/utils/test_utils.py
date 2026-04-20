@@ -1,10 +1,10 @@
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 
 
-@mock_ec2
+@mock_aws
 def test_tag_aws_resources():
     """
     This method tag aws resources

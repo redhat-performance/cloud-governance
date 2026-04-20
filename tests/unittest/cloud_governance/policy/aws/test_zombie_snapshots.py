@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.main.environment_variables import environment_variables
@@ -11,7 +11,7 @@ from tests.unittest.configs import DRY_RUN_YES, AWS_DEFAULT_REGION, INSTANCE_TYP
     TEST_USER_NAME, DRY_RUN_NO
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_snapshots():
     """
     This method tests lists of the ami related snapshots
@@ -58,7 +58,7 @@ def test_zombie_snapshots():
                                    tag_name='cost-savings') == 'zombie_snapshots'
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_snapshots_delete():
     """
     This method tests delete of the ami related snapshots
@@ -99,7 +99,7 @@ def test_zombie_snapshots_delete():
     assert len(response) == 1
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_snapshots_skip():
     """
     This method tests skip delete of the ami related snapshots
@@ -142,7 +142,7 @@ def test_zombie_snapshots_skip():
                                    tag_name='cost-savings') == ''
 
 
-@mock_ec2
+@mock_aws
 def test_zombie_snapshots_contains_cluster_tag():
     """
     This method tests snapshot having the live cluster

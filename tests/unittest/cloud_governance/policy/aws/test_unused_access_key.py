@@ -3,7 +3,7 @@ Unit tests for cloud_governance.policy.aws.unused_access_key.UnusedAccessKey.
 """
 from unittest.mock import patch
 
-from moto import mock_ec2, mock_s3, mock_iam
+from moto import mock_aws
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.unused_access_key import UnusedAccessKey
@@ -29,9 +29,7 @@ def _mock_iam_users_access_keys(age_days: int, status: str = 'Active', last_acti
     }
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_skips_when_age_below_threshold():
     """Keys with age_days < UNUSED_ACCESS_KEY_DAYS are skipped (no deactivation)."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -47,9 +45,7 @@ def test_unused_access_key_skips_when_age_below_threshold():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_includes_when_age_at_or_above_threshold():
     """Keys with age_days >= UNUSED_ACCESS_KEY_DAYS are included for deactivation path."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -70,9 +66,7 @@ def test_unused_access_key_includes_when_age_at_or_above_threshold():
     assert result[0]['AgeDays'] == UNUSED_ACCESS_KEY_DAYS
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_skips_inactive_keys():
     """Keys with status 'Inactive' are skipped."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -88,9 +82,7 @@ def test_unused_access_key_skips_inactive_keys():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_skips_when_skip_policy_tag():
     """Users with Policy=notdelete or skip are skipped."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -110,9 +102,7 @@ def test_unused_access_key_skips_when_skip_policy_tag():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_skips_when_no_active_keys():
     """When _has_active_access_keys returns False for the key, it is skipped."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -128,9 +118,7 @@ def test_unused_access_key_skips_when_no_active_keys():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_empty_when_no_users():
     """When no IAM users have access keys, result is empty."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'
@@ -144,9 +132,7 @@ def test_unused_access_key_empty_when_no_users():
     assert len(result) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_unused_access_key_deactivation_grace_days_capped():
     """Deactivation grace days is min(age_days - UNUSED_ACCESS_KEY_DAYS, DAYS_TO_TAKE_ACTION)."""
     environment_variables.environment_variables_dict['policy'] = 'unused_access_key'

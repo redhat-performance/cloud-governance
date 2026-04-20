@@ -1,12 +1,11 @@
 import boto3
-from moto import mock_s3, mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_not_zombie_s3_bucket_deletion():
     """
     This method tests force the s3 bucket deletion
@@ -32,8 +31,7 @@ def test_not_zombie_s3_bucket_deletion():
     assert s3_operations.find_bucket(bucket_name='unitest-test-ocp-image-registry-us-east-1')
 
 
-@mock_ec2
-@mock_s3
+@mock_aws
 def test_force_zombie_s3_bucket_deletion():
     """
     This method tests force the s3 bucket deletion

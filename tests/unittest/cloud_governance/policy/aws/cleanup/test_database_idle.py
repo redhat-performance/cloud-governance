@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from freezegun import freeze_time
-from moto import mock_rds, mock_cloudwatch
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client, get_tag_value_from_tags
 from cloud_governance.policy.aws.cleanup.database_idle import DatabaseIdle
@@ -13,8 +13,7 @@ current_date = datetime.utcnow()
 start_date = current_date - timedelta(days=CLOUD_WATCH_METRICS_DAYS + 1)
 
 
-@mock_cloudwatch
-@mock_rds
+@mock_aws
 @freeze_time(start_date.__str__())
 def test_database_idle():
     """
@@ -40,8 +39,7 @@ def test_database_idle():
                                    tag_name='cost-savings') == "database_idle"
 
 
-@mock_cloudwatch
-@mock_rds
+@mock_aws
 @freeze_time(start_date.__str__())
 def test_database_idle_alert_skip():
     """
@@ -66,8 +64,7 @@ def test_database_idle_alert_skip():
     assert len(rds_client.describe_db_instances()['DBInstances']) == 1
 
 
-@mock_cloudwatch
-@mock_rds
+@mock_aws
 @freeze_time(start_date.__str__())
 def test_database_idle_delete():
     """
@@ -92,8 +89,7 @@ def test_database_idle_delete():
     assert running_instances_data[0]['ResourceAction'] == 'True'
 
 
-@mock_cloudwatch
-@mock_rds
+@mock_aws
 @freeze_time(start_date.__str__())
 def test_database_idle_dry_run_yes():
     """

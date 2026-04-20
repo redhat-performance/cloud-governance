@@ -1,12 +1,12 @@
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 
 AWS_DEFAULT_REGION = 'ap-south-1'
 
 
-@mock_ec2
+@mock_aws
 def test_get_ec2_instance_list():
     """
     This method returns the list of ec2 instances
@@ -21,7 +21,7 @@ def test_get_ec2_instance_list():
     assert type(ec2_operations.get_ec2_instance_list()[0]) == dict
 
 
-@mock_ec2
+@mock_aws
 def test_get_ec2_instance_ids():
     """
     This method tests the return the list instance_ids
@@ -36,7 +36,7 @@ def test_get_ec2_instance_ids():
     assert type(ec2_operations.get_ec2_instance_ids()[0]) == str
 
 
-@mock_ec2
+@mock_aws
 def test_tag_ec2_resources():
     """
     This method tests the method tagged instances by batch wise

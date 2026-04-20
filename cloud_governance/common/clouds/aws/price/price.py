@@ -2,7 +2,9 @@ from datetime import datetime
 from time import strftime
 
 import json
-from pkg_resources import resource_filename
+from pathlib import Path
+
+import botocore
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.logger.init_logger import logger
@@ -62,7 +64,7 @@ class AWSPrice:
         @return:
         """
         default_region = 'us-east-1'
-        endpoint_file = resource_filename('botocore', 'data/endpoints.json')
+        endpoint_file = str(Path(botocore.__file__).parent / 'data' / 'endpoints.json')
         try:
             with open(endpoint_file, 'r') as f:
                 data = json.load(f)

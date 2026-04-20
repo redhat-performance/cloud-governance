@@ -1,16 +1,14 @@
 from datetime import datetime, timedelta
 
 import boto3
-from moto import mock_ec2, mock_s3, mock_iam
+from moto import mock_aws
 
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.cleanup.instance_run import InstanceRun
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run():
     """
     This method tests instance_run
@@ -33,9 +31,7 @@ def test_instance_run():
     assert running_instances_data[0].get('ResourceState') == 'running'
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run_alert():
     """
     This method tests instance_run
@@ -63,9 +59,7 @@ def test_instance_run_alert():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run_alert_stopped():
     """
     This method tests instance_run
@@ -95,9 +89,7 @@ def test_instance_run_alert_stopped():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run_alert_skip():
     """
     This method tests instance_run
@@ -126,9 +118,7 @@ def test_instance_run_alert_skip():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 1
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run_stop_reset():
     """
     This method tests instance_run
@@ -163,9 +153,7 @@ def test_instance_run_stop_reset():
     assert aws_cleanup_operations.get_tag_name_from_tags(tags=instances.get('Tags'), tag_name='DaysCount').split('@')[-1] == '0'
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_instance_run_stop_start():
     """
     This method tests instance_run
@@ -206,9 +194,7 @@ def test_instance_run_stop_start():
     assert aws_cleanup_operations.get_tag_name_from_tags(tags=instances.get('Tags'), tag_name='DaysCount').split('@')[-1] == '1'
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_ec2_force_delete():
     """
     This method tests instance_run
@@ -240,9 +226,7 @@ def test_ec2_force_delete():
     assert len(ec2_client.describe_instances(Filters=[{"Name": "instance-state-name", "Values": ["running"]}])['Reservations']) == 0
 
 
-@mock_ec2
-@mock_s3
-@mock_iam
+@mock_aws
 def test_ec2_force_delete_skip():
     """
     This method tests instance_run

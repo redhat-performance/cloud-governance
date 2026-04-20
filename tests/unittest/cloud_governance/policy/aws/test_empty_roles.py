@@ -1,7 +1,7 @@
 import json
 from datetime import date
 
-from moto import mock_ec2, mock_iam
+from moto import mock_aws
 from unittest.mock import patch
 
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
@@ -60,8 +60,7 @@ def setup_empty_role_with_ip(iam_client, role_name, ip_name, days_count=0):
 
     return tags
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles():
     """
     This method tests lists empty roles
@@ -86,8 +85,7 @@ def test_empty_roles():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@1"
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_dry_run_yes():
     """
     This method tests collects empty roles  on dry_run=yes
@@ -110,8 +108,7 @@ def test_empty_roles_dry_run_yes():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_delete():
     """
     This method tests delete empty role
@@ -132,8 +129,7 @@ def test_empty_roles_delete():
     assert len(response) == 1
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_skip():
     """
     This method tests skip delete of the empty role
@@ -156,8 +152,7 @@ def test_empty_roles_skip():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_contains_cluster_tag():
     """
     This method tests role having the live cluster
@@ -181,8 +176,7 @@ def test_empty_roles_contains_cluster_tag():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_contains_attached_policy():
     """
     This method tests role having attached policy
@@ -206,8 +200,7 @@ def test_empty_roles_contains_attached_policy():
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_contains_inline_policy():
     """
     This method tests role having inline policy
@@ -229,8 +222,7 @@ def test_empty_roles_contains_inline_policy():
     assert get_tag_value_from_tags(tags=iam_operations.get_role(role_name=PROJECT_NAME).get('Tags', []),
                                    tag_name='DaysCount') == f"{CURRENT_DATE}@0"
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_with_instance_profile_live_delete():
     """
     Tests successful detachment of Instance Profile and subsequent deletion.
@@ -257,8 +249,7 @@ def test_empty_roles_with_instance_profile_live_delete():
     assert len(response) == 1
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 def test_empty_roles_with_instance_profile_dry_run_check():
     """
     Tests that detachment is skipped in dry_run=yes, and the flow proceeds to the deletion check.
@@ -287,8 +278,7 @@ def test_empty_roles_with_instance_profile_dry_run_check():
     assert len(iam_operations.get_instance_profiles_for_role(PROJECT_NAME)) == 1
 
 
-@mock_ec2
-@mock_iam
+@mock_aws
 @patch('cloud_governance.policy.helpers.aws.aws_policy_operations.AWSPolicyOperations.update_resource_tags')
 @patch('cloud_governance.common.clouds.aws.iam.iam_operations.IAMOperations.remove_role_from_instance_profiles',
        return_value=False)

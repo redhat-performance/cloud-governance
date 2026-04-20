@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # cloud-governance latest version
 ARG VERSION
@@ -14,10 +14,13 @@ RUN apt-get update \
      && mv gitleaks /usr/local/bin/ \
      && gitleaks --version
 
-# Pin setuptools<82 so pkg_resources is available when building ibm-cloud-sdk-core
+# Pre-install IBM packages, then use a constraints file so pip cannot
+# downgrade them when resolving cloud-governance's published dependencies.
 RUN python -m pip --no-cache-dir install --upgrade pip "setuptools>=58,<82" wheel && \
-    pip --no-cache-dir install --no-build-isolation ibm-cloud-sdk-core==3.18.0 ibm-platform-services==0.27.0 ibm-vpc==0.21.0 ibm-schematics==1.0.1 && \
-    pip --no-cache-dir install cloud-governance --upgrade
+    pip --no-cache-dir install ibm-cloud-sdk-core==3.24.4 ibm-platform-services==0.75.0 ibm-vpc==0.33.0 ibm-schematics==1.0.1 && \
+    printf 'ibm-cloud-sdk-core==3.24.4\nibm-platform-services==0.75.0\nibm-vpc==0.33.0\nibm-schematics==1.0.1\n' > /tmp/constraints.txt && \
+    pip --no-cache-dir install cloud-governance --upgrade -c /tmp/constraints.txt && \
+    rm /tmp/constraints.txt
 RUN pip3 --no-cache-dir install --upgrade awscli
 ADD cloud_governance/policy /usr/local/cloud_governance/policy/
 COPY cloud_governance/main/main.py /usr/local/cloud_governance/main.py

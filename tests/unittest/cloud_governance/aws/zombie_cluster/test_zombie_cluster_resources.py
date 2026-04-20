@@ -1,5 +1,5 @@
 import pytest
-from moto import mock_ec2, mock_elb, mock_elbv2, mock_iam, mock_s3
+from moto import mock_aws
 
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 
@@ -7,7 +7,7 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 @pytest.fixture(scope="module")
 def zombie_cluster_resources():
     """Create ZombieClusterResources under mocks so __init__ does not hit real AWS."""
-    with mock_ec2(), mock_elb(), mock_elbv2(), mock_iam(), mock_s3():
+    with mock_aws():
         yield ZombieClusterResources(
             cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"],
             delete=False,

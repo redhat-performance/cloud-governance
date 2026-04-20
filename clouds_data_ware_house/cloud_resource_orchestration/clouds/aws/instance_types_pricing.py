@@ -1,8 +1,10 @@
 import json
 import os
 
+from pathlib import Path
+
 import boto3
-from pkg_resources import resource_filename
+import botocore
 
 
 class InstanceTypes:
@@ -29,7 +31,7 @@ class InstanceTypes:
         @return:
         """
         default_region = 'us-east-1'
-        endpoint_file = resource_filename('botocore', 'data/endpoints.json')
+        endpoint_file = str(Path(botocore.__file__).parent / 'data' / 'endpoints.json')
         try:
             with open(endpoint_file, 'r') as f:
                 data = json.load(f)

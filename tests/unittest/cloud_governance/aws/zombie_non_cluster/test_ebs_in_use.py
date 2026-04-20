@@ -1,6 +1,6 @@
 
 import boto3
-from moto import mock_ec2, mock_s3
+from moto import mock_aws
 
 from cloud_governance.common.clouds.aws.s3.s3_operations import S3Operations
 from cloud_governance.main.environment_variables import environment_variables
@@ -8,7 +8,7 @@ from cloud_governance.policy.aws.ebs_in_use import EbsInUse
 from tests.unittest.configs import AWS_DEFAULT_REGION
 
 
-@mock_ec2
+@mock_aws
 def test_ebs_in_use():
     """
     This method test in-use ebs volumes
@@ -26,8 +26,7 @@ def test_ebs_in_use():
     assert 2 == len(ebs_in_use.run())
 
 
-@mock_s3
-@mock_ec2
+@mock_aws
 def test_ebs_in_use_s3_upload():
     """
     This method test the data is upload t s3 or not

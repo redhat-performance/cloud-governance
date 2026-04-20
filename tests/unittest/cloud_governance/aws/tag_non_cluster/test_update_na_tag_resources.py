@@ -1,13 +1,13 @@
 import os
 
 import boto3
-from moto import mock_ec2
+from moto import mock_aws
 
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.update_na_tag_resources import UpdateNATags
 os.environ['SLEEP_SECONDS'] = '0'
 
 
-@mock_ec2
+@mock_aws
 def test_create_csv():
     """
     This method test csv is generated or not
@@ -29,7 +29,7 @@ def test_create_csv():
         os.remove('tag_na.csv')
 
 
-@mock_ec2
+@mock_aws
 def test_update_tags():
     """
     This method tests update of tags to resource
