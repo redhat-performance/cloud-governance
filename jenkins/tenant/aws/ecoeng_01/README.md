@@ -13,7 +13,7 @@ Accounts:
 - **emerge-partner**: "jsalomon@redhat.com, ltomasbo@redhat.com, hhalbfin@redhat.com",
 - **telco5g-ci**: "yjoseph@redhat.com, hhalbfin@redhat.com",
 - **ecoeng-sap**: "cbrune@redhat.com, ksatarin@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
-- **sysdeseng**: "scollier@redhat.com, hhalbfin@redhat.com",
+- **sysdeseng**: "scollier@redhat.com, hhalbfin@redhat.com, abbandar@redhat.com",
 - **appeng-ai**: "matrujil@redhat.com, mmikhail@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
 - **verticals-ui**: "brotman@redhat.com, hhalbfin@redhat.com",
 - **special-projects**: "chen.yosef@redhat.com, hhalbfin@redhat.com",
