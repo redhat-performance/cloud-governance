@@ -5,7 +5,7 @@ from ast import literal_eval
 from time import time
 
 import boto3
-from datetime import datetime
+from datetime import datetime, timezone
 from jinja2 import Template
 
 from es_operations import ESOperations
@@ -95,7 +95,7 @@ class EC2Operations:
         :return:
         """
         regions = self.__ec2_client.describe_regions()['Regions']
-        current_datetime = datetime.utcnow().date()
+        current_datetime = datetime.now(tz=timezone.utc).date()
         long_running_instances_by_user = {}
         for region in regions:
             region_name = region['RegionName']
@@ -237,7 +237,7 @@ class ProcessData:
         data = {
             'body': organized_ec2_data,
             'subject': self.__subject,
-            'index_id': f"{account_name.lower()}-{str(datetime.utcnow().date())}"
+            'index_id': f"{account_name.lower()}-{str(datetime.now(tz=timezone.utc).date())}"
         }
         if es_operations.upload_to_es(data=data, id=data.get('index_id')):
             return 200, "Successfully save date in elastic search"
@@ -266,7 +266,7 @@ def lambda_handler(event, context):
     :return:
     """
     start_time = time()
-    logging.info(f"{lambda_handler.__name__} started at {datetime.utcnow()}")
+    logging.info(f"{lambda_handler.__name__} started at {datetime.now(tz=timezone.utc)}")
     code = 400
     message = "Something went wrong while sending the Notification"
     extra_message = ''

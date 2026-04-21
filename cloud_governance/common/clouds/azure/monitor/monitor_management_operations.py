@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from azure.core.exceptions import HttpResponseError
 from azure.mgmt.monitor import MonitorManagementClient
@@ -22,7 +22,7 @@ class MonitorManagementOperations(CommonOperations):
         :return:
         :rtype:
         """
-        return datetime.utcnow()
+        return datetime.now(tz=timezone.utc)
 
     def __get_start_date(self):
         """
@@ -79,7 +79,7 @@ class MonitorManagementOperations(CommonOperations):
         :rtype:
         """
         if not timespan:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(tz=timezone.utc)
             start_date = end_date - timedelta(days=UNUSED_DAYS)
             timespan = f'{start_date}/{end_date}'
         response = self.__monitor_client.metrics.list(resource_uri=resource_id, timespan=timespan,

@@ -14,7 +14,7 @@ class AbstractPolicyOperations(ABC):
     DAYS_TO_NOTIFY_ADMINS = 2
     DAYS_TO_TRIGGER_RESOURCE_MAIL = 4
     DAILY_HOURS = 24
-    CURRENT_DATE = datetime.utcnow().date().__str__()
+    CURRENT_DATE = datetime.now(tz=timezone.utc).date().__str__()
 
     def __init__(self):
         self._environment_variables_dict = environment_variables.environment_variables_dict
@@ -27,7 +27,7 @@ class AbstractPolicyOperations(ABC):
         self._es_upload = ElasticUpload()
         self._shutdown_period = self._environment_variables_dict.get('SHUTDOWN_PERIOD')
 
-    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.utcnow()):
+    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.now(tz=timezone.utc)):
         """
         This method returns the days
         :param start_date:

@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 
@@ -42,7 +42,7 @@ class SlackOperations:
         This method sends the header first to create a thread in slack
         :return:
         """
-        header = f":zap: Daily Report @ {datetime.utcnow().date()}: Account *{account_name.title()}* has following long running instances"
+        header = f":zap: Daily Report @ {datetime.now(tz=timezone.utc).date()}: Account *{account_name.title()}* has following long running instances"
         blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": header}}]
         response_data = self.post_message(blocks=blocks)
         if response_data:
