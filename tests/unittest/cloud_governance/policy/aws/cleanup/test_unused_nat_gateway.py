@@ -55,7 +55,7 @@ def test_unused_nat_gateway_dry_run_yes_collect_none():
                     'Value': nat_gateway.get('NatGatewayId')
                 },
             ],
-            'Timestamp': datetime.datetime.utcnow() - datetime.timedelta(hours=12),
+            'Timestamp': datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(hours=12),
             'Value': 123.0,
             'Unit': 'Count',
         }
@@ -99,7 +99,7 @@ def test_unused_nat_gateway___dry_run_no_7_days_action_delete():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     subnet_id = ec2_client.describe_subnets()['Subnets'][0].get('SubnetId')
-    tags = [{'Key': 'DaysCount', 'Value': f'{datetime.datetime.utcnow().date()}@7'}]
+    tags = [{'Key': 'DaysCount', 'Value': f'{datetime.datetime.now(tz=datetime.timezone.utc).date()}@7'}]
     ec2_client.create_nat_gateway(SubnetId=subnet_id, TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}])
     unused_nat_gateway = UnUsedNatGateway()
     response = unused_nat_gateway.run()
@@ -121,7 +121,7 @@ def test_unused_nat_gateway___dry_run_no_skips_delete():
     environment_variables.environment_variables_dict['dry_run'] = 'no'
     ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
     subnet_id = ec2_client.describe_subnets()['Subnets'][0].get('SubnetId')
-    tags = [{'Key': 'DaysCount', 'Value': f'{datetime.datetime.utcnow().date()}@7'},
+    tags = [{'Key': 'DaysCount', 'Value': f'{datetime.datetime.now(tz=datetime.timezone.utc).date()}@7'},
             {'Key': 'policy', 'Value': 'not-delete'}]
     ec2_client.create_nat_gateway(SubnetId=subnet_id, TagSpecifications=[{'ResourceType': 'nat-gateway', 'Tags': tags}])
     unused_nat_gateway = UnUsedNatGateway()

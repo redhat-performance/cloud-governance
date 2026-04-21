@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -190,7 +190,7 @@ class ESUploader:
             data[key] = value
 
         # utcnow - solve timestamp issue
-        data['timestamp'] = datetime.utcnow()  # datetime.now()
+        data['timestamp'] = datetime.now(tz=timezone.utc)  # datetime.now()
 
         # Upload data to elastic search server
         try:

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from unittest.mock import patch
 
@@ -19,7 +19,7 @@ def get_ticket_response():
     This method return the ticket data
     :return:
     """
-    created = datetime.strftime(datetime.utcnow() - timedelta(days=2), "%Y-%m-%dT%H:%M:%S")
+    created = datetime.strftime(datetime.now(tz=timezone.utc) - timedelta(days=2), "%Y-%m-%dT%H:%M:%S")
     response = {
                 'key': 'MOCK-1',
                 'fields': {
@@ -73,7 +73,7 @@ async def mock_get_all_issues(*args, **kwargs):
                 'key': 'MOCK-1',
                 'fields': {
                     'status': {'name': 'Refinement'},
-                    'created': datetime.utcnow() - timedelta(days=2),
+                    'created': datetime.now(tz=timezone.utc) - timedelta(days=2),
                     'description': "First Name: Test\n"
                                    "Last Name: Mock\nEmail Address: mock@gmail.com\n"
                                    "Manager Approval Address: manager@gmail.com\nCC-Users: \nDays: 5\n"

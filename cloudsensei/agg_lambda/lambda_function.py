@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from time import time
 
 from es_operations import ESOperations
@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     :return:
     """
     start_time = time()
-    logging.info(f"{lambda_handler.__name__} started at {datetime.utcnow()}")
+    logging.info(f"{lambda_handler.__name__} started at {datetime.now(tz=timezone.utc)}")
     aws_accounts = ["perf-dept", "openshift-perfscale", "openshift-psap"]
     code = 400
     message = "Something went wrong check your es_data"
@@ -24,7 +24,7 @@ def lambda_handler(event, context):
     email_body = ""
     subject = "Weekly Cloud Report: Long running instances in the Perf&Scale AWS Accounts"
     for account in aws_accounts:
-        current_date = str(datetime.utcnow().date())
+        current_date = str(datetime.now(tz=timezone.utc).date())
         index_id = f"{account}-{current_date}"
         es_data = es_operations.get_es_data_by_id(index_id)
         if es_data:

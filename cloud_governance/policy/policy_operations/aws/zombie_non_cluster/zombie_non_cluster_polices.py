@@ -1,6 +1,6 @@
 import importlib
 import inspect
-from datetime import datetime
+from datetime import datetime, timezone
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import NonClusterZombiePolicy
@@ -40,7 +40,7 @@ class ZombieNonClusterPolicies(NonClusterZombiePolicy):
                                     self._es_operations.upload_to_elasticsearch(data=policy_dict.copy(), index=self._es_index)
                             logger.info(f'Uploaded the policy results to elasticsearch index: {self._es_index}')
                         else:
-                            logger.info(f'No data to upload on @{self._account}  at {datetime.utcnow()}')
+                            logger.info(f'No data to upload on @{self._account}  at {datetime.now(tz=timezone.utc)}')
                     else:
                         logger.error('ElasticSearch host is not pingable, Please check ')
 
