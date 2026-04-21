@@ -1,5 +1,5 @@
 # This image for Jenkins slave
-# located: quay.io/cloud-governance/centos-stream9-podman:latest
+# located: quay.io/rh_perfscale/centos-stream9-podman:latest
 # run the postfix service within the container
 # mount /etc/postfix/main.cf file to the container
 
