@@ -1,5 +1,7 @@
 FROM python:3.14-slim
 
+LABEL quay.expires-after=365d
+
 # cloud-governance latest version
 ARG VERSION
 
