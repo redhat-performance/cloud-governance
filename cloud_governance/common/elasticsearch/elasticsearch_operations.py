@@ -54,6 +54,8 @@ class ElasticSearchOperations:
             self.__es = Elasticsearch([add_host],
                                       timeout=self.__timeout,
                                       max_retries=2)
+            # Skip product check for OpenSearch compatibility (elasticsearch-py 7.14+ rejects non-Elasticsearch servers)
+            self.__es.transport._verified_elasticsearch = True
         except Exception as err:
             self.__es = None
 
