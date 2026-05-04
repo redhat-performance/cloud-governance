@@ -57,6 +57,13 @@ class ElasticSearchOperations:
         except Exception as err:
             self.__es = None
 
+        # Skip product check for OpenSearch compatibility (elasticsearch-py 7.14+ rejects non-Elasticsearch servers)
+        try:
+            if self.__es and hasattr(self.__es.transport, '_verified_elasticsearch'):
+                self.__es.transport._verified_elasticsearch = True
+        except AttributeError as err:
+            logger.warning(f"Could not bypass Elasticsearch product check: {err}")
+
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
         """
