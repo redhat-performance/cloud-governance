@@ -1,14 +1,13 @@
 ### ecoeng_01 - dry_run=no
 
 **POLICIES_IN_ACTION
-** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
+** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
 
-- Run zombie_cluster_resource in blueprints
+- zombie_cluster_resource removed from POLICIES_IN_ACTION (runs as dry_run=yes only) due to Hypershift incompatibility
 
 Accounts:
 
 - **industry-partners**: "hhalbfin@redhat.com",
-- **certification-pipeline**: "matt.dorn@redhat.com, mhillsma@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
 - **ecoengverticals-qe**: "augol@redhat.com, hhalbfin@redhat.com",
 - **emerge-partner**: "jsalomon@redhat.com, ltomasbo@redhat.com, hhalbfin@redhat.com",
 - **telco5g-ci**: "yjoseph@redhat.com, hhalbfin@redhat.com",
@@ -19,7 +18,6 @@ Accounts:
 - **special-projects**: "chen.yosef@redhat.com, hhalbfin@redhat.com",
 - **edgeinfra**: "lgamliel@redhat.com, bthurber@redhat.com, oourfali@redhat.com, hhalbfin@redhat.com",
 - **specialprojects-qe**: "augol@redhat.com, hhalbfin@redhat.com",
-- **partnerlab**: "matt.dorn@redhat.com, jomckenz@redhat.com, babak@redhat.com, hhalbfin@redhat.com",
 - **blueprints**: "abeekhof@redhat.com, hhalbfin@redhat.com",
 - **edgeinfra-ci**: "rfreiman@redhat.com, hhalbfin@redhat.com",
 - **ecoeng-flightctl**:  "ayogev@redhat.com, hhalbfin@redhat.com",
