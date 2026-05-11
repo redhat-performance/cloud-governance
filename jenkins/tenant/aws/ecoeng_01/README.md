@@ -24,4 +24,5 @@ Accounts:
 - **partners-eng**: "hhalbfin@redhat.com",
 - **fusionaccess**: "abeekhof@redhat.com,  hhalbfin@redhat.com",
 - **ecoeng-assistedci**: "alkaplan@redhat.com, dmanor@redhat.com, hhalbfin@redhat.com",
-- **medik8s-ci**: "ushkalim@redhat.com,  hhalbfin@redhat.com"
+- **medik8s-ci**: "ushkalim@redhat.com,  hhalbfin@redhat.com",
+- **ecoeng-buildSign**: "hhalbfin@redhat.com"
