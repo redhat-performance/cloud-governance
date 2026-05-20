@@ -1,6 +1,6 @@
 ### ecoeng_03 - dry_run=yes
 
-**POLICIES_IN_ACTION** = '["unused_access_key"]'
+**POLICIES_IN_ACTION** = '[]'
 
 Accounts:
 
