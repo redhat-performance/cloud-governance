@@ -28,6 +28,8 @@ LOGS = os.environ.get('LOGS', 'logs')
 ALERT_DRY_RUN = os.environ.get('ALERT_DRY_RUN', False)
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
 
 # Set es_index if given
@@ -62,7 +64,7 @@ container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
-    "es_host": ES_HOST, "es_port": ES_PORT,
+    "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN
 }

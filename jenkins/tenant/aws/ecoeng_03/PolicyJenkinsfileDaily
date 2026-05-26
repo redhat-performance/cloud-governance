@@ -18,6 +18,7 @@ pipeline {
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         ES_HOST = credentials('haim-cloud-governance-elasticsearch-url')
         ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
+        ES_SERVER_TYPE = 'elasticsearch'
         ALERT_DRY_RUN = true
         contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"

@@ -5,8 +5,7 @@ azure-mgmt-costmanagement==3.0.0
 azure-mgmt-monitor==6.0.2
 azure-mgmt-subscription==3.1.1
 boto3==1.42.89
-elasticsearch==7.17.13
-elasticsearch-dsl==7.4.0
+elasticsearch==8.17.0
 freezegun==1.5.1
 ibm-cloud-sdk-core==3.24.4
 ibm-platform-services==0.75.0
@@ -15,6 +14,7 @@ ibm-vpc==0.33.0
 moto[all]==5.1.22
 numpy<=1.26.4
 oauthlib~=3.1.1
+opensearch-py==3.2.0
 pandas
 pre-commit==3.5.0
 pytest

@@ -4,6 +4,8 @@ AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 COST_SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 AWS_ACCOUNT_ROLE = os.environ['AWS_ACCOUNT_ROLE']
@@ -33,7 +35,8 @@ os.system('echo "Updating the Org level cost billing reports"')
 cost_metric = 'UnblendedCost'  # UnblendedCost/BlendedCost
 granularity = 'DAILY'  # DAILY/MONTHLY/HOURLY
 
-common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-global-cost-billing-reports',
+common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
+                     'es_index': 'cloud-governance-global-cost-billing-reports',
                      'log_level': 'INFO', 'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS,
                      'COST_CENTER_OWNER': f"{COST_CENTER_OWNER}", 'REPLACE_ACCOUNT_NAME': REPLACE_ACCOUNT_NAME,
                      'PAYER_SUPPORT_FEE_CREDIT': PAYER_SUPPORT_FEE_CREDIT}
@@ -48,7 +51,7 @@ os.system('echo "Run the Spot Analysis report over the account using AWS Athena"
 os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="spot_savings_analysis" -e account="pnt-payer" \
 -e AWS_ACCESS_KEY_ID="{AWS_ACCESS_KEY_ID_ATHIRUMA_BOT}" \
 -e AWS_SECRET_ACCESS_KEY="{AWS_SECRET_ACCESS_KEY_ATHIRUMA_BOT}" \
--e es_host="{ES_HOST}" -e es_port="{ES_PORT}" \
+-e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" \
 -e es_index="cloud-governance-clouds-billing-reports" \
 -e S3_RESULTS_PATH="{S3_RESULTS_PATH}" \
 -e ATHENA_DATABASE_NAME="{ATHENA_DATABASE_NAME}" \
@@ -65,6 +68,8 @@ for account in accounts:
 -e account="{account}" \
 -e es_host="{ES_HOST}" \
 -e es_port="{ES_PORT}" \
+-e es_user="{ES_USER}" \
+-e es_password="{ES_PASSWORD}" \
 -e es_index="cloud-governance-policy-es-index" \
 -e log_level="INFO" \
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
@@ -104,7 +109,8 @@ def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = 
 
 
 common_env_vars = {
-    'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': COST_ES_INDEX,
+    'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
+    'es_index': COST_ES_INDEX,
     'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS,
     'SPREADSHEET_ID': COST_SPREADSHEET_ID,
 }

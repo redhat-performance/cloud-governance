@@ -210,6 +210,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['es_index'] = EnvironmentVariables.get_env('es_index', es_index)
         self._environment_variables_dict['es_doc_type'] = EnvironmentVariables.get_env('es_doc_type', '')
         self._environment_variables_dict['ES_TIMEOUT'] = EnvironmentVariables.get_env('ES_TIMEOUT', 2000)
+        self._environment_variables_dict['ES_SERVER_TYPE'] = EnvironmentVariables.get_env('ES_SERVER_TYPE', 'opensearch')
 
         # GitHub credentials
         self._environment_variables_dict['git_access_token'] = EnvironmentVariables.get_env('git_access_token', '')

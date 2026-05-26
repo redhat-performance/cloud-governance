@@ -218,7 +218,6 @@ def main():
         es_host = environment_variables_dict.get('es_host', '')
         es_port = environment_variables_dict.get('es_port', '')
         es_index = environment_variables_dict.get('es_index', '')
-        es_doc_type = environment_variables_dict.get('es_doc_type', '')
         bucket = environment_variables_dict.get('bucket', '')
         main_operations = MainOperations()
         response = main_operations.run()
@@ -309,7 +308,6 @@ def main():
                     input_data = {'es_host': es_host,
                                   'es_port': int(es_port),
                                   'es_index': es_index,
-                                  'es_doc_type': es_doc_type,
                                   'es_add_items': {'account': account},
                                   'bucket': bucket,
                                   'logs_bucket_key': 'logs',

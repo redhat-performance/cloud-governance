@@ -2,6 +2,7 @@ import uuid
 from functools import wraps
 from unittest.mock import patch
 
+from opensearchpy import OpenSearch
 from elasticsearch import Elasticsearch
 
 
@@ -43,7 +44,9 @@ def mock_elasticsearch(method):
         @return:
         """
         mock_class = MockElasticsearch()
-        with patch.object(Elasticsearch, 'index', mock_class.index), \
+        with patch.object(OpenSearch, 'index', mock_class.index), \
+             patch.object(OpenSearch, 'search', mock_class.search), \
+             patch.object(Elasticsearch, 'index', mock_class.index), \
              patch.object(Elasticsearch, 'search', mock_class.search):
             result = method(*args, **kwargs)
         return result
