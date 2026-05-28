@@ -16,6 +16,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY_DELETE_PERF_SCALE = credentials('cloud-governance-aws-secret-access-key-delete-perf-scale')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
+        ES_USER = credentials('cloud-governance-es-user')
+        ES_PASSWORD = credentials('cloud-governance-es-password')
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
         JIRA_URL = credentials('JIRA_URL')

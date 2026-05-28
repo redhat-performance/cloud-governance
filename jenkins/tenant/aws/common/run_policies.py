@@ -54,6 +54,9 @@ LOGS = os.environ.get('LOGS', 'logs')
 ALERT_DRY_RUN = os.environ.get('ALERT_DRY_RUN', False)
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_SERVER_TYPE = os.environ.get('ES_SERVER_TYPE', 'opensearch')
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
@@ -91,7 +94,8 @@ container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
-    "es_host": ES_HOST, "es_port": ES_PORT,
+    "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
+    "ES_SERVER_TYPE": ES_SERVER_TYPE,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN,
     'CLUSTER_PREFIX': '["kubernetes.io/cluster","sigs.k8s.io/cluster-api-provider-aws/cluster"]'
@@ -130,4 +134,4 @@ run_cmd(
 # Run the AggMail
 
 run_cmd(
-    f"""podman run --rm --name cloud-governance-haim --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e SKIP_POLICIES_ALERT='{SKIP_POLICIES_ALERT}' -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" {env_es_index} -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" -e ALERT_DRY_RUN="{ALERT_DRY_RUN}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance-haim --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e SKIP_POLICIES_ALERT='{SKIP_POLICIES_ALERT}' -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ES_SERVER_TYPE="{ES_SERVER_TYPE}" {env_es_index} -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" -e ALERT_DRY_RUN="{ALERT_DRY_RUN}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")

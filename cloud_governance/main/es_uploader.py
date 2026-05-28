@@ -17,7 +17,6 @@ class ESUploader:
         self.__es_host = kwargs.get('es_host')
         self.__es_port = kwargs.get('es_port')
         self.__es_index = kwargs.get('es_index')
-        self.__es_doc_type = kwargs.get('es_doc_type')
         self.__es_add_items = kwargs.get('es_add_items')
         self.__bucket_name = kwargs.get('bucket')
         self.__s3_file_name = kwargs.get('s3_file_name')
@@ -95,14 +94,13 @@ class ESUploader:
                 num += 1
         return user_cost_results
 
-    def upload_last_policy_to_elasticsearch(self, policy: str, index: str, doc_type: str, s3_json_file: str,
+    def upload_last_policy_to_elasticsearch(self, policy: str, index: str, s3_json_file: str,
                                             es_add_items: dict = None):
         """
         This method is upload json kubernetes cluster data into elasticsearch
         :param policy:
         :param s3_json_file:
         :param index:
-        :param doc_type:
         :param es_add_items:
         :return:
         """
@@ -210,5 +208,5 @@ class ESUploader:
         """
         self.__es_add_items.update({'policy': self.__policy_name, 'region': self.__region_name})
         self.upload_last_policy_to_elasticsearch(policy=self.__policy_name, index=self.__es_index,
-                                                 doc_type=self.__es_doc_type, s3_json_file=self.__s3_file_name,
+                                                 s3_json_file=self.__s3_file_name,
                                                  es_add_items=self.__es_add_items)

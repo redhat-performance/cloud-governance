@@ -14,6 +14,8 @@ pipeline {
         AZURE_CLIENT_ID = credentials('cloud-governance-azure-client-id')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
+        ES_USER = credentials('cloud-governance-es-user')
+        ES_PASSWORD = credentials('cloud-governance-es-password')
         COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
 

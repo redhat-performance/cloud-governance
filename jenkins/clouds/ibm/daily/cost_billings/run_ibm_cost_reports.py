@@ -13,6 +13,8 @@ USAGE_REPORTS_APIKEY_CERTIFICATION_CE = os.environ['USAGE_REPORTS_APIKEY_CERTIFI
 SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 LOGS = os.environ.get('LOGS', 'logs')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
@@ -30,7 +32,7 @@ key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAM
 
 for keys in key_list:
     os.system(
-        f"""podman run --rm --net="host" --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --rm --net="host" --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Cloudability reports
 # Cloudability env variables
@@ -82,6 +84,8 @@ cloudability_env_vars = {
     "IBM_ACCOUNT_ID": IBM_ACCOUNT_ID_PERFORMANCE_SCALE,
     "es_host": ES_HOST,
     "es_port": ES_PORT,
+    "es_user": ES_USER,
+    "es_password": ES_PASSWORD,
     "es_index": "cloudability-cloud-governance-ibm-cost-usage-reports",
     "PUBLIC_CLOUD_NAME": "IBM"
 }

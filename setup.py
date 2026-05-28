@@ -51,8 +51,8 @@ setup(
         'azure-mgmt-monitor==6.0.2',
         'boto3==1.42.89',
         'botocore==1.42.89',
-        'elasticsearch-dsl==7.4.0',
-        'elasticsearch==7.17.13',  # opensearch 1.2.4 for elasticsearch
+        'elasticsearch==8.17.0',  # ecoeng ES 8.8.0 server
+        'opensearch-py==3.2.0',  # intlab OpenSearch 3.2.0 server (includes DSL)
         'google-api-python-client==2.57.0',  # google drive
         'google-auth-httplib2==0.1.0',  # google drive
         'google-auth-oauthlib==0.5.2',  # google drive
@@ -64,14 +64,14 @@ setup(
         'ibm-schematics==1.0.1',
         'ibm-vpc==0.33.0',
         'myst-parser==1.0.0',  # readthedocs
-        'numpy<=1.26.4',  # opensearch 1.2.4 for elasticsearch
+        'numpy<=1.26.4',
         'oauthlib~=3.1.1',  # required by jira
         'pandas',  # latest: aggregate ec2/ebs cluster data
         'PyAthena[Pandas]==3.0.5',  # AWS Athena package
         'PyGitHub==1.55',  # gitleaks
         'python-ldap==3.4.2',  # prerequisite: sudo dnf install -y python3-devel openldap-devel gcc
         'protobuf==5.29.6',  # google-cloud transitive dep
-        'pytz',  # timezone handling (azure cost management, elasticsearch)
+        'pytz',  # timezone handling (azure cost management, opensearch)
         'requests==2.33.1',  # rest api & lambda
         'retry==0.9.2',
         'setuptools',  # CI: setuptools<82 for IBM sdist builds
