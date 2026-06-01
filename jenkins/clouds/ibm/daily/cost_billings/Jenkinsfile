@@ -10,6 +10,8 @@ pipeline {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         ES_HOST = credentials('cloud-governance-es-host')
         ES_PORT = credentials('cloud-governance-es-port')
+        ES_USER = credentials('cloud-governance-es-user')
+        ES_PASSWORD = credentials('cloud-governance-es-password')
         IBM_API_USERNAME_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-api-username-performance-scale')
         IBM_API_KEY_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-api-key-performance-scale')
         IBM_ACCOUNT_ID_PERFORMANCE_SCALE = credentials('cloud-governance-ibm-account-id-performance-scale')

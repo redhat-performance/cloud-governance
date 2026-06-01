@@ -5,6 +5,8 @@ AZURE_TENANT_ID = os.environ['AZURE_TENANT_ID']
 AZURE_CLIENT_ID = os.environ['AZURE_CLIENT_ID']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 COST_SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
@@ -15,7 +17,8 @@ input_vars_to_container = [{'account': 'perf-scale-azure', 'AZURE_CLIENT_ID': AZ
                             'AZURE_TENANT_ID': AZURE_TENANT_ID, 'AZURE_CLIENT_SECRET': AZURE_CLIENT_SECRET,
                             'AZURE_ACCOUNT_ID': AZURE_ACCOUNT_ID}]
 
-common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-clouds-billing-reports',
+common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
+                     'es_index': 'cloud-governance-clouds-billing-reports',
                      'log_level': 'INFO', 'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS}
 combine_vars = lambda item: f'{item[0]}="{item[1]}"'
 common_envs = list(map(combine_vars, common_input_vars.items()))

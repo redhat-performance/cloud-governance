@@ -14,6 +14,8 @@ LOGS = os.environ.get('LOGS', 'logs')
 account_admin = os.environ['ACCOUNT_ADMIN']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 ES_INDEX = os.environ.get('ES_INDEX')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
@@ -88,7 +90,7 @@ container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
-    "es_host": ES_HOST, "es_port": ES_PORT,
+    "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'special_user_mails': f"{special_user_mails}",
     'account_admin': f"{account_admin}",
@@ -133,7 +135,7 @@ run_cmd(
 # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
 run_cmd(
-    f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Git-leaks run on GitHub not related to any aws account
 # run_cmd("echo Run Git-leaks")
@@ -145,4 +147,4 @@ run_cmd(
 
 run_cmd("echo Run Aggregated Email Alert")
 run_cmd(
-    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")

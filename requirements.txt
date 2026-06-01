@@ -10,8 +10,7 @@ azure-mgmt-resource==23.0.1
 azure-mgmt-subscription==3.1.1
 boto3==1.42.89
 botocore==1.42.89
-elasticsearch==7.17.13 # opensearch 1.2.4 for elasticsearch
-elasticsearch-dsl==7.4.0
+elasticsearch==8.17.0  # ecoeng ES 8.8.0 server
 google-api-python-client==2.57.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.2
@@ -23,8 +22,9 @@ ibm-platform-services==0.75.0
 ibm-schematics==1.0.1
 ibm-vpc==0.33.0
 myst-parser==1.0.0
-numpy<=1.26.4 # opensearch 1.2.4 for elasticsearch
+numpy<=1.26.4
 oauthlib~=3.1.1
+opensearch-py==3.2.0  # intlab OpenSearch 3.2.0 server (includes DSL)
 pandas
 protobuf==5.29.6
 PyAthena[Pandas]==3.0.5

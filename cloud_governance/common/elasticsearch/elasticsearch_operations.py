@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 import time
 import pandas as pd
-from elasticsearch.helpers import bulk
 
 from cloud_governance.main.environment_variables import environment_variables
 
-from elasticsearch_dsl import Search
+from opensearchpy import OpenSearch
+from opensearchpy.helpers import bulk as opensearch_bulk
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk as es_bulk
 from typeguard import typechecked
 
 from cloud_governance.common.elasticsearch.elasticsearch_exceptions import ElasticSearchDataNotUploaded
@@ -46,69 +47,63 @@ class ElasticSearchOperations:
             self.__environment_variables_dict.get('ES_TIMEOUT')) if self.__environment_variables_dict.get(
             'ES_TIMEOUT') else timeout
         self.__account = self.__environment_variables_dict.get('account')
+        self.__server_type = self.__environment_variables_dict.get('ES_SERVER_TYPE', 'opensearch')
         try:
-            add_host = {'host': self.__es_host, 'port': self.__es_port,
-                        'http_auth': f'{self.__es_user}:{self.__es_password}'}
-            if int(self.__es_port) == 443:
-                add_host['use_ssl'] = True
-            self.__es = Elasticsearch([add_host],
-                                      timeout=self.__timeout,
-                                      max_retries=2)
+            if self.__server_type == 'elasticsearch':
+                scheme = 'https' if int(self.__es_port) == 443 else 'http'
+                hosts = [{'host': self.__es_host, 'port': int(self.__es_port), 'scheme': scheme}]
+                basic_auth = (self.__es_user, self.__es_password) if self.__es_user else None
+                self.__es = Elasticsearch(hosts, basic_auth=basic_auth, verify_certs=False,
+                                          request_timeout=self.__timeout, max_retries=2)
+                self.__bulk_fn = es_bulk
+            else:
+                add_host = {'host': self.__es_host, 'port': self.__es_port}
+                if self.__es_user:
+                    add_host['http_auth'] = (self.__es_user, self.__es_password)
+                if int(self.__es_port) == 443:
+                    add_host['use_ssl'] = True
+                    add_host['verify_certs'] = False
+                self.__es = OpenSearch([add_host], timeout=self.__timeout, max_retries=2)
+                self.__bulk_fn = opensearch_bulk
         except Exception as err:
+            logger.error(f'Failed to connect to {self.__server_type} at {self.__es_host}:{self.__es_port}: {err}')
             self.__es = None
-
-        # Skip product check for OpenSearch compatibility (elasticsearch-py 7.14+ rejects non-Elasticsearch servers)
-        try:
-            if self.__es and hasattr(self.__es.transport, '_verified_elasticsearch'):
-                self.__es.transport._verified_elasticsearch = True
-        except AttributeError as err:
-            logger.warning(f"Could not bypass Elasticsearch product check: {err}")
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
         """
-        This method search for data per index in last 2 minutes and return the number of docs or zero
+        This method search for data per index in last 15 minutes and return the number of docs or zero
         :param index:
-        :param workload: need only if there is different timestamp parameter in Elasticsearch
+        :param workload: need only if there is different timestamp parameter in the server
         :param id: True to return the doc ids
         :param fast_check: return fast response
         :return:
         """
-        """
-        :return:
-        """
         ids = []
-        # https://github.com/elastic/elasticsearch-dsl-py/issues/49
         self.__es.indices.refresh(index=index)
-        # timestamp name in Elasticsearch is different
-        search = Search(using=self.__es, index=index).filter('range', timestamp={
-            'gte': f'now-{self.ES_FETCH_MIN_TIME}m', 'lt': 'now'})
-        # reduce the search result
-        if fast_check:
-            search = search[0:self.MIN_SEARCH_RESULTS]
-        else:
-            search = search[0:self.MAX_SEARCH_RESULTS]
-        search_response = search.execute()
-        if search_response.hits:
+        size = self.MIN_SEARCH_RESULTS if fast_check else self.MAX_SEARCH_RESULTS
+        query = {"query": {"range": {"timestamp": {"gte": f"now-{self.ES_FETCH_MIN_TIME}m", "lt": "now"}}}}
+        search_response = self.__es.search(index=index, body=query, size=size)
+        hits = search_response.get('hits', {}).get('hits', [])
+        if hits:
             if uuid:
                 count_hits = 0
-                for row in search_response:
-                    if type(row['uuid']) == str:
-                        # uperf return str
-                        current_uuid = row['uuid']
-                    else:
-                        current_uuid = row['uuid'][0]
+                for row in hits:
+                    source = row['_source']
+                    current_uuid = source.get('uuid', '')
+                    if isinstance(current_uuid, list):
+                        current_uuid = current_uuid[0]
                     if current_uuid == uuid:
                         if fast_check:
                             return 1
-                        ids.append(row.meta.id)
+                        ids.append(row['_id'])
                         count_hits += 1
                 if id:
                     return ids
                 else:
                     return count_hits
             else:
-                return len(search_response.hits)
+                return len(hits)
         else:
             return 0
 
@@ -141,13 +136,12 @@ class ElasticSearchOperations:
         raise ElasticSearchDataNotUploaded
 
     @typechecked()
-    def upload_to_elasticsearch(self, index: str, data: dict, doc_type: str = '_doc', es_add_items: dict = None,
+    def upload_to_elasticsearch(self, index: str, data: dict, es_add_items: dict = None,
                                 **kwargs):
         """
         This method is upload json data into elasticsearch
         :param index: index name to be stored in elasticsearch
         :param data: data must be in dictionary i.e. {'key': 'value'}
-        :param doc_type:
         :param es_add_items:
         :return:
         """
@@ -178,10 +172,10 @@ class ElasticSearchOperations:
             kwargs['id'] = data.get('IndexId')
         try:
             if isinstance(data, dict):  # JSON Object
-                self.__es.index(index=index, doc_type=doc_type, body=data, **kwargs)
+                self.__es.index(index=index, body=data, **kwargs)
             else:  # JSON Array
                 for record in data:
-                    self.__es.index(index=index, doc_type=doc_type, body=record, **kwargs)
+                    self.__es.index(index=index, body=record, **kwargs)
             return True
         except Exception as err:
             raise err
@@ -217,12 +211,12 @@ class ElasticSearchOperations:
         @param index:
         @return:
         """
-        search = Search(using=self.__es, index=index).filter('range', timestamp={'gte': f'now-{days}d', 'lt': 'now'})
-        search = search[0:self.MAX_SEARCH_RESULTS]
-        search_response = search.execute()
+        query = {"query": {"range": {"timestamp": {"gte": f"now-{days}d", "lt": "now"}}}}
+        search_response = self.__es.search(index=index, body=query, size=self.MAX_SEARCH_RESULTS)
+        hits = search_response.get('hits', {}).get('hits', [])
         df = pd.DataFrame()
-        for row in search_response:
-            df = pd.concat([df, pd.DataFrame([row.to_dict()])], ignore_index=True).fillna({})
+        for row in hits:
+            df = pd.concat([df, pd.DataFrame([row['_source']])], ignore_index=True).fillna({})
         return df.to_dict('records')
 
     @typechecked()
@@ -273,7 +267,7 @@ class ElasticSearchOperations:
                 if start_datetime and end_datetime:
                     query = self.get_query_data_between_range(start_datetime=start_datetime, end_datetime=end_datetime)
             if query:
-                response = self.__es.search(index=es_index, body=query, doc_type='_doc', size=search_size, scroll='1h',
+                response = self.__es.search(index=es_index, body=query, size=search_size, scroll='1h',
                                             filter_path=filter_path)
                 if result_agg:
                     es_data.extend(response.get('aggregations').get(group_by).get('buckets'))
@@ -363,7 +357,7 @@ class ElasticSearchOperations:
                 if 'CleanUpDays' not in item:
                     item['ExpireDays'] = self.__environment_variables_dict.get('DAYS_TO_TAKE_ACTION')
                 item['policy'] = self.__environment_variables_dict.get('policy')
-            response = bulk(self.__es, bulk_items)
+            response = self.__bulk_fn(self.__es, bulk_items)
             if response:
                 total_uploaded += len(bulk_items)
             else:
@@ -399,7 +393,7 @@ class ElasticSearchOperations:
             if result_agg:
                 return response.get('aggregations')
             else:
-                return response.get('hits', {}).get('hits', {})
+                return response.get('hits', {}).get('hits', [])
         except Exception as err:
             logger.error(err)
             raise err

@@ -13,6 +13,8 @@ LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 
@@ -78,7 +80,7 @@ container_env_dict = {
     "dry_run": "yes",
     "LDAP_HOST_NAME": LDAP_HOST_NAME,
     "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
-    "es_host": ES_HOST, "es_port": ES_PORT,
+    "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource,
     'GLOBAL_TAGS': GLOBAL_TAGS

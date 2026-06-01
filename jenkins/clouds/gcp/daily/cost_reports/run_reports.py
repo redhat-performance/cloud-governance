@@ -4,13 +4,16 @@ GCP_DATABASE_NAME = os.environ['GCP_DATABASE_NAME']
 GCP_DATABASE_TABLE_NAME = os.environ['GCP_DATABASE_TABLE_NAME']
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
+ES_USER = os.environ.get('ES_USER', '')
+ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 COST_SPREADSHEET_ID = os.environ['COST_SPREADSHEET_ID']
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 print('Running the GCP cost billing reports')
 
-common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_index': 'cloud-governance-clouds-billing-reports',
+common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
+                     'es_index': 'cloud-governance-clouds-billing-reports',
                      'log_level': 'INFO', 'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS,
                      'PUBLIC_CLOUD_NAME': 'GCP', 'SPREADSHEET_ID': COST_SPREADSHEET_ID,
                      'GCP_DATABASE_NAME': GCP_DATABASE_NAME, 'GCP_DATABASE_TABLE_NAME': GCP_DATABASE_TABLE_NAME}
