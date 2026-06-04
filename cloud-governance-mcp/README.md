@@ -144,8 +144,8 @@ kill $(lsof -ti tcp:8501)
 # Test connection manually
 curl http://your-opensearch-host:9200/_cat/indices
 
-# Check .env file
-cat .env | grep OPENSEARCH
+# Check non-secret OpenSearch settings
+grep -E '^(OPENSEARCH_HOSTS|OPENSEARCH_USERNAME)=' .env
 ```
 
 ## Management Commands

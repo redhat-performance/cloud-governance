@@ -28,9 +28,14 @@ echo "Installing dependencies..."
 python -m pip install -U pip > /dev/null
 python -m pip install -r requirements.txt
 
-# Kill existing Streamlit processes on port 8501
+# Stop existing Streamlit processes on port 8501
 echo "Stopping existing Streamlit processes..."
-kill -9 $(lsof -ti tcp:8501) 2>/dev/null || true
+pids="$(lsof -ti tcp:8501 || true)"
+if [ -n "$pids" ]; then
+  kill $pids 2>/dev/null || true
+  sleep 1
+  kill -9 $pids 2>/dev/null || true
+fi
 
 # Configure Streamlit (skip telemetry prompt)
 mkdir -p ~/.streamlit
@@ -39,7 +44,7 @@ cat > ~/.streamlit/config.toml <<EOF
 gatherUsageStats = false
 
 [client]
-showErrorDetails = true
+showErrorDetails = false
 EOF
 
 # Start Streamlit (MCP server starts automatically as a stdio subprocess)

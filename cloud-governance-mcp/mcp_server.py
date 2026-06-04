@@ -618,7 +618,11 @@ def _tool_date_range_search(
 
 def _tool_raw_search(index: str, query_body: dict) -> str:
     client = _get_client()
-    response = client.search(index=index, body=query_body)
+    if "size" not in query_body:
+        query_body["size"] = 100
+    elif query_body.get("size", 0) > 1000:
+        query_body["size"] = 1000
+    response = client.search(index=index, body=query_body, request_timeout=30)
     return json.dumps(response, indent=2, default=str)
 
 

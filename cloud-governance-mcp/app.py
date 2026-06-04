@@ -52,7 +52,10 @@ def _fetch_available_indices() -> list[str]:
             timeout=10,
         )
         indices = client.cat.indices(format="json")
-        names = sorted(idx.get("index", "") for idx in indices if not idx.get("index", "").startswith("."))
+        names = sorted(
+            idx.get("index", "") for idx in indices
+            if idx.get("index", "").startswith("cloud-governance")
+        )
         return names
     except Exception:
         return []
@@ -337,7 +340,7 @@ def execute_mcp_tool(name: str, arguments: dict) -> str:
                 # Try to pretty-print JSON
                 parsed = json.loads(result)
                 st.code(json.dumps(parsed, indent=2), language="json")
-            except:
+            except (json.JSONDecodeError, TypeError):
                 # If not JSON, show as text (truncate if too long)
                 if len(result) > 2000:
                     st.text(result[:2000] + f"\n\n... (truncated, total {len(result)} chars)")
@@ -347,7 +350,7 @@ def execute_mcp_tool(name: str, arguments: dict) -> str:
     return result
 
 
-def run_agent_loop_gemini(user_message: str, tools: List[types.FunctionDeclaration], previous_messages: list = None) -> str:
+def run_agent_loop_gemini(user_message: str, tools: List[types.FunctionDeclaration], previous_messages: list | None = None) -> str:
     """Run agentic loop with Gemini"""
 
     if not GEMINI_API_KEY:
