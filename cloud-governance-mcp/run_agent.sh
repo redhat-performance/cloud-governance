@@ -30,7 +30,12 @@ python -m pip install -r requirements.txt
 
 # Stop existing Streamlit processes on port 8501
 echo "Stopping existing Streamlit processes..."
-pids="$(lsof -ti tcp:8501 || true)"
+pids=""
+for pid in $(lsof -ti tcp:8501 2>/dev/null); do
+  if ps -o cmd= -p "$pid" 2>/dev/null | grep -q "streamlit"; then
+    pids="$pids $pid"
+  fi
+done
 if [ -n "$pids" ]; then
   kill $pids 2>/dev/null || true
   sleep 1
