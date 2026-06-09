@@ -85,9 +85,9 @@ class UnUsedNatGateway(AWSPolicyOperations):
                                                         resource_action=self.RESOURCE_ACTION,
                                                         cloud_name=self._cloud_name,
                                                         resource_type='NatGateway',
-                                                        resource_state=nat_gateway.get('State'),
-                                                        unit_price=unit_price
-                                                        if not cleanup_result else "Deleted")
+                                                        resource_state=nat_gateway.get('State')
+                                                        if not cleanup_result else "Deleted",
+                                                        unit_price=unit_price)
                     unused_nat_gateways.append(resource_data)
                     if not cleanup_result:
                         self.update_resource_tags(resource_id=resource_id, tags=tags + self.cost_savings_tag)
