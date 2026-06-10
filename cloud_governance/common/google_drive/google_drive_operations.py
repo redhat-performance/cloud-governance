@@ -101,16 +101,28 @@ class GoogleDriveOperations:
             except HttpError as error:
                 logger.info(f'An error occurred: {error}')
 
+    def _evict_sheet_cache(self, sheet_name: str, spreadsheet_id: str):
+        """
+        Evict a sheet ID from cache (used when sheet is not found or has been modified)
+        @param sheet_name:
+        @param spreadsheet_id:
+        """
+        cache_key = f"{spreadsheet_id}:{sheet_name}"
+        if cache_key in self.__sheet_id_cache:
+            del self.__sheet_id_cache[cache_key]
+            logger.info(f'Evicted stale cache entry for sheet: {sheet_name}')
+
     @logger_time_stamp
-    def find_sheet_id_by_name(self, sheet_name: str, spreadsheet_id: str):
+    def find_sheet_id_by_name(self, sheet_name: str, spreadsheet_id: str, use_cache: bool = True):
         """
         This method find the sheet id in the spreadsheet
         @param sheet_name:
         @param spreadsheet_id:
+        @param use_cache: If False, bypass cache and fetch fresh data
         @return:
         """
         cache_key = f"{spreadsheet_id}:{sheet_name}"
-        if cache_key in self.__sheet_id_cache:
+        if use_cache and cache_key in self.__sheet_id_cache:
             return self.__sheet_id_cache[cache_key]
 
         if self.__service:
@@ -135,25 +147,35 @@ class GoogleDriveOperations:
         @return:
         """
         if self.__service:
-            try:
-                spreadsheet_data = [
-                    {
-                        "deleteDimension": {
-                            "range": {
-                                "sheetId": self.find_sheet_id_by_name(sheet_name=sheet_name,
-                                                                      spreadsheet_id=spreadsheet_id),
-                                "dimension": "ROWS",
-                                "startIndex": row_number,
-                                "endIndex": row_number + 1
+            for attempt in range(2):
+                try:
+                    use_cache = attempt == 0
+                    sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name,
+                                                          spreadsheet_id=spreadsheet_id,
+                                                          use_cache=use_cache)
+                    spreadsheet_data = [
+                        {
+                            "deleteDimension": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "dimension": "ROWS",
+                                    "startIndex": row_number,
+                                    "endIndex": row_number + 1
+                                }
                             }
                         }
-                    }
-                ]
-                update_data = {"requests": spreadsheet_data}
-                updating = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=update_data)
-                updating.execute()
-            except HttpError as error:
-                logger.info(f'An error occurred: {error}')
+                    ]
+                    update_data = {"requests": spreadsheet_data}
+                    updating = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=update_data)
+                    updating.execute()
+                    break
+                except HttpError as error:
+                    if attempt == 0 and ('Unable to parse range' in str(error) or 'not found' in str(error).lower()):
+                        self._evict_sheet_cache(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id)
+                        logger.info(f'Retrying delete_rows after cache eviction for sheet: {sheet_name}')
+                        continue
+                    logger.info(f'An error occurred: {error}')
+                    break
 
     @logger_time_stamp
     def paste_csv_to_gsheet(self, csv_path, spreadsheet_id: str, sheet_name: str):
@@ -170,25 +192,35 @@ class GoogleDriveOperations:
             with open(csv_path, 'r') as csv_file:
                 csv_contents = csv_file.read()
             if csv_contents:
-                sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id)
-                body = {
-                    'requests': [{
-                        'pasteData': {
-                            "coordinate": {
-                                "sheetId": sheet_id,
-                                "rowIndex": "0",
-                                "columnIndex": "0",
-                            },
-                            "data": csv_contents,
-                            "type": 'PASTE_NORMAL',
-                            "delimiter": ',',
+                for attempt in range(2):
+                    try:
+                        use_cache = attempt == 0
+                        sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id,
+                                                              use_cache=use_cache)
+                        body = {
+                            'requests': [{
+                                'pasteData': {
+                                    "coordinate": {
+                                        "sheetId": sheet_id,
+                                        "rowIndex": "0",
+                                        "columnIndex": "0",
+                                    },
+                                    "data": csv_contents,
+                                    "type": 'PASTE_NORMAL',
+                                    "delimiter": ',',
+                                }
+                            }]
                         }
-                    }]
-                }
-                request = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body)
-                response = request.execute()
-                logger.info(f'Pasted data into the {sheet_name}')
-                return response
+                        request = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body)
+                        response = request.execute()
+                        logger.info(f'Pasted data into the {sheet_name}')
+                        return response
+                    except HttpError as error:
+                        if attempt == 0 and ('Unable to parse range' in str(error) or 'not found' in str(error).lower()):
+                            self._evict_sheet_cache(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id)
+                            logger.info(f'Retrying paste_csv_to_gsheet after cache eviction for sheet: {sheet_name}')
+                            continue
+                        raise error
 
     @logger_time_stamp
     def update_row_in_gsheet(self, data: list, gsheet_id: str, row: int, sheet_name: str):
@@ -197,19 +229,29 @@ class GoogleDriveOperations:
         @return:
         """
         if self.__service:
-            sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id)
-            requests_body = {'requests': [{
-                'updateCells': {
-                    'rows': [{"values": data}],
-                    'fields': '*',
-                    'start': {
-                        "sheetId": sheet_id,
-                        "rowIndex": row,
-                        "columnIndex": '0'
-                    }
-                }
-            }]}
-            request = self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id, body=requests_body)
-            response = request.execute()
-            logger.info(f'Updated the row in the worksheet {sheet_name}')
-            return response
+            for attempt in range(2):
+                try:
+                    use_cache = attempt == 0
+                    sheet_id = self.find_sheet_id_by_name(sheet_name=sheet_name, spreadsheet_id=gsheet_id,
+                                                          use_cache=use_cache)
+                    requests_body = {'requests': [{
+                        'updateCells': {
+                            'rows': [{"values": data}],
+                            'fields': '*',
+                            'start': {
+                                "sheetId": sheet_id,
+                                "rowIndex": row,
+                                "columnIndex": '0'
+                            }
+                        }
+                    }]}
+                    request = self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id, body=requests_body)
+                    response = request.execute()
+                    logger.info(f'Updated the row in the worksheet {sheet_name}')
+                    return response
+                except HttpError as error:
+                    if attempt == 0 and ('Unable to parse range' in str(error) or 'not found' in str(error).lower()):
+                        self._evict_sheet_cache(sheet_name=sheet_name, spreadsheet_id=gsheet_id)
+                        logger.info(f'Retrying update_row_in_gsheet after cache eviction for sheet: {sheet_name}')
+                        continue
+                    raise error
