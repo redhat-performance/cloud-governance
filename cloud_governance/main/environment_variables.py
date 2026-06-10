@@ -392,17 +392,18 @@ class EnvironmentVariables:
     def get_env(var: str, defval=''):
         lcvar = var.lower()
         dashvar = lcvar.replace('_', '-')
+        env_value = os.environ.get(var) or os.environ.get(var.upper()) or os.environ.get(var.lower()) or defval
         parser = argparse.ArgumentParser(description='Run CloudGovernance', allow_abbrev=False)
         if lcvar == dashvar:
-            parser.add_argument(f"--{lcvar}", default=os.environ.get(var, defval), type=str, metavar='String', help=var)
+            parser.add_argument(f"--{lcvar}", default=env_value, type=str, metavar='String', help=var)
         else:
-            parser.add_argument(f"--{lcvar}", f"--{dashvar}", default=os.environ.get(var, defval), type=str,
+            parser.add_argument(f"--{lcvar}", f"--{dashvar}", default=env_value, type=str,
                                 metavar='String', help=var)
         args, ignore = parser.parse_known_args()
         if hasattr(args, lcvar):
             return getattr(args, lcvar)
         else:
-            return os.environ.get(var, defval)
+            return env_value
 
     @staticmethod
     def get_boolean_from_environment(var: str, defval: bool):
