@@ -22,6 +22,7 @@ class GoogleDriveOperations:
     def __init__(self):
         self.__environment_variables_dict = environment_variables.environment_variables_dict
         self.__service = None
+        self.__sheet_id_cache = {}
         if self.__environment_variables_dict.get('GOOGLE_APPLICATION_CREDENTIALS'):
             self.__creds, _ = google.auth.default()
             self.__service = build('sheets', 'v4', credentials=self.__creds, num_retries=self.RETRIES)
@@ -46,6 +47,9 @@ class GoogleDriveOperations:
                 if self.__service:
                     self.__service.spreadsheets().batchUpdate(spreadsheetId=gsheet_id,
                                                               body=create_worksheet_meta_data).execute()
+                    cache_key = f"{gsheet_id}:{sheet_name}"
+                    if cache_key in self.__sheet_id_cache:
+                        del self.__sheet_id_cache[cache_key]
                     logger.info(f'{sheet_name} worksheet created')
             else:
                 logger.info(f'{sheet_name} Worksheet Already present')
@@ -105,6 +109,10 @@ class GoogleDriveOperations:
         @param spreadsheet_id:
         @return:
         """
+        cache_key = f"{spreadsheet_id}:{sheet_name}"
+        if cache_key in self.__sheet_id_cache:
+            return self.__sheet_id_cache[cache_key]
+
         if self.__service:
             sheets_with_properties = self.__service.spreadsheets().get(spreadsheetId=spreadsheet_id,
                                                                        fields='sheets.properties').execute().get(
@@ -112,7 +120,9 @@ class GoogleDriveOperations:
             for sheet in sheets_with_properties:
                 if 'title' in sheet['properties'].keys():
                     if sheet['properties']['title'] == sheet_name:
-                        return sheet['properties']['sheetId']
+                        sheet_id = sheet['properties']['sheetId']
+                        self.__sheet_id_cache[cache_key] = sheet_id
+                        return sheet_id
         return ''
 
     @logger_time_stamp
@@ -143,7 +153,7 @@ class GoogleDriveOperations:
                 updating = self.__service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=update_data)
                 updating.execute()
             except HttpError as error:
-                logger.into(f'An error occurred: {error}')
+                logger.info(f'An error occurred: {error}')
 
     @logger_time_stamp
     def paste_csv_to_gsheet(self, csv_path, spreadsheet_id: str, sheet_name: str):
