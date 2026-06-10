@@ -174,8 +174,8 @@ class GoogleDriveOperations:
                         self._evict_sheet_cache(sheet_name=sheet_name, spreadsheet_id=spreadsheet_id)
                         logger.info(f'Retrying delete_rows after cache eviction for sheet: {sheet_name}')
                         continue
-                    logger.info(f'An error occurred: {error}')
-                    break
+                    logger.error(f'Failed to delete rows in sheet {sheet_name}: {error}')
+                    raise
 
     @logger_time_stamp
     def paste_csv_to_gsheet(self, csv_path, spreadsheet_id: str, sheet_name: str):
@@ -202,8 +202,8 @@ class GoogleDriveOperations:
                                 'pasteData': {
                                     "coordinate": {
                                         "sheetId": sheet_id,
-                                        "rowIndex": "0",
-                                        "columnIndex": "0",
+                                        "rowIndex": 0,
+                                        "columnIndex": 0,
                                     },
                                     "data": csv_contents,
                                     "type": 'PASTE_NORMAL',
@@ -241,7 +241,7 @@ class GoogleDriveOperations:
                             'start': {
                                 "sheetId": sheet_id,
                                 "rowIndex": row,
-                                "columnIndex": '0'
+                                "columnIndex": 0
                             }
                         }
                     }]}
