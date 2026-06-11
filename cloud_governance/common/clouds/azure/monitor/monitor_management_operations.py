@@ -81,7 +81,7 @@ class MonitorManagementOperations(CommonOperations):
         if not timespan:
             end_date = datetime.now(tz=timezone.utc)
             start_date = end_date - timedelta(days=UNUSED_DAYS)
-            timespan = f'{start_date}/{end_date}'
+            timespan = f'{start_date.isoformat()}/{end_date.isoformat()}'
         response = self.__monitor_client.metrics.list(resource_uri=resource_id, timespan=timespan,
                                                       metricnames=metricnames, aggregation=aggregation,
                                                       result_type='Data', interval=interval,
