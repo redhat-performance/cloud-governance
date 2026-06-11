@@ -44,13 +44,18 @@ def _fetch_available_indices() -> list[str]:
     """Fetch index names from OpenSearch for the sidebar dropdown."""
     try:
         from opensearchpy import OpenSearch
-        client = OpenSearch(
-            hosts=[OPENSEARCH_HOSTS],
-            use_ssl=OPENSEARCH_HOSTS.startswith("https"),
-            verify_certs=False,
-            ssl_show_warn=False,
-            timeout=10,
-        )
+        username = os.getenv("OPENSEARCH_USERNAME", "")
+        password = os.getenv("OPENSEARCH_PASSWORD", "")
+        kwargs = {
+            "hosts": [OPENSEARCH_HOSTS],
+            "use_ssl": OPENSEARCH_HOSTS.startswith("https"),
+            "verify_certs": False,
+            "ssl_show_warn": False,
+            "timeout": 10,
+        }
+        if username and password:
+            kwargs["http_auth"] = (username, password)
+        client = OpenSearch(**kwargs)
         indices = client.cat.indices(format="json")
         names = sorted(
             idx.get("index", "") for idx in indices
