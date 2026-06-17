@@ -49,9 +49,12 @@ class ElasticSearchOperations:
         self.__account = self.__environment_variables_dict.get('account')
         self.__server_type = self.__environment_variables_dict.get('ES_SERVER_TYPE', 'opensearch')
         try:
+            if not self.__es_port or not self.__es_host:
+                raise ValueError(f'Missing required ElasticSearch/OpenSearch connection parameters: es_host={self.__es_host}, es_port={self.__es_port}')
+            es_port_int = int(self.__es_port)
             if self.__server_type == 'elasticsearch':
-                scheme = 'https' if int(self.__es_port) == 443 else 'http'
-                hosts = [{'host': self.__es_host, 'port': int(self.__es_port), 'scheme': scheme}]
+                scheme = 'https' if es_port_int == 443 else 'http'
+                hosts = [{'host': self.__es_host, 'port': es_port_int, 'scheme': scheme}]
                 basic_auth = (self.__es_user, self.__es_password) if self.__es_user else None
                 self.__es = Elasticsearch(hosts, basic_auth=basic_auth, verify_certs=False,
                                           request_timeout=self.__timeout, max_retries=2)
@@ -60,7 +63,7 @@ class ElasticSearchOperations:
                 add_host = {'host': self.__es_host, 'port': self.__es_port}
                 if self.__es_user:
                     add_host['http_auth'] = (self.__es_user, self.__es_password)
-                if int(self.__es_port) == 443:
+                if es_port_int == 443:
                     add_host['use_ssl'] = True
                     add_host['verify_certs'] = False
                 self.__es = OpenSearch([add_host], timeout=self.__timeout, max_retries=2)
