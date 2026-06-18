@@ -199,7 +199,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         start_date, end_date = Utils.get_start_and_end_datetime(days=days)
-        timespan = f'{start_date.isoformat()}/{end_date.isoformat()}'
+        timespan = f'{start_date.strftime("%Y-%m-%dT%H:%M:%SZ")}/{end_date.strftime("%Y-%m-%dT%H:%M:%SZ")}'
         cpu_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
                                                                    metricnames='Percentage CPU',
                                                                    aggregation='Average',
@@ -218,7 +218,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         start_date, end_date = Utils.get_start_and_end_datetime(days=days)
-        timespan = f'{start_date.isoformat()}/{end_date.isoformat()}'
+        timespan = f'{start_date.strftime("%Y-%m-%dT%H:%M:%SZ")}/{end_date.strftime("%Y-%m-%dT%H:%M:%SZ")}'
         network_in_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
                                                                           metricnames='Network In Total',
                                                                           aggregation='Average',
@@ -238,7 +238,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         start_date, end_date = Utils.get_start_and_end_datetime(days=days)
-        timespan = f'{start_date.isoformat()}/{end_date.isoformat()}'
+        timespan = f'{start_date.strftime("%Y-%m-%dT%H:%M:%SZ")}/{end_date.strftime("%Y-%m-%dT%H:%M:%SZ")}'
         network_out_metrics = self.monitor_operations.get_resource_metrics(resource_id=resource_id,
                                                                            metricnames='Network Out Total',
                                                                            aggregation='Average',
