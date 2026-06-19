@@ -48,10 +48,19 @@ class ElasticSearchOperations:
             'ES_TIMEOUT') else timeout
         self.__account = self.__environment_variables_dict.get('account')
         self.__server_type = self.__environment_variables_dict.get('ES_SERVER_TYPE', 'opensearch')
+
+        # Check if ES/OpenSearch connection parameters are provided
+        if not self.__es_port or not self.__es_host:
+            logger.warning(f'ElasticSearch/OpenSearch not configured (es_host={self.__es_host}, es_port={self.__es_port}). Policy will run without ES upload.')
+            self.__es = None
+            self.__bulk_fn = None
+            return
+
         try:
+            es_port_int = int(self.__es_port)
             if self.__server_type == 'elasticsearch':
-                scheme = 'https' if int(self.__es_port) == 443 else 'http'
-                hosts = [{'host': self.__es_host, 'port': int(self.__es_port), 'scheme': scheme}]
+                scheme = 'https' if es_port_int == 443 else 'http'
+                hosts = [{'host': self.__es_host, 'port': es_port_int, 'scheme': scheme}]
                 basic_auth = (self.__es_user, self.__es_password) if self.__es_user else None
                 self.__es = Elasticsearch(hosts, basic_auth=basic_auth, verify_certs=False,
                                           request_timeout=self.__timeout, max_retries=2)
@@ -60,7 +69,7 @@ class ElasticSearchOperations:
                 add_host = {'host': self.__es_host, 'port': self.__es_port}
                 if self.__es_user:
                     add_host['http_auth'] = (self.__es_user, self.__es_password)
-                if int(self.__es_port) == 443:
+                if es_port_int == 443:
                     add_host['use_ssl'] = True
                     add_host['verify_certs'] = False
                 self.__es = OpenSearch([add_host], timeout=self.__timeout, max_retries=2)
@@ -68,6 +77,7 @@ class ElasticSearchOperations:
         except Exception as err:
             logger.error(f'Failed to connect to {self.__server_type} at {self.__es_host}:{self.__es_port}: {err}')
             self.__es = None
+            self.__bulk_fn = None
 
     def __elasticsearch_get_index_hits(self, index: str, uuid: str = '', workload: str = '', fast_check: bool = False,
                                        id: bool = False):
@@ -145,6 +155,11 @@ class ElasticSearchOperations:
         :param es_add_items:
         :return:
         """
+        # Check if ES is configured
+        if not self.__es:
+            logger.debug(f'Skipping upload to ElasticSearch - not configured')
+            return False
+
         # read json to dict
         json_path = ""
 
@@ -189,6 +204,9 @@ class ElasticSearchOperations:
         :param metadata: The metadata for enrich that existing index according to id
         :return:
         """
+        if not self.__es:
+            logger.debug(f'Skipping update to ElasticSearch - not configured')
+            return
         self.__es.update(index=index, id=id, body={"doc": metadata})
 
     @typechecked()
@@ -314,10 +332,14 @@ class ElasticSearchOperations:
         """
         This method verify that document present in the index or not
         """
+        if not self.__es:
+            return False
         return self.__es.exists(index=index, id=doc_id)
 
     def get_es_data_by_id(self, id: str, index: str):
         """This method fetch the data from the es based on the match case and match value"""
+        if not self.__es:
+            return {}
         try:
             es_data = self.__es.get(index=index, id=id)
         except Exception as err:
@@ -331,6 +353,11 @@ class ElasticSearchOperations:
         :param data_items:
         :return:
         """
+        # Check if ES is configured
+        if not self.__es or not self.__bulk_fn:
+            logger.debug(f'Skipping bulk upload to ElasticSearch - not configured')
+            return
+
         total_uploaded = 0
         failed_items = 0
         for i in range(0, len(data_items), self.DEFAULT_ES_BULK_LIMIT):
