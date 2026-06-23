@@ -34,22 +34,31 @@ class SchematicOperations(IBMAuthenticator):
     def get_supported_locations(self):
         """
         This method lists supported locations
+        DEPRECATED: list_locations() was removed from IBM Schematics SDK
         :return:
         """
-        response = self.__client.list_locations().get_result()
-        return response['locations']
+        # Method no longer available in IBM Schematics SDK
+        # Use known regions in get_all_workspaces() instead
+        raise NotImplementedError("list_locations() is no longer available in IBM Schematics SDK")
 
     def get_all_workspaces(self):
         """
         This method lists all available schematics workspaces
         :return:
         """
-        locations = self.get_supported_locations()
+        # list_locations() was removed from IBM Schematics SDK
+        # Use known IBM Cloud regions instead
+        known_regions = ['us-south', 'us-east', 'eu-de', 'eu-gb']
         resources_list = {}
-        for location in locations:
-            region = location['region']
-            geography_code = location['geography_code']
-            self.set_service_url(region)
-            if geography_code not in resources_list:
-                resources_list[geography_code] = self.get_workspaces()
+
+        for region in known_regions:
+            try:
+                self.set_service_url(region)
+                workspaces = self.get_workspaces()
+                if workspaces:
+                    resources_list[region] = workspaces
+            except Exception:
+                # Skip regions where schematics is not available or no access
+                continue
+
         return resources_list
