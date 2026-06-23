@@ -1,0 +1,7 @@
+.venv
+.env
+conversations/
+streamlit.log
+__pycache__
+*.pyc
+.claude/
