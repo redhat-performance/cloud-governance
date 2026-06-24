@@ -45,11 +45,13 @@ class SchematicOperations(IBMAuthenticator):
         """
         This method lists all available schematics workspaces
         :return:
+        :raises: RuntimeError if unable to query any region
         """
         # list_locations() was removed from IBM Schematics SDK
         # Use known IBM Cloud regions instead
         known_regions = ['us-south', 'us-east', 'eu-de', 'eu-gb']
         resources_list = {}
+        failed_regions = []
 
         for region in known_regions:
             try:
@@ -57,8 +59,18 @@ class SchematicOperations(IBMAuthenticator):
                 workspaces = self.get_workspaces()
                 if workspaces:
                     resources_list[region] = workspaces
-            except Exception:
-                # Skip regions where schematics is not available or no access
+            except Exception as exc:
+                # Track failed regions for debugging
+                failed_regions.append((region, str(exc)))
                 continue
+
+        # If all regions failed, raise error instead of returning empty dict
+        if not resources_list and len(failed_regions) == len(known_regions):
+            failed_details = '; '.join(f"{region}: {error}" for region, error in failed_regions)
+            raise RuntimeError(
+                f"Unable to list Schematics workspaces in any region. "
+                f"All {len(known_regions)} regions failed. "
+                f"Check credentials and permissions. Details: {failed_details}"
+            )
 
         return resources_list
