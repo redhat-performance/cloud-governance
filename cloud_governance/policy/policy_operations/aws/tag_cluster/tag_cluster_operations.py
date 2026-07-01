@@ -126,7 +126,9 @@ class TagClusterOperations:
             ct_username = self._get_username_from_instance_id_and_time(
                 start_time=start_time, resource_id=resource_id,
                 resource_type=resource_type)
-            if ct_username and (ct_username in self.iam_users or ct_username == 'AutoScaling'):
+            if ct_username == 'AutoScaling':
+                return ct_username
+            if ct_username and ct_username in self.iam_users and ct_username not in exclude:
                 return ct_username
             if cluster_id:
                 iam_username = self.cloudtrail.get_username_from_cluster_role(

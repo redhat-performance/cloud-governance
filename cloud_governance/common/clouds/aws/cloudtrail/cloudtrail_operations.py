@@ -338,14 +338,22 @@ class CloudTrailOperations:
         IAM but creation events still exist in CloudTrail (90-day retention).
         """
         try:
-            events = self.__cloudtrail.lookup_events(
-                LookupAttributes=[{
+            events = []
+            kwargs = {
+                'LookupAttributes': [{
                     'AttributeKey': 'EventName',
                     'AttributeValue': 'CreateRole'
                 }],
-                StartTime=start_time, EndTime=end_time,
-                MaxResults=50
-            ).get('Events', [])
+                'StartTime': start_time, 'EndTime': end_time,
+                'MaxResults': 50
+            }
+            while True:
+                response = self.__global_cloudtrail.lookup_events(**kwargs)
+                events.extend(response.get('Events', []))
+                next_token = response.get('NextToken')
+                if not next_token:
+                    break
+                kwargs['NextToken'] = next_token
             for event in events:
                 resources = event.get('Resources', [])
                 role_names = [r.get('ResourceName', '') for r in resources
@@ -387,7 +395,10 @@ class CloudTrailOperations:
         """
         ROSA_ROLE_WINDOW_SECONDS = 21600  # 6 hours before launch
         try:
-            roles = self.__iam_client.list_roles(MaxItems=1000).get('Roles', [])
+            paginator = self.__iam_client.get_paginator('list_roles')
+            roles = []
+            for page in paginator.paginate(PaginationConfig={'PageSize': 1000}):
+                roles.extend(page.get('Roles', []))
             cluster_roles = [r for r in roles if cluster_id in r.get('RoleName', '')]
             if cluster_roles:
                 for role in cluster_roles:
@@ -412,10 +423,13 @@ class CloudTrailOperations:
                     candidate_roles.append(role)
             if candidate_roles:
                 candidate_roles.sort(key=lambda r: r.get('CreateDate', ''), reverse=True)
+                resolved_users = set()
                 for role in candidate_roles[:6]:
                     username = self.__get_username_from_role_cloudtrail(role, iam_users)
                     if username:
-                        return username
+                        resolved_users.add(username)
+                if len(resolved_users) == 1:
+                    return resolved_users.pop()
 
             ct_start = launch_time - timedelta(seconds=ROSA_ROLE_WINDOW_SECONDS)
             username = self.__get_username_from_create_role_events(
