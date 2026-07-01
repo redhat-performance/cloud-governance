@@ -6,6 +6,7 @@ from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.utils.utils import Utils
+from cloud_governance.common.logger.init_logger import logger
 
 
 class TagClusterOperations:
@@ -29,9 +30,25 @@ class TagClusterOperations:
         self.cluster_name = cluster_name
         self.input_tags = input_tags
         self.cloudtrail = CloudTrailOperations(region_name='us-east-1')
-        self._get_username_from_instance_id_and_time = CloudTrailOperations(region_name=region).get_username_by_instance_id_and_time
+        self._regional_cloudtrail = CloudTrailOperations(region_name=region)
+        self._get_username_from_instance_id_and_time = self._regional_cloudtrail.get_username_by_instance_id_and_time
         self.dry_run = dry_run
         self.iam_users = self.iam_operations.get_iam_users_list()
+        self._automation_user = self._get_automation_username()
+
+    @staticmethod
+    def _get_automation_username():
+        """
+        Identify the current caller (the automation/service account running
+        this policy) so it can be excluded from CloudTrail fallback searches.
+        """
+        try:
+            sts = boto3.client('sts')
+            identity = sts.get_caller_identity()
+            arn = identity.get('Arn', '')
+            return arn.split('/')[-1] if '/' in arn else ''
+        except Exception:
+            return ''
 
     def _input_tags_list_builder(self):
         """
@@ -89,12 +106,61 @@ class TagClusterOperations:
                     return user
             return None
 
-    def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list):
+    def get_username(self, start_time: datetime, resource_id: str, resource_type: str,
+                     tags: list, cluster_id: str = ''):
         """
-        This method returns the username
+        This method returns the username using multiple strategies:
+        1. Check existing tags (User tag, Name tag)
+        2. CloudTrail - resource creation event (RunInstances, etc.)
+        3. CloudTrail - any event on this resource by a known IAM user
+           (handles managed services like ROSA where service accounts create
+           resources but user events like CreateTags may exist)
+        4. CloudTrail - trace cluster IAM roles to find who created them
+           (handles ROSA/OSD where instances are created by service accounts
+           but IAM roles are created by the user)
         :return:
         """
+        exclude = {self._automation_user} if self._automation_user else set()
         iam_username = self.get_user_name_from_name_tag(tags=tags)
         if not iam_username:
-            return self._get_username_from_instance_id_and_time(start_time=start_time, resource_id=resource_id, resource_type=resource_type)
+            ct_username = self._get_username_from_instance_id_and_time(
+                start_time=start_time, resource_id=resource_id,
+                resource_type=resource_type)
+            if ct_username == 'AutoScaling':
+                return ct_username
+            if ct_username and ct_username in self.iam_users and ct_username not in exclude:
+                return ct_username
+            if cluster_id:
+                iam_username = self.cloudtrail.get_username_from_cluster_role(
+                    cluster_id=cluster_id, iam_users=self.iam_users,
+                    launch_time=start_time)
+                if iam_username:
+                    logger.info(f'Resolved cluster owner {iam_username} via IAM '
+                                f'role lookup for cluster {cluster_id}')
+                    return iam_username
+            iam_username = self._regional_cloudtrail.get_username_from_resource_events(
+                resource_id=resource_id, iam_users=self.iam_users,
+                start_time=start_time, exclude_users=exclude)
         return iam_username
+
+    def get_username_from_cluster_instances(self, resources: list, cluster_name: str):
+        """
+        Search all instances in a cluster for a valid User tag.
+        If any instance already has a tagged owner, return that username.
+        Handles managed services (ROSA, EKS) where CloudTrail cannot attribute
+        the creator - if at least one instance was tagged, propagate to siblings.
+        @param resources: list of instance groups from the cluster
+        @param cluster_name: the cluster identifier to match
+        @return: username string or None
+        """
+        for instance_group in resources:
+            for item in instance_group:
+                tags = item.get('Tags', [])
+                for tag in tags:
+                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                        if cluster_name in tag.get('Key', ''):
+                            user = self.ec2_operations.get_tag_value_from_tags(
+                                tags=tags, tag_name='User')
+                            if user and user != 'NA' and user in self.iam_users:
+                                return user
+        return None

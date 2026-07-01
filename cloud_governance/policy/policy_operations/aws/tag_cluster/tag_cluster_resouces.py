@@ -312,7 +312,11 @@ class TagClusterResources(TagClusterOperations):
                                 else:
                                     username = self.get_username(start_time=item.get('LaunchTime'),
                                                                  resource_id=instance_id,
-                                                                 resource_type='AWS::EC2::Instance', tags=tags)
+                                                                 resource_type='AWS::EC2::Instance', tags=tags,
+                                                                 cluster_id=cluster_name)
+                                    if not username:
+                                        username = self.get_username_from_cluster_instances(
+                                            resources=resources, cluster_name=cluster_name)
                                     if username:
                                         if username == 'AutoScaling':
                                             add_tags.extend(self._fill_na_tags(user=username))
