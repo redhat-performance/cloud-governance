@@ -253,6 +253,181 @@ class CloudTrailOperations:
         username, event = self.__get_user_by_resource_id(start_time, end_time, resource_id, resource_type, event_type)
         return self.__check_filter_username(username, event)
 
+    def get_username_from_resource_events(self, resource_id: str, iam_users: list,
+                                         start_time: datetime = None, end_time: datetime = None,
+                                         exclude_users: set = None):
+        """
+        Fallback username lookup: search ALL CloudTrail events for a resource
+        and return the first username matching a known IAM user.
+        Handles managed services (ROSA, EKS, etc.) where RunInstances is
+        performed by a service account but subsequent events (CreateTags, etc.)
+        may be performed by the actual user via SSO or IAM credentials.
+        @param resource_id: The AWS resource ID to look up
+        @param iam_users: List of known IAM usernames to validate against
+        @param start_time: Optional search window start (defaults to LOOKBACK_DAYS ago)
+        @param end_time: Optional search window end (defaults to now)
+        @param exclude_users: Optional set of usernames to skip (automation accounts)
+        @return: matching IAM username or empty string
+        """
+        if exclude_users is None:
+            exclude_users = set()
+        try:
+            if not start_time:
+                start_time = datetime.now() - timedelta(days=self.LOOKBACK_DAYS)
+            if not end_time:
+                end_time = datetime.now()
+            responses = self.get_full_responses(
+                StartTime=start_time, EndTime=end_time,
+                LookupAttributes=[{
+                    'AttributeKey': 'ResourceName',
+                    'AttributeValue': resource_id
+                }])
+            for event in responses:
+                username, _ = self.__check_event_is_assumed_role(
+                    event.get('CloudTrailEvent', ''))
+                if username and username in iam_users and username not in exclude_users:
+                    logger.info(f'Found username {username} from {event.get("EventName")} '
+                                f'event on resource {resource_id}')
+                    return username
+                event_username = event.get('Username', '')
+                if event_username and event_username in iam_users and event_username not in exclude_users:
+                    logger.info(f'Found username {event_username} from {event.get("EventName")} '
+                                f'event on resource {resource_id}')
+                    return event_username
+            return ''
+        except Exception as err:
+            logger.error(f'Error in get_username_from_resource_events: {err}')
+            return ''
+
+    def __get_username_from_role_cloudtrail(self, role: dict, iam_users: list):
+        """
+        Look up CloudTrail CreateRole event for a given IAM role and return
+        the username if it matches a known IAM user.
+        """
+        role_name = role['RoleName']
+        role_arn = role['Arn']
+        create_date = role.get('CreateDate')
+        if not create_date:
+            return ''
+        end_time = create_date + timedelta(seconds=self.SEARCH_SECONDS)
+        start_time = create_date - timedelta(seconds=self.SEARCH_SECONDS)
+        responses = self.__get_cloudtrail_responses(
+            start_time=start_time, end_time=end_time,
+            resource_arn=role_arn)
+        for event in responses:
+            if event.get('EventName') == 'CreateRole':
+                username, _ = self.__check_event_is_assumed_role(
+                    event.get('CloudTrailEvent', ''))
+                if username and username in iam_users:
+                    logger.info(f'Found cluster owner {username} from CreateRole '
+                                f'event on role {role_name}')
+                    return username
+                event_username = event.get('Username', '')
+                if event_username and event_username in iam_users:
+                    logger.info(f'Found cluster owner {event_username} from CreateRole '
+                                f'event on role {role_name}')
+                    return event_username
+        return ''
+
+    def __get_username_from_create_role_events(self, start_time: datetime,
+                                                end_time: datetime,
+                                                iam_users: list):
+        """
+        Search CloudTrail for CreateRole events of OpenShift operator roles
+        within a time window. Handles the case where roles were deleted from
+        IAM but creation events still exist in CloudTrail (90-day retention).
+        """
+        try:
+            events = self.__cloudtrail.lookup_events(
+                LookupAttributes=[{
+                    'AttributeKey': 'EventName',
+                    'AttributeValue': 'CreateRole'
+                }],
+                StartTime=start_time, EndTime=end_time,
+                MaxResults=50
+            ).get('Events', [])
+            for event in events:
+                resources = event.get('Resources', [])
+                role_names = [r.get('ResourceName', '') for r in resources
+                              if r.get('ResourceType') == 'AWS::IAM::Role']
+                if not any('openshift' in n.lower() for n in role_names):
+                    continue
+                username, _ = self.__check_event_is_assumed_role(
+                    event.get('CloudTrailEvent', ''))
+                if username and username in iam_users:
+                    logger.info(f'Found cluster owner {username} from '
+                                f'CloudTrail CreateRole event (deleted role)')
+                    return username
+                event_username = event.get('Username', '')
+                if event_username and event_username in iam_users:
+                    logger.info(f'Found cluster owner {event_username} from '
+                                f'CloudTrail CreateRole event (deleted role)')
+                    return event_username
+        except Exception as err:
+            logger.error(f'Error searching CreateRole events: {err}')
+        return ''
+
+    def get_username_from_cluster_role(self, cluster_id: str, iam_users: list,
+                                       launch_time: datetime = None):
+        """
+        Trace a cluster's ownership through its IAM roles.
+        Uses three strategies:
+        1. Direct match: find roles whose names contain the cluster ID
+           (works for IPI/UPI clusters)
+        2. Temporal match: find ROSA/OpenShift operator roles created
+           shortly before the cluster's instance launch time
+           (works for ROSA STS where roles use cluster name, not infra ID)
+        3. CloudTrail fallback: search CreateRole events directly for
+           OpenShift roles in the time window (handles deleted roles)
+        Works for both SSO (AssumedRole) and IAM user identities.
+        @param cluster_id: The cluster infra ID (e.g. 'u0s3a7y7o5y9c6w-x56mc')
+        @param iam_users: List of known IAM usernames to validate against
+        @param launch_time: Instance launch time for temporal role matching
+        @return: matching IAM username or empty string
+        """
+        ROSA_ROLE_WINDOW_SECONDS = 21600  # 6 hours before launch
+        try:
+            roles = self.__iam_client.list_roles(MaxItems=1000).get('Roles', [])
+            cluster_roles = [r for r in roles if cluster_id in r.get('RoleName', '')]
+            if cluster_roles:
+                for role in cluster_roles:
+                    username = self.__get_username_from_role_cloudtrail(role, iam_users)
+                    if username:
+                        return username
+
+            if not launch_time:
+                return ''
+            candidate_roles = []
+            for role in roles:
+                role_name = role.get('RoleName', '')
+                if 'openshift' not in role_name.lower():
+                    continue
+                create_date = role.get('CreateDate')
+                if not create_date:
+                    continue
+                launch_naive = launch_time.replace(tzinfo=None)
+                create_naive = create_date.replace(tzinfo=None)
+                diff_seconds = (launch_naive - create_naive).total_seconds()
+                if 0 <= diff_seconds <= ROSA_ROLE_WINDOW_SECONDS:
+                    candidate_roles.append(role)
+            if candidate_roles:
+                candidate_roles.sort(key=lambda r: r.get('CreateDate', ''), reverse=True)
+                for role in candidate_roles[:6]:
+                    username = self.__get_username_from_role_cloudtrail(role, iam_users)
+                    if username:
+                        return username
+
+            ct_start = launch_time - timedelta(seconds=ROSA_ROLE_WINDOW_SECONDS)
+            username = self.__get_username_from_create_role_events(
+                start_time=ct_start, end_time=launch_time,
+                iam_users=iam_users)
+            if username:
+                return username
+            return ''
+        except Exception as err:
+            logger.error(f'Error in get_username_from_cluster_role: {err}')
+            return ''
+
     def get_stop_time(self, resource_id: str, event_name: str):
         """
         This method return the time of when instance is stopped
