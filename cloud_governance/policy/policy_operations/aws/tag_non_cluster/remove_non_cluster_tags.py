@@ -17,7 +17,11 @@ class RemoveNonClusterTags(NonClusterOperations):
         @param tags:
         @return:
         """
-        username = self._get_username_from_cloudtrail(start_time=launch_time, resource_id=instance_id, resource_type='AWS::EC2::Instance')
+        username = self.ec2_operations.get_tag_value_from_tags(tags=tags or [], tag_name='User')
+        if not username or username == self.NA_VALUE:
+            username = self.get_username(
+                start_time=launch_time, resource_id=instance_id,
+                resource_type='AWS::EC2::Instance', tags=tags or [])
         search_tags = []
         user_tags = self.iam_client.get_user_tags(username=username)
         if not username:

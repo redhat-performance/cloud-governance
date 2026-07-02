@@ -24,6 +24,17 @@ class NonClusterOperations:
         self.ec2_operations = EC2Operations(region=region)
         self.utils = Utils(region=region)
         self.iam_users = self.iam_client.get_iam_users_list()
+        self._automation_user = self._get_automation_username()
+
+    @staticmethod
+    def _get_automation_username():
+        try:
+            sts = boto3.client('sts')
+            identity = sts.get_caller_identity()
+            arn = identity.get('Arn', '')
+            return arn.split('/')[-1] if '/' in arn else ''
+        except Exception:
+            return ''
 
     def _get_instances_data(self, instance_id: str = ''):
         """
@@ -209,14 +220,27 @@ class NonClusterOperations:
 
     def get_username(self, start_time: datetime, resource_id: str, resource_type: str, tags: list, resource_name: str = '', end_time: datetime = None):
         """
-        This method returns the username
+        This method returns the username using multiple strategies:
+        1. Check existing tags (Name tag)
+        2. CloudTrail - resource creation event
+        3. CloudTrail - any event on this resource by a known IAM user
+           (handles managed services where service accounts create resources)
         :return:
         """
         iam_username = self.get_user_name_from_name_tag(tags=tags, resource_name=resource_name)
         if not iam_username:
             iam_username = self.get_user_name_from_name_tag(resource_name=resource_name)
             if not iam_username:
-                return self._get_username_from_cloudtrail(start_time=start_time, resource_id=resource_id, resource_type=resource_type, end_time=end_time)
+                ct_username = self._get_username_from_cloudtrail(
+                    start_time=start_time, resource_id=resource_id,
+                    resource_type=resource_type, end_time=end_time)
+                exclude = {self._automation_user} if self._automation_user else set()
+                if ct_username and ct_username in self.iam_users and ct_username not in exclude:
+                    return ct_username
+                iam_username = self.cloudtrail.get_username_from_resource_events(
+                    resource_id=resource_id, iam_users=self.iam_users,
+                    start_time=start_time, end_time=end_time,
+                    exclude_users=exclude)
         return iam_username
 
     def validate_existing_tag(self, tags: list):
@@ -225,7 +249,9 @@ class NonClusterOperations:
         @param tags:
         @return:
         """
-        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
+        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email', 'LaunchTime']
+        if self.input_tags:
+            check_tags.extend(key for key in self.input_tags if key not in check_tags)
         tag_count = 0
         if tags:
             for tag in tags:
