@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -349,3 +350,126 @@ class TestCloudTrailOperations:
         for arn, expected_username in test_cases:
             session_name = arn.split('/')[-1]
             assert session_name == expected_username, f"Failed to parse {arn}"
+
+
+class TestCloudTrailOperationsRosaTagging:
+    """Tests for ROSA cluster ownership resolution added in PR #1007."""
+
+    LAUNCH_TIME = datetime(2026, 6, 30, 14, 6, 46, tzinfo=timezone.utc)
+    IAM_USERS = ['pragchau', 'cloud-governance-delete-user']
+
+    @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
+    def test_get_username_from_resource_events_skips_excluded_users(self, mock_boto3):
+        cloudtrail_ops = CloudTrailOperations(region_name='us-east-1')
+        cloudtrail_ops.get_full_responses = Mock(return_value=[
+            {
+                'EventName': 'CreateTags',
+                'Username': 'cloud-governance-delete-user',
+                'CloudTrailEvent': '{}',
+            },
+            {
+                'EventName': 'CreateTags',
+                'Username': 'pragchau',
+                'CloudTrailEvent': '{}',
+            },
+        ])
+        result = cloudtrail_ops.get_username_from_resource_events(
+            resource_id='i-0123456789abcdef0',
+            iam_users=self.IAM_USERS,
+            start_time=self.LAUNCH_TIME,
+            exclude_users={'cloud-governance-delete-user'})
+        assert result == 'pragchau'
+
+    @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
+    def test_get_username_from_cluster_role_direct_match(self, mock_boto3):
+        mock_iam = Mock()
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [{
+            'Roles': [{
+                'RoleName': 'z2r7p1f3o6m2h3y-t5bx8-master-role',
+                'Arn': 'arn:aws:iam::123456789012:role/z2r7p1f3o6m2h3y-t5bx8-master-role',
+                'CreateDate': self.LAUNCH_TIME,
+            }]
+        }]
+        mock_iam.get_paginator.return_value = mock_paginator
+        mock_boto3.client.side_effect = lambda service, **kwargs: {
+            'cloudtrail': Mock(),
+            'iam': mock_iam,
+        }[service]
+
+        cloudtrail_ops = CloudTrailOperations(region_name='us-east-1')
+        cloudtrail_ops._CloudTrailOperations__get_username_from_role_cloudtrail = Mock(
+            return_value='pragchau')
+
+        result = cloudtrail_ops.get_username_from_cluster_role(
+            cluster_id='z2r7p1f3o6m2h3y-t5bx8',
+            iam_users=self.IAM_USERS,
+            launch_time=self.LAUNCH_TIME)
+        assert result == 'pragchau'
+
+    @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
+    def test_get_username_from_cluster_role_ambiguous_temporal_match_returns_empty(
+            self, mock_boto3):
+        role_create = datetime(2026, 6, 30, 13, 0, 0, tzinfo=timezone.utc)
+        mock_iam = Mock()
+        mock_paginator = Mock()
+        mock_paginator.paginate.return_value = [{
+            'Roles': [
+                {
+                    'RoleName': 'cluster-a-openshift-machine-api',
+                    'Arn': 'arn:aws:iam::123456789012:role/cluster-a-openshift-machine-api',
+                    'CreateDate': role_create,
+                },
+                {
+                    'RoleName': 'cluster-b-openshift-machine-api',
+                    'Arn': 'arn:aws:iam::123456789012:role/cluster-b-openshift-machine-api',
+                    'CreateDate': role_create,
+                },
+            ]
+        }]
+        mock_iam.get_paginator.return_value = mock_paginator
+        mock_boto3.client.side_effect = lambda service, **kwargs: {
+            'cloudtrail': Mock(),
+            'iam': mock_iam,
+        }[service]
+
+        cloudtrail_ops = CloudTrailOperations(region_name='us-east-1')
+        cloudtrail_ops._CloudTrailOperations__get_username_from_role_cloudtrail = Mock(
+            side_effect=['pragchau', 'otheruser'])
+        cloudtrail_ops._CloudTrailOperations__get_username_from_create_role_events = Mock(
+            return_value='')
+
+        result = cloudtrail_ops.get_username_from_cluster_role(
+            cluster_id='unknown-infra-id',
+            iam_users=self.IAM_USERS + ['otheruser'],
+            launch_time=self.LAUNCH_TIME)
+        assert result == ''
+        cloudtrail_ops._CloudTrailOperations__get_username_from_create_role_events.assert_called_once()
+
+    @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
+    def test_get_username_from_create_role_events_paginates_global_cloudtrail(
+            self, mock_boto3):
+        mock_global_ct = Mock()
+        mock_global_ct.lookup_events.side_effect = [
+            {'Events': [], 'NextToken': 'page2'},
+            {'Events': [{
+                'EventName': 'CreateRole',
+                'Username': 'pragchau',
+                'Resources': [{
+                    'ResourceType': 'AWS::IAM::Role',
+                    'ResourceName': 'rosa-test-openshift-machine-api',
+                }],
+                'CloudTrailEvent': '{}',
+            }]},
+        ]
+        mock_boto3.client.return_value = Mock()
+
+        cloudtrail_ops = CloudTrailOperations(region_name='us-west-2')
+        cloudtrail_ops._CloudTrailOperations__global_cloudtrail = mock_global_ct
+
+        start = datetime(2026, 6, 30, 8, 0, 0, tzinfo=timezone.utc)
+        end = datetime(2026, 6, 30, 14, 0, 0, tzinfo=timezone.utc)
+        result = cloudtrail_ops._CloudTrailOperations__get_username_from_create_role_events(
+            start_time=start, end_time=end, iam_users=self.IAM_USERS)
+        assert result == 'pragchau'
+        assert mock_global_ct.lookup_events.call_count == 2
