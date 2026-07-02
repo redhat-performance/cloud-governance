@@ -35,6 +35,7 @@ class TestTagClusterOperationsGetUsername:
 
     def test_skips_automation_user_from_instance_cloudtrail(self):
         ops = _make_tag_cluster_ops(
+            iam_users=['pragchau', 'cloud-governance-delete-user', 'cloud-governance-user'],
             instance_ct_user='cloud-governance-user',
             cluster_role_user='pragchau')
         result = ops.get_username(

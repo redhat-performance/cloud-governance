@@ -20,7 +20,9 @@ class TestNonClusterOperationsGetUsername:
     START_TIME = datetime(2026, 6, 30, 14, 0, 0, tzinfo=timezone.utc)
 
     def test_excludes_automation_user_from_primary_cloudtrail(self):
-        ops = _make_non_cluster_ops(cloudtrail_user='cloud-governance-user')
+        ops = _make_non_cluster_ops(
+            iam_users=['pragchau', 'cloud-governance-delete-user', 'cloud-governance-user'],
+            cloudtrail_user='cloud-governance-user')
         result = ops.get_username(
             start_time=self.START_TIME, resource_id='vol-abc123',
             resource_type='AWS::EC2::Volume', tags=[])
