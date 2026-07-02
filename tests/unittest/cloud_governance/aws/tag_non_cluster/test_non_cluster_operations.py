@@ -3,11 +3,15 @@ from unittest.mock import Mock
 
 from cloud_governance.policy.policy_operations.aws.tag_non_cluster.non_cluster_operations import NonClusterOperations
 
+CLUSTER_OWNER = 'cluster-owner'
+LEGACY_TAGGER = 'legacy-tagger'
+AUTOMATION_USER = 'automation-user'
+
 
 def _make_non_cluster_ops(**overrides):
     ops = NonClusterOperations.__new__(NonClusterOperations)
-    ops.iam_users = overrides.get('iam_users', ['pragchau', 'cloud-governance-delete-user'])
-    ops._automation_user = overrides.get('_automation_user', 'cloud-governance-user')
+    ops.iam_users = overrides.get('iam_users', [CLUSTER_OWNER, LEGACY_TAGGER])
+    ops._automation_user = overrides.get('_automation_user', AUTOMATION_USER)
     ops.get_user_name_from_name_tag = Mock(return_value=overrides.get('name_tag_user'))
     ops._get_username_from_cloudtrail = Mock(return_value=overrides.get('cloudtrail_user'))
     ops.cloudtrail = Mock()
@@ -21,8 +25,8 @@ class TestNonClusterOperationsGetUsername:
 
     def test_excludes_automation_user_from_primary_cloudtrail(self):
         ops = _make_non_cluster_ops(
-            iam_users=['pragchau', 'cloud-governance-delete-user', 'cloud-governance-user'],
-            cloudtrail_user='cloud-governance-user')
+            iam_users=[CLUSTER_OWNER, LEGACY_TAGGER, AUTOMATION_USER],
+            cloudtrail_user=AUTOMATION_USER)
         result = ops.get_username(
             start_time=self.START_TIME, resource_id='vol-abc123',
             resource_type='AWS::EC2::Volume', tags=[])
@@ -30,20 +34,20 @@ class TestNonClusterOperationsGetUsername:
         ops.cloudtrail.get_username_from_resource_events.assert_called_once()
 
     def test_returns_valid_user_from_primary_cloudtrail(self):
-        ops = _make_non_cluster_ops(cloudtrail_user='pragchau')
+        ops = _make_non_cluster_ops(cloudtrail_user=CLUSTER_OWNER)
         result = ops.get_username(
             start_time=self.START_TIME, resource_id='vol-abc123',
             resource_type='AWS::EC2::Volume', tags=[])
-        assert result == 'pragchau'
+        assert result == CLUSTER_OWNER
         ops.cloudtrail.get_username_from_resource_events.assert_not_called()
 
     def test_resource_events_fallback_excludes_automation_user(self):
         ops = _make_non_cluster_ops(
             cloudtrail_user='',
-            resource_events_user='pragchau')
+            resource_events_user=CLUSTER_OWNER)
         result = ops.get_username(
             start_time=self.START_TIME, resource_id='vol-abc123',
             resource_type='AWS::EC2::Volume', tags=[])
-        assert result == 'pragchau'
+        assert result == CLUSTER_OWNER
         call_kwargs = ops.cloudtrail.get_username_from_resource_events.call_args.kwargs
-        assert call_kwargs['exclude_users'] == {'cloud-governance-user'}
+        assert call_kwargs['exclude_users'] == {AUTOMATION_USER}

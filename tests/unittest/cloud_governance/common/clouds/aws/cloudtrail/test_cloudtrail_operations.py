@@ -355,8 +355,10 @@ class TestCloudTrailOperations:
 class TestCloudTrailOperationsRosaTagging:
     """Tests for ROSA cluster ownership resolution added in PR #1007."""
 
+    CLUSTER_OWNER = 'cluster-owner'
+    LEGACY_TAGGER = 'legacy-tagger'
     LAUNCH_TIME = datetime(2026, 6, 30, 14, 6, 46, tzinfo=timezone.utc)
-    IAM_USERS = ['pragchau', 'cloud-governance-delete-user']
+    IAM_USERS = [CLUSTER_OWNER, LEGACY_TAGGER]
 
     @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
     def test_get_username_from_resource_events_skips_excluded_users(self, mock_boto3):
@@ -364,12 +366,12 @@ class TestCloudTrailOperationsRosaTagging:
         cloudtrail_ops.get_full_responses = Mock(return_value=[
             {
                 'EventName': 'CreateTags',
-                'Username': 'cloud-governance-delete-user',
+                'Username': self.LEGACY_TAGGER,
                 'CloudTrailEvent': '{}',
             },
             {
                 'EventName': 'CreateTags',
-                'Username': 'pragchau',
+                'Username': self.CLUSTER_OWNER,
                 'CloudTrailEvent': '{}',
             },
         ])
@@ -377,8 +379,8 @@ class TestCloudTrailOperationsRosaTagging:
             resource_id='i-0123456789abcdef0',
             iam_users=self.IAM_USERS,
             start_time=self.LAUNCH_TIME,
-            exclude_users={'cloud-governance-delete-user'})
-        assert result == 'pragchau'
+            exclude_users={self.LEGACY_TAGGER})
+        assert result == self.CLUSTER_OWNER
 
     @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
     def test_get_username_from_cluster_role_direct_match(self, mock_boto3):
@@ -386,8 +388,8 @@ class TestCloudTrailOperationsRosaTagging:
         mock_paginator = Mock()
         mock_paginator.paginate.return_value = [{
             'Roles': [{
-                'RoleName': 'z2r7p1f3o6m2h3y-t5bx8-master-role',
-                'Arn': 'arn:aws:iam::123456789012:role/z2r7p1f3o6m2h3y-t5bx8-master-role',
+                'RoleName': 'test-infra-id-x56mc-master-role',
+                'Arn': 'arn:aws:iam::123456789012:role/test-infra-id-x56mc-master-role',
                 'CreateDate': self.LAUNCH_TIME,
             }]
         }]
@@ -399,13 +401,13 @@ class TestCloudTrailOperationsRosaTagging:
 
         cloudtrail_ops = CloudTrailOperations(region_name='us-east-1')
         cloudtrail_ops._CloudTrailOperations__get_username_from_role_cloudtrail = Mock(
-            return_value='pragchau')
+            return_value=self.CLUSTER_OWNER)
 
         result = cloudtrail_ops.get_username_from_cluster_role(
-            cluster_id='z2r7p1f3o6m2h3y-t5bx8',
+            cluster_id='test-infra-id-x56mc',
             iam_users=self.IAM_USERS,
             launch_time=self.LAUNCH_TIME)
-        assert result == 'pragchau'
+        assert result == self.CLUSTER_OWNER
 
     @patch('cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations.boto3')
     def test_get_username_from_cluster_role_ambiguous_temporal_match_returns_empty(
@@ -435,7 +437,7 @@ class TestCloudTrailOperationsRosaTagging:
 
         cloudtrail_ops = CloudTrailOperations(region_name='us-east-1')
         cloudtrail_ops._CloudTrailOperations__get_username_from_role_cloudtrail = Mock(
-            side_effect=['pragchau', 'otheruser'])
+            side_effect=[self.CLUSTER_OWNER, 'otheruser'])
         cloudtrail_ops._CloudTrailOperations__get_username_from_create_role_events = Mock(
             return_value='')
 
@@ -454,7 +456,7 @@ class TestCloudTrailOperationsRosaTagging:
             {'Events': [], 'NextToken': 'page2'},
             {'Events': [{
                 'EventName': 'CreateRole',
-                'Username': 'pragchau',
+                'Username': self.CLUSTER_OWNER,
                 'Resources': [{
                     'ResourceType': 'AWS::IAM::Role',
                     'ResourceName': 'rosa-test-openshift-machine-api',
@@ -471,5 +473,5 @@ class TestCloudTrailOperationsRosaTagging:
         end = datetime(2026, 6, 30, 14, 0, 0, tzinfo=timezone.utc)
         result = cloudtrail_ops._CloudTrailOperations__get_username_from_create_role_events(
             start_time=start, end_time=end, iam_users=self.IAM_USERS)
-        assert result == 'pragchau'
+        assert result == self.CLUSTER_OWNER
         assert mock_global_ct.lookup_events.call_count == 2
