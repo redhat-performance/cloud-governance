@@ -249,7 +249,9 @@ class NonClusterOperations:
         @param tags:
         @return:
         """
-        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email']
+        check_tags = ['User', 'Project', 'Manager', 'Owner', 'Email', 'LaunchTime']
+        if self.input_tags:
+            check_tags.extend(key for key in self.input_tags if key not in check_tags)
         tag_count = 0
         if tags:
             for tag in tags:

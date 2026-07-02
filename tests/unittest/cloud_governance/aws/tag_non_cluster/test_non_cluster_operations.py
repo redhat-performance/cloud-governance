@@ -51,3 +51,32 @@ class TestNonClusterOperationsGetUsername:
         assert result == CLUSTER_OWNER
         call_kwargs = ops.cloudtrail.get_username_from_resource_events.call_args.kwargs
         assert call_kwargs['exclude_users'] == {AUTOMATION_USER}
+
+
+class TestNonClusterOperationsValidateExistingTag:
+    def test_returns_false_when_budget_tag_missing(self):
+        ops = NonClusterOperations.__new__(NonClusterOperations)
+        ops.input_tags = {'Budget': 'PERF-DEPT'}
+        tags = [
+            {'Key': 'User', 'Value': 'cluster-owner'},
+            {'Key': 'Project', 'Value': 'test'},
+            {'Key': 'Manager', 'Value': 'manager'},
+            {'Key': 'Owner', 'Value': 'owner'},
+            {'Key': 'Email', 'Value': 'cluster-owner@redhat.com'},
+            {'Key': 'LaunchTime', 'Value': '2026/06/30 14:00:00'},
+        ]
+        assert ops.validate_existing_tag(tags=tags) is False
+
+    def test_returns_true_when_all_required_tags_present(self):
+        ops = NonClusterOperations.__new__(NonClusterOperations)
+        ops.input_tags = {'Budget': 'PERF-DEPT'}
+        tags = [
+            {'Key': 'User', 'Value': 'cluster-owner'},
+            {'Key': 'Project', 'Value': 'test'},
+            {'Key': 'Manager', 'Value': 'manager'},
+            {'Key': 'Owner', 'Value': 'owner'},
+            {'Key': 'Email', 'Value': 'cluster-owner@redhat.com'},
+            {'Key': 'LaunchTime', 'Value': '2026/06/30 14:00:00'},
+            {'Key': 'Budget', 'Value': 'PERF-DEPT'},
+        ]
+        assert ops.validate_existing_tag(tags=tags) is True
