@@ -74,9 +74,9 @@ class CostOverUsage:
         """
         df = pandas.DataFrame.from_records(data).fillna({})
         if 'Instances' in data[0]:
-            df = df.groupby('User').agg({'Cost': sum, 'Instances': sum}).reset_index()
+            df = df.groupby('User').agg({'Cost': 'sum', 'Instances': sum}).reset_index()
         else:
-            df = df.groupby('User').agg({'Cost': sum}).reset_index()
+            df = df.groupby('User').agg({'Cost': 'sum'}).reset_index()
         return self.filter_sort_list(user_resources=df.to_dict('records'))
 
     def aws_user_usage(self, days: int, cost_usage: int):
@@ -87,25 +87,25 @@ class CostOverUsage:
         @return:
         """
         users = []
-        cc = []
         user_data = self._elastic_upload.elastic_search_operations.get_index_hits(days=days,
                                                                                   index=self._elastic_upload.es_index)
         user_data = self.aggregate_user_sum(user_data)
         for user_usage in user_data:
             user = user_usage['User']
             if user_usage['Cost'] > cost_usage:
-                file_name = ""
-                if user_usage.get('Instances'):
-                    used_instances = self.get_user_used_instances(user_used_list=user_usage.get('Instances'))
-                    with open(file_name, 'w') as file:
-                        json.dump(used_instances, file, indent=4)
                 ignore_user_mails = self._elastic_upload.literal_eval(self.__ignore_mails)
                 if user not in ignore_user_mails:
+                    cc = []
                     special_user_mails = self._elastic_upload.literal_eval(self._elastic_upload.special_user_mails)
                     to = user if user not in special_user_mails else special_user_mails[user]
                     ldap_data = self.__ldap.get_user_details(user_name=to)
                     name = to
-                    file_name = os.path.join('/tmp', f'{to}_resource.json')
+                    file_name = None
+                    if user_usage.get('Instances'):
+                        used_instances = self.get_user_used_instances(user_used_list=user_usage.get('Instances'))
+                        file_name = os.path.join('/tmp', f'{to}_resource.json')
+                        with open(file_name, 'w') as file:
+                            json.dump(used_instances, file, indent=4)
 
                     if ldap_data:
                         cc.append(f'{ldap_data.get("managerId")}@redhat.com')
@@ -114,8 +114,10 @@ class CostOverUsage:
                                                                                                user_usage=user_usage[
                                                                                                    'Cost'], name=name,
                                                                                                usage_cost=self.COST_USAGE_DOLLAR)
-                    self._elastic_upload.postfix_mail.send_email_postfix(subject=subject, content=body, to=to, cc=cc,
-                                                                         filename=file_name)
+                    email_kwargs = {'subject': subject, 'content': body, 'to': to, 'cc': cc}
+                    if file_name:
+                        email_kwargs['filename'] = file_name
+                    self._elastic_upload.postfix_mail.send_email_postfix(**email_kwargs)
                     users.append(to)
         return users
 
