@@ -6,11 +6,15 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/rh_perfscale/fedora38-podman:latest'
-            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+            args  '--entrypoint="" -u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
         }
     }
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        ES_HOST = credentials('cloud-governance-es-host')
+        ES_PORT = credentials('cloud-governance-es-port')
+        ES_USER = credentials('cloud-governance-es-user')
+        ES_PASSWORD = credentials('cloud-governance-es-password')
         USAGE_REPORTS_APIKEY = credentials('cloud-governance-ibm-service-id-performance-scale')
         IBM_ACCOUNT_ID = credentials('cloud-governance-ibm-account-id-performance-scale')
         contact1 = "ebattat@redhat.com"
