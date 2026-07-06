@@ -127,7 +127,8 @@ class JiraOperations:
                                 description_dict['Project'] = description_dict.get('Otherproductsbeingtested')
                             if not description_dict['Project']:
                                 description_dict['Project'] = description_dict.get('Explanationof"Other"secondaryproduct')
-                    description_dict['TicketOpenedDate'] = datetime.strptime(issue_data.get('fields').get('created').split('.')[0], "%Y-%m-%dT%H:%M:%S")
+                    created_str = issue_data.get('fields').get('created').split('.')[0].split('+')[0].split('Z')[0]
+                    description_dict['TicketOpenedDate'] = datetime.strptime(created_str, "%Y-%m-%dT%H:%M:%S")
                     description_dict['JiraStatus'] = issue_data['fields']['status']['name']
                     self.cache_ticket_description(ticket_id=ticket_id, ticket_description=description_dict)
                     return description_dict
@@ -145,7 +146,8 @@ class JiraOperations:
             if '[Clouds]' in issue['fields']['summary']:
                 ticket_id = issue.get('key')
                 description = self.beautify_issue_description(issue['fields']['description'])
-                description['TicketOpenedDate'] = datetime.strptime(issue.get('fields').get('created').split('.')[0], "%Y-%m-%dT%H:%M:%S")
+                created_str = issue.get('fields').get('created').split('.')[0].split('+')[0].split('Z')[0]
+                description['TicketOpenedDate'] = datetime.strptime(created_str, "%Y-%m-%dT%H:%M:%S")
                 ticket_ids[ticket_id] = description.get('Region')
         return ticket_ids
 
@@ -231,7 +233,8 @@ class JiraOperations:
             if '[Clouds]' in issue['fields']['summary']:
                 ticket_id = issue.get('key')
                 description = self.beautify_issue_description(issue['fields']['description'])
-                description['TicketOpenedDate'] = datetime.strptime(issue.get('fields').get('created').split('.')[0], "%Y-%m-%dT%H:%M:%S")
+                created_str = issue.get('fields').get('created').split('.')[0].split('+')[0].split('Z')[0]
+                description['TicketOpenedDate'] = datetime.strptime(created_str, "%Y-%m-%dT%H:%M:%S")
                 ticket_ids[ticket_id] = description
         return ticket_ids
 

@@ -103,7 +103,13 @@ class AWSPrice:
             except Exception as err:
                 return 'NA'
             ec2_lanuch_time = item_data['LaunchTime']
-            d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
+            if isinstance(ec2_lanuch_time, datetime):
+                d1 = ec2_lanuch_time.replace(tzinfo=None)
+            else:
+                launch_time_str = str(ec2_lanuch_time).split('.')[0].replace('Z', '+00:00')
+                if '+' not in launch_time_str:
+                    launch_time_str += '+00:00'
+                d1 = datetime.strptime(launch_time_str, "%Y-%m-%dT%H:%M:%S+00:00")
             d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
             diff = d2 - d1
             diff_in_hours = diff.total_seconds() / 3600
