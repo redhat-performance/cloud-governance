@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import typeguard
 
 from cloud_governance.cloud_resource_orchestration.utils.constant_variables import DATE_FORMAT
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import parse_iso_datetime
 from cloud_governance.cloud_resource_orchestration.utils.elastic_search_queries import ElasticSearchQueries
 from cloud_governance.common.clouds.aws.cost_explorer.cost_explorer_operations import CostExplorerOperations
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
@@ -294,7 +295,7 @@ class CostOverUsage:
             last_send_date = last_alert.get('_source').get('timestamp')
             alert_number = last_alert.get('_source').get('Alert', 0)
             current_date = datetime.now(tz=timezone.utc).date()
-            last_send_date = datetime.strptime(last_send_date, self.TIMESTAMP_DATE_FORMAT).date()
+            last_send_date = parse_iso_datetime(last_send_date).date()
             days = (current_date - last_send_date).days
             if days % self.SEND_ALERT_DAY == 0 and last_send_date != current_date:
                 return True, alert_number

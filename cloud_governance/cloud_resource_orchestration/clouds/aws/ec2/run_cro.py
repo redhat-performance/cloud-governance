@@ -7,6 +7,7 @@ from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.cost_over_usag
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.monitor_cro_instances import MonitorCROInstances
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.aws_monitor_tickets import AWSMonitorTickets
 from cloud_governance.cloud_resource_orchestration.clouds.aws.ec2.tag_cro_instances import TagCROInstances
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import parse_iso_datetime
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.main.environment_variables import environment_variables
@@ -38,7 +39,7 @@ class RunCRO:
             source = es_data.get('_source')
             last_run_time = source.get(f'last_run_{self.account.lower()}')
             if last_run_time:
-                last_updated_time = datetime.strptime(last_run_time, "%Y-%m-%dT%H:%M:%S.%f").date()
+                last_updated_time = parse_iso_datetime(last_run_time).date()
                 if last_updated_time == datetime.now(tz=timezone.utc).date():
                     first_run = False
         self.__environment_variables_dict.update({'CRO_FIRST_RUN': first_run})

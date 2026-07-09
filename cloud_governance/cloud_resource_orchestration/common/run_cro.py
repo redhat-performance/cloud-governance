@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
 from cloud_governance.cloud_resource_orchestration.common.cro_object import CroObject
-from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case
+from cloud_governance.cloud_resource_orchestration.utils.common_operations import string_equal_ignore_case, \
+    parse_iso_datetime
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
@@ -55,7 +56,7 @@ class RunCRO:
                 source = es_data.get('_source')
                 last_run_time = source.get(f'last_run_{self.__account.lower()}')
                 if last_run_time:
-                    last_updated_time = datetime.strptime(last_run_time, "%Y-%m-%dT%H:%M:%S.%f").date()
+                    last_updated_time = parse_iso_datetime(last_run_time).date()
                     if last_updated_time == datetime.now(tz=timezone.utc).date():
                         first_run = False
             self.__environment_variables_dict.update({'CRO_FIRST_RUN': first_run})
