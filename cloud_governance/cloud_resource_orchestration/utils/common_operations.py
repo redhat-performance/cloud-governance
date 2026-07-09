@@ -1,6 +1,27 @@
+import re
+from datetime import datetime
 from typing import Union
 
 from cloud_governance.main.environment_variables import environment_variables
+
+_ISO_DATETIME_OFFSET_RE = re.compile(r'[+-]\d{2}:\d{2}$')
+
+
+def parse_iso_datetime(value: str) -> datetime:
+    """
+    This method parses an ISO 8601 datetime string, tolerating fractional seconds and a
+    trailing timezone offset (e.g. '+00:00', '-05:00') or 'Z' suffix.
+    Elasticsearch/OpenSearch clients serialize stored python datetime objects back to
+    strings like '2026-07-09T13:00:23.548397+00:00', which plain strptime formats such as
+    '%Y-%m-%dT%H:%M:%S.%f' cannot parse (raises "unconverted data remains: +00:00").
+    The returned datetime is naive (tzinfo stripped) for easy comparison with naive dates.
+    :param value:
+    :return:
+    """
+    normalized = re.sub(r'\.\d+', '', str(value)).replace('Z', '+00:00')
+    if _ISO_DATETIME_OFFSET_RE.search(normalized):
+        return datetime.strptime(normalized, '%Y-%m-%dT%H:%M:%S%z').replace(tzinfo=None)
+    return datetime.strptime(normalized, '%Y-%m-%dT%H:%M:%S')
 
 
 def string_equal_ignore_case(value1: str, value2: str, *args) -> bool:
