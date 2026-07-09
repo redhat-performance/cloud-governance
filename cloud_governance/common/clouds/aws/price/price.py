@@ -2,6 +2,7 @@ from datetime import datetime
 from time import strftime
 
 import json
+import re
 from pathlib import Path
 
 import botocore
@@ -103,7 +104,16 @@ class AWSPrice:
             except Exception as err:
                 return 'NA'
             ec2_lanuch_time = item_data['LaunchTime']
-            d1 = datetime.strptime(ec2_lanuch_time, "%Y-%m-%dT%H:%M:%S+00:00")
+            if isinstance(ec2_lanuch_time, datetime):
+                d1 = ec2_lanuch_time.replace(tzinfo=None)
+            else:
+                # Remove fractional seconds while preserving timezone offset
+                launch_time_str = re.sub(r'\.\d+', '', str(ec2_lanuch_time)).replace('Z', '+00:00')
+                # Check if timezone offset exists (handles both + and - offsets)
+                if not re.search(r'[+-]\d{2}:\d{2}$', launch_time_str):
+                    launch_time_str += '+00:00'
+                # Parse with timezone and then remove it for consistent naive datetime
+                d1 = datetime.strptime(launch_time_str, "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
             d2 = datetime.strptime(strftime("%Y-%m-%dT%H:%M:%S+00:00"), "%Y-%m-%dT%H:%M:%S+00:00")
             diff = d2 - d1
             diff_in_hours = diff.total_seconds() / 3600
