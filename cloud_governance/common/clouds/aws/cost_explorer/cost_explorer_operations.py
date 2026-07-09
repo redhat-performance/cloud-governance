@@ -145,6 +145,18 @@ class CostExplorerOperations:
         try:
             if self.FILTER in kwargs and not kwargs.get('Filter'):
                 kwargs.pop('Filter')
+
+            # AWS Cost Explorer requires start_date to be first day of month when querying >14 months back
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            months_diff = (end_date_obj.year - start_date_obj.year) * 12 + (end_date_obj.month - start_date_obj.month)
+
+            if months_diff > 14 and start_date_obj.day != 1:
+                # Adjust to first day of the month
+                start_date_obj = start_date_obj.replace(day=1)
+                start_date = start_date_obj.strftime('%Y-%m-%d')
+                logger.info(f"Adjusted start_date to first day of month for >14 month query: {start_date}")
+
             usage_cost = {}
             response = self.cost_explorer_client.get_cost_and_usage(TimePeriod={
                 'Start': start_date,
