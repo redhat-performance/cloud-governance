@@ -694,13 +694,14 @@ def test_f12_elastic_ip_includes_association_zombies():
         TagSpecifications=[{'ResourceType': 'network-interface',
                            'Tags': [{'Key': K8S_TAG_EIP, 'Value': 'owned'}]}]
     )
-    ec2_client.associate_address(
+    association_resp = ec2_client.associate_address(
         AllocationId=allocation_id,
         NetworkInterfaceId=eni['NetworkInterface']['NetworkInterfaceId']
     )
+    association_id = association_resp['AssociationId']
     ec2_client.create_tags(Resources=[allocation_id], Tags=[{'Key': K8S_TAG_EIP, 'Value': 'owned'}])
 
     zcr = ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=False, region=region_name)
     zombies, _ = zcr.zombie_cluster_elastic_ip()
 
-    assert len(zombies) > 0
+    assert association_id in zombies

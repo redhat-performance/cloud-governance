@@ -364,8 +364,8 @@ def test_f11_resource_name_does_not_override_cluster_id():
         resources_list=security_groups, input_resource_id='GroupId'
     )
 
-    if sg_id in result:
-        assert result[sg_id] == K8S_TAG
+    assert sg_id in result
+    assert result[sg_id] == K8S_TAG
 
 
 @mock_aws
