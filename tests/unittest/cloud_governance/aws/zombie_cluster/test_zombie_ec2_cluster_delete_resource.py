@@ -5,7 +5,7 @@ from moto import mock_aws
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
-from tests.unittest.configs import DRY_RUN_YES, DRY_RUN_NO
+from tests.unittest.configs import DRY_RUN_YES, DRY_RUN_NO, DEFAULT_AMI_ID
 
 tags = [
     {'Key': 'kubernetes.io/cluster/unittest-test-cluster', 'Value': 'Owned'},
@@ -664,3 +664,43 @@ def test_delete_security_group_with_icmp_rule():
 
     zombie_cluster_resources.zombie_cluster_security_group()
     assert not EC2Operations(region_name).find_security_group(sg1)
+
+
+# ---------------------------------------------------------------------------
+# F12: Elastic IP dict merge fix
+# ---------------------------------------------------------------------------
+
+CLUSTER_PREFIX = ['kubernetes.io/cluster', 'sigs.k8s.io/cluster-api-provider-aws/cluster']
+K8S_TAG_EIP = 'kubernetes.io/cluster/unittest-test-cluster-abc123'
+
+
+@mock_aws
+def test_f12_elastic_ip_includes_association_zombies():
+    """
+    Elastic IP associated with an ENI that carries a cluster tag.
+    The EIP should appear in the returned zombies dict — association-based
+    entries must not be dropped by the dict merge.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+
+    vpc = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    subnet = ec2_client.create_subnet(VpcId=vpc['Vpc']['VpcId'], CidrBlock='10.0.1.0/24')
+
+    eip = ec2_client.allocate_address(Domain='vpc')
+    allocation_id = eip['AllocationId']
+
+    eni = ec2_client.create_network_interface(
+        SubnetId=subnet['Subnet']['SubnetId'],
+        TagSpecifications=[{'ResourceType': 'network-interface',
+                           'Tags': [{'Key': K8S_TAG_EIP, 'Value': 'owned'}]}]
+    )
+    ec2_client.associate_address(
+        AllocationId=allocation_id,
+        NetworkInterfaceId=eni['NetworkInterface']['NetworkInterfaceId']
+    )
+    ec2_client.create_tags(Resources=[allocation_id], Tags=[{'Key': K8S_TAG_EIP, 'Value': 'owned'}])
+
+    zcr = ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=False, region=region_name)
+    zombies, _ = zcr.zombie_cluster_elastic_ip()
+
+    assert len(zombies) > 0
