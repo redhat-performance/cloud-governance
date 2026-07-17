@@ -121,7 +121,7 @@ class ZombieClusterCommonMethods:
                 except Exception as err:
                     return []
             else:
-                if resource.get(aws_tag) and resource_id in zombies:
+                if resource.get(aws_tag):
                     aws_tags = resource.get(aws_tag)
             if aws_tags:
                 old_tags = deepcopy(aws_tags)
@@ -130,8 +130,12 @@ class ZombieClusterCommonMethods:
                 if cluster_delete_days:
                     if resource_id in zombies:
                         if self.dry_run == 'no':
+                            try:
+                                new_days = str(int(cluster_delete_days) + 1)
+                            except ValueError:
+                                new_days = str(1)
                             tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays',
-                                                             tag_value=str(int(cluster_delete_days) + 1))
+                                                             tag_value=new_days)
                         else:
                             tags = self.update_resource_tags(tags=tags, tag_name='ClusterDeleteDays', tag_value=str(0))
                     else:
@@ -192,7 +196,10 @@ class ZombieClusterCommonMethods:
         if not cluster_delete_days:
             cluster_delete_days = 1
         else:
-            cluster_delete_days = int(cluster_delete_days) + 1
+            try:
+                cluster_delete_days = int(cluster_delete_days) + 1
+            except ValueError:
+                cluster_delete_days = 1
         return cluster_delete_days
 
     def trigger_mail(self, tags: list, resource_id: str, days: int, resources: list, message_type: str):
@@ -245,7 +252,10 @@ class ZombieClusterCommonMethods:
         for resource_id, cluster_tag in resource_data.items():
             if cluster_tag in cluster_left_out_days:
                 cluster_tags.add(cluster_tag)
-                zombie_days = int(self.get_tag_name_from_tags(tags=cluster_left_out_days[cluster_tag], tag_name='ClusterDeleteDays'))
+                try:
+                    zombie_days = int(self.get_tag_name_from_tags(tags=cluster_left_out_days[cluster_tag], tag_name='ClusterDeleteDays'))
+                except ValueError:
+                    zombie_days = 0
                 if zombie_days == self.DAYS_TO_TRIGGER_RESOURCE_MAIL:
                     notify_tag_data.setdefault(cluster_tag, []).append(resource_id)
                 elif zombie_days >= self.DAYS_TO_DELETE_RESOURCE:
@@ -288,7 +298,10 @@ class ZombieClusterCommonMethods:
         """
         delete_cluster_resource = False
         if resources:
-            cluster_delete_days = int(self.get_tag_name_from_tags(tags=resources[zombie], tag_name='ClusterDeleteDays'))
+            try:
+                cluster_delete_days = int(self.get_tag_name_from_tags(tags=resources[zombie], tag_name='ClusterDeleteDays'))
+            except ValueError:
+                cluster_delete_days = 0
             if cluster_tag not in cluster_left_out_days:
                 cluster_left_out_days[cluster_tag] = resources[zombie]
             if cluster_delete_days >= self.DAYS_TO_DELETE_RESOURCE:
