@@ -705,3 +705,79 @@ def test_f12_elastic_ip_includes_association_zombies():
     zombies, _ = zcr.zombie_cluster_elastic_ip()
 
     assert association_id in zombies
+
+
+# ---------------------------------------------------------------------------
+# F6: VPC-expanded siblings are checked per-resource before deletion
+# ---------------------------------------------------------------------------
+
+@mock_aws
+def test_f6_vpc_sibling_with_fewer_days_not_deleted():
+    """
+    F6: When one zombie SG in a VPC reaches the 7-day deletion threshold, VPC siblings must
+    be checked individually. A sibling at 3 days must survive even though the trigger zombie
+    hit the threshold. Before the fix, any zombie reaching the threshold caused all VPC
+    siblings to be deleted regardless of their individual counters.
+    """
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
+    ec2_client = boto3.client('ec2', region_name=region_name)
+
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    subnet_id = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    # sg1 at day 6 — becomes 7 after one policy run → should be deleted
+    sg1 = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='trigger zombie', GroupName='sg-f6-trigger',
+        TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}]
+    )['GroupId']
+    ec2_client.create_tags(Resources=[sg1], Tags=[{'Key': 'ClusterDeleteDays', 'Value': '6'}])
+    ec2_client.create_network_interface(SubnetId=subnet_id, Groups=[sg1], Description='eni-sg1')
+
+    # sg2 at day 3 — becomes 4 after one policy run → must NOT be deleted
+    sg2 = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='sibling zombie', GroupName='sg-f6-sibling',
+        TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}]
+    )['GroupId']
+    ec2_client.create_tags(Resources=[sg2], Tags=[{'Key': 'ClusterDeleteDays', 'Value': '3'}])
+    ec2_client.create_network_interface(SubnetId=subnet_id, Groups=[sg2], Description='eni-sg2')
+
+    # No running instances — both SGs are zombie
+    ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=True, region=region_name).zombie_cluster_security_group()
+
+    ec2_ops = EC2Operations(region_name)
+    assert not ec2_ops.find_security_group(sg1), "sg1 (7 days) should have been deleted"
+    assert ec2_ops.find_security_group(sg2), "sg2 (4 days) must not be deleted"
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
+
+
+# ---------------------------------------------------------------------------
+# F14: non-numeric ClusterDeleteDays tag must not crash the policy
+# ---------------------------------------------------------------------------
+
+@mock_aws
+def test_f14_corrupt_cluster_delete_days_does_not_crash():
+    """
+    F14: A non-numeric ClusterDeleteDays tag value must not raise ValueError and crash the
+    policy. The corrupt value is treated as day 1 (reset), so the resource is not deleted
+    and the policy completes without error. Before the fix, int() on a corrupt tag value
+    propagated an unhandled ValueError.
+    """
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_NO
+    ec2_client = boto3.client('ec2', region_name=region_name)
+
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    subnet_id = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+    sg_id = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='F14 test', GroupName='sg-f14-test',
+        TagSpecifications=[{'ResourceType': 'security-group', 'Tags': tags}]
+    )['GroupId']
+    ec2_client.create_tags(Resources=[sg_id], Tags=[{'Key': 'ClusterDeleteDays', 'Value': 'not-a-number'}])
+    ec2_client.create_network_interface(SubnetId=subnet_id, Groups=[sg_id], Description='eni-f14')
+
+    # No running instances — SG is zombie; corrupt tag must not raise
+    ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=True, region=region_name).zombie_cluster_security_group()
+
+    # Corrupt tag resets to 1 (day 1 of 7) → SG must still exist
+    assert EC2Operations(region_name).find_security_group(sg_id), \
+        "SG must survive when ClusterDeleteDays is corrupt (treated as day 1)"
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
