@@ -30,6 +30,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         self.delete_s3_resource = DeleteS3Resources(s3_client=self.s3_client, s3_resource=self.s3_resource)
         self.ec2_operations = EC2Operations(region=region)
         self.__get_details_resource_list = Utils().get_details_resource_list
+        self._vpcs_with_instances = set()
 
     def all_cluster_instance(self):
         """
@@ -65,6 +66,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         """
         instances_list = []
         result_instance = {}
+        self._vpcs_with_instances = set()
         ec2s_data = self.ec2_operations.get_instances()
         for items in ec2s_data:
             if items.get('Instances'):
@@ -72,6 +74,9 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         for instance in instances_list:
             for item in instance:
                 instance_id = item['InstanceId']
+                vpc_id = item.get('VpcId')
+                if vpc_id:
+                    self._vpcs_with_instances.add(vpc_id)
                 ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                            tags=item.get('Tags', []))
                 if ok:
@@ -104,10 +109,6 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                         if self.cluster_tag and self.cluster_tag == tag['Key']:
                             result_resources_key_id[resource_id] = tag['Key']
                             break
-                        else:
-                            if self.resource_name and self.resource_name == tag['Value']:
-                                result_resources_key_id[resource_id] = tag['Key']
-                                break
         return result_resources_key_id
 
     def __extract_vpc_id_from_resource_data(self, zombie_id: str, resource_data: list, input_tag: str,
@@ -149,17 +150,47 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 ids.append(resource.get(output_tag))
         return ids
 
+    def __extract_cluster_name(self, tag_key: str):
+        """
+        This method extracts the cluster name from a full tag key by stripping the prefix.
+        e.g. 'kubernetes.io/cluster/my-cluster' -> 'my-cluster'
+             'sigs.k8s.io/cluster-api-provider-aws/cluster/my-cluster' -> 'my-cluster'
+        """
+        if not tag_key:
+            return ''
+        for prefix in self.cluster_prefix:
+            if tag_key.startswith(prefix):
+                name = tag_key[len(prefix):].lstrip('/')
+                return name
+        return tag_key
+
+    def _filter_zombies_by_vpc(self, zombies: dict, resource_data: list, vpc_key: str = 'VpcId'):
+        """
+        This method filters out zombies whose VPC has running instances (F2 safety net).
+        """
+        if not self._vpcs_with_instances:
+            return zombies
+        filtered = {}
+        for zombie_id, cluster_tag in zombies.items():
+            vpc_id = self.__extract_vpc_id_from_resource_data(
+                zombie_id=zombie_id, resource_data=resource_data, input_tag=vpc_key)
+            if vpc_id not in self._vpcs_with_instances:
+                filtered[zombie_id] = cluster_tag
+        return filtered
+
     def __get_zombie_resources(self, exist_resources: dict):
         """
         This method filter zombie resource, meaning no active instance for this cluster
         """
         zombie_resources = {}
-        zombies_values = set(exist_resources.values()) - set(self._cluster_instance().values())
+        instance_cluster_names = {self.__extract_cluster_name(v)
+                                  for v in self._cluster_instance().values()}
+        instance_cluster_names.discard('')
 
-        for zombie_value in zombies_values:
-            for key, value in exist_resources.items():
-                if zombie_value == value:
-                    zombie_resources[key] = value
+        for key, value in exist_resources.items():
+            resource_cluster_name = self.__extract_cluster_name(value)
+            if resource_cluster_name and resource_cluster_name not in instance_cluster_names:
+                zombie_resources[key] = value
 
         return zombie_resources
 
@@ -168,12 +199,14 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         This method filter zombie resource, meaning no active instance for this cluster in all regions
         """
         zombie_resources = {}
-        zombies_values = set(exist_resources.values()) - set(self.all_cluster_instance().values())
+        instance_cluster_names = {self.__extract_cluster_name(v)
+                                  for v in self.all_cluster_instance().values()}
+        instance_cluster_names.discard('')
 
-        for zombie_value in zombies_values:
-            for key, value in exist_resources.items():
-                if zombie_value == value:
-                    zombie_resources[key] = value
+        for key, value in exist_resources.items():
+            resource_cluster_name = self.__extract_cluster_name(value)
+            if resource_cluster_name and resource_cluster_name not in instance_cluster_names:
+                zombie_resources[key] = value
         return zombie_resources
 
     def zombie_cluster_volume(self, vpc_id: str = '', cluster_tag_vpc: str = ''):
@@ -279,9 +312,20 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             if vpcs:
                 vpc = vpcs[0]
                 if vpc.get('Tags'):
-                    for tag in vpc.get('Tags'):
-                        if cluster_tag in tag.get('Key'):
-                            return tag.get('Key')
+                    if cluster_tag:
+                        search_name = self.__extract_cluster_name(cluster_tag)
+                        if not search_name:
+                            return ''
+                        for tag in vpc.get('Tags'):
+                            tag_name = self.__extract_cluster_name(tag.get('Key'))
+                            if tag_name and tag_name == search_name:
+                                return tag.get('Key')
+                    else:
+                        for tag in vpc.get('Tags'):
+                            ok, _ = Utils.is_cluster_resource(
+                                cluster_prefix=self.cluster_prefix, tag=tag)
+                            if ok:
+                                return tag.get('Key')
         return ''
 
     def __get_zombies_by_vpc_id(self, vpc_id: str, resources: list, output_tag: str, cluster_tag: str = '',
@@ -327,6 +371,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         security_groups = self.ec2_operations.get_security_groups()
         exist_security_group = self.__get_cluster_resources(resources_list=security_groups, input_resource_id='GroupId')
         zombies = self.__get_zombie_resources(exist_security_group)
+        zombies = self._filter_zombies_by_vpc(zombies, security_groups, vpc_key='GroupId')
         if vpc_id and not zombies:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=security_groups, output_tag='GroupId',
                                                    cluster_tag=cluster_tag_vpc)
@@ -373,7 +418,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                                                             input_resource_id='AllocationId')
         zombies_ass = self.__get_zombie_resources(exist_elastic_ip_ass)
         zombies_all = self.__get_zombie_resources(exist_elastic_ip_all)
-        resources_ass = self._get_tags_of_zombie_resources(resources=elastic_ips_data, resource_id_name='AllocationId',
+        resources_ass = self._get_tags_of_zombie_resources(resources=elastic_ips_data, resource_id_name='AssociationId',
                                                            zombies=zombies_ass, aws_service='ec2')
         resources_all = self._get_tags_of_zombie_resources(resources=elastic_ips_data, resource_id_name='AllocationId',
                                                            zombies=zombies_all, aws_service='ec2')
@@ -402,7 +447,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     if self._force_delete and self.delete:
                         self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie,
                                                                         cluster_tag=cluster_tag)
-        zombies = {**zombies_all}
+        zombies = {**zombies_ass, **zombies_all}
         return zombies, cluster_left_out_days
 
     def zombie_cluster_network_interface(self, vpc_id: str = '', cluster_tag_vpc: str = ''):
@@ -413,6 +458,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_network_interface = self.__get_cluster_resources(resources_list=network_interfaces_data,
                                                                input_resource_id='NetworkInterfaceId', tags='TagSet')
         zombies = self.__get_zombie_resources(exist_network_interface)
+        zombies = self._filter_zombies_by_vpc(zombies, network_interfaces_data, vpc_key='NetworkInterfaceId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=network_interfaces_data,
                                                    output_tag='NetworkInterfaceId', tags='TagSet',
@@ -553,6 +599,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         vpcs_data = self.ec2_operations.get_vpcs()
         exist_vpc = self.__get_cluster_resources(resources_list=vpcs_data, input_resource_id='VpcId')
         zombies = self.__get_zombie_resources(exist_vpc)
+        zombies = self._filter_zombies_by_vpc(zombies, vpcs_data, vpc_key='VpcId')
         delete_dict = {"ELB": self.zombie_cluster_load_balancer, "ELBV2": self.zombie_cluster_load_balancer_v2,
                        "VPCE": self.zombie_cluster_vpc_endpoint, "DHCP": self.zombie_cluster_dhcp_option,
                        "RT": self.zombie_cluster_route_table, "SG": self.zombie_cluster_security_group,
@@ -586,6 +633,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         subnets_data = self.ec2_operations.get_subnets()
         exist_subnet = self.__get_cluster_resources(resources_list=subnets_data, input_resource_id='SubnetId')
         zombies = self.__get_zombie_resources(exist_subnet)
+        zombies = self._filter_zombies_by_vpc(zombies, subnets_data, vpc_key='SubnetId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=subnets_data, output_tag='SubnetId',
                                                    cluster_tag=cluster_tag_vpc)
@@ -621,6 +669,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_route_table = self.__get_cluster_resources(resources_list=route_tables_data,
                                                          input_resource_id='RouteTableId')
         zombies = self.__get_zombie_resources(exist_route_table)
+        zombies = self._filter_zombies_by_vpc(zombies, route_tables_data, vpc_key='RouteTableId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=route_tables_data,
                                                    output_tag='RouteTableId', cluster_tag=cluster_tag_vpc)
@@ -657,6 +706,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_internet_gateway = self.__get_cluster_resources(resources_list=internet_gateways_data,
                                                               input_resource_id='InternetGatewayId')
         zombies = self.__get_zombie_resources(exist_internet_gateway)
+        zombies = self._filter_zombies_by_vpc(zombies, internet_gateways_data, vpc_key='InternetGatewayId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=internet_gateways_data,
                                                    output_tag='InternetGatewayId', input_tag='Attachments',
@@ -703,6 +753,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_dhcp_option = self.__get_cluster_resources(resources_list=dhcp_options_data,
                                                          input_resource_id='DhcpOptionsId')
         zombies = self.__get_zombie_resources(exist_dhcp_option)
+        zombies = self._filter_zombies_by_vpc(zombies, dhcp_options_data, vpc_key='DhcpOptionsId')
         resources = self._get_tags_of_zombie_resources(resources=dhcp_options_data, resource_id_name='DhcpOptionsId',
                                                        zombies=zombies, aws_service='ec2')
         cluster_left_out_days = {}
@@ -737,6 +788,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_vpc_endpoint = self.__get_cluster_resources(resources_list=vpc_endpoints_data,
                                                           input_resource_id='VpcEndpointId')
         zombies = self.__get_zombie_resources(exist_vpc_endpoint)
+        zombies = self._filter_zombies_by_vpc(zombies, vpc_endpoints_data, vpc_key='VpcEndpointId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=vpc_endpoints_data,
                                                    output_tag='VpcEndpointId', cluster_tag=cluster_tag_vpc)
@@ -752,7 +804,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     zombie_ids = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=vpc_endpoints_data,
                                                               output_tag='VpcEndpointId', cluster_tag=cluster_tag)
                 else:
-                    zombie_ids = [zombies]
+                    zombie_ids = [zombie]
                 cluster_left_out_days, delete_cluster_resource = self._check_zombie_cluster_deleted_days(
                     resources=resources, cluster_left_out_days=cluster_left_out_days, zombie=zombie,
                     cluster_tag=cluster_tag)
@@ -776,6 +828,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         exist_nat_gateway = self.__get_cluster_resources(resources_list=nat_gateways_data,
                                                          input_resource_id='NatGatewayId')
         zombies = self.__get_zombie_resources(exist_nat_gateway)
+        zombies = self._filter_zombies_by_vpc(zombies, nat_gateways_data, vpc_key='NatGatewayId')
         if not zombies and vpc_id:
             zombies = self.__get_zombies_by_vpc_id(vpc_id=vpc_id, resources=nat_gateways_data,
                                                    output_tag='NatGatewayId', cluster_tag=cluster_tag_vpc)
@@ -875,7 +928,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                                 if self.cluster_tag == tag['Key']:
                                     exist_role_name_tag[role_name] = tag['Key']
                                     break
-        zombies = []
+        zombies = {}
         cluster_left_out_days = {}
         if exist_role_name_tag:
             zombies = self.__get_all_zombie_resources(exist_role_name_tag)

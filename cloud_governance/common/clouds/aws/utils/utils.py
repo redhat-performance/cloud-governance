@@ -125,7 +125,7 @@ class Utils:
                     return True, tag.get('Key')
             else:
                 if tags:
-                    for tag in tags:
-                        if tag.get('Key').startswith(prefix):
-                            return True, tag.get('Key')
+                    for t in tags:
+                        if t.get('Key').startswith(prefix):
+                            return True, t.get('Key')
         return False, None

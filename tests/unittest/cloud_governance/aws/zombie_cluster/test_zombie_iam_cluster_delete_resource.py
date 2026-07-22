@@ -185,3 +185,60 @@ def test_not_delete_iam_cluster_user():
             find = True
             break
     assert find
+
+
+# ---------------------------------------------------------------------------
+# Role return type fix + cross-prefix IAM detection
+# ---------------------------------------------------------------------------
+
+CLUSTER_PREFIX_IAM = ['kubernetes.io/cluster', 'sigs.k8s.io/cluster-api-provider-aws/cluster']
+CLUSTER_NAME_IAM = 'unittest-test-cluster-abc123'
+K8S_TAG_IAM = f'kubernetes.io/cluster/{CLUSTER_NAME_IAM}'
+CAPA_TAG_IAM = f'sigs.k8s.io/cluster-api-provider-aws/cluster/{CLUSTER_NAME_IAM}'
+REGION_IAM = 'us-east-2'
+
+
+@mock_aws
+def test_zombie_cluster_role_returns_dict():
+    """zombie_cluster_role should return a dict (not list) as the first element of the tuple."""
+    zcr = ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX_IAM, delete=False, region=REGION_IAM)
+    zombies, _ = zcr.zombie_cluster_role()
+    assert isinstance(zombies, dict)
+
+
+@mock_aws
+def test_iam_role_cross_prefix_not_zombie():
+    """
+    IAM role tagged with sigs.k8s.io prefix, EC2 instance with kubernetes.io prefix.
+    Same cluster name — role should NOT be detected as zombie.
+    """
+    ec2_client = boto3.client('ec2', region_name=REGION_IAM)
+    ec2_resource = boto3.resource('ec2', region_name=REGION_IAM)
+    iam_client = boto3.client('iam', region_name=REGION_IAM)
+
+    vpc = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
+    subnet = ec2_client.create_subnet(VpcId=vpc['Vpc']['VpcId'], CidrBlock='10.0.1.0/24')
+
+    ec2_resource.create_instances(
+        ImageId='ami-03cf127a', MinCount=1, MaxCount=1,
+        SubnetId=subnet['Subnet']['SubnetId'],
+        TagSpecifications=[{'ResourceType': 'instance',
+                           'Tags': [{'Key': K8S_TAG_IAM, 'Value': 'owned'}]}]
+    )
+
+    assume_role_doc = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"},
+                       "Action": "sts:AssumeRole"}]
+    })
+    role_name = f'{CLUSTER_NAME_IAM}-worker-role'
+    iam_client.create_role(
+        RoleName=role_name,
+        AssumeRolePolicyDocument=assume_role_doc,
+        Tags=[{'Key': CAPA_TAG_IAM, 'Value': 'owned'}]
+    )
+
+    zcr = ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX_IAM, delete=False, region=REGION_IAM)
+    zombies, _ = zcr.zombie_cluster_role()
+
+    assert role_name not in zombies
