@@ -480,3 +480,42 @@ def test_dead_cluster_resources_detected():
 
     assert sg_id in sg_zombies
     assert subnet_id in subnet_zombies
+
+
+# ---------------------------------------------------------------------------
+# F4: stale ClusterDeleteDays counter is reset for alive (non-zombie) resources
+# ---------------------------------------------------------------------------
+
+@mock_aws
+def test_f4_stale_counter_reset_for_alive_resource():
+    """
+    F4: A resource with a stale ClusterDeleteDays counter (left over from when the cluster
+    was previously zombie) must have its counter reset to 0 once the cluster is alive again
+    (a running instance with the cluster tag exists). Before the fix the
+    'and resource_id in zombies' guard prevented tag loading for alive resources, so the
+    stale counter was never cleared.
+    """
+    ec2_client = boto3.client('ec2', region_name=REGION)
+    ec2_resource = boto3.resource('ec2', region_name=REGION)
+
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    alive_tags = [{'Key': K8S_TAG, 'Value': 'owned'}]
+
+    sg_id = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='F4 test SG', GroupName='sg-f4-test',
+        TagSpecifications=[{'ResourceType': 'security-group', 'Tags': alive_tags}]
+    )['GroupId']
+    # Pre-set a stale counter as if the SG was previously seen as zombie
+    ec2_client.create_tags(Resources=[sg_id], Tags=[{'Key': 'ClusterDeleteDays', 'Value': '6'}])
+
+    # Running instance with same cluster tag — cluster is alive
+    ec2_resource.create_instances(
+        ImageId=DEFAULT_AMI_ID, MaxCount=1, MinCount=1,
+        TagSpecifications=[{'ResourceType': 'instance', 'Tags': alive_tags}]
+    )
+
+    ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=False, region=REGION).zombie_cluster_security_group()
+
+    sg_tags = ec2_client.describe_security_groups(GroupIds=[sg_id])['SecurityGroups'][0].get('Tags', [])
+    delete_days = next((t['Value'] for t in sg_tags if t['Key'] == 'ClusterDeleteDays'), None)
+    assert delete_days == '0', f"Expected ClusterDeleteDays=0 for alive resource, got {delete_days!r}"

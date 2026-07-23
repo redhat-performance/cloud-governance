@@ -390,8 +390,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource('security_group', resource_id=zombie_id,
-                                                                        vpc_id=vpc_id, cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource('security_group', resource_id=zombie_id,
+                                                                            vpc_id=vpc_id, cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
@@ -484,8 +489,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='network_interface',
-                                                                        resource_id=zombie_id, cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource(resource='network_interface',
+                                                                            resource_id=zombie_id, cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
@@ -652,8 +662,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='subnet', resource_id=zombie_id,
-                                                                        cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource(resource='subnet', resource_id=zombie_id,
+                                                                            cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
@@ -688,8 +703,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='route_table', resource_id=zombie_id,
-                                                                        vpc_id=vpc_id, cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource(resource='route_table', resource_id=zombie_id,
+                                                                            vpc_id=vpc_id, cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
@@ -733,9 +753,14 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='internet_gateway',
-                                                                        resource_id=zombie_id, vpc_id=vpc_id,
-                                                                        cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource(resource='internet_gateway',
+                                                                            resource_id=zombie_id, vpc_id=vpc_id,
+                                                                            cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
@@ -892,8 +917,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     for zombie_id in zombie_ids:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='network_acl', resource_id=zombie_id,
-                                                                        vpc_id=vpc_id, cluster_tag=cluster_tag)
+                        if zombie_id not in resources:
+                            continue
+                        _, delete_zombie_id = self._check_zombie_cluster_deleted_days(
+                            resources=resources, cluster_left_out_days={}, zombie=zombie_id, cluster_tag=cluster_tag)
+                        if delete_zombie_id:
+                            self.delete_ec2_resource.delete_zombie_resource(resource='network_acl', resource_id=zombie_id,
+                                                                            vpc_id=vpc_id, cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         for zombie_id in zombie_ids:
