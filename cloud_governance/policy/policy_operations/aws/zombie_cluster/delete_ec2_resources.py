@@ -43,6 +43,7 @@ class DeleteEC2Resources:
 
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient, region: str = 'us-east-2'):
         self.cluster_tag = None
+        self._f16_live_cluster_cache: dict = {}
         self.client = client
         self.elb_client = elb_client
         self.elbv2_client = elbv2_client
@@ -65,6 +66,21 @@ class DeleteEC2Resources:
         :return:
         """
         self.cluster_tag = cluster_tag
+        if cluster_tag:
+            if cluster_tag not in self._f16_live_cluster_cache:
+                try:
+                    filters = [
+                        {'Name': 'tag-key', 'Values': [cluster_tag]},
+                        {'Name': 'instance-state-name', 'Values': ['running', 'stopped', 'pending', 'stopping']},
+                    ]
+                    reservations = self.client.describe_instances(Filters=filters).get('Reservations', [])
+                    self._f16_live_cluster_cache[cluster_tag] = bool(reservations)
+                except Exception as err:
+                    logger.warning(f'F16: instance check failed for {cluster_tag}, skipping as precaution: {err}')
+                    return
+            if self._f16_live_cluster_cache[cluster_tag]:
+                logger.info(f'F16: cluster {cluster_tag} has live instances — aborting deletion of {resource_id}')
+                return
         if resource == 'load_balancer':
             self.__delete_load_balancer(resource_id=resource_id)
         elif resource == 'load_balancer_v2':
@@ -257,6 +273,18 @@ class DeleteEC2Resources:
         :param resource_id:
         :return:
         """
+        try:
+            enis = self.client.describe_network_interfaces(
+                Filters=[{'Name': 'group-id', 'Values': [resource_id]}]
+            )['NetworkInterfaces']
+            for eni in enis:
+                attachment = eni.get('Attachment', {})
+                if attachment.get('Status') == 'attached' and attachment.get('InstanceOwnerId'):
+                    logger.info(f'F7: SG {resource_id} has live ENI attachment — skipping deletion')
+                    return
+        except Exception as err:
+            logger.warning(f'F7: ENI check failed for {resource_id}, skipping as precaution: {err}')
+            return
         try:
             security_groups = self.ec2_operations.get_security_groups()
             vpc_security_groups = self.__get_cluster_references(resource_id=vpc_id, resource_list=security_groups, input_resource_id='VpcId', output_result='')
@@ -499,11 +527,11 @@ class DeleteEC2Resources:
                                                                    input_resource_id='AssociationId',
                                                                    output_result='')
                 for network_interface in network_interfaces:
-                    if network_interface.get('TagSet'):
-                        if self.__is_cluster_resource(network_interface.get('TagSet'), self.cluster_tag):
-                            self.__delete_network_interface(network_interface.get('NetworkInterfaceId'))
-                        else:
-                            logger.info(f'This network interface Id : {network_interface.get("NetworkInterfaceId")} not a zombie cluster resource')
+                    tags = network_interface.get('Tags') or []
+                    if tags and self.__is_cluster_resource(tags, self.cluster_tag):
+                        self.__delete_network_interface(network_interface.get('NetworkInterfaceId'))
+                    else:
+                        logger.info(f'This network interface Id : {network_interface.get("NetworkInterfaceId")} not a zombie cluster resource')
             else:
                 self.client.release_address(AllocationId=resource_id)
                 logger.info(f'release_address: {resource_id}')

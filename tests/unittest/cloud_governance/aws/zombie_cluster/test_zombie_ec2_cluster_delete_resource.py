@@ -4,6 +4,7 @@ from moto import mock_aws
 
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
+from cloud_governance.policy.policy_operations.aws.zombie_cluster.delete_ec2_resources import DeleteEC2Resources
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from tests.unittest.configs import DRY_RUN_YES, DRY_RUN_NO, DEFAULT_AMI_ID
 
@@ -789,3 +790,295 @@ def test_f14_corrupt_cluster_delete_days_does_not_crash():
         assert repaired_days == '1', f"Expected ClusterDeleteDays='1' after corrupt reset, got {repaired_days!r}"
     finally:
         environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
+
+
+# ---------------------------------------------------------------------------
+# PR3: Deletion Safety — F7, F16, B2a
+# All tests marked "Fails before PR3" FAIL before the fixes are implemented
+# and PASS after.  Tests marked "Regression" already pass and must continue to.
+# ---------------------------------------------------------------------------
+
+PR3_CLUSTER_TAG_A = 'kubernetes.io/cluster/cluster-pr3-a'
+PR3_CLUSTER_TAG_B = 'kubernetes.io/cluster/cluster-pr3-b'
+
+
+def _make_delete_ec2(region):
+    """Helper: build a DeleteEC2Resources instance wired to real moto boto3 clients."""
+    return DeleteEC2Resources(
+        client=boto3.client('ec2', region_name=region),
+        elb_client=boto3.client('elb', region_name=region),
+        elbv2_client=boto3.client('elbv2', region_name=region),
+        region=region,
+    )
+
+
+def _default_sg_id(ec2_client, vpc_id):
+    """Return the default security group ID for a VPC."""
+    return ec2_client.describe_security_groups(
+        Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]},
+                 {'Name': 'group-name', 'Values': ['default']}]
+    )['SecurityGroups'][0]['GroupId']
+
+
+def _sg_still_references(ec2_client, sg_id, referenced_sg_id):
+    """True if sg_id has any ingress rule UserIdGroupPair pointing to referenced_sg_id."""
+    rules = ec2_client.describe_security_groups(GroupIds=[sg_id])['SecurityGroups'][0]['IpPermissions']
+    return any(
+        pair.get('GroupId') == referenced_sg_id
+        for rule in rules
+        for pair in rule.get('UserIdGroupPairs', [])
+    )
+
+
+# ── F7: ENI dependency guard before SG ingress revocation ─────────────────
+#
+# The P1 incident: __delete_security_group REVOKES ingress rules in the default
+# SG BEFORE calling delete_security_group.  The revocation succeeds even when a
+# running instance still uses the zombie SG, severing its network connectivity.
+# AWS then refuses delete_security_group (SG in use), so the SG survives but
+# ingress rules have been permanently torn out — the actual observable damage.
+#
+# F7 is reached via the VPC cascade path (zombie_cluster_vpc → __delete_vpc →
+# pending_resource → zombie_cluster_security_group(vpc_id=...)).  In this path
+# _filter_zombies_by_vpc (F2) filters the SG out of the initial zombie set, but
+# __get_zombies_by_vpc_id then re-adds it — bypassing F2.  F7 guards this gap
+# by checking ENI attachments at the start of __delete_security_group.
+#
+# Tests are at the DeleteEC2Resources level (bypassing the scan stage) so that
+# F2 doesn't mask the missing F7 guard.
+
+@mock_aws
+def test_f7_ingress_rule_not_revoked_when_running_instance_uses_sg():
+    """
+    F7 (P1 scenario): the default SG's ingress rule referencing the zombie SG must
+    NOT be revoked when a running instance uses that SG.  Tested at the
+    DeleteEC2Resources level to bypass the scan-time F2 guard.
+    Without F7: revoke_security_group_ingress is called → rule removed → FAIL.
+    After F7: ENI check causes early return → rule preserved → PASS.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    subnet_id = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    sg_id = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='zombie SG', GroupName='sg-pr3-f7-running',
+        TagSpecifications=[{'ResourceType': 'security-group',
+                            'Tags': [{'Key': PR3_CLUSTER_TAG_A, 'Value': 'owned'}]}],
+    )['GroupId']
+
+    # Add cross-SG ingress rule in the default SG — the rule the code will try to revoke
+    default_sg = _default_sg_id(ec2_client, vpc_id)
+    ec2_client.authorize_security_group_ingress(
+        GroupId=default_sg,
+        IpPermissions=[{'IpProtocol': '-1', 'UserIdGroupPairs': [{'GroupId': sg_id}]}],
+    )
+
+    # Running instance uses the zombie SG — its primary ENI has Attachment.Status='attached'
+    ec2_resource.create_instances(
+        ImageId=DEFAULT_AMI_ID, MinCount=1, MaxCount=1,
+        SubnetId=subnet_id, SecurityGroupIds=[sg_id],
+    )
+
+    # Simulate the VPC cascade call: delete_zombie_resource is called directly
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='security_group', resource_id=sg_id, vpc_id=vpc_id, cluster_tag=PR3_CLUSTER_TAG_A,
+    )
+
+    assert _sg_still_references(ec2_client, default_sg, sg_id), \
+        'F7: ingress rule must not be revoked when the zombie SG has a live ENI attachment'
+
+
+@mock_aws
+def test_f7_ingress_rule_not_revoked_when_stopped_instance_uses_sg():
+    """
+    F7: Same scenario with a stopped instance.
+    Stopped instances keep their primary ENI attached; ingress rule must be preserved.
+    Without F7: rule revoked → FAIL.  After F7: early return → rule preserved → PASS.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    subnet_id = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    sg_id = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='zombie SG stopped', GroupName='sg-pr3-f7-stopped',
+        TagSpecifications=[{'ResourceType': 'security-group',
+                            'Tags': [{'Key': PR3_CLUSTER_TAG_A, 'Value': 'owned'}]}],
+    )['GroupId']
+
+    default_sg = _default_sg_id(ec2_client, vpc_id)
+    ec2_client.authorize_security_group_ingress(
+        GroupId=default_sg,
+        IpPermissions=[{'IpProtocol': '-1', 'UserIdGroupPairs': [{'GroupId': sg_id}]}],
+    )
+
+    instance = ec2_resource.create_instances(
+        ImageId=DEFAULT_AMI_ID, MinCount=1, MaxCount=1,
+        SubnetId=subnet_id, SecurityGroupIds=[sg_id],
+    )[0]
+    ec2_client.stop_instances(InstanceIds=[instance.id])
+
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='security_group', resource_id=sg_id, vpc_id=vpc_id, cluster_tag=PR3_CLUSTER_TAG_A,
+    )
+
+    assert _sg_still_references(ec2_client, default_sg, sg_id), \
+        'F7: ingress rule must not be revoked when zombie SG has a stopped instance ENI'
+
+
+@mock_aws
+def test_f7_sg_deleted_and_ingress_revoked_when_no_eni_attached():
+    """
+    F7 regression: when no instance uses the SG, F7 must not block deletion.
+    The ingress rule should be revoked and the SG deleted normally.
+    Currently passes; must stay passing after F7 is added.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+
+    sg_id = ec2_client.create_security_group(
+        VpcId=vpc_id, Description='zombie SG no instance', GroupName='sg-pr3-f7-clean',
+        TagSpecifications=[{'ResourceType': 'security-group',
+                            'Tags': [{'Key': PR3_CLUSTER_TAG_A, 'Value': 'owned'}]}],
+    )['GroupId']
+
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='security_group', resource_id=sg_id, vpc_id=vpc_id, cluster_tag=PR3_CLUSTER_TAG_A,
+    )
+
+    assert not EC2Operations(region_name).find_security_group(sg_id), \
+        'F7 regression: SG with no live ENI attachments must still be deleted'
+
+
+# ── F16: Pre-deletion cluster instance re-check ───────────────────────────
+
+@mock_aws
+def test_f16_snapshot_not_deleted_when_cluster_has_live_instance():
+    """
+    F16: delete_zombie_resource must re-verify that no running instances exist for
+    the cluster before deleting any resource.  This guards against the race where
+    the policy scan labelled a resource as zombie but a cluster instance appeared
+    before the deletion window ran.
+    Tested at the DeleteEC2Resources level (bypassing ZombieClusterResources scan)
+    because the scan's own _cluster_instance() check would prevent the zombie from
+    ever being classified in the first place — we need to simulate the stale result.
+    Fails before F16 (resource is deleted); passes after F16 (deletion aborted).
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    cluster_tag_key = 'kubernetes.io/cluster/cluster-f16-snap'
+
+    vol = ec2_client.create_volume(AvailabilityZone=f'{region_name}a', Size=10)
+    snap_id = ec2_client.create_snapshot(VolumeId=vol['VolumeId'])['SnapshotId']
+    ec2_client.create_tags(Resources=[snap_id], Tags=[{'Key': cluster_tag_key, 'Value': 'owned'}])
+
+    # Cluster has a live running instance (appeared after the scan produced a stale zombie list)
+    ec2_resource.create_instances(
+        ImageId=DEFAULT_AMI_ID, MinCount=1, MaxCount=1,
+        TagSpecifications=[{'ResourceType': 'instance',
+                            'Tags': [{'Key': cluster_tag_key, 'Value': 'owned'}]}],
+    )
+
+    # Simulate what the policy would do when it acts on the stale zombie result
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='ebs_snapshots', resource_id=snap_id, cluster_tag=cluster_tag_key,
+    )
+
+    assert EC2Operations(region_name).find_snapshots(snap_id), \
+        'F16: snapshot must not be deleted when cluster has a running instance'
+
+
+@mock_aws
+def test_f16_dhcp_options_not_deleted_when_cluster_has_live_instance():
+    """
+    F16: Same re-check guard for the dhcp_options resource type.
+    Fails before F16; passes after.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    ec2_resource = boto3.resource('ec2', region_name=region_name)
+    cluster_tag_key = 'kubernetes.io/cluster/cluster-f16-dhcp'
+
+    dhcp_id = ec2_client.create_dhcp_options(
+        DhcpConfigurations=[{'Key': 'domain-name-servers', 'Values': ['10.0.0.1']}],
+        TagSpecifications=[{'ResourceType': 'dhcp-options',
+                            'Tags': [{'Key': cluster_tag_key, 'Value': 'owned'}]}],
+    )['DhcpOptions']['DhcpOptionsId']
+
+    ec2_resource.create_instances(
+        ImageId=DEFAULT_AMI_ID, MinCount=1, MaxCount=1,
+        TagSpecifications=[{'ResourceType': 'instance',
+                            'Tags': [{'Key': cluster_tag_key, 'Value': 'owned'}]}],
+    )
+
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='dhcp_options', resource_id=dhcp_id, cluster_tag=cluster_tag_key,
+    )
+
+    assert EC2Operations(region_name).find_dhcp_options(dhcp_id=dhcp_id), \
+        'F16: DHCP options must not be deleted when cluster has a running instance'
+
+
+@mock_aws
+def test_f16_deletion_proceeds_when_no_live_instances():
+    """
+    F16 regression: when the cluster has no live instances, F16 must not block
+    deletion.  The guard must only fire when instances actually exist.
+    Currently passes (no F16 to interfere); must continue to pass after F16.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    cluster_tag_key = 'kubernetes.io/cluster/cluster-f16-pass'
+
+    vol = ec2_client.create_volume(AvailabilityZone=f'{region_name}a', Size=10)
+    snap_id = ec2_client.create_snapshot(VolumeId=vol['VolumeId'])['SnapshotId']
+    ec2_client.create_tags(Resources=[snap_id], Tags=[{'Key': cluster_tag_key, 'Value': 'owned'}])
+
+    # No instances for this cluster → F16 must not block
+    _make_delete_ec2(region_name).delete_zombie_resource(
+        resource='ebs_snapshots', resource_id=snap_id, cluster_tag=cluster_tag_key,
+    )
+
+    assert not EC2Operations(region_name).find_snapshots(snap_id), \
+        'F16 regression: snapshot must be deleted when the cluster has no live instances'
+
+
+# ── B2a: Fix TagSet → Tags in __delete_elastic_ip ─────────────────────────
+
+@mock_aws
+def test_b2a_eni_deleted_via_elastic_ip_disassociate_path():
+    """
+    B2a: __delete_elastic_ip checks network_interface.get('TagSet'), but EIP records
+    from describe_addresses carry 'Tags' (never 'TagSet').  The mismatch silently
+    skipped ENI cleanup on every disassociate-path run.
+    Also requires B2 (pass cluster_tag at the elastic_ip disassociate call sites in
+    zombie_cluster_resource.py) so that self.cluster_tag is non-empty when the check runs.
+    Without B2/B2a: ENI survives (tag lookup returns None, __is_cluster_resource skipped).
+    After B2+B2a: ENI is deleted via __delete_network_interface.
+    Fails before the fix; passes after.
+    """
+    ec2_client = boto3.client('ec2', region_name=region_name)
+    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
+    subnet_id = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock='10.0.1.0/24')['Subnet']['SubnetId']
+
+    # Allocate EIP and tag it with cluster-A
+    allocation_id = ec2_client.allocate_address(
+        Domain='vpc',
+        TagSpecifications=[{'ResourceType': 'elastic-ip',
+                            'Tags': [{'Key': PR3_CLUSTER_TAG_A, 'Value': 'owned'}]}],
+    )['AllocationId']
+
+    # Create a standalone ENI and associate the EIP with it
+    eni_id = ec2_client.create_network_interface(
+        SubnetId=subnet_id, Description='pr3-b2a-eni',
+    )['NetworkInterface']['NetworkInterfaceId']
+    ec2_client.associate_address(NetworkInterfaceId=eni_id, AllocationId=allocation_id)
+
+    # No cluster-A instances → EIP enters the zombies_ass (association) path
+    ZombieClusterResources(
+        cluster_prefix=CLUSTER_PREFIX, delete=True,
+        region=region_name, resource_name='zombie_cluster_elastic_ip', force_delete=True,
+    ).zombie_cluster_elastic_ip()
+
+    # After B2+B2a the disassociate path must have deleted the ENI
+    assert not EC2Operations(region_name).find_network_interface(eni_id), \
+        'B2a: ENI must be deleted via the elastic_ip disassociate path after Tags/TagSet fix'
