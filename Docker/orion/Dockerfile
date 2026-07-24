@@ -1,5 +1,5 @@
 # Based on cloud-bulldozer/orion's own Dockerfile, with fixes found while validating
-# this integration (see CLGOVNR-91):
+# this integration:
 #   - python-311 instead of python-314: orion pins scikit-learn==1.5.0, which has no
 #     prebuilt wheel for cp314 and fails to build from source in this base image.
 #   - no forced --no-binary build of cryptography: the source build fails via cargo/maturin;
