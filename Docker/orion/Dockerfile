@@ -7,7 +7,7 @@
 #   - single stage instead of multi-stage: the final stage's COPY --from=builder breaks on
 #     Fedora's /opt/app-root/lib64 -> lib symlink, since the builder's manual site-packages
 #     extraction step turns it into a real directory instead of preserving the symlink.
-FROM quay.io/fedora/python-311:latest
+FROM quay.io/fedora/python-311@sha256:aabd8125b244b6eb71baa91d3e0b1921a0205a8e9d47961ebcabb7a5a529436e
 
 USER 0
 
@@ -29,8 +29,8 @@ ARG ORION_COMMIT=b0acf1948e017164a45ca0af309b69d05ed4735a
 RUN git clone https://github.com/cloud-bulldozer/orion.git . && \
     git checkout "${ORION_COMMIT}"
 
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir setuptools && \
+RUN pip install --upgrade pip==26.1.2 && \
+    pip install --no-cache-dir setuptools==65.5.1 && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir .
 
