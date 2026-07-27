@@ -231,10 +231,10 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     resources=resources, cluster_left_out_days=cluster_left_out_days, zombie=zombie,
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
-                    self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume')
+                    self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume', cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
-                        self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume')
+                        self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume', cluster_tag=cluster_tag)
 
         return zombies, cluster_left_out_days
 

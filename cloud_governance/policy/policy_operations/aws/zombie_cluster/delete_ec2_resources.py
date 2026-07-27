@@ -43,6 +43,8 @@ class DeleteEC2Resources:
 
     def __init__(self, client: BaseClient, elb_client: BaseClient, elbv2_client: BaseClient, region: str = 'us-east-2'):
         self.cluster_tag = None
+        # Intentionally never cleared mid-run: if instances terminate during cleanup the next policy
+        # run will re-check. Fail-safe tradeoff — one delayed cycle beats a false-safe deletion.
         self._f16_live_cluster_cache: dict = {}
         self.client = client
         self.elb_client = elb_client
@@ -279,7 +281,7 @@ class DeleteEC2Resources:
             )['NetworkInterfaces']
             for eni in enis:
                 attachment = eni.get('Attachment', {})
-                if attachment.get('Status') == 'attached' and attachment.get('InstanceOwnerId'):
+                if attachment.get('Status') == 'attached' and attachment.get('InstanceId'):
                     logger.info(f'F7: SG {resource_id} has live ENI attachment — skipping deletion')
                     return
         except Exception as err:
