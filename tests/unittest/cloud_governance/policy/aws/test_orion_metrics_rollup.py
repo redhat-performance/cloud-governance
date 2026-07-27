@@ -192,9 +192,17 @@ class TestOrionMetricsRollup:
         assert result['status'] == 'success'
         assert self.mock_es_instance.post_query.call_count == 2
 
-    def test_build_query_filters_to_tracked_policies_only(self):
-        """The source query must scope to the tracked policies, not every policy in the index"""
+    def test_build_query_restricts_counts_but_not_savings_to_tracked_policies(self):
+        """
+        Counts must be scoped to the tracked policies via the by_policy 'include',
+        but the top-level query must NOT filter by policy, since none of the
+        tracked policies populate TotalYearlySavings - monitored_policies_savings
+        needs to see every policy's docs to be a meaningful, non-zero signal.
+        """
         query = self.rollup._OrionMetricsRollup__build_query('2026-07-01', '2026-07-31')
 
-        policy_filter = query['query']['bool']['filter'][1]['terms']['policy.keyword']
-        assert set(policy_filter) == set(OrionMetricsRollup.TRACKED_POLICIES)
+        filter_clauses = query['query']['bool']['filter']
+        assert not any('terms' in clause and clause['terms'].get('policy.keyword') for clause in filter_clauses)
+
+        by_policy_agg = query['aggs']['by_account']['aggs']['by_day']['aggs']['by_policy']['terms']
+        assert set(by_policy_agg['include']) == set(OrionMetricsRollup.TRACKED_POLICIES)

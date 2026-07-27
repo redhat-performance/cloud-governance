@@ -19,6 +19,8 @@ class OrionMetricsRollup:
     # policy in cost_policies (this one included), that var defaults to the
     # cost-billing index, not the policy index this rollup needs to read from.
     SOURCE_ES_INDEX = 'cloud-governance-policy-es-index'
+    # Per-policy resource counts are restricted to these. monitored_policies_savings
+    # is NOT restricted to these - see __build_query for why.
     TRACKED_POLICIES = ['zombie_cluster_resource', 's3_inactive', 'ec2_stop', 'unused_access_key', 'delete_access_key']
 
     def __init__(self):
@@ -68,6 +70,13 @@ class OrionMetricsRollup:
     def __build_query(self, start_date: str, end_date: str):
         """
         Build the account/day/policy aggregation query for a single date-range chunk.
+
+        Deliberately does not filter by policy at the top level: none of the
+        tracked policies populate TotalYearlySavings (confirmed against
+        production data - they're risk/hygiene policies, not
+        idle-resource-elimination policies), so monitored_policies_savings is
+        summed across all policies for the account/day, while by_policy below
+        restricts the per-policy counts to just the tracked set via 'include'.
         @param start_date: Start date string (YYYY-MM-DD)
         @param end_date: End date string (YYYY-MM-DD)
         @return: ES query dict
@@ -77,8 +86,7 @@ class OrionMetricsRollup:
             "query": {
                 "bool": {
                     "filter": [
-                        {"range": {"timestamp": {"gte": start_date, "lte": end_date, "format": "yyyy-MM-dd"}}},
-                        {"terms": {"policy.keyword": self.TRACKED_POLICIES}}
+                        {"range": {"timestamp": {"gte": start_date, "lte": end_date, "format": "yyyy-MM-dd"}}}
                     ]
                 }
             },
@@ -90,7 +98,7 @@ class OrionMetricsRollup:
                             "date_histogram": {"field": "timestamp", "calendar_interval": "day", "format": "yyyy-MM-dd"},
                             "aggs": {
                                 "by_policy": {
-                                    "terms": {"field": "policy.keyword", "size": len(self.TRACKED_POLICIES)}
+                                    "terms": {"field": "policy.keyword", "include": self.TRACKED_POLICIES, "size": len(self.TRACKED_POLICIES)}
                                 },
                                 "total_savings": {
                                     "sum": {"field": "TotalYearlySavings", "missing": 0}
