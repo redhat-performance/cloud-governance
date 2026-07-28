@@ -208,6 +208,9 @@ class OrionMetricsRollup:
         if not end_date:
             end_date = self.__custom_end_date
 
+        if bool(start_date) != bool(end_date):
+            logger.warning(f'Ignoring partial date range (start_date={start_date}, end_date={end_date}); both must be set to backfill. Falling back to daily mode.')
+
         if start_date and end_date:
             logger.info(f'Backfilling Orion metrics rollup from {start_date} to {end_date}')
             monthly_ranges = self.__split_date_range_by_month(start_date, end_date)

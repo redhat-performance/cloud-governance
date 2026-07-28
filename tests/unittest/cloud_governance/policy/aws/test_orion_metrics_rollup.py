@@ -183,6 +183,18 @@ class TestOrionMetricsRollup:
         assert 'date' in result
         assert self.mock_es_instance.post_query.call_count == 1
 
+    def test_run_with_only_start_date_falls_back_to_daily_mode_with_warning(self):
+        """A partial date range (only one of start/end set) must not silently backfill - and must warn"""
+        self.mock_es_instance.post_query.return_value = {'by_account': {'buckets': []}}
+
+        with patch('cloud_governance.policy.aws.orion_metrics_rollup.logger') as mock_logger:
+            result = self.rollup.run(start_date='2026-01-01')
+
+        assert 'date' in result
+        assert 'start_date' not in result
+        assert self.mock_es_instance.post_query.call_count == 1
+        assert any('partial date range' in call.args[0].lower() for call in mock_logger.warning.call_args_list)
+
     def test_run_backfill_mode_chunks_by_month(self):
         """With an explicit date range spanning two months, run() should query once per month"""
         self.mock_es_instance.post_query.return_value = {'by_account': {'buckets': []}}
