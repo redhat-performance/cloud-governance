@@ -231,10 +231,10 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     resources=resources, cluster_left_out_days=cluster_left_out_days, zombie=zombie,
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
-                    self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume')
+                    self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume', cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
-                        self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume')
+                        self.delete_ec2_resource.delete_zombie_resource(resource_id=zombie, resource='ec2_volume', cluster_tag=cluster_tag)
 
         return zombies, cluster_left_out_days
 
@@ -281,10 +281,12 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     resources=resources, cluster_left_out_days=cluster_left_out_days, zombie=zombie,
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
-                    self.delete_ec2_resource.delete_zombie_resource(resource='ebs_snapshots', resource_id=zombie)
+                    self.delete_ec2_resource.delete_zombie_resource(resource='ebs_snapshots', resource_id=zombie,
+                                                                    cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='ebs_snapshots', resource_id=zombie)
+                        self.delete_ec2_resource.delete_zombie_resource(resource='ebs_snapshots', resource_id=zombie,
+                                                                        cluster_tag=cluster_tag)
         return zombies, cluster_left_out_days
 
     def __get_tag_from_resource_tags(self, tags: list, cluster_tag: str):
@@ -435,11 +437,11 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                     cluster_tag=cluster_tag)
                 if delete_cluster_resource and self.delete:
                     self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie,
-                                                                    deletion_type='disassociate')
+                                                                    deletion_type='disassociate', cluster_tag=cluster_tag)
                 else:
-                    if self._force_delete:
+                    if self._force_delete and self.delete:
                         self.delete_ec2_resource.delete_zombie_resource(resource='elastic_ip', resource_id=zombie,
-                                                                        deletion_type='disassociate')
+                                                                        deletion_type='disassociate', cluster_tag=cluster_tag)
         if zombies_all:
             for zombie, cluster_tag in zombies_all.items():
                 cluster_left_out_days, delete_cluster_resource = self._check_zombie_cluster_deleted_days(
@@ -793,16 +795,18 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 if delete_cluster_resource and self.delete:
                     if vpc_id:
                         self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie,
-                                                                        vpc_id=vpc_id)
+                                                                        vpc_id=vpc_id, cluster_tag=cluster_tag)
                     else:
-                        self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie)
+                        self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie,
+                                                                        cluster_tag=cluster_tag)
                 else:
                     if self._force_delete and self.delete:
                         if vpc_id:
                             self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie,
-                                                                            vpc_id=vpc_id)
+                                                                            vpc_id=vpc_id, cluster_tag=cluster_tag)
                         else:
-                            self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie)
+                            self.delete_ec2_resource.delete_zombie_resource(resource='dhcp_options', resource_id=zombie,
+                                                                            cluster_tag=cluster_tag)
         return zombies, cluster_left_out_days
 
     def zombie_cluster_vpc_endpoint(self, vpc_id: str = '', cluster_tag_vpc: str = ''):
