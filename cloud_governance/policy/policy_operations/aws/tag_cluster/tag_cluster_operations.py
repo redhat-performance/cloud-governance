@@ -157,7 +157,7 @@ class TagClusterOperations:
             for item in instance_group:
                 tags = item.get('Tags', [])
                 for tag in tags:
-                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                    if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                         if cluster_name in tag.get('Key', ''):
                             user = self.ec2_operations.get_tag_value_from_tags(
                                 tags=tags, tag_name='User')

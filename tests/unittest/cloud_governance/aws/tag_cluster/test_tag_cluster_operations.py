@@ -75,7 +75,7 @@ class TestTagClusterOperationsGetUsername:
 class TestTagClusterOperationsClusterInstanceFallback:
     def test_get_username_from_cluster_instances_returns_tagged_peer(self):
         ops = TagClusterOperations.__new__(TagClusterOperations)
-        ops.cluster_prefix = ['kubernetes.io/cluster/']
+        ops.cluster_prefix = ['kubernetes.io/cluster']
         ops.iam_users = [CLUSTER_OWNER]
         ops.ec2_operations = Mock()
         ops.ec2_operations.get_tag_value_from_tags = Mock(return_value=CLUSTER_OWNER)
