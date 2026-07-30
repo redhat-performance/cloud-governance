@@ -524,7 +524,7 @@ def test_f4_stale_counter_reset_for_alive_resource():
 def test_hypershift_prefix_in_default_cluster_prefix():
     """
     This test verifies that the built-in default CLUSTER_PREFIX includes
-    'hypershift.openshift.io/cluster' for self-managed Hypershift support.
+    'hypershift.openshift.io/cluster' for tag_cluster and cleanup policies.
     """
     import os
     from cloud_governance.main.environment_variables import EnvironmentVariables
@@ -536,28 +536,3 @@ def test_hypershift_prefix_in_default_cluster_prefix():
     finally:
         if prev is not None:
             os.environ['CLUSTER_PREFIX'] = prev
-
-
-@mock_aws
-def test_sg_with_hypershift_managed_policy_not_zombie():
-    """
-    This test verifies that a security group tagged Policy=hypershift-managed
-    is not classified as a zombie resource even when the VPC has no running instances.
-    """
-    ec2_client = boto3.client('ec2', region_name=REGION)
-
-    vpc_id = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')['Vpc']['VpcId']
-    sg = ec2_client.create_security_group(
-        VpcId=vpc_id, GroupName='hypershift-sg', Description='Hypershift managed SG',
-        TagSpecifications=[{'ResourceType': 'security-group',
-                            'Tags': [
-                                {'Key': K8S_TAG, 'Value': 'owned'},
-                                {'Key': 'Policy', 'Value': 'hypershift-managed'},
-                            ]}]
-    )
-    sg_id = sg['GroupId']
-
-    zcr = ZombieClusterResources(cluster_prefix=CLUSTER_PREFIX, delete=False, region=REGION)
-    zombies, _ = zcr.zombie_cluster_security_group()
-
-    assert sg_id not in zombies

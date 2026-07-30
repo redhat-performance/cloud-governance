@@ -15,7 +15,11 @@ from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterRes
 @typeguard.typechecked
 def __get_resource_list(region, delete: bool = False, resource: str = '', cluster_tag: str = '',
                         resource_name: str = '', service_type: str = ' '):
-    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+    # Exclude hypershift prefix from zombie detection: hypershift control-plane runs in a separate
+    # management account so customer workload accounts have no instances to verify cluster liveness.
+    # Resources in customer accounts use kubernetes.io/ and sigs.k8s.io/ tags (handled by existing prefixes).
+    _all_prefixes = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
+    cluster_prefix = [p for p in _all_prefixes if not p.startswith('hypershift')]
     zombie_cluster_resources = ZombieClusterResources(cluster_prefix=cluster_prefix, delete=delete,
                                                       region=region, cluster_tag=cluster_tag,
                                                       resource_name=resource_name)
