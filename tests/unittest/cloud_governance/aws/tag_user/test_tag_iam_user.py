@@ -53,3 +53,29 @@ def test_update_user_tags():
     count = tag_user.update_user_tags()
     os.remove(file_name)
     assert count == 1
+
+
+@mock_aws
+def test_capa_cluster_user_excluded_from_csv():
+    """
+    This test verifies that a user tagged with a CAPA cluster key is identified
+    as a cluster service account and excluded from the tagging CSV.
+    @return:
+    """
+    iam_client = boto3.client('iam')
+    capa_cluster_tag = 'sigs.k8s.io/cluster-api-provider-aws/cluster/test-cluster'
+    iam_client.create_user(
+        UserName='capa-service-account',
+        Tags=[{'Key': capa_cluster_tag, 'Value': 'owned'}]
+    )
+    tag_user = TagUser(file_name=file_name)
+    tag_user.generate_user_csv()
+
+    row_count = 0
+    if os.path.exists(file_name):
+        with open(file_name, 'r') as f:
+            rows = [r for r in csv.reader(f) if any(cell.strip() for cell in r)]
+        row_count = max(0, len(rows) - 1)  # exclude header
+        os.remove(file_name)
+
+    assert row_count == 0

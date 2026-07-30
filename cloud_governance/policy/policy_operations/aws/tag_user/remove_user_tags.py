@@ -3,6 +3,7 @@ import boto3
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.utils.utils import Utils
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class RemoveUserTags:
@@ -13,6 +14,7 @@ class RemoveUserTags:
     def __init__(self, remove_keys: list, username: str = ''):
         self.remove_keys = remove_keys
         self.username = username
+        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         self.iam_client = boto3.client('iam')
         self.IAMOperations = IAMOperations()
         self.get_detail_resource_list = Utils().get_details_resource_list
@@ -24,7 +26,7 @@ class RemoveUserTags:
         @return:
         """
         for tag in tags:
-            if 'kubernetes.io/cluster' in tag.get('Key'):
+            if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                 return True
         return False
 

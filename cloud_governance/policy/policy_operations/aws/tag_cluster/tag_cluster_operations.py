@@ -16,7 +16,7 @@ class TagClusterOperations:
 
     CLUSTER_ID_COST_ALLOCATION_TAG = 'cluster_id'
 
-    def __init__(self, region: str, input_tags: dict = None,  cluster_name: str = None,  cluster_prefix: str = None, dry_run: str = None, cluster_only: bool = None):
+    def __init__(self, region: str, input_tags: dict = None,  cluster_name: str = None,  cluster_prefix: list = None, dry_run: str = None, cluster_only: bool = None):
         self.cluster_only = cluster_only
         self.cluster_prefix = cluster_prefix
         self.utils = Utils(region=region)
@@ -157,7 +157,7 @@ class TagClusterOperations:
             for item in instance_group:
                 tags = item.get('Tags', [])
                 for tag in tags:
-                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                    if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                         if cluster_name in tag.get('Key', ''):
                             user = self.ec2_operations.get_tag_value_from_tags(
                                 tags=tags, tag_name='User')

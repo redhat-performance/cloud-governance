@@ -27,7 +27,7 @@ class EC2Operations:
         self.ec2_client = get_boto3_client('ec2', region_name=region)
         self.get_full_list = Utils().get_details_resource_list
         self.utils = Utils(region=region)
-        self.cluster_prefix = self.__environment_variables_dict.get('CLUSTER_PREFIX')
+        self.cluster_prefix = self.__environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
 
     @logger_time_stamp
     @typeguard.typechecked

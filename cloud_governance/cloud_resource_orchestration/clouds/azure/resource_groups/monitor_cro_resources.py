@@ -4,6 +4,7 @@ from cloud_governance.cloud_resource_orchestration.clouds.azure.resource_groups.
     AbstractResource
 from cloud_governance.cloud_resource_orchestration.utils.common_operations import check_name_and_get_key_from_tags
 from cloud_governance.cloud_resource_orchestration.utils.constant_variables import DURATION, TICKET_ID
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class MonitorCROResources(AbstractResource):
@@ -51,6 +52,13 @@ class MonitorCROResources(AbstractResource):
                 ticket_id = self._compute_client.check_tag_name(tags=tags, tag_name=TICKET_ID)
                 cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags,
                                                                               tag_name='kubernetes.io/cluster/')
+                if not cluster_key:
+                    for prefix in environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]):
+                        if prefix == 'kubernetes.io/cluster':
+                            continue
+                        cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags, tag_name=f'{prefix}/')
+                        if cluster_key:
+                            break
                 hcp_key, hcp_name = check_name_and_get_key_from_tags(tags=tags, tag_name='api.openshift.com/name')
                 if hcp_name:
                     cluster_key = hcp_name

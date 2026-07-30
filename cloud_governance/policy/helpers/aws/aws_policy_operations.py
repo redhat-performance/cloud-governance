@@ -260,10 +260,11 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         active_instances = self._ec2_operations.get_ec2_instance_list()
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         cluster_ids = []
         for instance in active_instances:
             for tag in instance.get('Tags', []):
-                if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                if any(tag.get('Key', '').startswith(p) for p in cluster_prefixes):
                     cluster_ids.append(tag.get('Key'))
                     break
         return cluster_ids
@@ -274,13 +275,14 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :return:
         """
         cluster_ids = []
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         active_regions = self._ec2_operations.get_active_regions()
         for region in active_regions:
             active_instances = self._ec2_operations.get_ec2_instance_list(
                 ec2_client=get_boto3_client('ec2', region_name=region))
             for instance in active_instances:
                 for tag in instance.get('Tags', []):
-                    if tag.get('Key', '').startswith('kubernetes.io/cluster'):
+                    if any(tag.get('Key', '').startswith(p) for p in cluster_prefixes):
                         cluster_ids.append(tag.get('Key'))
                         break
         return cluster_ids
@@ -291,9 +293,10 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :return:
         :rtype:
         """
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         if tags:
             for tag in tags:
-                if tag.get('Key').startswith('kubernetes.io/cluster'):
+                if any(tag.get('Key', '').startswith(p) for p in cluster_prefixes):
                     return tag.get('Key')
         return ''
 

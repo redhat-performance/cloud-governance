@@ -519,3 +519,21 @@ def test_f4_stale_counter_reset_for_alive_resource():
     sg_tags = ec2_client.describe_security_groups(GroupIds=[sg_id])['SecurityGroups'][0].get('Tags', [])
     delete_days = next((t['Value'] for t in sg_tags if t['Key'] == 'ClusterDeleteDays'), None)
     assert delete_days == '0', f"Expected ClusterDeleteDays=0 for alive resource, got {delete_days!r}"
+
+
+def test_default_cluster_prefix_contains_ipi_and_capa():
+    """
+    This test verifies that the built-in default CLUSTER_PREFIX includes
+    both the IPI and CAPA prefixes.
+    """
+    import os
+    from cloud_governance.main.environment_variables import EnvironmentVariables
+    prev = os.environ.pop('CLUSTER_PREFIX', None)
+    try:
+        ev = EnvironmentVariables()
+        prefix = ev.environment_variables_dict.get('CLUSTER_PREFIX', [])
+        assert 'kubernetes.io/cluster' in prefix
+        assert 'sigs.k8s.io/cluster-api-provider-aws/cluster' in prefix
+    finally:
+        if prev is not None:
+            os.environ['CLUSTER_PREFIX'] = prev

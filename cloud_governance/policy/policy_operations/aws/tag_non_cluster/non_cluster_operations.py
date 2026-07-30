@@ -6,6 +6,7 @@ from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import 
 from cloud_governance.common.clouds.aws.ec2.ec2_operations import EC2Operations
 from cloud_governance.common.clouds.aws.iam.iam_operations import IAMOperations
 from cloud_governance.common.clouds.aws.utils.utils import Utils
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class NonClusterOperations:
@@ -17,7 +18,7 @@ class NonClusterOperations:
         self.dry_run = dry_run
         self.input_tags = input_tags
         self.cloudtrail = boto3.client('cloudtrail', region_name=region)
-        self.cluster_prefix = 'kubernetes.io/cluster/'
+        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.cloudtrail = CloudTrailOperations(region_name=self.region)
         self.iam_client = IAMOperations()

@@ -159,7 +159,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         if not tag_key:
             return ''
         for prefix in self.cluster_prefix:
-            if tag_key.startswith(prefix):
+            if tag_key.startswith(f'{prefix}/'):
                 name = tag_key[len(prefix):].lstrip('/')
                 return name
         return tag_key
