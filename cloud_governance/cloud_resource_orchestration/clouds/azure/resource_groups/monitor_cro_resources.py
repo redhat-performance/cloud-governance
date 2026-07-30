@@ -53,7 +53,7 @@ class MonitorCROResources(AbstractResource):
                 cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags,
                                                                               tag_name='kubernetes.io/cluster/')
                 if not cluster_key:
-                    for prefix in environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]):
+                    for prefix in environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]):
                         if prefix == 'kubernetes.io/cluster':
                             continue
                         cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags, tag_name=f'{prefix}/')

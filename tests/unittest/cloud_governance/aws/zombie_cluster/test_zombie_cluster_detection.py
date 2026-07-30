@@ -521,10 +521,10 @@ def test_f4_stale_counter_reset_for_alive_resource():
     assert delete_days == '0', f"Expected ClusterDeleteDays=0 for alive resource, got {delete_days!r}"
 
 
-def test_hypershift_prefix_in_default_cluster_prefix():
+def test_default_cluster_prefix_contains_ipi_and_capa():
     """
     This test verifies that the built-in default CLUSTER_PREFIX includes
-    'hypershift.openshift.io/cluster' for tag_cluster and cleanup policies.
+    both the IPI and CAPA prefixes.
     """
     import os
     from cloud_governance.main.environment_variables import EnvironmentVariables
@@ -532,7 +532,8 @@ def test_hypershift_prefix_in_default_cluster_prefix():
     try:
         ev = EnvironmentVariables()
         prefix = ev.environment_variables_dict.get('CLUSTER_PREFIX', [])
-        assert 'hypershift.openshift.io/cluster' in prefix
+        assert 'kubernetes.io/cluster' in prefix
+        assert 'sigs.k8s.io/cluster-api-provider-aws/cluster' in prefix
     finally:
         if prev is not None:
             os.environ['CLUSTER_PREFIX'] = prev

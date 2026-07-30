@@ -1070,5 +1070,5 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
 
         return zombies, cluster_left_out_days
 
-# zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"], delete=False, region='us-east-2')
+# zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=False, region='us-east-2')
 # print(zombie_cluster_resources.zombie_cluster_subnet())

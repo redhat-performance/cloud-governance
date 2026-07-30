@@ -16,7 +16,7 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         action = 'read'
         dry_run = 'yes'
-    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
     tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
                                                 input_tags=mandatory_tags, region=region, dry_run=dry_run, cluster_only=cluster_only)
 
@@ -64,7 +64,7 @@ def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: di
     @param input_tags:
     @return:
     """
-    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
     remove_cluster_tags = RemoveClusterTags(region=region, cluster_name=cluster_name, cluster_prefix=cluster_prefix, input_tags=input_tags, cluster_only=cluster_only)
     func_resource_list = [remove_cluster_tags.cluster_instance,
                           remove_cluster_tags.cluster_volume,

@@ -31,7 +31,7 @@ class MonitorCROInstances:
             ticket_id = self.__ec2_operations.get_tag_value_from_tags(tag_name=self.__cro_resource_tag_name, tags=tags)
             cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags, tag_name='kubernetes.io/cluster/')
             if not cluster_key:
-                for prefix in self.__environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]):
+                for prefix in self.__environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]):
                     if prefix == 'kubernetes.io/cluster':
                         continue
                     cluster_key, cluster_value = check_name_and_get_key_from_tags(tags=tags, tag_name=f'{prefix}/')

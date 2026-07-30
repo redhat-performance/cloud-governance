@@ -124,7 +124,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         active_instances = self._get_all_instances()
-        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         cluster_ids = []
         for vm in active_instances:
             tags = vm.tags if vm.tags else {}
@@ -140,7 +140,7 @@ class AzurePolicyOperations(AbstractPolicyOperations):
         :return:
         :rtype:
         """
-        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         if tags:
             for key, value in tags.items():
                 if any(key.startswith(p) for p in cluster_prefixes):

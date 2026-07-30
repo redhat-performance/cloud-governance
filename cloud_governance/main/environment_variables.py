@@ -134,12 +134,11 @@ class EnvironmentVariables:
         _cluster_prefix_default = [
             "kubernetes.io/cluster",
             "sigs.k8s.io/cluster-api-provider-aws/cluster",
-            "hypershift.openshift.io/cluster",
         ]
         try:
             _parsed = json.loads(EnvironmentVariables.get_env(
                 'CLUSTER_PREFIX',
-                '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]'
+                '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]'
             ))
             if isinstance(_parsed, list):
                 _normalized = [p.strip().rstrip('/') for p in _parsed if isinstance(p, str)]

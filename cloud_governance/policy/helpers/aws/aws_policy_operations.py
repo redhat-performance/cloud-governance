@@ -260,7 +260,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :rtype:
         """
         active_instances = self._ec2_operations.get_ec2_instance_list()
-        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         cluster_ids = []
         for instance in active_instances:
             for tag in instance.get('Tags', []):
@@ -275,7 +275,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :return:
         """
         cluster_ids = []
-        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         active_regions = self._ec2_operations.get_active_regions()
         for region in active_regions:
             active_instances = self._ec2_operations.get_ec2_instance_list(
@@ -293,7 +293,7 @@ class AWSPolicyOperations(AbstractPolicyOperations):
         :return:
         :rtype:
         """
-        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
+        cluster_prefixes = self._environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"])
         if tags:
             for tag in tags:
                 if any(tag.get('Key', '').startswith(p) for p in cluster_prefixes):
