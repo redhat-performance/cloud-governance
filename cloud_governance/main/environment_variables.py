@@ -141,9 +141,12 @@ class EnvironmentVariables:
                 'CLUSTER_PREFIX',
                 '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]'
             ))
-            _normalized = [p.strip().rstrip('/') for p in _parsed if isinstance(p, str)]
-            if _normalized and all(_normalized):
-                self._environment_variables_dict['CLUSTER_PREFIX'] = _normalized
+            if isinstance(_parsed, list):
+                _normalized = [p.strip().rstrip('/') for p in _parsed if isinstance(p, str)]
+                if _normalized and all(_normalized):
+                    self._environment_variables_dict['CLUSTER_PREFIX'] = _normalized
+                else:
+                    self._environment_variables_dict['CLUSTER_PREFIX'] = _cluster_prefix_default
             else:
                 self._environment_variables_dict['CLUSTER_PREFIX'] = _cluster_prefix_default
         except json.JSONDecodeError:
