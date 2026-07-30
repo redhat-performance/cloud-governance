@@ -84,6 +84,13 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
 
         return result_instance
 
+    @staticmethod
+    def _is_hypershift_managed(tags: list) -> bool:
+        for tag in (tags or []):
+            if tag.get('Key') == 'Policy' and tag.get('Value', '').lower() == 'hypershift-managed':
+                return True
+        return False
+
     def __get_cluster_resources(self, resources_list: list, input_resource_id: str, tags: str = 'Tags'):
         """
         This method returns all cluster resources keys that start with cluster prefix
@@ -99,6 +106,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             else:
                 continue
             tags_list = resource.get(tags, [])
+            if self._is_hypershift_managed(tags_list):
+                continue
             if tags:
                 ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                            tags=tags_list)
@@ -343,6 +352,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         """
         ids = {}
         for resource in resources:
+            if self._is_hypershift_managed(resource.get(tags) or []):
+                continue
             if input_tag:
                 for attachment in resource.get(input_tag):
                     if attachment.get('VpcId') == vpc_id:
@@ -519,6 +530,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             for item in tags['TagDescriptions']:
                 tags = item.get('Tags')
                 if tags:
+                    if self._is_hypershift_managed(tags):
+                        continue
                     ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                                tags=tags)
                     if ok:
@@ -562,6 +575,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             for item in tags['TagDescriptions']:
                 tags = item.get('Tags', [])
                 if tags:
+                    if self._is_hypershift_managed(tags):
+                        continue
                     ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                                tags=tags)
                     if ok:
@@ -891,6 +906,7 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
         """
         exist_network_acl = {}
         network_acls_data = self.ec2_operations.get_nacls()
+        network_acls_data = [n for n in network_acls_data if not self._is_hypershift_managed(n.get('Tags', []))]
         for resource in network_acls_data:
             exist_network_acl[resource['NetworkAclId']] = resource['VpcId']
         zombie_resources = {}
@@ -951,6 +967,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 data = role_data['Role']
                 tags = data.get('Tags', [])
                 if tags:
+                    if self._is_hypershift_managed(tags):
+                        continue
                     ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                                tags=tags)
                     if ok:
@@ -996,6 +1014,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
             data = user_data['User']
             tags = data.get('Tags', [])
             if tags:
+                if self._is_hypershift_managed(tags):
+                    continue
                 ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                            tags=tags)
                 if ok:
@@ -1042,6 +1062,8 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
                 except Exception as e:  # continue when no bucket tags
                     continue
                 tags = tags.get('TagSet', [])
+                if self._is_hypershift_managed(tags):
+                    continue
                 ok, cluster_id = Utils.is_cluster_resource(cluster_prefix=self.cluster_prefix,
                                                            tags=tags)
                 if ok:
@@ -1070,5 +1092,5 @@ class ZombieClusterResources(ZombieClusterCommonMethods):
 
         return zombies, cluster_left_out_days
 
-# zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], delete=False, region='us-east-2')
+# zombie_cluster_resources = ZombieClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"], delete=False, region='us-east-2')
 # print(zombie_cluster_resources.zombie_cluster_subnet())

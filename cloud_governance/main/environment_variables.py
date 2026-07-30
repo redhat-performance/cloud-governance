@@ -134,12 +134,13 @@ class EnvironmentVariables:
         try:
             self._environment_variables_dict['CLUSTER_PREFIX'] = json.loads(EnvironmentVariables.get_env(
                 'CLUSTER_PREFIX',
-                '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"]'
+                '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]'
             ))
         except json.JSONDecodeError as err:
             self._environment_variables_dict['CLUSTER_PREFIX'] = [
                 "kubernetes.io/cluster",
-                "sigs.k8s.io/cluster-api-provider-aws/cluster"
+                "sigs.k8s.io/cluster-api-provider-aws/cluster",
+                "hypershift.openshift.io/cluster",
             ]
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')

@@ -98,7 +98,7 @@ container_env_dict = {
     "ES_SERVER_TYPE": ES_SERVER_TYPE,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
     'DAYS_TO_TAKE_ACTION': days_to_delete_resource, 'ALERT_DRY_RUN': ALERT_DRY_RUN,
-    'CLUSTER_PREFIX': '["kubernetes.io/cluster","sigs.k8s.io/cluster-api-provider-aws/cluster"]'
+    'CLUSTER_PREFIX': '["kubernetes.io/cluster","sigs.k8s.io/cluster-api-provider-aws/cluster","hypershift.openshift.io/cluster"]'
 }
 
 

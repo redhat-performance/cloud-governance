@@ -12,11 +12,18 @@ class RemoveClusterTags(TagClusterOperations):
     This class removes the tags of cluster resources
     """
 
-    def __init__(self, input_tags: dict, cluster_name: str = None, cluster_prefix: str = None,
+    def __init__(self, input_tags: dict, cluster_name: str = None, cluster_prefix: list = None,
                  region: str = 'us-east-2', cluster_only: bool = False):
         super().__init__(cluster_name=cluster_name, cluster_prefix=cluster_prefix, input_tags=input_tags, region=region, dry_run='no', cluster_only=cluster_only)
         self.__get_details_resource_list = Utils().get_details_resource_list
         self.non_cluster_update = RemoveNonClusterTags(region=region, dry_run='no', input_tags=input_tags)
+
+    def _resolve_full_name(self, cluster_name: str, instance_tags: dict) -> str:
+        for prefix in self.cluster_prefix:
+            candidate = f'{prefix}/{cluster_name}'
+            if candidate in instance_tags:
+                return candidate
+        return f'{self.cluster_prefix[0]}/{cluster_name}' if self.cluster_prefix else cluster_name
 
     def get_tags(self, tags: list):
         """
@@ -77,9 +84,9 @@ class RemoveClusterTags(TagClusterOperations):
                 if item.get('Tags'):
                     for tag in item.get('Tags'):
                         key = tag.get('Key')
-                        if self.cluster_prefix in key:
+                        if any(prefix in key for prefix in self.cluster_prefix):
                             if self.cluster_name:
-                                if f'{self.cluster_prefix}{self.cluster_name}' == key:
+                                if any(f'{prefix}/{self.cluster_name}' == key for prefix in self.cluster_prefix):
                                     if key in cluster_dict:
                                         cluster_dict[key].append(item.get('InstanceId'))
                                     else:
@@ -143,9 +150,9 @@ class RemoveClusterTags(TagClusterOperations):
         for resource in resource_list:
             if resource.get(tags):
                 for tag in resource.get(tags):
-                    if self.cluster_prefix in tag.get('Key'):
+                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                         if self.cluster_name:
-                            if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
+                            if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                 if tag.get('Key') in cluster_resources:
                                     cluster_resources[tag.get('Key')].append(resource.get(resource_id))
                                 else:
@@ -248,9 +255,9 @@ class RemoveClusterTags(TagClusterOperations):
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if self.cluster_prefix in tag.get('Key'):
+                        if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                             if self.cluster_name:
-                                if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
+                                if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                     if tag.get('Key') in cluster_resources:
                                         cluster_resources[tag.get('Key')].append(resource.get('LoadBalancerName'))
                                     else:
@@ -281,9 +288,9 @@ class RemoveClusterTags(TagClusterOperations):
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if self.cluster_prefix in tag.get('Key'):
+                        if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
                             if self.cluster_name:
-                                if f'{self.cluster_prefix}{self.cluster_name}' == tag.get('Key'):
+                                if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                     if tag.get('Key') in cluster_resources:
                                         cluster_resources[tag.get('Key')].append(resource_id)
                                     else:
@@ -443,15 +450,15 @@ class RemoveClusterTags(TagClusterOperations):
             for role_name in role_name_list:
                 if self.cluster_name:
                     if self.cluster_name in role_name:
-                        full_name = f'{self.cluster_prefix}{self.cluster_name}'
-                        keys = self.tag_keys(list(instance_tags.get(full_name)))
+                        full_name = self._resolve_full_name(self.cluster_name, instance_tags)
+                        keys = self.tag_keys(list(instance_tags.get(full_name, [])))
                         self.iam_client.untag_role(RoleName=role_name, TagKeys=keys)
-                        tags = list(instance_tags.get(full_name))
+                        tags = list(instance_tags.get(full_name, []))
                 else:
-                    full_name = f'{self.cluster_prefix}{cluster_name}'
-                    keys = self.tag_keys(list(instance_tags.get(full_name)))
+                    full_name = self._resolve_full_name(cluster_name, instance_tags)
+                    keys = self.tag_keys(list(instance_tags.get(full_name, [])))
                     self.iam_client.untag_role(RoleName=role_name, TagKeys=keys)
-                    tags = list(instance_tags.get(full_name))
+                    tags = list(instance_tags.get(full_name, []))
             logger.info(f'Role Name :: {role_name_list} {tags}')
             cluster_ids.extend(role_name_list)
         return cluster_ids
@@ -474,17 +481,17 @@ class RemoveClusterTags(TagClusterOperations):
                 if cluster_name in user_name:
                     if self.cluster_name:
                         if self.cluster_name in user_name:
-                            full_name = f'{self.cluster_prefix}{self.cluster_name}'
-                            keys = self.tag_keys(instance_tags.get(full_name))
+                            full_name = self._resolve_full_name(self.cluster_name, instance_tags)
+                            keys = self.tag_keys(instance_tags.get(full_name, []))
                             self.iam_client.untag_user(UserName=user_name, TagKeys=keys)
                             usernames.append(user_name)
-                            tags = list(instance_tags.get(full_name))
+                            tags = list(instance_tags.get(full_name, []))
                     else:
-                        full_name = f'{self.cluster_prefix}{cluster_name}'
-                        keys = self.tag_keys(list(instance_tags.get(full_name)))
+                        full_name = self._resolve_full_name(cluster_name, instance_tags)
+                        keys = self.tag_keys(list(instance_tags.get(full_name, [])))
                         self.iam_client.untag_user(UserName=user_name, TagKeys=keys)
                         usernames.append(user_name)
-                        tags = list(instance_tags.get(full_name))
+                        tags = list(instance_tags.get(full_name, []))
             logger.info(f'IAM Users : {usernames}, {tags}')
             user_ids.extend(usernames)
         return user_ids
@@ -521,8 +528,8 @@ class RemoveClusterTags(TagClusterOperations):
                     bucket_tags = self.s3_client.get_bucket_tagging(Bucket=bucket.get('Name'))
                     if bucket_tags:
                         bucket_tags = bucket_tags['TagSet']
-                        full_name = f'{self.cluster_prefix}{cluster_name}'
-                        added_tags = instance_tags.get(full_name)
+                        full_name = self._resolve_full_name(cluster_name, instance_tags)
+                        added_tags = instance_tags.get(full_name, [])
                         add_tags = self.get_bucket_tags_to_add(added_tags, bucket_tags)
                         if self.cluster_name:
                             if self.cluster_name in bucket.get('Name'):

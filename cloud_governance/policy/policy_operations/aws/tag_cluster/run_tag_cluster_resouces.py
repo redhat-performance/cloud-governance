@@ -1,4 +1,5 @@
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.tag_cluster.remove_cluster_tags import RemoveClusterTags
 from cloud_governance.policy.policy_operations.aws.tag_cluster.tag_cluster_resouces import TagClusterResources
 
@@ -15,7 +16,8 @@ def tag_cluster_resource(cluster_name: str = '', mandatory_tags: dict = None, re
     else:
         action = 'read'
         dry_run = 'yes'
-    tag_cluster_resources = TagClusterResources(cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"], cluster_name=cluster_name,
+    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', [])
+    tag_cluster_resources = TagClusterResources(cluster_prefix=cluster_prefix, cluster_name=cluster_name,
                                                 input_tags=mandatory_tags, region=region, dry_run=dry_run, cluster_only=cluster_only)
 
     func_resource_list = [tag_cluster_resources.cluster_instance,
@@ -62,7 +64,8 @@ def remove_cluster_resources_tags(region: str, cluster_name: str, input_tags: di
     @param input_tags:
     @return:
     """
-    remove_cluster_tags = RemoveClusterTags(region=region, cluster_name=cluster_name, cluster_prefix='kubernetes.io/cluster/', input_tags=input_tags, cluster_only=cluster_only)
+    cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', [])
+    remove_cluster_tags = RemoveClusterTags(region=region, cluster_name=cluster_name, cluster_prefix=cluster_prefix, input_tags=input_tags, cluster_only=cluster_only)
     func_resource_list = [remove_cluster_tags.cluster_instance,
                           remove_cluster_tags.cluster_volume,
                           remove_cluster_tags.cluster_images,

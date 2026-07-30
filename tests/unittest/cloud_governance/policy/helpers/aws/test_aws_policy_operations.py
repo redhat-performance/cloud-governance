@@ -192,3 +192,36 @@ def test_update_resource_day_count_tag_updated_tag_today():
         instances = ec2_client.describe_instances()['Reservations']
         tag_value = aws_cleanup_operations.get_tag_name_from_tags(instances[0]['Instances'][0].get('Tags'), tag_name='DaysCount')
         assert tag_value == str(datetime.datetime.now(tz=datetime.timezone.utc).date()) + "@1"
+
+
+@mock_aws
+def test_get_cluster_tag_with_capa_prefix():
+    """
+    This test verifies that _get_cluster_tag recognises CAPA-prefixed cluster tags
+    in addition to the standard IPI prefix.
+    @return:
+    """
+    aws_ops = AWSPolicyOperations()
+    capa_tags = [{'Key': 'sigs.k8s.io/cluster-api-provider-aws/cluster/test-cluster', 'Value': 'owned'}]
+    result = aws_ops._get_cluster_tag(tags=capa_tags)
+    assert result == 'sigs.k8s.io/cluster-api-provider-aws/cluster/test-cluster'
+
+
+@mock_aws
+def test_get_active_cluster_ids_includes_capa_instances():
+    """
+    This test verifies that _get_active_cluster_ids finds instances tagged with
+    the CAPA cluster prefix so cleanup policies correctly skip active CAPA resources.
+    @return:
+    """
+    environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = 'us-east-2'
+    ec2_client = boto3.client('ec2', region_name='us-east-2')
+    capa_cluster_tag = 'sigs.k8s.io/cluster-api-provider-aws/cluster/test-capa-cluster'
+    ec2_client.run_instances(
+        ImageId='ami-03cf127a', MinCount=1, MaxCount=1,
+        TagSpecifications=[{'ResourceType': 'instance',
+                            'Tags': [{'Key': capa_cluster_tag, 'Value': 'owned'}]}]
+    )
+    aws_ops = AWSPolicyOperations()
+    cluster_ids = aws_ops._get_active_cluster_ids()
+    assert capa_cluster_tag in cluster_ids
