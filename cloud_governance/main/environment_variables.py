@@ -131,17 +131,22 @@ class EnvironmentVariables:
                                                                                                 '{}')
         self._environment_variables_dict['DAYS_TO_DELETE_RESOURCE'] = int(
             EnvironmentVariables.get_env('DAYS_TO_DELETE_RESOURCE', '7'))
+        _cluster_prefix_default = [
+            "kubernetes.io/cluster",
+            "sigs.k8s.io/cluster-api-provider-aws/cluster",
+            "hypershift.openshift.io/cluster",
+        ]
         try:
-            self._environment_variables_dict['CLUSTER_PREFIX'] = json.loads(EnvironmentVariables.get_env(
+            _parsed = json.loads(EnvironmentVariables.get_env(
                 'CLUSTER_PREFIX',
                 '["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"]'
             ))
-        except json.JSONDecodeError as err:
-            self._environment_variables_dict['CLUSTER_PREFIX'] = [
-                "kubernetes.io/cluster",
-                "sigs.k8s.io/cluster-api-provider-aws/cluster",
-                "hypershift.openshift.io/cluster",
-            ]
+            if isinstance(_parsed, list) and _parsed and all(isinstance(p, str) and p for p in _parsed):
+                self._environment_variables_dict['CLUSTER_PREFIX'] = _parsed
+            else:
+                self._environment_variables_dict['CLUSTER_PREFIX'] = _cluster_prefix_default
+        except json.JSONDecodeError:
+            self._environment_variables_dict['CLUSTER_PREFIX'] = _cluster_prefix_default
         # AWS Cost Explorer tags
         self._environment_variables_dict['cost_metric'] = EnvironmentVariables.get_env('cost_metric', 'UnblendedCost')
         self._environment_variables_dict['start_date'] = EnvironmentVariables.get_env('start_date', '')

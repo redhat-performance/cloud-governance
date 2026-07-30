@@ -84,7 +84,7 @@ class RemoveClusterTags(TagClusterOperations):
                 if item.get('Tags'):
                     for tag in item.get('Tags'):
                         key = tag.get('Key')
-                        if any(prefix in key for prefix in self.cluster_prefix):
+                        if any(key.startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                             if self.cluster_name:
                                 if any(f'{prefix}/{self.cluster_name}' == key for prefix in self.cluster_prefix):
                                     if key in cluster_dict:
@@ -150,7 +150,7 @@ class RemoveClusterTags(TagClusterOperations):
         for resource in resource_list:
             if resource.get(tags):
                 for tag in resource.get(tags):
-                    if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                    if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                         if self.cluster_name:
                             if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                 if tag.get('Key') in cluster_resources:
@@ -255,7 +255,7 @@ class RemoveClusterTags(TagClusterOperations):
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                        if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                             if self.cluster_name:
                                 if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                     if tag.get('Key') in cluster_resources:
@@ -288,7 +288,7 @@ class RemoveClusterTags(TagClusterOperations):
             for item in tags['TagDescriptions']:
                 if item.get('Tags'):
                     for tag in item['Tags']:
-                        if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+                        if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                             if self.cluster_name:
                                 if any(f'{prefix}/{self.cluster_name}' == tag.get('Key') for prefix in self.cluster_prefix):
                                     if tag.get('Key') in cluster_resources:

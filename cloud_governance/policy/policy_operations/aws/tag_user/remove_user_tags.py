@@ -14,7 +14,7 @@ class RemoveUserTags:
     def __init__(self, remove_keys: list, username: str = ''):
         self.remove_keys = remove_keys
         self.username = username
-        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ['kubernetes.io/cluster'])
+        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
         self.iam_client = boto3.client('iam')
         self.IAMOperations = IAMOperations()
         self.get_detail_resource_list = Utils().get_details_resource_list
@@ -26,7 +26,7 @@ class RemoveUserTags:
         @return:
         """
         for tag in tags:
-            if any(prefix in tag.get('Key', '') for prefix in self.cluster_prefix):
+            if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                 return True
         return False
 

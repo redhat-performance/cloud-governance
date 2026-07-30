@@ -18,7 +18,7 @@ class NonClusterOperations:
         self.dry_run = dry_run
         self.input_tags = input_tags
         self.cloudtrail = boto3.client('cloudtrail', region_name=region)
-        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ['kubernetes.io/cluster'])
+        self.cluster_prefix = environment_variables.environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
         self.ec2_client = boto3.client('ec2', region_name=region)
         self.cloudtrail = CloudTrailOperations(region_name=self.region)
         self.iam_client = IAMOperations()

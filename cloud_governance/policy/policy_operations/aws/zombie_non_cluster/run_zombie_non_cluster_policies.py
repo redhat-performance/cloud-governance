@@ -41,7 +41,7 @@ class NonClusterZombiePolicy:
         self._s3_client = boto3.client('s3')
         self._iam_operations = IAMOperations()
         self._iam_client = boto3.client('iam')
-        self._cluster_prefix = self.__environment_variables_dict.get('CLUSTER_PREFIX', ['kubernetes.io/cluster'])
+        self._cluster_prefix = self.__environment_variables_dict.get('CLUSTER_PREFIX', ["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster", "hypershift.openshift.io/cluster"])
         self._s3operations = S3Operations(region_name=self._region)
         self._cloudtrail = CloudTrailOperations(region_name=self._region)
         self._special_user_mails = self.__environment_variables_dict.get('special_user_mails', '{}')
