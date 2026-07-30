@@ -82,7 +82,7 @@ class NonClusterZombiePolicy:
         """
         if tags:
             for tag in tags:
-                if tag.get('Key').startswith(tuple(self._cluster_prefix)):
+                if tag.get('Key').startswith(tuple(f'{p}/' for p in self._cluster_prefix)):
                     return True
         return False
 

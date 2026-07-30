@@ -119,13 +119,13 @@ class Utils:
         :return:
         """
         for prefix in cluster_prefix:
-            prefix = prefix.strip()
+            prefix = prefix.strip().rstrip('/')
             if tag:
-                if tag.get('Key').startswith(prefix):
+                if tag.get('Key').startswith(f'{prefix}/'):
                     return True, tag.get('Key')
             else:
                 if tags:
                     for t in tags:
-                        if t.get('Key').startswith(prefix):
+                        if t.get('Key').startswith(f'{prefix}/'):
                             return True, t.get('Key')
         return False, None
