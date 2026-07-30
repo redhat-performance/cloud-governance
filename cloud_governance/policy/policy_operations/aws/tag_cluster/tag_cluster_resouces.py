@@ -114,7 +114,7 @@ class TagClusterResources(TagClusterOperations):
                                     no_propagate_prefixes = tuple(p.split('/', 1)[0] + '/' for p in cluster_prefix)
                                     i_tags = [instance_tag for instance_tag in item.get('Tags') if
                                               instance_tag.get('Key') != 'Name' and
-                                              not any((instance_tag.get('Key') or '').startswith(prefix)
+                                              not any((instance_tag.get('Key') or '').startswith(f'{prefix}/')
                                                       for prefix in self.cluster_prefix) and
                                               not (instance_tag.get('Key') or '').startswith(no_propagate_prefixes)]
                                     return i_tags
@@ -599,7 +599,7 @@ class TagClusterResources(TagClusterOperations):
                     if any(tag.get('Key', '').startswith(f'{prefix}/') for prefix in self.cluster_prefix):
                         vpc_ids[vpc.get('VpcId')] = [t for t in vpc.get('Tags') if
                                                      t.get('Key') != 'Name' and
-                                                     not any((t.get('Key') or '').startswith(prefix)
+                                                     not any((t.get('Key') or '').startswith(f'{prefix}/')
                                                              for prefix in self.cluster_prefix) and
                                                      not (t.get('Key') or '').startswith(no_propagate_prefixes)]
                         break
