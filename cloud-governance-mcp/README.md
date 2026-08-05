@@ -111,6 +111,20 @@ Show resources created in the last 7 days
 Find all policies that ran between 2026-01-01 and 2026-03-31
 ```
 
+### Questions That Need Refining
+
+The bot works best with specific, concrete questions rather than vague ones.
+
+- *"Tell me about our cloud spend"* → too vague. Try: "Total cost by account for the last month"
+- *"Is everything okay?"* → not measurable. Try: "How many zombie resources exist right now?"
+
+### Tips
+
+- **No exact field-name casing needed** — the bot resolves `policy` vs `Policy` automatically
+- **No OpenSearch syntax needed** — no `.keyword`, no JSON, just ask in English
+- **Follow-up questions work** — the conversation keeps context, so you can say "now break that down by region" after an initial answer
+- **If a query returns nothing**, the bot will often suggest actual field names to try instead of just failing silently
+
 ### How It Works
 
 1. **You ask a question** in natural language
@@ -118,6 +132,15 @@ Find all policies that ran between 2026-01-01 and 2026-03-31
 3. **MCP server builds the query** automatically (handles `.keyword` suffixes, Query DSL construction)
 4. **AI formats the results** as markdown tables
 5. **You get the answer** with data summary
+
+### Sidebar Features
+
+| Feature | What it does |
+|---------|---------------|
+| **OpenSearch Index dropdown** | Switch which index you're querying (resets the conversation) |
+| **Debug Mode** | Shows the exact tool calls and raw OpenSearch responses behind each answer |
+| **Reset Conversation** | Clears chat history and starts fresh |
+| **Export Chat History** | Downloads the conversation as JSON |
 
 ## Troubleshooting
 
