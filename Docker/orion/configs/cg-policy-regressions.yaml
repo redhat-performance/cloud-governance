@@ -1,0 +1,74 @@
+# Orion regression-detection config for the metrics produced by
+# cloud_governance/policy/aws/orion_metrics_rollup.py (cloud-governance-orion-metrics-index).
+# Invoke once per account, e.g.:
+#   orion --es-server=<opensearch-url> \
+#         --benchmark-index=cloud-governance-orion-metrics-index \
+#         --metadata-index=cloud-governance-orion-metrics-index \
+#         --hunter-analyze \
+#         --input-vars='{"account": "<ACCOUNT_NAME>"}' \
+#         --config cg-policy-regressions.yaml
+tests:
+  - name: cg-policy-regressions
+    metadata:
+      account.keyword: "{{ account }}"
+
+    metrics:
+      - name: zombieClusterResourceCountIncrease
+        metric_of_interest: zombie_cluster_resource_count
+        direction: 1
+        threshold: 10
+
+      - name: zombieClusterResourceCountDecrease
+        metric_of_interest: zombie_cluster_resource_count
+        direction: -1
+        threshold: 10
+
+      - name: s3InactiveCountIncrease
+        metric_of_interest: s3_inactive_count
+        direction: 1
+        threshold: 10
+
+      - name: s3InactiveCountDecrease
+        metric_of_interest: s3_inactive_count
+        direction: -1
+        threshold: 10
+
+      - name: ec2StopCountIncrease
+        metric_of_interest: ec2_stop_count
+        direction: 1
+        threshold: 10
+
+      - name: ec2StopCountDecrease
+        metric_of_interest: ec2_stop_count
+        direction: -1
+        threshold: 10
+
+      - name: unusedAccessKeyCountIncrease
+        metric_of_interest: unused_access_key_count
+        direction: 1
+        threshold: 10
+
+      - name: unusedAccessKeyCountDecrease
+        metric_of_interest: unused_access_key_count
+        direction: -1
+        threshold: 10
+
+      - name: deleteAccessKeyCountIncrease
+        metric_of_interest: delete_access_key_count
+        direction: 1
+        threshold: 10
+
+      - name: deleteAccessKeyCountDecrease
+        metric_of_interest: delete_access_key_count
+        direction: -1
+        threshold: 10
+
+      - name: monitoredPoliciesSavingsIncrease
+        metric_of_interest: monitored_policies_savings
+        direction: 1
+        threshold: 10
+
+      - name: monitoredPoliciesSavingsDecrease
+        metric_of_interest: monitored_policies_savings
+        direction: -1
+        threshold: 10
