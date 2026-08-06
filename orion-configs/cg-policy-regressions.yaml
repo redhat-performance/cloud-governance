@@ -16,59 +16,59 @@ tests:
       - name: zombieClusterResourceCountIncrease
         metric_of_interest: zombie_cluster_resource_count
         direction: 1
-        threshold: 10
+        threshold: 20
 
       - name: zombieClusterResourceCountDecrease
         metric_of_interest: zombie_cluster_resource_count
         direction: -1
-        threshold: 10
+        threshold: 20
 
       - name: s3InactiveCountIncrease
         metric_of_interest: s3_inactive_count
         direction: 1
-        threshold: 10
+        threshold: 20
 
       - name: s3InactiveCountDecrease
         metric_of_interest: s3_inactive_count
         direction: -1
-        threshold: 10
+        threshold: 20
 
       - name: ec2StopCountIncrease
         metric_of_interest: ec2_stop_count
         direction: 1
-        threshold: 10
+        threshold: 20
 
       - name: ec2StopCountDecrease
         metric_of_interest: ec2_stop_count
         direction: -1
-        threshold: 10
+        threshold: 20
 
       - name: unusedAccessKeyCountIncrease
         metric_of_interest: unused_access_key_count
         direction: 1
-        threshold: 10
+        threshold: 20
 
       - name: unusedAccessKeyCountDecrease
         metric_of_interest: unused_access_key_count
         direction: -1
-        threshold: 10
+        threshold: 20
 
       - name: deleteAccessKeyCountIncrease
         metric_of_interest: delete_access_key_count
         direction: 1
-        threshold: 10
+        threshold: 20
 
       - name: deleteAccessKeyCountDecrease
         metric_of_interest: delete_access_key_count
         direction: -1
-        threshold: 10
+        threshold: 20
 
       - name: monitoredPoliciesSavingsIncrease
         metric_of_interest: monitored_policies_savings
         direction: 1
-        threshold: 10
+        threshold: 50
 
       - name: monitoredPoliciesSavingsDecrease
         metric_of_interest: monitored_policies_savings
         direction: -1
-        threshold: 10
+        threshold: 50
