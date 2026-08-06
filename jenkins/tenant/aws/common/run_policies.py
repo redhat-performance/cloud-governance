@@ -25,7 +25,7 @@ def get_policies(file_type: str = '.py', exclude_policies: list = None):
 exclude_policies = ['cost_explorer', 'optimize_resources_report', 'monthly_report', 'cost_over_usage',
                     'skipped_resources', 'cost_explorer_payer_billings', 'cost_billing_reports',
                     'spot_savings_analysis', 'yearly_savings_report',
-                    'delete_access_key']
+                    'delete_access_key', 'orion_metrics_rollup']
 available_policies = get_policies(exclude_policies=exclude_policies)
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
