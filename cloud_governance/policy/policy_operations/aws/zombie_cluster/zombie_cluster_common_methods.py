@@ -90,21 +90,24 @@ class ZombieClusterCommonMethods:
                     aws_tags = self.elb_client.describe_tags(LoadBalancerNames=[resource_id]).get('TagDescriptions')
                     if len(aws_tags) > 0:
                         aws_tags = aws_tags[0].get(aws_tag)
-                except:
+                except Exception as err:
+                    logger.info(f'elbv1 describe_tags error for {resource_id}: {err}')
                     return []
             elif aws_service == 'elbv2':
                 try:
                     aws_tags = self.elbv2_client.describe_tags(ResourceArns=[resource_id]).get('TagDescriptions')
                     if len(aws_tags) > 0:
                         aws_tags = aws_tags[0].get(aws_tag)
-                except:
+                except Exception as err:
+                    logger.info(f'elbv2 describe_tags error for {resource_id}: {err}')
                     return []
             elif aws_service == 'role' and resource_id in zombies:
                 try:
                     role_data = self.iam_client.get_role(RoleName=resource_id)['Role']
                     if role_data.get(aws_tag):
                         aws_tags = role_data.get(aws_tag)
-                except:
+                except Exception as err:
+                    logger.info(f'iam get_role error for {resource_id}: {err}')
                     return []
             elif aws_service == 'user' and resource_id in zombies:
                 try:
@@ -112,6 +115,7 @@ class ZombieClusterCommonMethods:
                     if user_data.get(aws_tag):
                         aws_tags = user_data.get(aws_tag)
                 except Exception as err:
+                    logger.info(f'iam get_user error for {resource_id}: {err}')
                     return []
             elif aws_service == 'bucket' and resource_id in zombies:
                 try:
@@ -119,6 +123,7 @@ class ZombieClusterCommonMethods:
                     if bucket_data.get(aws_tag):
                         aws_tags = bucket_data.get(aws_tag)
                 except Exception as err:
+                    logger.info(f's3 get_bucket_tagging error for {resource_id}: {err}')
                     return []
             else:
                 if resource.get(aws_tag):
@@ -160,7 +165,8 @@ class ZombieClusterCommonMethods:
                             self.iam_client.tag_user(UserName=resource_id, Tags=tags)
                         elif aws_service == 'bucket':
                             self.s3_client.put_bucket_tagging(Bucket=resource_id, Tagging={'TagSet': tags})
-                    except:
+                    except Exception as err:
+                        logger.info(f'resource tag update error for {resource_id}: {err}')
                         return []
                 if resource_id in zombies:
                     resources_tags[resource_id] = tags
