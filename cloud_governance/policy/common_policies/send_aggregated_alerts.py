@@ -139,9 +139,9 @@ class SendAggregatedAlerts:
         filtered_policy_es_data = []
         for record in policy_es_data:
             try:
-                days = record.get('ClusterResourcesCount')
+                days = record.get('CleanUpDays')
                 if not days:
-                    days = record.get('CleanUpDays')
+                    days = record.get('ClusterResourcesCount')
                 if not days:
                     days = record.get('Days')
                 if not days:
