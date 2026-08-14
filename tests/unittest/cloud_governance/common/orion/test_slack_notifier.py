@@ -296,6 +296,18 @@ class TestOrionSlackNotifier:
         assert result['ok'] is False
 
     @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_post_to_slack_handles_non_dict_json_response(self, mock_post):
+        """A valid-JSON-but-non-object response (list/scalar) must not crash on .get()"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = ['unexpected', 'array']
+        mock_post.return_value = mock_response
+
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        result = notifier.post_to_slack([notifier._section('test')])
+
+        assert result['ok'] is False
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
     def test_post_to_slack_handles_http_error(self, mock_post):
         """A non-2xx HTTP status must route through the failure path"""
         mock_response = MagicMock()

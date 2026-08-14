@@ -174,6 +174,9 @@ class OrionSlackNotifier:
         except ValueError as err:
             logger.error('Slack response was not valid JSON: %s', err)
             return {'ok': False, 'error': 'invalid_response'}
+        if not isinstance(response_data, dict):
+            logger.error('Slack response was not a JSON object: %r', response_data)
+            return {'ok': False, 'error': 'invalid_response'}
         if not response_data.get('ok'):
             logger.error('Slack API error: %s', response_data.get('error', 'unknown'))
         return response_data
