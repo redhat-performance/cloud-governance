@@ -3,6 +3,8 @@ import os
 import tempfile
 from unittest.mock import patch, MagicMock
 
+import requests
+
 from cloud_governance.common.orion.slack_notifier import OrionSlackNotifier
 
 
@@ -234,3 +236,73 @@ class TestOrionSlackNotifier:
             assert result['slack_ok'] is False
         finally:
             os.unlink(path)
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_post_to_slack_batches_over_block_limit(self, mock_post):
+        """More than 50 blocks must be split across multiple Slack messages"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {'ok': True}
+        mock_post.return_value = mock_response
+
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        # 120 blocks -> ceil(120/50) = 3 messages
+        blocks = [notifier._section(f'block {i}') for i in range(120)]
+        result = notifier.post_to_slack(blocks)
+
+        assert result['ok'] is True
+        assert result['messages_sent'] == 3
+        assert mock_post.call_count == 3
+        # no single message exceeds the block limit
+        for call in mock_post.call_args_list:
+            assert len(call.kwargs['json']['blocks']) <= OrionSlackNotifier.SLACK_MAX_BLOCKS
+
+    def test_regression_section_splits_long_text(self):
+        """A regression with many metrics must split into multiple sections under the char limit"""
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        regression = {
+            'timestamp': '2026-07-15T00:00:00Z',
+            'metrics': [
+                {'name': f'some_long_metric_name_number_{i}', 'value': 12345, 'percentage_change': 42.5}
+                for i in range(100)
+            ],
+        }
+        blocks = notifier._regression_section_blocks(regression)
+
+        assert len(blocks) > 1
+        for block in blocks:
+            assert len(block['text']['text']) <= OrionSlackNotifier.SLACK_MAX_SECTION_CHARS
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_post_to_slack_handles_request_exception(self, mock_post):
+        """A network/TLS/DNS failure must be caught, not raised"""
+        mock_post.side_effect = requests.RequestException('connection timed out')
+
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        result = notifier.post_to_slack([notifier._section('test')])
+
+        assert result['ok'] is False
+        assert result['messages_sent'] == 1
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_post_to_slack_handles_non_json_response(self, mock_post):
+        """A non-JSON response body must be caught, not raised"""
+        mock_response = MagicMock()
+        mock_response.json.side_effect = ValueError('no JSON could be decoded')
+        mock_post.return_value = mock_response
+
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        result = notifier.post_to_slack([notifier._section('test')])
+
+        assert result['ok'] is False
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_post_to_slack_handles_http_error(self, mock_post):
+        """A non-2xx HTTP status must route through the failure path"""
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = requests.HTTPError('500 Server Error')
+        mock_post.return_value = mock_response
+
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+        result = notifier.post_to_slack([notifier._section('test')])
+
+        assert result['ok'] is False
