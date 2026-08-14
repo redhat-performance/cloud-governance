@@ -15,9 +15,9 @@ class OrionMetricsRollup:
     time series.
     """
 
-    # Read from explicitly, rather than the shared 'es_index' env var: for any
-    # policy in cost_policies (this one included), that var defaults to the
-    # cost-billing index, not the policy index this rollup needs to read from.
+    # Read from explicitly, rather than the shared 'es_index' env var, so the
+    # source index this rollup reads from is unaffected by whatever es_index a
+    # given invocation happens to default to.
     SOURCE_ES_INDEX = 'cloud-governance-policy-es-index'
     # Per-policy resource counts are restricted to these. monitored_policies_savings
     # is NOT restricted to these - see __build_query for why.

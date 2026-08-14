@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 
-from cloud_governance.policy.aws.orion_metrics_rollup import OrionMetricsRollup
+from cloud_governance.policy.common_policies.orion_metrics_rollup import OrionMetricsRollup
 from tests.unittest.configs import ES_INDEX
 
 
@@ -9,8 +9,8 @@ class TestOrionMetricsRollup:
 
     def setup_method(self):
         """Setup test fixtures"""
-        with patch('cloud_governance.policy.aws.orion_metrics_rollup.environment_variables') as mock_env_vars, \
-             patch('cloud_governance.policy.aws.orion_metrics_rollup.ElasticSearchOperations') as mock_es_ops:
+        with patch('cloud_governance.policy.common_policies.orion_metrics_rollup.environment_variables') as mock_env_vars, \
+             patch('cloud_governance.policy.common_policies.orion_metrics_rollup.ElasticSearchOperations') as mock_es_ops:
             mock_env_vars.environment_variables_dict = {
                 'es_host': 'localhost',
                 'es_port': '9200',
@@ -166,7 +166,7 @@ class TestOrionMetricsRollup:
 
     def test_run_without_es_configured(self):
         """run() should no-op cleanly when ES isn't configured, not raise"""
-        with patch('cloud_governance.policy.aws.orion_metrics_rollup.environment_variables') as mock_env_vars:
+        with patch('cloud_governance.policy.common_policies.orion_metrics_rollup.environment_variables') as mock_env_vars:
             mock_env_vars.environment_variables_dict = {'es_host': '', 'es_port': ''}
             rollup = OrionMetricsRollup()
             result = rollup.run()
@@ -187,7 +187,7 @@ class TestOrionMetricsRollup:
         """A partial date range (only one of start/end set) must not silently backfill - and must warn"""
         self.mock_es_instance.post_query.return_value = {'by_account': {'buckets': []}}
 
-        with patch('cloud_governance.policy.aws.orion_metrics_rollup.logger') as mock_logger:
+        with patch('cloud_governance.policy.common_policies.orion_metrics_rollup.logger') as mock_logger:
             result = self.rollup.run(start_date='2026-01-01')
 
         assert 'date' in result

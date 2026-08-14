@@ -1,5 +1,5 @@
 # Orion regression-detection config for the metrics produced by
-# cloud_governance/policy/aws/orion_metrics_rollup.py (cloud-governance-orion-metrics-index).
+# cloud_governance/policy/common_policies/orion_metrics_rollup.py (cloud-governance-orion-metrics-index).
 # Invoke once per account, e.g.:
 #   orion --es-server=<opensearch-url> \
 #         --benchmark-index=cloud-governance-orion-metrics-index \
