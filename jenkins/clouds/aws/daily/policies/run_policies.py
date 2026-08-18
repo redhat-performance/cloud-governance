@@ -22,9 +22,10 @@ SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
+# Derived, not a separate credential, so the two image paths can never drift apart.
+QUAY_ORION_REPOSITORY = f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}-orion'
 # Orion regression detection is optional: skips quietly (does not fail the job)
-# if any of these three are not configured as Jenkins credentials.
-QUAY_ORION_REPOSITORY = os.environ.get('QUAY_ORION_REPOSITORY', '')
+# if these are not configured as Jenkins credentials.
 SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN', '')
 SLACK_CHANNEL_NAME = os.environ.get('SLACK_CHANNEL_NAME', '')
 
@@ -158,7 +159,7 @@ run_cmd(
 # change-point analysis against it, and post any regressions to Slack.
 # Must run after all of this account's policies above have finished writing
 # to cloud-governance-policy-es-index, since the rollup step reads from it.
-if QUAY_ORION_REPOSITORY and SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
+if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     REPO_ROOT = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
     ORION_CONFIG_PATH = os.path.join(REPO_ROOT, 'orion-configs', 'cg-policy-regressions.yaml')
@@ -186,4 +187,4 @@ if QUAY_ORION_REPOSITORY and SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
 
     run_cmd(f'rm -f "{orion_output_file}"')
 else:
-    run_cmd("echo Skipping Orion regression detection - QUAY_ORION_REPOSITORY/SLACK_API_TOKEN/SLACK_CHANNEL_NAME not configured")
+    run_cmd("echo Skipping Orion regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME not configured")

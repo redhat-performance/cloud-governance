@@ -19,8 +19,11 @@ jobs:
       - uses: actions/checkout@v6
       - name: ⌛ Build and upload Orion image to 🐋 quay.io
         run: |
-          sudo docker build -t ${{ secrets.QUAY_PUBLIC_ORION_REPOSITORY }}:latest -f Docker/orion/Dockerfile Docker/orion
+          # Reuses the existing cloud-governance repository secret rather than a
+          # separate one, so the two image paths can never drift apart.
+          ORION_REPOSITORY="${{ secrets.QUAY_PUBLIC_CLOUD_GOVERNANCE_REPOSITORY }}-orion"
+          sudo docker build -t "$ORION_REPOSITORY:latest" -f Docker/orion/Dockerfile Docker/orion
           sudo docker login quay.io -u ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_USER }} -p ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_TOKEN }}
-          sudo docker push ${{ secrets.QUAY_PUBLIC_ORION_REPOSITORY }}:latest
+          sudo docker push "$ORION_REPOSITORY:latest"
           echo 'Wait 30 sec till image will be updated in quay.io'
           sleep 30

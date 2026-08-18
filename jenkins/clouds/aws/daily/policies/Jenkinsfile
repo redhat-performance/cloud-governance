@@ -12,10 +12,11 @@ pipeline {
     }
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
-        // Orion regression detection: these 3 credentials must exist in Jenkins
+        // Orion regression detection: these 2 credentials must exist in Jenkins
         // before this Jenkinsfile is deployed, otherwise the pipeline fails to
-        // start for every account (credentials() errors on an unknown ID).
-        QUAY_ORION_REPOSITORY = credentials('QUAY_ORION_REPOSITORY')
+        // start for every account (credentials() errors on an unknown ID). The
+        // Orion image repository is derived from QUAY_CLOUD_GOVERNANCE_REPOSITORY
+        // above, not a separate credential.
         SLACK_API_TOKEN = credentials('cloud-governance-slack-api-token')
         SLACK_CHANNEL_NAME = credentials('cloud-governance-slack-channel-name')
         POLICIES_IN_ACTION = '["instance_idle", "ec2_stop", "unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "delete_access_key", "zombie_cluster_resource"]'
