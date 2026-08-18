@@ -106,7 +106,7 @@ class EnvironmentVariables:
         es_index = 'cloud-governance-policy-es-index'
         self._environment_variables_dict['cost_policies'] = ['cost_explorer', 'cost_over_usage', 'cost_billing_reports',
                                                              'cost_explorer_payer_billings', 'spot_savings_analysis',
-                                                             'yearly_savings_report', 'orion_metrics_rollup']
+                                                             'yearly_savings_report']
         self._environment_variables_dict['ibm_policies'] = ['tag_baremetal', 'tag_vm', 'ibm_cost_report',
                                                             'ibm_cost_over_usage']
         self._environment_variables_dict['azure_policies'] = ['tag_azure_resource_group']
@@ -308,7 +308,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
         self._environment_variables_dict['SKIP_POLICIES_ALERT'] = literal_eval(
             EnvironmentVariables.get_env('SKIP_POLICIES_ALERT', '[]'))
-        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_alert_handler']:
+        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_metrics_rollup', 'orion_alert_handler']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch
         self._environment_variables_dict[
