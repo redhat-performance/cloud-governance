@@ -11,32 +11,35 @@ from cloud_governance.common.orion.slack_notifier import OrionSlackNotifier
 class TestOrionSlackNotifier:
     """Test suite for OrionSlackNotifier"""
 
+    # Orion's real JSON output keys metrics as "<config_name>_<metric_of_interest>"
+    # and serializes "timestamp" as Unix epoch seconds, not ISO8601 - confirmed
+    # against live output. 1782864000/1784073600/1784505600 = 2026-07-01/15/20.
     SAMPLE_ORION_OUTPUT = [
         {
-            'timestamp': '2026-07-01T00:00:00Z',
+            'timestamp': 1782864000,
             'account': 'PERFSCALE',
             'is_changepoint': False,
             'metrics': {
-                'zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
-                'ec2_stop_count': {'value': 5, 'percentage_change': 0, 'labels': []},
+                'zombieClusterResourceCountIncrease_zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
+                'ec2StopCountIncrease_ec2_stop_count': {'value': 5, 'percentage_change': 0, 'labels': []},
             }
         },
         {
-            'timestamp': '2026-07-15T00:00:00Z',
+            'timestamp': 1784073600,
             'account': 'PERFSCALE',
             'is_changepoint': True,
             'metrics': {
-                'zombie_cluster_resource_count': {'value': 25, 'percentage_change': 150.0, 'labels': []},
-                'ec2_stop_count': {'value': 5, 'percentage_change': 0, 'labels': []},
+                'zombieClusterResourceCountIncrease_zombie_cluster_resource_count': {'value': 25, 'percentage_change': 150.0, 'labels': []},
+                'ec2StopCountIncrease_ec2_stop_count': {'value': 5, 'percentage_change': 0, 'labels': []},
             }
         },
         {
-            'timestamp': '2026-07-20T00:00:00Z',
+            'timestamp': 1784505600,
             'account': 'PERFSCALE',
             'is_changepoint': True,
             'metrics': {
-                'zombie_cluster_resource_count': {'value': 25, 'percentage_change': 0, 'labels': []},
-                'ec2_stop_count': {'value': 2, 'percentage_change': -60.0, 'labels': []},
+                'zombieClusterResourceCountIncrease_zombie_cluster_resource_count': {'value': 25, 'percentage_change': 0, 'labels': []},
+                'ec2StopCountDecrease_ec2_stop_count': {'value': 2, 'percentage_change': -60.0, 'labels': []},
             }
         },
     ]
@@ -79,24 +82,38 @@ class TestOrionSlackNotifier:
         assert len(regressions) == 2
 
         first = regressions[0]
-        assert first['timestamp'] == '2026-07-15T00:00:00Z'
+        assert first['timestamp'] == '2026-07-15'
         assert len(first['metrics']) == 1
-        assert first['metrics'][0]['name'] == 'zombie_cluster_resource_count'
+        assert first['metrics'][0]['name'] == 'zombieClusterResourceCountIncrease_zombie_cluster_resource_count'
         assert first['metrics'][0]['percentage_change'] == 150.0
 
         second = regressions[1]
-        assert second['timestamp'] == '2026-07-20T00:00:00Z'
+        assert second['timestamp'] == '2026-07-20'
         assert len(second['metrics']) == 1
-        assert second['metrics'][0]['name'] == 'ec2_stop_count'
+        assert second['metrics'][0]['name'] == 'ec2StopCountDecrease_ec2_stop_count'
         assert second['metrics'][0]['percentage_change'] == -60.0
+
+    def test_extract_regressions_converts_epoch_timestamp_to_date(self):
+        """Orion serializes timestamp as Unix epoch seconds, not ISO8601 - must be readable"""
+        data = [
+            {
+                'timestamp': 1784073600,
+                'is_changepoint': True,
+                'metrics': {
+                    'someMetricIncrease_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []},
+                }
+            }
+        ]
+        regressions = OrionSlackNotifier.extract_regressions(data)
+        assert regressions[0]['timestamp'] == '2026-07-15'
 
     def test_extract_regressions_skips_non_changepoints(self):
         data = [
             {
-                'timestamp': '2026-07-01T00:00:00Z',
+                'timestamp': 1782864000,
                 'is_changepoint': False,
                 'metrics': {
-                    'zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
+                    'zombieClusterResourceCountIncrease_zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
                 }
             }
         ]
@@ -105,10 +122,10 @@ class TestOrionSlackNotifier:
     def test_extract_regressions_skips_changepoint_with_all_zero_changes(self):
         data = [
             {
-                'timestamp': '2026-07-01T00:00:00Z',
+                'timestamp': 1782864000,
                 'is_changepoint': True,
                 'metrics': {
-                    'zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
+                    'zombieClusterResourceCountIncrease_zombie_cluster_resource_count': {'value': 10, 'percentage_change': 0, 'labels': []},
                 }
             }
         ]
@@ -121,10 +138,10 @@ class TestOrionSlackNotifier:
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
         regressions = [
             {
-                'timestamp': '2026-07-15T00:00:00Z',
+                'timestamp': '2026-07-15',
                 'account': 'PERFSCALE',
                 'metrics': [
-                    {'name': 'zombie_cluster_resource_count', 'value': 25, 'percentage_change': 150.0},
+                    {'name': 'zombieClusterResourceCountIncrease_zombie_cluster_resource_count', 'value': 25, 'percentage_change': 150.0},
                 ]
             }
         ]
@@ -136,17 +153,21 @@ class TestOrionSlackNotifier:
         assert '1 change point' in blocks[1]['text']['text']
         assert blocks[2]['type'] == 'divider'
         assert blocks[3]['type'] == 'section'
+        assert '2026-07-15' in blocks[3]['text']['text']
         assert 'increased' in blocks[3]['text']['text']
         assert '150.0%' in blocks[3]['text']['text']
+        # Only the readable config name should show, not the raw composite key
+        assert 'zombieClusterResourceCountIncrease' in blocks[3]['text']['text']
+        assert 'zombieClusterResourceCountIncrease_zombie_cluster_resource_count' not in blocks[3]['text']['text']
 
     def test_format_slack_blocks_shows_decrease(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
         regressions = [
             {
-                'timestamp': '2026-07-20T00:00:00Z',
+                'timestamp': '2026-07-20',
                 'account': 'PERFSCALE',
                 'metrics': [
-                    {'name': 'ec2_stop_count', 'value': 2, 'percentage_change': -60.0},
+                    {'name': 'ec2StopCountDecrease_ec2_stop_count', 'value': 2, 'percentage_change': -60.0},
                 ]
             }
         ]
@@ -155,6 +176,7 @@ class TestOrionSlackNotifier:
         metric_block = blocks[3]
         assert 'decreased' in metric_block['text']['text']
         assert '60.0%' in metric_block['text']['text']
+        assert 'ec2StopCountDecrease' in metric_block['text']['text']
 
     def test_format_slack_blocks_returns_empty_for_no_regressions(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
