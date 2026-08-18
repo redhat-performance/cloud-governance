@@ -1,0 +1,26 @@
+name: Orion Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Docker/orion/**'
+  workflow_dispatch:
+
+concurrency:
+  group: orion-image
+  cancel-in-progress: false
+
+jobs:
+  publish_orion_image:
+    name: publish_orion_image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: ⌛ Build and upload Orion image to 🐋 quay.io
+        run: |
+          sudo docker build -t ${{ secrets.QUAY_PUBLIC_ORION_REPOSITORY }}:latest -f Docker/orion/Dockerfile Docker/orion
+          sudo docker login quay.io -u ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_USER }} -p ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_TOKEN }}
+          sudo docker push ${{ secrets.QUAY_PUBLIC_ORION_REPOSITORY }}:latest
+          echo 'Wait 30 sec till image will be updated in quay.io'
+          sleep 30
