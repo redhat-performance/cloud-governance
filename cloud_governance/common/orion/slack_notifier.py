@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime, timezone
 
 import requests
 
@@ -43,6 +44,16 @@ class OrionSlackNotifier:
         return data if isinstance(data, list) else []
 
     @staticmethod
+    def _format_timestamp(ts) -> str:
+        """
+        Orion serializes the timestamp field as Unix epoch seconds in its
+        JSON output, not ISO8601 - convert to a readable date for display.
+        """
+        if isinstance(ts, (int, float)):
+            return datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%Y-%m-%d')
+        return str(ts)
+
+    @staticmethod
     def extract_regressions(data_points: list) -> list:
         """
         Walk the Orion JSON array and pull out change points with their
@@ -63,8 +74,9 @@ class OrionSlackNotifier:
                         'percentage_change': round(pct, 2),
                     })
             if changed_metrics:
+                timestamp = entry.get('timestamp')
                 regressions.append({
-                    'timestamp': entry.get('timestamp', 'unknown'),
+                    'timestamp': OrionSlackNotifier._format_timestamp(timestamp) if timestamp is not None else 'unknown',
                     'account': entry.get('account', entry.get('account.keyword', 'unknown')),
                     'metrics': changed_metrics,
                 })
@@ -85,8 +97,13 @@ class OrionSlackNotifier:
         lines = [f"*Date:* {ts}"]
         for m in regression['metrics']:
             direction = 'increased' if m['percentage_change'] > 0 else 'decreased'
+            # Orion's JSON output keys metrics as "<config_name>_<metric_of_interest>"
+            # (e.g. "zombieClusterResourceCountIncrease_zombie_cluster_resource_count").
+            # Config metric names are plain camelCase with no underscores, so the part
+            # before the first underscore is always just the readable config name.
+            display_name = m['name'].split('_', 1)[0]
             lines.append(
-                f"*{m['name']}*: {direction} by `{abs(m['percentage_change']):.1f}%` (value: {m['value']})"
+                f"*{display_name}*: {direction} by `{abs(m['percentage_change']):.1f}%` (value: {m['value']})"
             )
 
         blocks = []
