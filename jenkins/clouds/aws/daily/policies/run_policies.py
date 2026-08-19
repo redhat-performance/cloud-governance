@@ -22,10 +22,7 @@ SPREADSHEET_ID = os.environ['AWS_IAM_USER_SPREADSHEET_ID']
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 ADMIN_MAIL_LIST = os.environ.get('ADMIN_MAIL_LIST', '')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
-# Derived, not a separate credential, so the two image paths can never drift apart.
 QUAY_ORION_REPOSITORY = f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}-orion'
-# Orion regression detection is optional: skips quietly (does not fail the job)
-# if these are not configured as Jenkins credentials.
 SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN', '')
 SLACK_CHANNEL_NAME = os.environ.get('SLACK_CHANNEL_NAME', '')
 
@@ -163,8 +160,6 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     REPO_ROOT = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
     ORION_CONFIG_PATH = os.path.join(REPO_ROOT, 'orion-configs', 'cg-policy-regressions.yaml')
-    # Must match the 'name:' field of the test in ORION_CONFIG_PATH: Orion's
-    # JSON formatter appends "_<test_name>" to whatever --save-output-path is given.
     ORION_TEST_NAME = 'cg-policy-regressions'
 
     run_cmd("echo Running Orion metrics rollup")
@@ -176,15 +171,23 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
     orion_output_base = f'/tmp/orion-output-{account_name}.json'
     orion_output_file = f'/tmp/orion-output-{account_name}_{ORION_TEST_NAME}.json'
+    # Orion also always writes a CSV of the underlying data alongside the JSON
+    # output; without an explicit path every account would overwrite the same
+    # file. We never read this CSV, so it's just given an account-specific
+    # name and cleaned up with the JSON output below. Orion builds the actual
+    # written filename from the *first* dot in the given path (not the
+    # extension), so the actual file is "<path-before-first-dot>-<test_name>.csv".
+    orion_data_base = f'/tmp/orion-data-{account_name}.csv'
+    orion_data_file = f'/tmp/orion-data-{account_name}-{ORION_TEST_NAME}.csv'
 
     run_cmd("echo Running Orion regression analysis")
     run_cmd(
-        f"""podman run --rm --name orion --net="host" -v "{ORION_CONFIG_PATH}":"{ORION_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="cloud-governance-orion-metrics-index" --metadata-index="cloud-governance-orion-metrics-index" --hunter-analyze --input-vars='{{"account": "{account_name.upper()}"}}' --config "{ORION_CONFIG_PATH}" --output-format json --save-output-path "{orion_output_base}" """)
+        f"""podman run --rm --name orion --net="host" -v "{ORION_CONFIG_PATH}":"{ORION_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="cloud-governance-orion-metrics-index" --metadata-index="cloud-governance-orion-metrics-index" --hunter-analyze --input-vars='{{"account": "{account_name.upper()}"}}' --config "{ORION_CONFIG_PATH}" --output-format json --save-output-path "{orion_output_base}" --save-data-path "{orion_data_base}" """)
 
     run_cmd("echo Running Orion Slack alert handler")
     run_cmd(
         f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{account_name}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_output_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-    run_cmd(f'rm -f "{orion_output_file}"')
+    run_cmd(f'rm -f "{orion_output_file}" "{orion_data_file}"')
 else:
     run_cmd("echo Skipping Orion regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME not configured")
