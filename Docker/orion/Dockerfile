@@ -7,7 +7,10 @@
 #   - single stage instead of multi-stage: the final stage's COPY --from=builder breaks on
 #     Fedora's /opt/app-root/lib64 -> lib symlink, since the builder's manual site-packages
 #     extraction step turns it into a real directory instead of preserving the symlink.
-FROM quay.io/fedora/python-311@sha256:aabd8125b244b6eb71baa91d3e0b1921a0205a8e9d47961ebcabb7a5a529436e
+# The digest below is the multi-arch manifest list (not a single-arch manifest), so the
+# build resolves the right image on both the amd64 CI runner / Jenkins agent and arm64
+# local machines. Pinning a single-arch digest here fails on amd64 with "exec format error".
+FROM quay.io/fedora/python-311@sha256:d12ae9699d4c0af68366e8589c43339db948df57837de06c3c1536b3ec852520
 
 USER 0
 
