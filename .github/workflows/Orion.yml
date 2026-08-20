@@ -1,0 +1,35 @@
+name: Orion Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Docker/orion/**'
+  workflow_dispatch:
+
+concurrency:
+  group: orion-image
+  cancel-in-progress: false
+
+jobs:
+  publish_orion_image:
+    name: publish_orion_image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: ⌛ Build and upload Orion image to 🐋 quay.io
+        env:
+          QUAY_USER: ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_USER }}
+          QUAY_TOKEN: ${{ secrets.QAUYIO_ROBOT_CLOUD_GOVERNANCE_TOKEN }}
+          QUAY_REPOSITORY: ${{ secrets.QUAY_PUBLIC_CLOUD_GOVERNANCE_REPOSITORY }}
+        run: |
+          # Reuses the existing cloud-governance repository secret rather than a
+          # separate one, so the two image paths can never drift apart.
+          ORION_REPOSITORY="${QUAY_REPOSITORY}-orion"
+          sudo docker build -t "$ORION_REPOSITORY:latest" -f Docker/orion/Dockerfile Docker/orion
+          # Pipe the token via stdin rather than -p so it is never visible as a
+          # process argument.
+          printf '%s' "$QUAY_TOKEN" | sudo docker login quay.io -u "$QUAY_USER" --password-stdin
+          sudo docker push "$ORION_REPOSITORY:latest"
+          echo 'Wait 30 sec till image will be updated in quay.io'
+          sleep 30
