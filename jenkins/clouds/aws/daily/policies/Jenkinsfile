@@ -64,7 +64,9 @@ pipeline {
                         }
                         orionSlackBindings = [string(credentialsId: 'cloud-governance-slack-api-token', variable: 'SLACK_API_TOKEN'),
                                               string(credentialsId: 'cloud-governance-slack-channel-name', variable: 'SLACK_CHANNEL_NAME')]
-                    } catch (Exception e) {
+                    } catch (org.jenkinsci.plugins.credentialsbinding.impl.CredentialNotFoundException e) {
+                        // Only a genuinely absent credential disables Orion; transient
+                        // plugin errors and build interruptions propagate and fail the job.
                         echo 'Orion Slack credentials not configured - Orion regression alerts disabled for this run'
                     }
                     for (account in accounts_list.keySet()) {
