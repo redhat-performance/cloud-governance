@@ -6,6 +6,7 @@
 Accounts:
 
 - **appeng**: mmikhail@redhat.com, matrujil@redhat.com, babak@redhat.com, hhalbfin@redhat.com
+- **appeng-ai**: matrujil@redhat.com, mmikhail@redhat.com, babak@redhat.com, hhalbfin@redhat.com
 - **fsi-partner**: mmikhail@redhat.com, avillega@redhat.com, vbelouso@redhat.com, babak@redhat.com, nnaamneh@redhat.com,
   ebattat@redhat.com, hhalbfin@redhat.com
 - **fsi-ecosystem**: mmikhail@redhat.com, avillega@redhat.com, babak@redhat.com, hhalbfin@redhat.com
