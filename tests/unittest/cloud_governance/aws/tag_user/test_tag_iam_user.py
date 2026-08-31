@@ -182,3 +182,45 @@ def test_delete_update_partial_tags_aligned_and_triggers_mail(tmp_path):
     # Project stays under Project; Budget/Environment are blank (not shifted)
     assert appended == [['partialuser', '', 'PROJECT-C', '']]
     tag_user._TagUser__trigger_mail.assert_called_once_with(user='partialuser')
+
+
+@mock_aws
+def test_delete_update_skips_when_csv_empty(tmp_path):
+    """
+    A zero-byte downloaded CSV raises pandas.errors.EmptyDataError; the sync must
+    skip through the warning path instead of crashing.
+    """
+    iam_client = boto3.client('iam')
+    iam_client.create_user(UserName='someuser', Tags=[{'Key': 'Project', 'Value': 'PROJECT-A'}])
+    empty_csv = os.path.join(tmp_path, 'empty.csv')
+    open(empty_csv, 'w').close()  # zero-byte file
+
+    tag_user, mock_gdo = __build_tag_user_with_mocked_gsheet(empty_csv)
+    tag_user.delete_update_user_from_doc()  # must not raise
+
+    mock_gdo.append_values.assert_not_called()
+    mock_gdo.delete_rows.assert_not_called()
+
+
+@mock_aws
+def test_delete_update_removes_stale_rows_in_descending_order(tmp_path):
+    """
+    Stale rows must be deleted in descending row order so that removing an earlier
+    row does not shift later rows and cause the wrong row to be deleted.
+    """
+    iam_client = boto3.client('iam')
+    iam_client.create_user(UserName='userB')  # only userB still exists in IAM
+    csv_path = os.path.join(tmp_path, 'test-account.csv')
+    with open(csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['User', 'Budget', 'Project', 'Environment'])
+        writer.writerow(['userA', 'dept-budget', 'PROJECT-A', 'TEST'])  # stale -> row 1
+        writer.writerow(['userB', 'dept-budget', 'PROJECT-A', 'TEST'])  # kept  -> row 2
+        writer.writerow(['userC', 'dept-budget', 'PROJECT-A', 'TEST'])  # stale -> row 3
+
+    tag_user, mock_gdo = __build_tag_user_with_mocked_gsheet(csv_path)
+    tag_user.delete_update_user_from_doc()
+
+    row_numbers = [call.kwargs['row_number'] for call in mock_gdo.delete_rows.call_args_list]
+    # userC (row 3) deleted before userA (row 1) -> descending order
+    assert row_numbers == [3, 1]

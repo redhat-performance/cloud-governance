@@ -251,7 +251,12 @@ class TagUser:
             logger.warning(f'Spreadsheet CSV not found: {self.file_name}. '
                            f'Skipping IAM user sync to avoid duplicate/misaligned rows.')
             return
-        iam_file = pd.read_csv(self.file_name)
+        try:
+            iam_file = pd.read_csv(self.file_name)
+        except pd.errors.EmptyDataError:
+            logger.warning(f'Spreadsheet CSV {self.file_name} is empty. '
+                           f'Skipping IAM user sync to avoid duplicate/misaligned rows.')
+            return
         iam_file.columns = [str(column).strip() for column in iam_file.columns]
         if 'User' not in iam_file.columns:
             logger.warning(f'Spreadsheet CSV {self.file_name} is missing the "User" column. '
@@ -261,12 +266,14 @@ class TagUser:
         # correct column, regardless of which/how many tags a user has.
         sheet_columns = list(iam_file.columns)
         csv_iam_users = [str(user).strip() for user in iam_file['User'].tolist()]
-        # Remove users that are no longer present in IAM
-        for index, user in enumerate(csv_iam_users):
-            if user not in iam_users:
-                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
-                                                           sheet_name=self.__sheet_name, row_number=index + 1)
-                logger.info(f'removed user {user}')
+        # Remove users no longer present in IAM. Delete in descending row order because
+        # each delete is applied immediately; deleting an earlier row would otherwise
+        # shift later rows up and cause the wrong row to be removed.
+        stale_row_indexes = [index for index, user in enumerate(csv_iam_users) if user not in iam_users]
+        for index in sorted(stale_row_indexes, reverse=True):
+            self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
+                                                       sheet_name=self.__sheet_name, row_number=index + 1)
+            logger.info(f'removed user {csv_iam_users[index]}')
         # Append new IAM users, building each row aligned to the sheet header order
         append_data = []
         for user in iam_users:
