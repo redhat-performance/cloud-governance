@@ -234,46 +234,52 @@ class TagUser:
 
     def delete_update_user_from_doc(self):
         """
-        This method removes IAM user if not in the IAM list
+        This method syncs the spreadsheet with the live IAM users: it removes rows for
+        users no longer present in IAM and appends rows for new IAM users, keeping every
+        value aligned to the sheet's actual header columns.
         @return:
         """
         self.__google_drive_operations.create_work_sheet(gsheet_id=self.__SPREADSHEET_ID, sheet_name=self.__sheet_name)
         iam_users = [user['UserName'] for user in
                      self.get_detail_resource_list(func_name=self.iam_client.list_users, input_tag='Users',
                                                    check_tag='Marker') if user['UserName'].count('-') <= 3]
-        csv_iam_users = []
-        iam_file = pd.DataFrame(columns=['User', "Project"])
-        if os.path.exists(self.file_name):
-            iam_file = pd.read_csv(self.file_name)
-            if not iam_file.empty:
-                csv_iam_users = list(iam_file['User'])
-                for index, user in enumerate(csv_iam_users):
-                    if user not in iam_users:
-                        self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
-                                                                   sheet_name=self.__sheet_name, row_number=index + 1)
-                        logger.info(f'removed user {user}')
-            else:
-                iam_file = pd.DataFrame(columns=['User'])
+        # The downloaded sheet CSV is the source of truth for both the header columns and
+        # the existing users. If it is missing (download failed / empty sheet) we must NOT
+        # sync: without the real header the appended rows would be misaligned, and with an
+        # empty baseline every IAM user would be re-appended as a duplicate.
+        if not os.path.exists(self.file_name):
+            logger.warning(f'Spreadsheet CSV not found: {self.file_name}. '
+                           f'Skipping IAM user sync to avoid duplicate/misaligned rows.')
+            return
+        iam_file = pd.read_csv(self.file_name)
+        iam_file.columns = [str(column).strip() for column in iam_file.columns]
+        if 'User' not in iam_file.columns:
+            logger.warning(f'Spreadsheet CSV {self.file_name} is missing the "User" column. '
+                           f'Skipping IAM user sync to avoid misaligned rows.')
+            return
+        # Derive the columns from the actual sheet header so appended values land under the
+        # correct column, regardless of which/how many tags a user has.
+        sheet_columns = list(iam_file.columns)
+        csv_iam_users = [str(user).strip() for user in iam_file['User'].tolist()]
+        # Remove users that are no longer present in IAM
+        for index, user in enumerate(csv_iam_users):
+            if user not in iam_users:
+                self.__google_drive_operations.delete_rows(spreadsheet_id=self.__SPREADSHEET_ID,
+                                                           sheet_name=self.__sheet_name, row_number=index + 1)
+                logger.info(f'removed user {user}')
+        # Append new IAM users, building each row aligned to the sheet header order
         append_data = []
         for user in iam_users:
-            if user.count('-') <= 3:
-                if user not in csv_iam_users:
-                    if not iam_file.empty:
-                        tags = self.__format_tags(username=user, headers=list(iam_file.columns))
-                    else:
-                        append_data.append(['User'])
-                        tags = self.__format_tags(username=user)
-                    df2 = pd.DataFrame.from_dict([tags])
-                    iam_file = pd.concat([iam_file, df2], ignore_index=True)
-                    iam_file = iam_file.fillna('')
-                    append_data.append(list(iam_file.iloc[-1]))
-                    if len(tags) < len(list(iam_file.columns)):
-                        self.__trigger_mail(user=user)
+            if user.count('-') <= 3 and user not in csv_iam_users:
+                tags = self.__format_tags(username=user, headers=sheet_columns)
+                append_data.append([tags.get(column, '') for column in sheet_columns])
+                if len(tags) < len(sheet_columns):
+                    self.__trigger_mail(user=user)
         if append_data:
             response = self.__google_drive_operations.append_values(spreadsheet_id=self.__SPREADSHEET_ID,
                                                                     sheet_name=self.__sheet_name, values=append_data)
             if response:
-                logger.info(f'Updated the users in the spreadsheet')
+                logger.info('Updated the users in the spreadsheet')
 
     def __trigger_mail(self, user: str):
         """
