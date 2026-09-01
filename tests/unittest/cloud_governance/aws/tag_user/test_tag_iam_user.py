@@ -224,3 +224,29 @@ def test_delete_update_removes_stale_rows_in_descending_order(tmp_path):
     row_numbers = [call.kwargs['row_number'] for call in mock_gdo.delete_rows.call_args_list]
     # userC (row 3) deleted before userA (row 1) -> descending order
     assert row_numbers == [3, 1]
+
+
+@mock_aws
+def test_delete_update_stores_formula_like_values_as_raw(tmp_path):
+    """
+    Tag values beginning with '=' must be stored literally (value_input_option='RAW')
+    rather than being interpreted by Google Sheets as formulas.
+    """
+    iam_client = boto3.client('iam')
+    iam_client.create_user(UserName='existinguser')
+    iam_client.create_user(UserName='formulauser', Tags=[{'Key': 'Project', 'Value': '=SUM(A1:A2)'}])
+    csv_path = os.path.join(tmp_path, 'test-account.csv')
+    with open(csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['User', 'Budget', 'Project', 'Environment'])
+        writer.writerow(['existinguser', 'dept-budget', 'PROJECT-B', 'TEST'])
+
+    tag_user, mock_gdo = __build_tag_user_with_mocked_gsheet(csv_path)
+    tag_user._TagUser__trigger_mail = MagicMock()
+    tag_user.delete_update_user_from_doc()
+
+    call = mock_gdo.append_values.call_args
+    # the '=' value is preserved literally under Project ...
+    assert call.kwargs['values'] == [['formulauser', '', '=SUM(A1:A2)', '']]
+    # ... and RAW is used so Sheets does not evaluate it as a formula
+    assert call.kwargs['value_input_option'] == 'RAW'

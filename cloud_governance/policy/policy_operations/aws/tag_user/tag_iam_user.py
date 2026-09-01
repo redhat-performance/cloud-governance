@@ -283,8 +283,11 @@ class TagUser:
                 if len(tags) < len(sheet_columns):
                     self.__trigger_mail(user=user)
         if append_data:
+            # Use RAW so tag values beginning with '=' (or '+', '-', '@') are stored as
+            # literal text instead of being interpreted as spreadsheet formulas.
             response = self.__google_drive_operations.append_values(spreadsheet_id=self.__SPREADSHEET_ID,
-                                                                    sheet_name=self.__sheet_name, values=append_data)
+                                                                    sheet_name=self.__sheet_name, values=append_data,
+                                                                    value_input_option='RAW')
             if response:
                 logger.info('Updated the users in the spreadsheet')
 
