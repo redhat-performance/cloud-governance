@@ -158,7 +158,8 @@ class TestOrionCostMetricsRollup:
         assert result['status'] == 'success'
         assert result['start_date'] == '2024-01-01'
         assert result['end_date'] == '2024-12-31'
-        assert self.mock_es_instance.post_query.call_count == 1
+        # Backfill chunks by month, so 12 months = 12 queries
+        assert self.mock_es_instance.post_query.call_count == 12
 
     def test_run_partial_date_range_falls_back_to_incremental(self):
         self.mock_es_instance.post_query.return_value = self._agg([])
@@ -167,3 +168,25 @@ class TestOrionCostMetricsRollup:
         assert 'month' in result
         assert 'start_date' not in result
         assert any('partial date range' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
+
+    def test_split_date_range_by_month_chunks_correctly(self):
+        ranges = self.rollup._OrionCostMetricsRollup__split_date_range_by_month('2024-01-01', '2024-03-31')
+        assert len(ranges) == 3
+        assert ranges[0] == ('2024-01-01', '2024-01-31')
+        assert ranges[1] == ('2024-02-01', '2024-02-29')  # leap year
+        assert ranges[2] == ('2024-03-01', '2024-03-31')
+
+    def test_split_date_range_by_month_year_boundary(self):
+        ranges = self.rollup._OrionCostMetricsRollup__split_date_range_by_month('2024-11-15', '2025-02-28')
+        assert len(ranges) == 4
+        assert ranges[0] == ('2024-11-15', '2024-11-30')
+        assert ranges[1] == ('2024-12-01', '2024-12-31')
+        assert ranges[2] == ('2025-01-01', '2025-01-31')
+        assert ranges[3] == ('2025-02-01', '2025-02-28')
+
+    def test_run_backfill_chunks_by_month(self):
+        self.mock_es_instance.post_query.return_value = self._agg([])
+        result = self.rollup.run(start_date='2024-01-01', end_date='2024-03-31')
+        assert result['status'] == 'success'
+        # post_query called once per month (3 months)
+        assert self.mock_es_instance.post_query.call_count == 3

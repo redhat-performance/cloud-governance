@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 import time
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
@@ -67,6 +67,41 @@ class OrionCostMetricsRollup:
         prev = last_month_end.fromordinal(last_month_end.toordinal() - 1)
         prev_start = prev.replace(day=1)
         return prev_start.strftime('%Y-%m-%d'), prev.strftime('%Y-%m-%d')
+
+    def __split_date_range_by_month(self, start_date: str, end_date: str):
+        """
+        Split a date range into monthly (start, end) string chunks, to avoid
+        querying ES with an unbounded date range and ensure incremental progress.
+        @param start_date: Start date string (YYYY-MM-DD)
+        @param end_date: End date string (YYYY-MM-DD)
+        @return: list of (month_start, month_end) string tuples
+        """
+        if not start_date or not end_date:
+            raise ValueError(f"Both start_date and end_date must be provided. Got: start_date={start_date}, end_date={end_date}")
+
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+        if start > end:
+            raise ValueError(f"start_date ({start_date}) must be <= end_date ({end_date})")
+
+        monthly_ranges = []
+        current_start = start
+
+        while current_start <= end:
+            if current_start.month == 12:
+                current_end = date(current_start.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                current_end = date(current_start.year, current_start.month + 1, 1) - timedelta(days=1)
+            if current_end > end:
+                current_end = end
+            monthly_ranges.append((current_start.strftime("%Y-%m-%d"), current_end.strftime("%Y-%m-%d")))
+            if current_end.month == 12:
+                current_start = date(current_end.year + 1, 1, 1)
+            else:
+                current_start = date(current_end.year, current_end.month + 1, 1)
+
+        return monthly_ranges
 
     def __build_query(self, start_date: str, end_date: str):
         """
@@ -214,10 +249,18 @@ class OrionCostMetricsRollup:
 
         if bool(start_date) != bool(end_date):
             logger.warning(f'Ignoring partial date range (start_date={start_date}, end_date={end_date}); both must be set to backfill. Falling back to incremental mode.')
+            start_date = ''
+            end_date = ''
 
         if start_date and end_date:
             logger.info(f'Backfilling Orion cost metrics rollup from {start_date} to {end_date}')
-            total_documents = self.__process_date_range(start_date, end_date)
+            monthly_ranges = self.__split_date_range_by_month(start_date, end_date)
+            total_documents = 0
+            for i, (month_start, month_end) in enumerate(monthly_ranges, 1):
+                logger.info(f'Processing month {i}/{len(monthly_ranges)}: {month_start} to {month_end}')
+                total_documents += self.__process_date_range(month_start, month_end)
+                if i < len(monthly_ranges):
+                    time.sleep(0.5)
             logger.info(f'Orion cost metrics rollup backfill complete: {total_documents} documents written')
             return {'status': 'success', 'documents_written': total_documents, 'start_date': start_date, 'end_date': end_date}
 
