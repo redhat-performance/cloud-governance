@@ -136,6 +136,38 @@ def test_not_delete_iam_cluster_role():
 
 
 @mock_aws
+def test_delete_iam_role_with_installer_instance_profile_naming():
+    """
+    Reproduces the real installer naming convention: role '<name>-worker-role' with an instance
+    profile named '<name>-worker' (NOT '<name>-worker-profile'). The buggy code derived the profile
+    name via resource_id.replace('role', 'profile') and failed with NoSuchEntity, leaving the role
+    undeleted. The role must be deleted when using the actual profile name from the API.
+    """
+    iam_resource = boto3.client('iam')
+    assume_role_policy_document = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"},
+                       "Action": "sts:AssumeRole"}]
+    })
+    tags = [{'Key': 'kubernetes.io/cluster/unittest-real-cluster', 'Value': 'owned'}]
+    iam_resource.create_role(RoleName='unittest-real-worker-role',
+                             AssumeRolePolicyDocument=assume_role_policy_document, Tags=tags)
+    # Instance profile follows the installer convention: '<name>-worker' (not '<name>-worker-profile')
+    iam_resource.create_instance_profile(InstanceProfileName='unittest-real-worker', Tags=tags)
+    iam_resource.add_role_to_instance_profile(InstanceProfileName='unittest-real-worker',
+                                              RoleName='unittest-real-worker-role')
+
+    zombie_cluster_resources = ZombieClusterResources(
+        cluster_prefix=["kubernetes.io/cluster", "sigs.k8s.io/cluster-api-provider-aws/cluster"],
+        delete=True, cluster_tag='kubernetes.io/cluster/unittest-real-cluster',
+        resource_name='zombie_cluster_role', force_delete=True)
+    zombie_cluster_resources.zombie_cluster_role()
+
+    role_names = [role['RoleName'] for role in iam_resource.list_roles()['Roles']]
+    assert 'unittest-real-worker-role' not in role_names
+
+
+@mock_aws
 @pytest.mark.skip(reason='Skipping the zombie cluster user')
 def test_delete_iam_cluster_user():
     """

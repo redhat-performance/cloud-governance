@@ -48,11 +48,14 @@ class DeleteIAMResources:
             if policy_names.get('PolicyNames'):
                 for policy in policy_names.get('PolicyNames'):
                     self.iam_client.delete_role_policy(RoleName=resource_id, PolicyName=policy)
-            instance_policies = self.iam_client.list_instance_profiles_for_role(RoleName=resource_id)
-            if instance_policies['InstanceProfiles']:
-                self.iam_client.remove_role_from_instance_profile(RoleName=resource_id,
-                                                                  InstanceProfileName=resource_id.replace('role',
-                                                                                                          'profile'))
+            # Use the actual instance profile name(s) returned by the API. The profile name does not
+            # reliably follow the role name (installer convention is role '<name>-worker-role' with
+            # instance profile '<name>-worker'), so deriving it by string replacement fails.
+            instance_profiles = self.iam_client.list_instance_profiles_for_role(
+                RoleName=resource_id).get('InstanceProfiles', [])
+            for instance_profile in instance_profiles:
+                self.iam_client.remove_role_from_instance_profile(
+                    RoleName=resource_id, InstanceProfileName=instance_profile['InstanceProfileName'])
             self.iam_client.delete_role(RoleName=resource_id)
             logger.info(f'delete_role: {resource_id}')
         except Exception as err:

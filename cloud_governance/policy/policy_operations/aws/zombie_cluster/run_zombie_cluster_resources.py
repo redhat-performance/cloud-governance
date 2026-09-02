@@ -4,12 +4,18 @@ import typeguard
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_tag_value_from_tags
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from cloud_governance.common.utils.configs import AWS_DEFAULT_GLOBAL_REGION
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.policy_operations.aws.zombie_cluster.zombie_cluster_common_methods import \
     ZombieClusterCommonMethods
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.policy.aws.zombie_cluster_resource import ZombieClusterResources
+
+# Global (non-regional) AWS resources. They appear in every region's scan, so they must only be
+# processed in a single region (AWS_DEFAULT_GLOBAL_REGION); otherwise the ClusterDeleteDays day
+# counter is incremented once per region per day (~17x too fast), causing premature deletion.
+GLOBAL_ZOMBIE_CLUSTER_RESOURCES = ('zombie_cluster_role', 'zombie_cluster_user', 'zombie_cluster_s3_bucket')
 
 
 @typeguard.typechecked
@@ -120,6 +126,10 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
     zombie_cluster_resources_ids = {}
     zombie_cluster_resources_data = {}
     for func in func_resource_list:
+        # Global resources are only processed in AWS_DEFAULT_GLOBAL_REGION so their day counter
+        # advances once per day instead of once per region per day.
+        if region != AWS_DEFAULT_GLOBAL_REGION and func.__name__ in GLOBAL_ZOMBIE_CLUSTER_RESOURCES:
+            continue
         resource_data, cluster_left_out_days = func()
         if resource_data:
             notify_data, delete_data, cluster_data = zombie_cluster_common_methods.collect_notify_cluster_data(
@@ -153,11 +163,10 @@ def zombie_cluster_resource(delete: bool = False, region: str = 'us-east-2', res
         account = environment_variables_dict.get('account', '')
         if zombie_cluster_result:
             regional_zombie_cluster_ids = []
-            global_zombie_cluster_resources = ['zombie_cluster_role', 'zombie_cluster_s3_bucket']
             for zombie_cluster_id, resources_data in zombie_cluster_resources_data.items():
-                if (len(resources_data) > 0 and resources_data[0] in global_zombie_cluster_resources) \
-                        or (len(resources_data) > 1 and resources_data[1] in global_zombie_cluster_resources):
-                    if region == 'us-east-1':
+                if (len(resources_data) > 0 and resources_data[0] in GLOBAL_ZOMBIE_CLUSTER_RESOURCES) \
+                        or (len(resources_data) > 1 and resources_data[1] in GLOBAL_ZOMBIE_CLUSTER_RESOURCES):
+                    if region == AWS_DEFAULT_GLOBAL_REGION:
                         regional_zombie_cluster_ids.append(zombie_cluster_id)
                     else:
                         continue
