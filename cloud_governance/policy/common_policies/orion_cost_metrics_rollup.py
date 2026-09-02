@@ -242,15 +242,23 @@ class OrionCostMetricsRollup:
             logger.warning('orion_cost_center not configured, skipping Orion cost metrics rollup')
             return {'status': 'skipped', 'message': 'orion_cost_center not configured'}
 
-        if not start_date:
+        # Separate direct input from configured defaults
+        # If either direct boundary is provided, both must come exclusively from direct (don't mix with config)
+        if start_date is not None or end_date is not None:
+            # At least one direct boundary provided; reject partial ranges
+            if bool(start_date) != bool(end_date):
+                logger.warning(f'Ignoring partial date range (start_date={start_date}, end_date={end_date}); both must be provided together. Falling back to incremental mode.')
+                start_date = ''
+                end_date = ''
+        else:
+            # No direct boundaries; try config defaults
             start_date = self.__custom_start_date
-        if not end_date:
             end_date = self.__custom_end_date
-
-        if bool(start_date) != bool(end_date):
-            logger.warning(f'Ignoring partial date range (start_date={start_date}, end_date={end_date}); both must be set to backfill. Falling back to incremental mode.')
-            start_date = ''
-            end_date = ''
+            # Check if config provides a partial range
+            if bool(start_date) != bool(end_date):
+                logger.warning(f'Ignoring partial date range from config (start_date={start_date}, end_date={end_date}); both must be set to backfill. Falling back to incremental mode.')
+                start_date = ''
+                end_date = ''
 
         if start_date and end_date:
             logger.info(f'Backfilling Orion cost metrics rollup from {start_date} to {end_date}')

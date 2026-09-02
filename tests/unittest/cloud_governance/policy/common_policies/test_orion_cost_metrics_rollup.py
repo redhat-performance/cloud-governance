@@ -169,6 +169,17 @@ class TestOrionCostMetricsRollup:
         assert 'start_date' not in result
         assert any('partial date range' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
 
+    def test_run_direct_start_with_configured_end_falls_back(self):
+        """If caller provides start_date but only config has end_date, treat as partial and reject"""
+        self.mock_es_instance.post_query.return_value = self._agg([])
+        rollup = self._make_rollup({'orion_cost_rollup_end_date': '2024-12-31'})
+        with patch('cloud_governance.policy.common_policies.orion_cost_metrics_rollup.logger') as mock_logger:
+            result = rollup.run(start_date='2024-01-01')
+        # Should fall back to incremental, not backfill with mixed sources
+        assert 'month' in result
+        assert 'start_date' not in result
+        assert any('partial date range' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
+
     def test_split_date_range_by_month_chunks_correctly(self):
         ranges = self.rollup._OrionCostMetricsRollup__split_date_range_by_month('2024-01-01', '2024-03-31')
         assert len(ranges) == 3
