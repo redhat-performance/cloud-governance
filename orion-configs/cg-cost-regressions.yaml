@@ -1,0 +1,61 @@
+# Orion regression-detection config for the metrics produced by
+# cloud_governance/policy/common_policies/orion_cost_metrics_rollup.py (cloud-governance-orion-cost-metrics-index).
+# One document per cost center per completed month; "account" here is the
+# cost center's synthetic id, e.g. "CC<cost_center>" - not a cloud account name.
+# Invoke once per cost center, e.g.:
+#   orion --es-server=<opensearch-url> \
+#         --benchmark-index=cloud-governance-orion-cost-metrics-index \
+#         --metadata-index=cloud-governance-orion-cost-metrics-index \
+#         --hunter-analyze \
+#         --input-vars='{"account": "CC<COST_CENTER>"}' \
+#         --config cg-cost-regressions.yaml
+tests:
+  - name: cg-cost-regressions
+    metadata:
+      account.keyword: "{{ account }}"
+
+    metrics:
+      - name: totalCostIncrease
+        metric_of_interest: total_cost
+        direction: 1
+        threshold: 20
+
+      - name: totalCostDecrease
+        metric_of_interest: total_cost
+        direction: -1
+        threshold: 20
+
+      - name: awsCostIncrease
+        metric_of_interest: aws_cost
+        direction: 1
+        threshold: 20
+
+      - name: awsCostDecrease
+        metric_of_interest: aws_cost
+        direction: -1
+        threshold: 20
+
+      - name: azureCostIncrease
+        metric_of_interest: azure_cost
+        direction: 1
+        threshold: 20
+
+      - name: azureCostDecrease
+        metric_of_interest: azure_cost
+        direction: -1
+        threshold: 20
+
+      # gcp_cost intentionally omitted: if a cloud's cost-report feed for this
+      # cost center has gone stale (flatlined), a change-point entry for it
+      # only produces noise. Add gcpCostIncrease/gcpCostDecrease back once
+      # that feed is confirmed reporting fresh data again.
+
+      - name: ibmCostIncrease
+        metric_of_interest: ibm_cost
+        direction: 1
+        threshold: 20
+
+      - name: ibmCostDecrease
+        metric_of_interest: ibm_cost
+        direction: -1
+        threshold: 20
