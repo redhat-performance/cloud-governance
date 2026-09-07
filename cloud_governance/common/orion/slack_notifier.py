@@ -1,6 +1,7 @@
 import json
 import logging
-from datetime import datetime, timezone
+import math
+from datetime import datetime, timezone, timedelta
 
 import requests
 
@@ -22,6 +23,12 @@ class OrionSlackNotifier:
     # per section's mrkdwn text.
     SLACK_MAX_BLOCKS = 50
     SLACK_MAX_SECTION_CHARS = 3000
+    # Orion's JSON output re-lists every change point in the entire historical
+    # series on every run, not just newly-detected ones. Without a recency
+    # cutoff, a change point from months ago would be re-alerted on every
+    # single daily run forever. Only surface change points recent enough to
+    # plausibly be from "what just happened", not "what Orion has ever seen".
+    RECENCY_WINDOW_DAYS = 35
 
     def __init__(self, slack_token: str, slack_channel: str):
         self.__slack_token = slack_token
@@ -54,27 +61,48 @@ class OrionSlackNotifier:
         return str(ts)
 
     @staticmethod
-    def extract_regressions(data_points: list) -> list:
+    def extract_regressions(data_points: list, reference_date: datetime = None) -> list:
         """
-        Walk the Orion JSON array and pull out change points with their
-        regressed metrics.
+        Walk the Orion JSON array and pull out recent change points with
+        their regressed metrics.
+
+        Change points older than RECENCY_WINDOW_DAYS (relative to
+        reference_date, default now) are skipped - see RECENCY_WINDOW_DAYS
+        for why. Entries whose timestamp can't be parsed are not filtered
+        out (fail open: a missed alert is worse than an extra one).
+
+        A metric's percentage_change can be NaN (0 -> 0, no real change -
+        skipped) or +/-inf (a zero baseline dividing into a nonzero value -
+        kept, but displayed without a misleading "inf%").
+        @param data_points: Orion's parsed JSON array
+        @param reference_date: reference point for the recency cutoff (for tests); defaults to now (UTC)
         """
+        if reference_date is None:
+            reference_date = datetime.now(timezone.utc)
+        cutoff = reference_date - timedelta(days=OrionSlackNotifier.RECENCY_WINDOW_DAYS)
+
         regressions = []
         for entry in data_points:
             if not entry.get('is_changepoint'):
                 continue
+            timestamp = entry.get('timestamp')
+            if isinstance(timestamp, (int, float)):
+                entry_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                if entry_date < cutoff:
+                    continue
             metrics = entry.get('metrics', {})
             changed_metrics = []
             for metric_name, metric_data in metrics.items():
                 pct = metric_data.get('percentage_change', 0)
+                if isinstance(pct, float) and math.isnan(pct):
+                    continue
                 if pct != 0:
                     changed_metrics.append({
                         'name': metric_name,
                         'value': metric_data.get('value'),
-                        'percentage_change': round(pct, 2),
+                        'percentage_change': pct if (isinstance(pct, float) and math.isinf(pct)) else round(pct, 2),
                     })
             if changed_metrics:
-                timestamp = entry.get('timestamp')
                 regressions.append({
                     'timestamp': OrionSlackNotifier._format_timestamp(timestamp) if timestamp is not None else 'unknown',
                     'account': entry.get('account', entry.get('account.keyword', 'unknown')),
@@ -96,14 +124,21 @@ class OrionSlackNotifier:
         ts = regression.get('timestamp', 'unknown')
         lines = [f"*Date:* {ts}"]
         for m in regression['metrics']:
-            direction = 'increased' if m['percentage_change'] > 0 else 'decreased'
+            pct = m['percentage_change']
+            direction = 'increased' if pct > 0 else 'decreased'
             # Orion's JSON output keys metrics as "<config_name>_<metric_of_interest>"
             # (e.g. "zombieClusterResourceCountIncrease_zombie_cluster_resource_count").
             # Config metric names are plain camelCase with no underscores, so the part
             # before the first underscore is always just the readable config name.
             display_name = m['name'].split('_', 1)[0]
+            if isinstance(pct, float) and math.isinf(pct):
+                # A zero baseline makes the percentage mathematically undefined
+                # (division by zero) - showing "inf%" would be misleading.
+                magnitude = 'from a zero baseline (new)' if pct > 0 else 'to zero'
+            else:
+                magnitude = f'by `{abs(pct):.1f}%`'
             lines.append(
-                f"*{display_name}*: {direction} by `{abs(m['percentage_change']):.1f}%` (value: {m['value']})"
+                f"*{display_name}*: {direction} {magnitude} (value: {m['value']})"
             )
 
         blocks = []
@@ -198,13 +233,14 @@ class OrionSlackNotifier:
             logger.error('Slack API error: %s', response_data.get('error', 'unknown'))
         return response_data
 
-    def notify(self, file_path: str, account: str) -> dict:
+    def notify(self, file_path: str, account: str, reference_date: datetime = None) -> dict:
         """
         End-to-end: parse Orion output, extract regressions, post to Slack.
+        @param reference_date: reference point for the recency cutoff (for tests); defaults to now (UTC)
         Returns a summary dict.
         """
         data_points = self.parse_orion_json(file_path)
-        regressions = self.extract_regressions(data_points)
+        regressions = self.extract_regressions(data_points, reference_date=reference_date)
 
         if not regressions:
             logger.info('No regressions found for account %s', account)
