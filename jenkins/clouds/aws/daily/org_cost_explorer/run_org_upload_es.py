@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import tempfile
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
@@ -164,9 +166,8 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     orion_cost_data_base = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}.csv'
     orion_cost_output_files = [f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}_{name}.json' for name in ORION_COST_TEST_NAMES]
     orion_cost_data_files = [f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}-{name}.csv' for name in ORION_COST_TEST_NAMES]
-    orion_cost_merged_file = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}-merged.json'
 
-    run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files + [orion_cost_merged_file]))
+    run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files))
 
     run_shell_cmd("echo Running Orion cost metrics rollup")
     rollup_status = run_shell_cmd(
@@ -190,14 +191,19 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
                         merged_data_points.extend(json.load(f))
 
             if merged_data_points:
-                with open(orion_cost_merged_file, 'w', encoding='utf-8') as f:
-                    json.dump(merged_data_points, f)
-                run_shell_cmd("echo Running Orion cost Slack alert handler")
-                run_shell_cmd(
-                    f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{ORION_COST_ACCOUNT}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_cost_merged_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                orion_cost_merge_dir = tempfile.mkdtemp(prefix=f'orion-cost-merge-{ORION_COST_ACCOUNT}-')
+                try:
+                    orion_cost_merged_file = os.path.join(orion_cost_merge_dir, 'orion-cost-output-merged.json')
+                    with open(orion_cost_merged_file, 'w', encoding='utf-8') as f:
+                        json.dump(merged_data_points, f)
+                    run_shell_cmd("echo Running Orion cost Slack alert handler")
+                    run_shell_cmd(
+                        f"""podman run --rm --name cloud-governance --net="host" -v "{orion_cost_merge_dir}":"{orion_cost_merge_dir}" -e account="{ORION_COST_ACCOUNT}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_cost_merged_file}" -e SLACK_API_TOKEN -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                finally:
+                    shutil.rmtree(orion_cost_merge_dir, ignore_errors=True)
             else:
                 run_shell_cmd("echo Skipping Orion cost alert - analysis produced no output")
         finally:
-            run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files + [orion_cost_merged_file]))
+            run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files))
 else:
     run_shell_cmd("echo Skipping Orion cost-regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME/ORION_COST_CENTER not configured")
