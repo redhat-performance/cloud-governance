@@ -18,6 +18,10 @@ S3_RESULTS_PATH = os.environ['S3_RESULTS_PATH']
 ATHENA_DATABASE_NAME = os.environ['ATHENA_DATABASE_NAME']
 ATHENA_TABLE_NAME = os.environ['ATHENA_TABLE_NAME']
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
+QUAY_ORION_REPOSITORY = f'{QUAY_CLOUD_GOVERNANCE_REPOSITORY}-orion'
+SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN', '')
+SLACK_CHANNEL_NAME = os.environ.get('SLACK_CHANNEL_NAME', '')
+ORION_COST_CENTER = os.environ.get('ORION_COST_CENTER', '')
 
 # Cloudability env variables
 
@@ -85,10 +89,10 @@ def run_shell_cmd(cmd: str):
     This method run the shell command
     :param cmd:
     :type cmd:
-    :return:
-    :rtype:
+    :return: the raw os.system status (0 on success)
+    :rtype: int
     """
-    os.system(cmd)
+    return os.system(cmd)
 
 
 def generate_shell_cmd(policy: str, env_variables: dict, mounted_volumes: str = ''):
@@ -134,3 +138,42 @@ cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY,
 
 run_shell_cmd(f"echo Running the {CLOUDABILITY_POLICY}")
 run_shell_cmd(cloudability_run_command)
+
+if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
+    ORION_COST_ACCOUNT = f'CC{ORION_COST_CENTER}'
+    ORION_COST_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'orion-configs', 'cg-cost-regressions.yaml')
+    ORION_COST_TEST_NAME = 'cg-cost-regressions'
+    ORION_COST_INDEX = 'cloud-governance-orion-cost-metrics-index'
+
+    es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
+    es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
+    es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
+    orion_cost_output_base = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}.json'
+    orion_cost_output_file = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}_{ORION_COST_TEST_NAME}.json'
+    orion_cost_data_base = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}.csv'
+    orion_cost_data_file = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}-{ORION_COST_TEST_NAME}.csv'
+
+    run_shell_cmd(f'rm -f "{orion_cost_output_file}" "{orion_cost_data_file}"')
+
+    run_shell_cmd("echo Running Orion cost metrics rollup")
+    rollup_status = run_shell_cmd(
+        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_cost_metrics_rollup" -e orion_cost_center="{ORION_COST_CENTER}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+
+    if rollup_status != 0:
+        run_shell_cmd("echo Skipping Orion cost analysis and alert - metrics rollup failed")
+    else:
+        try:
+            run_shell_cmd("echo Running Orion cost regression analysis")
+            run_shell_cmd(
+                f"""podman run --rm --name orion --net="host" -v "{ORION_COST_CONFIG_PATH}":"{ORION_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{ORION_COST_INDEX}" --metadata-index="{ORION_COST_INDEX}" --hunter-analyze --input-vars='{{"account": "{ORION_COST_ACCOUNT}"}}' --config "{ORION_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_cost_output_base}" --save-data-path "{orion_cost_data_base}" """)
+
+            if os.path.exists(orion_cost_output_file):
+                run_shell_cmd("echo Running Orion cost Slack alert handler")
+                run_shell_cmd(
+                    f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{ORION_COST_ACCOUNT}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_cost_output_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+            else:
+                run_shell_cmd("echo Skipping Orion cost alert - analysis produced no output")
+        finally:
+            run_shell_cmd(f'rm -f "{orion_cost_output_file}" "{orion_cost_data_file}"')
+else:
+    run_shell_cmd("echo Skipping Orion cost-regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME/ORION_COST_CENTER not configured")
