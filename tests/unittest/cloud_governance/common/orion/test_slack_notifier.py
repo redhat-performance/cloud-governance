@@ -1,6 +1,8 @@
 import json
+import math
 import os
 import tempfile
+from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
 
 import requests
@@ -77,8 +79,12 @@ class TestOrionSlackNotifier:
         finally:
             os.unlink(path)
 
+    # Reference point for tests using SAMPLE_ORION_OUTPUT (2026-07-01/15/20),
+    # comfortably inside the 35-day recency window relative to those dates.
+    SAMPLE_REFERENCE_DATE = datetime(2026, 7, 25, tzinfo=timezone.utc)
+
     def test_extract_regressions_finds_changepoints_with_nonzero_change(self):
-        regressions = OrionSlackNotifier.extract_regressions(self.SAMPLE_ORION_OUTPUT)
+        regressions = OrionSlackNotifier.extract_regressions(self.SAMPLE_ORION_OUTPUT, reference_date=self.SAMPLE_REFERENCE_DATE)
         assert len(regressions) == 2
 
         first = regressions[0]
@@ -104,8 +110,13 @@ class TestOrionSlackNotifier:
                 }
             }
         ]
-        regressions = OrionSlackNotifier.extract_regressions(data)
+        regressions = OrionSlackNotifier.extract_regressions(data, reference_date=self.SAMPLE_REFERENCE_DATE)
         assert regressions[0]['timestamp'] == '2026-07-15'
+
+    def test_format_timestamp_falls_back_on_malformed_numeric_value(self):
+        """A NaN/inf/out-of-range timestamp must render as a raw fallback, not raise"""
+        for bad_timestamp in (math.nan, math.inf, 99999999999999999999999):
+            assert OrionSlackNotifier._format_timestamp(bad_timestamp) == str(bad_timestamp)
 
     def test_extract_regressions_skips_non_changepoints(self):
         data = [
@@ -129,10 +140,87 @@ class TestOrionSlackNotifier:
                 }
             }
         ]
-        assert OrionSlackNotifier.extract_regressions(data) == []
+        assert OrionSlackNotifier.extract_regressions(data, reference_date=self.SAMPLE_REFERENCE_DATE) == []
 
     def test_extract_regressions_handles_empty_list(self):
         assert OrionSlackNotifier.extract_regressions([]) == []
+
+    def test_extract_regressions_skips_change_points_older_than_recency_window(self):
+        """Orion re-lists every historical change point on every run; only recent ones should alert"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)  # cutoff = 2026-06-27
+        data = [
+            {
+                'timestamp': 1767225600,  # 2026-01-01, far outside the 35-day window
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        assert OrionSlackNotifier.extract_regressions(data, reference_date=reference_date) == []
+
+    def test_extract_regressions_keeps_change_points_within_recency_window(self):
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)  # cutoff = 2026-06-27
+        data = [
+            {
+                'timestamp': 1784073600,  # 2026-07-15, 17 days before reference_date
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
+        assert len(regressions) == 1
+
+    def test_extract_regressions_fails_open_on_unparseable_timestamp(self):
+        """A change point with a non-numeric timestamp must not be silently dropped"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        data = [
+            {
+                'timestamp': 'not-a-timestamp',
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
+        assert len(regressions) == 1
+
+    def test_extract_regressions_fails_open_on_malformed_numeric_timestamp(self):
+        """A NaN/inf/out-of-range numeric timestamp must not crash the whole batch or drop the entry"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        for bad_timestamp in (math.nan, math.inf, 99999999999999999999999):
+            data = [
+                {
+                    'timestamp': bad_timestamp,
+                    'is_changepoint': True,
+                    'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+                }
+            ]
+            regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
+            assert len(regressions) == 1
+
+    def test_extract_regressions_skips_nan_percentage_change(self):
+        """A NaN percentage_change (0 -> 0) is not a real change and must not be surfaced"""
+        data = [
+            {
+                'timestamp': 1784073600,
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 0, 'percentage_change': math.nan, 'labels': []}}
+            }
+        ]
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        assert OrionSlackNotifier.extract_regressions(data, reference_date=reference_date) == []
+
+    def test_extract_regressions_keeps_inf_percentage_change(self):
+        """A zero-baseline divide (+/-inf) is a real change and must be kept, not dropped"""
+        data = [
+            {
+                'timestamp': 1784073600,
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 100, 'percentage_change': math.inf, 'labels': []}}
+            }
+        ]
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
+        assert len(regressions) == 1
+        assert math.isinf(regressions[0]['metrics'][0]['percentage_change'])
 
     def test_format_slack_blocks_produces_header_and_sections(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
@@ -178,6 +266,24 @@ class TestOrionSlackNotifier:
         assert '60.0%' in metric_block['text']['text']
         assert 'ec2StopCountDecrease' in metric_block['text']['text']
 
+    def test_format_slack_blocks_handles_zero_baseline_inf_change(self):
+        """A zero-baseline (+inf) change must render a readable message, not 'inf%'"""
+        notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
+        regressions = [
+            {
+                'timestamp': '2026-07-15',
+                'account': 'PERFSCALE',
+                'metrics': [
+                    {'name': 'gcpCostIncrease_gcp_cost', 'value': 500, 'percentage_change': math.inf},
+                ]
+            }
+        ]
+        blocks = notifier.format_slack_blocks('PERFSCALE', regressions)
+        text = blocks[3]['text']['text']
+        assert 'inf%' not in text.lower()
+        assert 'increased' in text
+        assert 'zero baseline' in text.lower()
+
     def test_format_slack_blocks_returns_empty_for_no_regressions(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
         assert notifier.format_slack_blocks('PERFSCALE', []) == []
@@ -215,7 +321,7 @@ class TestOrionSlackNotifier:
         path = self._write_json_file(self.SAMPLE_ORION_OUTPUT)
         try:
             notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
-            result = notifier.notify(file_path=path, account='PERFSCALE')
+            result = notifier.notify(file_path=path, account='PERFSCALE', reference_date=self.SAMPLE_REFERENCE_DATE)
 
             assert result['status'] == 'notified'
             assert result['regressions_count'] == 2
@@ -252,7 +358,7 @@ class TestOrionSlackNotifier:
         path = self._write_json_file(self.SAMPLE_ORION_OUTPUT)
         try:
             notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='bad-channel')
-            result = notifier.notify(file_path=path, account='PERFSCALE')
+            result = notifier.notify(file_path=path, account='PERFSCALE', reference_date=self.SAMPLE_REFERENCE_DATE)
 
             assert result['status'] == 'slack_error'
             assert result['slack_ok'] is False
