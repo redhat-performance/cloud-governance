@@ -1,3 +1,4 @@
+import json
 import os
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
@@ -142,18 +143,30 @@ run_shell_cmd(cloudability_run_command)
 if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     ORION_COST_ACCOUNT = f'CC{ORION_COST_CENTER}'
     ORION_COST_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'orion-configs', 'cg-cost-regressions.yaml')
-    ORION_COST_TEST_NAME = 'cg-cost-regressions'
+    # Must stay in sync with the top-level test names in cg-cost-regressions.yaml.
+    # One metric per test block there (not multiple metrics sharing one block):
+    # Orion only resolves the "value" field correctly for the first metric in a
+    # given test block, silently nulling every metric after it - confirmed live
+    # against real data. So one Orion invocation now produces one output/data
+    # file pair per test name, which are merged below into a single alert.
+    ORION_COST_TEST_NAMES = [
+        'totalCostIncrease', 'totalCostDecrease',
+        'awsCostIncrease', 'awsCostDecrease',
+        'azureCostIncrease', 'azureCostDecrease',
+        'ibmCostIncrease', 'ibmCostDecrease',
+    ]
     ORION_COST_INDEX = 'cloud-governance-orion-cost-metrics-index'
 
     es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
     es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
     es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
     orion_cost_output_base = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}.json'
-    orion_cost_output_file = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}_{ORION_COST_TEST_NAME}.json'
     orion_cost_data_base = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}.csv'
-    orion_cost_data_file = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}-{ORION_COST_TEST_NAME}.csv'
+    orion_cost_output_files = [f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}_{name}.json' for name in ORION_COST_TEST_NAMES]
+    orion_cost_data_files = [f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}-{name}.csv' for name in ORION_COST_TEST_NAMES]
+    orion_cost_merged_file = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}-merged.json'
 
-    run_shell_cmd(f'rm -f "{orion_cost_output_file}" "{orion_cost_data_file}"')
+    run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files + [orion_cost_merged_file]))
 
     run_shell_cmd("echo Running Orion cost metrics rollup")
     rollup_status = run_shell_cmd(
@@ -164,16 +177,27 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     else:
         try:
             run_shell_cmd("echo Running Orion cost regression analysis")
+            # Orion exits non-zero (2) when it detects regressions, so its exit
+            # status cannot gate the next step; presence of output files, which
+            # are written only when analysis completes, is used instead.
             run_shell_cmd(
                 f"""podman run --rm --name orion --net="host" -v "{ORION_COST_CONFIG_PATH}":"{ORION_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{ORION_COST_INDEX}" --metadata-index="{ORION_COST_INDEX}" --hunter-analyze --input-vars='{{"account": "{ORION_COST_ACCOUNT}"}}' --config "{ORION_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_cost_output_base}" --save-data-path "{orion_cost_data_base}" """)
 
-            if os.path.exists(orion_cost_output_file):
+            merged_data_points = []
+            for output_file in orion_cost_output_files:
+                if os.path.exists(output_file):
+                    with open(output_file, 'r', encoding='utf-8') as f:
+                        merged_data_points.extend(json.load(f))
+
+            if merged_data_points:
+                with open(orion_cost_merged_file, 'w', encoding='utf-8') as f:
+                    json.dump(merged_data_points, f)
                 run_shell_cmd("echo Running Orion cost Slack alert handler")
                 run_shell_cmd(
-                    f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{ORION_COST_ACCOUNT}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_cost_output_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                    f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{ORION_COST_ACCOUNT}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_cost_merged_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
             else:
                 run_shell_cmd("echo Skipping Orion cost alert - analysis produced no output")
         finally:
-            run_shell_cmd(f'rm -f "{orion_cost_output_file}" "{orion_cost_data_file}"')
+            run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files + [orion_cost_merged_file]))
 else:
     run_shell_cmd("echo Skipping Orion cost-regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME/ORION_COST_CENTER not configured")
