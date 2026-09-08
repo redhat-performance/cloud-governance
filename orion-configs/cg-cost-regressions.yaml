@@ -2,6 +2,13 @@
 # cloud_governance/policy/common_policies/orion_cost_metrics_rollup.py (cloud-governance-orion-cost-metrics-index).
 # One document per cost center per completed month; "account" here is the
 # cost center's synthetic id, e.g. "CC<cost_center>" - not a cloud account name.
+#
+# Each metric gets its own top-level test entry, not multiple metrics under
+# one shared test: confirmed live (against real backfilled data) that Orion
+# only resolves the "value" field correctly for the first metric in a given
+# test block - every metric after the first comes back null, even though it
+# is still analyzed. One metric per test avoids this entirely.
+#
 # Invoke once per cost center, e.g.:
 #   orion --es-server=<opensearch-url> \
 #         --benchmark-index=cloud-governance-orion-cost-metrics-index \
@@ -10,51 +17,78 @@
 #         --input-vars='{"account": "CC<COST_CENTER>"}' \
 #         --config cg-cost-regressions.yaml
 tests:
-  - name: cg-cost-regressions
+  - name: totalCostIncrease
     metadata:
       account.keyword: "{{ account }}"
-
     metrics:
       - name: totalCostIncrease
         metric_of_interest: total_cost
         direction: 1
         threshold: 20
 
+  - name: totalCostDecrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: totalCostDecrease
         metric_of_interest: total_cost
         direction: -1
         threshold: 20
 
+  - name: awsCostIncrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: awsCostIncrease
         metric_of_interest: aws_cost
         direction: 1
         threshold: 20
 
+  - name: awsCostDecrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: awsCostDecrease
         metric_of_interest: aws_cost
         direction: -1
         threshold: 20
 
+  - name: azureCostIncrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: azureCostIncrease
         metric_of_interest: azure_cost
         direction: 1
         threshold: 20
 
+  - name: azureCostDecrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: azureCostDecrease
         metric_of_interest: azure_cost
         direction: -1
         threshold: 20
 
-      # gcp_cost intentionally omitted: if a cloud's cost-report feed for this
-      # cost center has gone stale (flatlined), a change-point entry for it
-      # only produces noise. Add gcpCostIncrease/gcpCostDecrease back once
-      # that feed is confirmed reporting fresh data again.
+  # gcp_cost intentionally omitted: if a cloud's cost-report feed for this
+  # cost center has gone stale (flatlined), a change-point entry for it
+  # only produces noise. Add gcpCostIncrease/gcpCostDecrease back once
+  # that feed is confirmed reporting fresh data again.
 
+  - name: ibmCostIncrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: ibmCostIncrease
         metric_of_interest: ibm_cost
         direction: 1
         threshold: 20
 
+  - name: ibmCostDecrease
+    metadata:
+      account.keyword: "{{ account }}"
+    metrics:
       - name: ibmCostDecrease
         metric_of_interest: ibm_cost
         direction: -1
