@@ -113,6 +113,11 @@ class TestOrionSlackNotifier:
         regressions = OrionSlackNotifier.extract_regressions(data, reference_date=self.SAMPLE_REFERENCE_DATE)
         assert regressions[0]['timestamp'] == '2026-07-15'
 
+    def test_format_timestamp_falls_back_on_malformed_numeric_value(self):
+        """A NaN/inf/out-of-range timestamp must render as a raw fallback, not raise"""
+        for bad_timestamp in (math.nan, math.inf, 99999999999999999999999):
+            assert OrionSlackNotifier._format_timestamp(bad_timestamp) == str(bad_timestamp)
+
     def test_extract_regressions_skips_non_changepoints(self):
         data = [
             {
@@ -176,6 +181,20 @@ class TestOrionSlackNotifier:
         ]
         regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
         assert len(regressions) == 1
+
+    def test_extract_regressions_fails_open_on_malformed_numeric_timestamp(self):
+        """A NaN/inf/out-of-range numeric timestamp must not crash the whole batch or drop the entry"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        for bad_timestamp in (math.nan, math.inf, 99999999999999999999999):
+            data = [
+                {
+                    'timestamp': bad_timestamp,
+                    'is_changepoint': True,
+                    'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+                }
+            ]
+            regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
+            assert len(regressions) == 1
 
     def test_extract_regressions_skips_nan_percentage_change(self):
         """A NaN percentage_change (0 -> 0) is not a real change and must not be surfaced"""

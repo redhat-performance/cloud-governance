@@ -55,9 +55,14 @@ class OrionSlackNotifier:
         """
         Orion serializes the timestamp field as Unix epoch seconds in its
         JSON output, not ISO8601 - convert to a readable date for display.
+        A numeric-but-malformed value (NaN, +/-inf, out-of-range) fails the
+        conversion; fall back to the raw value rather than raising.
         """
         if isinstance(ts, (int, float)):
-            return datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%Y-%m-%d')
+            try:
+                return datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%Y-%m-%d')
+            except (ValueError, OverflowError, OSError):
+                return str(ts)
         return str(ts)
 
     @staticmethod
@@ -68,8 +73,9 @@ class OrionSlackNotifier:
 
         Change points older than RECENCY_WINDOW_DAYS (relative to
         reference_date, default now) are skipped - see RECENCY_WINDOW_DAYS
-        for why. Entries whose timestamp can't be parsed are not filtered
-        out (fail open: a missed alert is worse than an extra one).
+        for why. Entries whose timestamp can't be parsed - missing, wrong
+        type, or numeric-but-malformed (NaN/+-inf/out-of-range) - are not
+        filtered out (fail open: a missed alert is worse than an extra one).
 
         A metric's percentage_change can be NaN (0 -> 0, no real change -
         skipped) or +/-inf (a zero baseline dividing into a nonzero value -
@@ -87,8 +93,11 @@ class OrionSlackNotifier:
                 continue
             timestamp = entry.get('timestamp')
             if isinstance(timestamp, (int, float)):
-                entry_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-                if entry_date < cutoff:
+                try:
+                    entry_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                except (ValueError, OverflowError, OSError):
+                    entry_date = None
+                if entry_date is not None and entry_date < cutoff:
                     continue
             metrics = entry.get('metrics', {})
             changed_metrics = []
