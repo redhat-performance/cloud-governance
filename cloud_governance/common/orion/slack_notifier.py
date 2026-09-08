@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import re
 from datetime import datetime, timezone, timedelta
 
 import requests
@@ -29,6 +30,9 @@ class OrionSlackNotifier:
     # single daily run forever. Only surface change points recent enough to
     # plausibly be from "what just happened", not "what Orion has ever seen".
     RECENCY_WINDOW_DAYS = 35
+    # Known cloud/service abbreviations that should stay all-caps when a
+    # config metric name (e.g. "awsCostIncrease") is humanized for display.
+    ACRONYMS = {'aws': 'AWS', 'ibm': 'IBM', 'gcp': 'GCP', 'ec2': 'EC2', 's3': 'S3'}
 
     def __init__(self, slack_token: str, slack_channel: str):
         self.__slack_token = slack_token
@@ -124,6 +128,53 @@ class OrionSlackNotifier:
         """Build a single mrkdwn section block."""
         return {'type': 'section', 'text': {'type': 'mrkdwn', 'text': text}}
 
+    @staticmethod
+    def _humanize_metric_name(name: str) -> str:
+        """
+        Turn a config metric name (e.g. "awsCostIncrease" or
+        "zombieClusterResourceCountIncrease") into a readable label
+        ("AWS Cost", "Zombie Cluster Resource Count") for display.
+        """
+        base = re.sub(r'(Increase|Decrease)$', '', name)
+        spaced = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', ' ', base)
+        words = spaced.split()
+        return ' '.join(OrionSlackNotifier.ACRONYMS.get(w.lower(), w.capitalize()) for w in words)
+
+    @staticmethod
+    def _estimate_baseline(value, pct):
+        """
+        Best-effort "before" level implied by the current value and
+        percentage_change (value = baseline * (1 + pct/100)). None if it
+        can't be computed (missing value, or an exact -100% change where
+        the baseline is mathematically undefined from these two numbers
+        alone).
+        """
+        if value is None:
+            return None
+        denominator = 1 + pct / 100
+        if denominator == 0:
+            return None
+        return value / denominator
+
+    @staticmethod
+    def _format_metric_line(display_name: str, pct, value) -> str:
+        """
+        Describe one metric's change point in terms of the shift it
+        represents (before -> after), not just a bare percentage - a lasting
+        step to a new level is the whole point of change-point detection,
+        as opposed to a single noisy data point.
+        """
+        direction = 'increased' if pct > 0 else 'decreased'
+        if isinstance(pct, float) and math.isinf(pct):
+            # A zero baseline makes the percentage mathematically undefined
+            # (division by zero) - showing "inf%" would be misleading.
+            detail = 'increased from a zero baseline (new)' if pct > 0 else 'decreased to zero'
+            return f"*{display_name}*: {detail}"
+        baseline = OrionSlackNotifier._estimate_baseline(value, pct)
+        if baseline is None or value is None:
+            return f"*{display_name}*: {direction} by `{abs(pct):.1f}%`"
+        return f"*{display_name}*: {direction} from ~{round(baseline):,} to {value:,} ({pct:+.1f}%, sustained)"
+
     def _regression_section_blocks(self, regression: dict) -> list:
         """
         Build the section block(s) for one regression, splitting the text
@@ -133,22 +184,12 @@ class OrionSlackNotifier:
         ts = regression.get('timestamp', 'unknown')
         lines = [f"*Date:* {ts}"]
         for m in regression['metrics']:
-            pct = m['percentage_change']
-            direction = 'increased' if pct > 0 else 'decreased'
             # Orion's JSON output keys metrics as "<config_name>_<metric_of_interest>"
             # (e.g. "zombieClusterResourceCountIncrease_zombie_cluster_resource_count").
             # Config metric names are plain camelCase with no underscores, so the part
             # before the first underscore is always just the readable config name.
-            display_name = m['name'].split('_', 1)[0]
-            if isinstance(pct, float) and math.isinf(pct):
-                # A zero baseline makes the percentage mathematically undefined
-                # (division by zero) - showing "inf%" would be misleading.
-                magnitude = 'from a zero baseline (new)' if pct > 0 else 'to zero'
-            else:
-                magnitude = f'by `{abs(pct):.1f}%`'
-            lines.append(
-                f"*{display_name}*: {direction} {magnitude} (value: {m['value']})"
-            )
+            display_name = self._humanize_metric_name(m['name'].split('_', 1)[0])
+            lines.append(self._format_metric_line(display_name, m['percentage_change'], m['value']))
 
         blocks = []
         current, current_len = [], 0

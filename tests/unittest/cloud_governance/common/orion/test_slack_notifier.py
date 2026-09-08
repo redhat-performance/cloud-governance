@@ -243,10 +243,14 @@ class TestOrionSlackNotifier:
         assert blocks[3]['type'] == 'section'
         assert '2026-07-15' in blocks[3]['text']['text']
         assert 'increased' in blocks[3]['text']['text']
-        assert '150.0%' in blocks[3]['text']['text']
-        # Only the readable config name should show, not the raw composite key
-        assert 'zombieClusterResourceCountIncrease' in blocks[3]['text']['text']
-        assert 'zombieClusterResourceCountIncrease_zombie_cluster_resource_count' not in blocks[3]['text']['text']
+        assert '+150.0%' in blocks[3]['text']['text']
+        assert 'sustained' in blocks[3]['text']['text']
+        # Before/after levels implied by value=25, percentage_change=150.0 (baseline = 25 / 2.5 = 10)
+        assert '~10' in blocks[3]['text']['text']
+        assert '25' in blocks[3]['text']['text']
+        # A humanized, readable name should show, not the raw camelCase/composite key
+        assert 'Zombie Cluster Resource Count' in blocks[3]['text']['text']
+        assert 'zombieClusterResourceCountIncrease' not in blocks[3]['text']['text']
 
     def test_format_slack_blocks_shows_decrease(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
@@ -263,8 +267,10 @@ class TestOrionSlackNotifier:
 
         metric_block = blocks[3]
         assert 'decreased' in metric_block['text']['text']
-        assert '60.0%' in metric_block['text']['text']
-        assert 'ec2StopCountDecrease' in metric_block['text']['text']
+        assert '-60.0%' in metric_block['text']['text']
+        # Before/after levels implied by value=2, percentage_change=-60.0 (baseline = 2 / 0.4 = 5)
+        assert '~5' in metric_block['text']['text']
+        assert 'EC2 Stop Count' in metric_block['text']['text']
 
     def test_format_slack_blocks_handles_zero_baseline_inf_change(self):
         """A zero-baseline (+inf) change must render a readable message, not 'inf%'"""
@@ -283,6 +289,44 @@ class TestOrionSlackNotifier:
         assert 'inf%' not in text.lower()
         assert 'increased' in text
         assert 'zero baseline' in text.lower()
+
+    def test_humanize_metric_name_strips_direction_suffix_and_splits_camel_case(self):
+        assert OrionSlackNotifier._humanize_metric_name('totalCostIncrease') == 'Total Cost'
+        assert OrionSlackNotifier._humanize_metric_name('totalCostDecrease') == 'Total Cost'
+        assert OrionSlackNotifier._humanize_metric_name('zombieClusterResourceCountIncrease') == 'Zombie Cluster Resource Count'
+
+    def test_humanize_metric_name_uppercases_known_acronyms(self):
+        assert OrionSlackNotifier._humanize_metric_name('awsCostIncrease') == 'AWS Cost'
+        assert OrionSlackNotifier._humanize_metric_name('ibmCostDecrease') == 'IBM Cost'
+        assert OrionSlackNotifier._humanize_metric_name('ec2StopCountIncrease') == 'EC2 Stop Count'
+        assert OrionSlackNotifier._humanize_metric_name('s3InactiveCountIncrease') == 'S3 Inactive Count'
+
+    def test_estimate_baseline_for_increase_and_decrease(self):
+        # value = baseline * (1 + pct/100)
+        assert OrionSlackNotifier._estimate_baseline(223828, 74.46999013381509) == 223828 / 1.7446999013381509
+        assert OrionSlackNotifier._estimate_baseline(2, -60.0) == 5.0
+
+    def test_estimate_baseline_returns_none_when_undefined(self):
+        assert OrionSlackNotifier._estimate_baseline(None, 50.0) is None
+        # An exact -100% change makes baseline = value / 0, undefined from these two numbers alone
+        assert OrionSlackNotifier._estimate_baseline(0, -100.0) is None
+
+    def test_format_metric_line_shows_before_after_shift(self):
+        pct, value = 74.46999013381509, 223828
+        expected_baseline = round(value / (1 + pct / 100))
+        line = OrionSlackNotifier._format_metric_line('Total Cost', pct, value)
+        assert 'increased' in line
+        assert '+74.5%' in line
+        assert 'sustained' in line
+        assert '223,828' in line
+        assert f'~{expected_baseline:,}' in line
+
+    def test_format_metric_line_falls_back_when_baseline_undefined(self):
+        """An exact -100% change (baseline undefined) must still render, without a fabricated baseline"""
+        line = OrionSlackNotifier._format_metric_line('Total Cost', -100.0, 0)
+        assert 'decreased' in line
+        assert '100.0%' in line
+        assert '~' not in line
 
     def test_format_slack_blocks_returns_empty_for_no_regressions(self):
         notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='test-channel')
