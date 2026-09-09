@@ -51,7 +51,24 @@ pipeline {
         }
         stage('Run the AWS Cost Reports') {
             steps {
-                sh 'python3 jenkins/clouds/aws/daily/org_cost_explorer/run_org_upload_es.py'
+                script {
+                    def orionCostBindings = []
+                    try {
+                        withCredentials([string(credentialsId: 'cloud-governance-slack-api-token', variable: 'SLACK_API_TOKEN'),
+                                         string(credentialsId: 'cloud-governance-slack-channel-name', variable: 'SLACK_CHANNEL_NAME'),
+                                         string(credentialsId: 'cloud-governance-orion-cost-center', variable: 'ORION_COST_CENTER')]) {
+                            // no-op: only checking that the credentials resolve
+                        }
+                        orionCostBindings = [string(credentialsId: 'cloud-governance-slack-api-token', variable: 'SLACK_API_TOKEN'),
+                                             string(credentialsId: 'cloud-governance-slack-channel-name', variable: 'SLACK_CHANNEL_NAME'),
+                                             string(credentialsId: 'cloud-governance-orion-cost-center', variable: 'ORION_COST_CENTER')]
+                    } catch (org.jenkinsci.plugins.credentialsbinding.impl.CredentialNotFoundException e) {
+                        echo 'Orion cost-regression credentials not configured - Orion cost-regression alerts disabled for this run'
+                    }
+                    withCredentials(orionCostBindings) {
+                        sh 'python3 jenkins/clouds/aws/daily/org_cost_explorer/run_org_upload_es.py'
+                    }
+                }
             }
         }
         stage('Finalize Cleanup') {
