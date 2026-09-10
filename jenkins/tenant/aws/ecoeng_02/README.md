@@ -1,7 +1,6 @@
 ### ecoeng_02 - dry_run=no
 
-**POLICIES_IN_ACTION
-** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles", "zombie_cluster_resource"]'
+**POLICIES_IN_ACTION** = '["unattached_volume", "ip_unattached", "zombie_snapshots", "unused_nat_gateway", "s3_inactive", "empty_roles"]'
 
 Accounts:
 
