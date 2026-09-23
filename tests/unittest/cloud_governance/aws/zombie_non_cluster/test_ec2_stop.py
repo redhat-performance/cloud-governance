@@ -1,9 +1,11 @@
 import os
 from operator import le
+from unittest.mock import MagicMock
 
 import boto3
 from moto import mock_aws
 
+from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws.ec2_stop import EC2Stop
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
@@ -48,3 +50,40 @@ def test_ec2_stop_not_delete():
     ec2_stop._EC2Stop__fetch_stop_instance(sign=le, instance_days=1, delete_instance_days=0)
     instances = ec2_client.describe_instances()['Reservations']
     assert len(instances) == 1
+
+
+@mock_aws
+def test_trigger_mail_routes_to_email_tag_when_valid():
+    environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
+    ec2_stop = EC2Stop()
+    ec2_stop._mail = MagicMock()
+    ec2_stop._ldap = MagicMock()
+    ec2_stop._ldap.get_user_details.return_value = {'displayName': 'John Doe', 'managerId': 'jmanager'}
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Email', 'Value': 'team-dl@redhat.com'},
+        {'Key': 'Name', 'Value': 'test-instance'},
+    ]
+    ec2_stop._EC2Stop__trigger_mail(tags=tags, stopped_time='2026-01-01', resource_id='i-123', days=20,
+                                    instance_id='i-123', message_type='notification')
+    _, kwargs = ec2_stop._mail.send_email_postfix.call_args
+    assert kwargs['to'] == 'team-dl@redhat.com'
+    ec2_stop._ldap.get_user_details.assert_called_with(user_name='jdoe')
+
+
+@mock_aws
+def test_trigger_mail_falls_back_to_user_when_email_tag_missing():
+    environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
+    ec2_stop = EC2Stop()
+    ec2_stop._mail = MagicMock()
+    ec2_stop._ldap = MagicMock()
+    ec2_stop._ldap.get_user_details.return_value = {'displayName': 'John Doe', 'managerId': 'jmanager'}
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Name', 'Value': 'test-instance'},
+    ]
+    ec2_stop._EC2Stop__trigger_mail(tags=tags, stopped_time='2026-01-01', resource_id='i-123', days=20,
+                                    instance_id='i-123', message_type='notification')
+    _, kwargs = ec2_stop._mail.send_email_postfix.call_args
+    assert kwargs['to'] == 'jdoe'
+    ec2_stop._ldap.get_user_details.assert_called_with(user_name='jdoe')

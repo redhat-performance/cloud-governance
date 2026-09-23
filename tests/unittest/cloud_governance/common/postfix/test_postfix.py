@@ -55,3 +55,22 @@ def test_prettify_cc_with_to():
     postfix = Postfix()
     response = postfix.prettify_cc(cc=["test@redhat.com", "test1"], to="test1, test")
     assert not response
+
+
+def test_prettify_to_rejects_domain_substring_bypass():
+    """
+    A value that merely contains '@redhat.com' as a substring (not as its actual
+    domain suffix) must not be mistaken for an already-complete address.
+    """
+    postfix = Postfix()
+    response = postfix.prettify_to(to="victim@redhat.com.evil.com")
+    assert response == "victim@redhat.com.evil.com@redhat.com"
+
+
+def test_prettify_cc_rejects_domain_substring_bypass():
+    """
+    Same domain-substring-bypass guard for cc
+    """
+    postfix = Postfix()
+    response = postfix.prettify_cc(cc=["victim@redhat.com.evil.com"])
+    assert response == "victim@redhat.com.evil.com@redhat.com"

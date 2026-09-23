@@ -88,7 +88,7 @@ class Postfix:
         if isinstance(to, str):
             to = self.split_emails(email_str=to)
         if isinstance(to, list):
-            return ','.join([item if '@redhat.com' in item else f'{item}@redhat.com' for item in to])
+            return ','.join([item if item.lower().endswith('@redhat.com') else f'{item}@redhat.com' for item in to])
         return to
 
     def prettify_cc(self, cc: Union[str, list], to: str = ''):
@@ -103,7 +103,7 @@ class Postfix:
         """
         if isinstance(cc, str):
             cc = self.split_emails(email_str=cc)
-        cc_unique_values = [cc_user if '@redhat.com' in cc_user else f'{cc_user}@redhat.com' for cc_user in cc]
+        cc_unique_values = [cc_user if cc_user.lower().endswith('@redhat.com') else f'{cc_user}@redhat.com' for cc_user in cc]
         to = self.prettify_to(to=to).split(',')
         return ','.join(list(set(cc_unique_values) - set(to)))
 

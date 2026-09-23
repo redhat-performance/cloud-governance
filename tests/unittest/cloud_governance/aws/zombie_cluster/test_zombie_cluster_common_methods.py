@@ -138,3 +138,38 @@ def test_get_tags_of_zombie_resources_tag_update_error_logs(caplog):
             zombies={'i-12345': 'test-cluster'}, aws_service='ec2')
     assert result == []
     assert 'resource tag update error for i-12345' in caplog.text
+
+
+def test_trigger_mail_routes_to_email_tag_when_valid():
+    environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
+    zcm = _make_instance()
+    zcm._mail = MagicMock()
+    zcm._ldap = MagicMock()
+    zcm._ldap.get_user_details.return_value = {'displayName': 'John Doe', 'managerId': 'jmanager'}
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Email', 'Value': 'team-dl@redhat.com'},
+        {'Key': 'Name', 'Value': 'test-cluster'},
+    ]
+    zcm.trigger_mail(tags=tags, resource_id='test-cluster', days=4, resources=['i-123'],
+                     message_type='notification')
+    _, kwargs = zcm._mail.send_email_postfix.call_args
+    assert kwargs['to'] == 'team-dl@redhat.com'
+    zcm._ldap.get_user_details.assert_called_with(user_name='jdoe')
+
+
+def test_trigger_mail_falls_back_to_user_when_email_tag_missing():
+    environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
+    zcm = _make_instance()
+    zcm._mail = MagicMock()
+    zcm._ldap = MagicMock()
+    zcm._ldap.get_user_details.return_value = {'displayName': 'John Doe', 'managerId': 'jmanager'}
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Name', 'Value': 'test-cluster'},
+    ]
+    zcm.trigger_mail(tags=tags, resource_id='test-cluster', days=4, resources=['i-123'],
+                     message_type='notification')
+    _, kwargs = zcm._mail.send_email_postfix.call_args
+    assert kwargs['to'] == 'jdoe'
+    zcm._ldap.get_user_details.assert_called_with(user_name='jdoe')

@@ -291,6 +291,8 @@ class EnvironmentVariables:
             'MANAGER_EMAIL_ALERT', True)
         self._environment_variables_dict['UPDATE_TAG_BULKS'] = int(
             EnvironmentVariables.get_env('UPDATE_TAG_BULKS', '20'))
+        self._environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = literal_eval(
+            EnvironmentVariables.get_env('ALLOWED_EMAIL_DOMAINS', "['@redhat.com']"))
 
         # policies aggregate alert
         self._environment_variables_dict['SAVE_TO_FILE_PATH'] = EnvironmentVariables.get_env('SAVE_TO_FILE_PATH', '')
