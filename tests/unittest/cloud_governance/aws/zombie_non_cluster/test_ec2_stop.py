@@ -54,6 +54,9 @@ def test_ec2_stop_not_delete():
 
 @mock_aws
 def test_trigger_mail_routes_to_email_tag_when_valid():
+    """
+    This method tests the mail is routed to a valid Email tag instead of the User tag
+    """
     environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
     ec2_stop = EC2Stop()
     ec2_stop._mail = MagicMock()
@@ -73,6 +76,9 @@ def test_trigger_mail_routes_to_email_tag_when_valid():
 
 @mock_aws
 def test_trigger_mail_falls_back_to_user_when_email_tag_missing():
+    """
+    This method tests the mail falls back to the User tag when Email tag is absent
+    """
     environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
     ec2_stop = EC2Stop()
     ec2_stop._mail = MagicMock()
