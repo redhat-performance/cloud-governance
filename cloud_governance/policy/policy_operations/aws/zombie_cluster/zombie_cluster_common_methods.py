@@ -8,7 +8,7 @@ import boto3
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
-from cloud_governance.common.mails.alert_recipient import resolve_alert_recipient
+from cloud_governance.common.mails.alert_recipient import get_email_tag_value, resolve_alert_recipient
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.main.environment_variables import environment_variables
@@ -229,7 +229,7 @@ class ZombieClusterCommonMethods:
                 to = special_user_mails[user]
                 ldap_lookup_user = to
             else:
-                email = self.get_tag_name_from_tags(tags=tags, tag_name='Email')
+                email = get_email_tag_value(tags=tags)
                 to = resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
                 ldap_lookup_user = user
             ldap_data = self._ldap.get_user_details(user_name=ldap_lookup_user)

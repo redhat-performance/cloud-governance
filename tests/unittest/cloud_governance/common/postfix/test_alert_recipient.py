@@ -1,4 +1,5 @@
-from cloud_governance.common.mails.alert_recipient import is_valid_alert_email, resolve_alert_recipient
+from cloud_governance.common.mails.alert_recipient import get_email_tag_value, is_valid_alert_email, \
+    resolve_alert_recipient
 from cloud_governance.main.environment_variables import environment_variables
 
 
@@ -88,3 +89,35 @@ def test_resolve_alert_recipient_falls_back_to_user_when_email_invalid():
     """
     _set_allowed_domains(['@redhat.com'])
     assert resolve_alert_recipient(email_tag_value='team-dl@gmail.com', user_tag_value='jdoe') == 'jdoe'
+
+
+def test_get_email_tag_value_matches_exact_case():
+    """
+    This method tests the standard 'Email' tag key is read
+    """
+    tags = [{'Key': 'Email', 'Value': 'team-dl@redhat.com'}]
+    assert get_email_tag_value(tags=tags) == 'team-dl@redhat.com'
+
+
+def test_get_email_tag_value_matches_lowercase_key():
+    """
+    This method tests a manually-added lowercase 'email' tag key is read
+    """
+    tags = [{'Key': 'email', 'Value': 'team-dl@redhat.com'}]
+    assert get_email_tag_value(tags=tags) == 'team-dl@redhat.com'
+
+
+def test_get_email_tag_value_matches_uppercase_key():
+    """
+    This method tests a manually-added uppercase 'EMAIL' tag key is read
+    """
+    tags = [{'Key': 'EMAIL', 'Value': 'team-dl@redhat.com'}]
+    assert get_email_tag_value(tags=tags) == 'team-dl@redhat.com'
+
+
+def test_get_email_tag_value_returns_empty_when_absent():
+    """
+    This method tests an empty string is returned when no Email tag exists
+    """
+    tags = [{'Key': 'User', 'Value': 'jdoe'}]
+    assert get_email_tag_value(tags=tags) == ''

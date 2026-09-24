@@ -24,6 +24,20 @@ def is_valid_alert_email(email: str) -> bool:
     return domain in [allowed_domain.lower() for allowed_domain in allowed_domains]
 
 
+def get_email_tag_value(tags: list) -> str:
+    """
+    This method reads the Email tag from a resource's tags case-insensitively, so a
+    manually-added 'email'/'EMAIL' key is honored the same as 'Email'.
+    @param tags:
+    @return:
+    """
+    if tags:
+        for tag in tags:
+            if (tag.get('Key') or '').strip().lower() == 'email':
+                return (tag.get('Value') or '').strip()
+    return ''
+
+
 def resolve_alert_recipient(email_tag_value: str, user_tag_value: str) -> str:
     """
     This method resolves the alert recipient for a resource, preferring the Email tag
