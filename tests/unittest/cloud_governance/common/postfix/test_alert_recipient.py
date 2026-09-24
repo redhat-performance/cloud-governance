@@ -50,6 +50,17 @@ def test_is_valid_alert_email_rejects_header_injection():
     assert is_valid_alert_email('victim@redhat.com\nBcc:attacker@evil.com') is False
 
 
+def test_is_valid_alert_email_rejects_other_control_characters():
+    """
+    This method tests values containing non-whitespace control characters (null byte,
+    other C0 controls) are rejected, not just CRLF - these are not caught by the format
+    regex's \\s exclusion since they are not whitespace, so they need an explicit check.
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert is_valid_alert_email('team@redhat.com\x00') is False
+    assert is_valid_alert_email('te\x01am@redhat.com') is False
+
+
 def test_is_valid_alert_email_rejects_malformed_value():
     """
     This method tests a non-email-shaped value is rejected
@@ -91,6 +102,17 @@ def test_resolve_alert_recipient_falls_back_to_user_when_email_invalid():
     assert resolve_alert_recipient(email_tag_value='team-dl@gmail.com', user_tag_value='jdoe') == 'jdoe'
 
 
+def test_resolve_alert_recipient_returns_empty_when_both_tags_invalid():
+    """
+    This method tests that an empty string is returned, rather than a placeholder like
+    'NA', when both the Email and User tags are missing or invalid
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert resolve_alert_recipient(email_tag_value='NA', user_tag_value='NA') == ''
+    assert resolve_alert_recipient(email_tag_value='', user_tag_value='') == ''
+    assert resolve_alert_recipient(email_tag_value='', user_tag_value=None) == ''
+
+
 def test_get_email_tag_value_matches_exact_case():
     """
     This method tests the standard 'Email' tag key is read
@@ -120,4 +142,30 @@ def test_get_email_tag_value_returns_empty_when_absent():
     This method tests an empty string is returned when no Email tag exists
     """
     tags = [{'Key': 'User', 'Value': 'jdoe'}]
+    assert get_email_tag_value(tags=tags) == ''
+
+
+def test_get_email_tag_value_skips_invalid_match_for_valid_duplicate_key():
+    """
+    This method tests that a stale/invalid 'Email' tag does not hide a valid 'email'
+    tag - AWS tag keys are case-sensitive, so both can coexist on the same resource.
+    """
+    _set_allowed_domains(['@redhat.com'])
+    tags = [
+        {'Key': 'Email', 'Value': 'NA'},
+        {'Key': 'email', 'Value': 'team-dl@redhat.com'},
+    ]
+    assert get_email_tag_value(tags=tags) == 'team-dl@redhat.com'
+
+
+def test_get_email_tag_value_returns_empty_when_all_matches_invalid():
+    """
+    This method tests an empty string is returned when every case-insensitive Email
+    match is invalid, rather than returning the invalid value
+    """
+    _set_allowed_domains(['@redhat.com'])
+    tags = [
+        {'Key': 'Email', 'Value': 'NA'},
+        {'Key': 'EMAIL', 'Value': 'not-an-email'},
+    ]
     assert get_email_tag_value(tags=tags) == ''
