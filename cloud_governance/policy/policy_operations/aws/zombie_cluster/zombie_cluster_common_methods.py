@@ -8,6 +8,7 @@ import boto3
 from cloud_governance.common.ldap.ldap_search import LdapSearch
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.common.mails.alert_recipient import get_email_tag_value, resolve_alert_recipient
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.main.environment_variables import environment_variables
@@ -224,10 +225,16 @@ class ZombieClusterCommonMethods:
                 tags=tags, tag_name='Name')
             if not resource_name:
                 resource_name = self.get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
-            to = user if user not in special_user_mails else special_user_mails[user]
-            ldap_data = self._ldap.get_user_details(user_name=to)
+            if user in special_user_mails:
+                to = special_user_mails[user]
+                ldap_lookup_user = to
+            else:
+                email = get_email_tag_value(tags=tags)
+                to = resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
+                ldap_lookup_user = user
+            ldap_data = self._ldap.get_user_details(user_name=ldap_lookup_user)
             cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
-            name = to
+            name = user
             if ldap_data:
                 name = ldap_data.get('displayName')
             file_name = os.path.join('/tmp', f'{resource_name.replace("/", "-")}.json')

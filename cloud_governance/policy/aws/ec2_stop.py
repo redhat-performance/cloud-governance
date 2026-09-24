@@ -3,6 +3,7 @@ import operator
 
 from cloud_governance.common.clouds.aws.cloudtrail.cloudtrail_operations import CloudTrailOperations
 from cloud_governance.common.logger.init_logger import logger
+from cloud_governance.common.mails.alert_recipient import get_email_tag_value, resolve_alert_recipient
 from cloud_governance.policy.policy_operations.aws.zombie_non_cluster.run_zombie_non_cluster_policies import \
     NonClusterZombiePolicy
 from operator import ge
@@ -128,8 +129,14 @@ class EC2Stop(NonClusterZombiePolicy):
             user, instance_name = self._get_tag_name_from_tags(tags=tags,
                                                                tag_name='User'), self._get_tag_name_from_tags(tags=tags,
                                                                                                               tag_name='Name')
-            to = user if user not in special_user_mails else special_user_mails[user]
-            ldap_data = self._ldap.get_user_details(user_name=to)
+            if user in special_user_mails:
+                to = special_user_mails[user]
+                ldap_lookup_user = to
+            else:
+                email = get_email_tag_value(tags=tags)
+                to = resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
+                ldap_lookup_user = user
+            ldap_data = self._ldap.get_user_details(user_name=ldap_lookup_user)
             cc = []
             subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days,
                                                             image_id=image_id,
