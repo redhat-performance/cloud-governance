@@ -59,6 +59,33 @@ def test_verify_and_delete_resource_stopped():
 
 
 @mock_aws
+def test_calculate_days_string_create_date():
+    """
+    This method tests calculate_days parses the month of a string create_date.
+    Guards against the "%Y-%M-%d" (minute) typo, which parsed every date as January.
+    :return:
+    :rtype:
+    """
+    aws_cleanup_operations = AWSPolicyOperations()
+    start_date = datetime.datetime(2024, 6, 25)
+    assert aws_cleanup_operations.calculate_days('2024-06-15', start_date=start_date) == 10
+    assert aws_cleanup_operations.calculate_days('2024-06-15T10:30:00.000Z', start_date=start_date) == 10
+    assert aws_cleanup_operations.calculate_days('2024-06-15', start_date='2024-06-25') == 10
+
+
+@mock_aws
+def test_calculate_hours_string_create_date():
+    """
+    This method tests calculate_hours parses the month of a string create_date.
+    :return:
+    :rtype:
+    """
+    aws_cleanup_operations = AWSPolicyOperations()
+    start_date = datetime.datetime(2024, 6, 15, 15, 0, 0, tzinfo=datetime.timezone.utc)
+    assert aws_cleanup_operations.calculate_hours('2024-06-15 10:00:00', start_date=start_date) == 5
+
+
+@mock_aws
 def test_verify_and_delete_resource_skip():
     """
     This method tests verify_and_delete_resource
