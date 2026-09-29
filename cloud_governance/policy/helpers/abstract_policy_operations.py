@@ -38,7 +38,7 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         if isinstance(create_date, str):
-            create_date = datetime.strptime(create_date.split('T')[0], "%Y-%M-%d")
+            create_date = datetime.strptime(create_date.split('T')[0], "%Y-%m-%d")
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
         start_date = start_date.date()
@@ -57,7 +57,7 @@ class AbstractPolicyOperations(ABC):
         :rtype:
         """
         if isinstance(create_date, str):
-            create_date = datetime.strptime(create_date, "%Y-%M-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            create_date = datetime.strptime(create_date, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         days = start_date - create_date
