@@ -14,7 +14,6 @@ start_date = current_date - timedelta(days=CLOUD_WATCH_METRICS_DAYS + 1)
 
 
 @mock_aws
-@freeze_time(start_date.__str__())
 def test_database_idle():
     """
     This method tests database_idle resources
@@ -27,9 +26,12 @@ def test_database_idle():
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     rds_client = get_boto3_client('rds', region_name=AWS_DEFAULT_REGION)
     tags = [{'Key': 'User', 'Value': PROJECT_NAME}, {'Key': "Name", "Value": TEST_USER_NAME}]
-    rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
-                                  DBInstanceClass=DB_INSTANCE_CLASS,
-                                  Engine=DB_ENGINE, Tags=tags)
+    # Create the database in the past, then let the policy evaluate it at the current
+    # time. Freezing the whole test would make create time and "now" identical.
+    with freeze_time(start_date.__str__()):
+        rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
+                                      DBInstanceClass=DB_INSTANCE_CLASS,
+                                      Engine=DB_ENGINE, Tags=tags)
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert len(running_instances_data) == 1
@@ -40,7 +42,6 @@ def test_database_idle():
 
 
 @mock_aws
-@freeze_time(start_date.__str__())
 def test_database_idle_alert_skip():
     """
     This method tests database_idle skip delete
@@ -55,9 +56,10 @@ def test_database_idle_alert_skip():
     mock_date = (datetime.now() - timedelta(days=2)).date()
     tags = [{'Key': 'User', 'Value': PROJECT_NAME}, {'Key': "Name", "Value": TEST_USER_NAME},
             {'Key': "DaysCount", "Value": f"{mock_date}@3"}, {'Key': "Skip", "Value": f"notdelete"}]
-    rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
-                                  DBInstanceClass=DB_INSTANCE_CLASS,
-                                  Engine=DB_ENGINE, Tags=tags)
+    with freeze_time(start_date.__str__()):
+        rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
+                                      DBInstanceClass=DB_INSTANCE_CLASS,
+                                      Engine=DB_ENGINE, Tags=tags)
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert len(running_instances_data) == 0
@@ -65,7 +67,6 @@ def test_database_idle_alert_skip():
 
 
 @mock_aws
-@freeze_time(start_date.__str__())
 def test_database_idle_delete():
     """
     This method tests the deletion of database_idle
@@ -80,9 +81,10 @@ def test_database_idle_delete():
     mock_date = (datetime.now() - timedelta(days=2)).date()
     tags = [{'Key': 'User', 'Value': PROJECT_NAME}, {'Key': "Name", "Value": TEST_USER_NAME},
             {'Key': "DaysCount", "Value": f"{mock_date}@3"}]
-    rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
-                                  DBInstanceClass=DB_INSTANCE_CLASS,
-                                  Engine=DB_ENGINE, Tags=tags)
+    with freeze_time(start_date.__str__()):
+        rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
+                                      DBInstanceClass=DB_INSTANCE_CLASS,
+                                      Engine=DB_ENGINE, Tags=tags)
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert running_instances_data[0]['DryRun'] == 'no'
@@ -90,7 +92,6 @@ def test_database_idle_delete():
 
 
 @mock_aws
-@freeze_time(start_date.__str__())
 def test_database_idle_dry_run_yes():
     """
     This method tests the deletion of database_idle
@@ -105,9 +106,10 @@ def test_database_idle_dry_run_yes():
     mock_date = (datetime.now() - timedelta(days=2)).date()
     tags = [{'Key': 'User', 'Value': PROJECT_NAME}, {'Key': "Name", "Value": TEST_USER_NAME},
             {'Key': "DaysCount", "Value": f"{mock_date}@3"}]
-    rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
-                                  DBInstanceClass=DB_INSTANCE_CLASS,
-                                  Engine=DB_ENGINE, Tags=tags)
+    with freeze_time(start_date.__str__()):
+        rds_client.create_db_instance(DBInstanceIdentifier=TEST_USER_NAME,
+                                      DBInstanceClass=DB_INSTANCE_CLASS,
+                                      Engine=DB_ENGINE, Tags=tags)
     database_idle = DatabaseIdle()
     running_instances_data = database_idle.run()
     assert running_instances_data[0]['DryRun'] == 'yes'
