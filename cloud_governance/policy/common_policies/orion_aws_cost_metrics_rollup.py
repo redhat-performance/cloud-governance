@@ -14,45 +14,21 @@ class OrionAwsCostMetricsRollup:
     detection) can watch each account's daily spend as its own time series.
 
     Source is the shared AWS cost-explorer index, which stores the SAME total
-    spend broken out ~28 ways (15 cost_explorer_tags dimensions x 2
-    savings_plan copies) - each combination a complete partition of the same
-    total. A query that doesn't pin exactly one (tag, savings_plan) pair
-    over-counts accordingly; see CANONICAL_TAG/CANONICAL_SAVINGS_PLAN.
+    spend broken out ~28 ways.
 
     Writes into the same destination index as OrionCostMetricsRollup
     (cloud-governance-orion-cost-metrics-index). That index therefore holds
     two unrelated series distinguished purely by the 'account' field's naming
-    convention: 'CC<number>' is the other rollup's cost-center-month entity,
-    a plain AWS account name (PSAP/PERFSCALE/PERF-DEPT) is this rollup's
-    account-day entity. Reuse was a deliberate choice (verified no schema or
-    query-scoping risk - Orion's metadata filter is enforced server-side
-    per account before any metric is read) over provisioning a second index
-    for what the two series have semantically in common (a daily/monthly
-    cost total) rather than how they differ.
+    convention.
     """
 
-    # Read from explicitly, rather than the shared 'es_index' env var, so the
-    # source index this rollup reads from is unaffected by whatever es_index a
-    # given invocation happens to default to.
     SOURCE_ES_INDEX = 'cloud-governance-cost-explorer-perf-global-cost'
-    # The only 3 accounts with real data in the source index (a legacy
-    # duplicate spelling, PERF-SCALE, also appears but went stale in
-    # 2026-02 - deliberately excluded by not including it here).
     ACCOUNTS = ['PSAP', 'PERFSCALE', 'PERF-DEPT']
-    # The source index holds every (cost_explorer_tags x savings_plan)
-    # combination as a separate copy of the same total spend - exactly one
-    # pair must be pinned, or totals over-count ~15x / ~2x. purchasetype is
-    # AWS-defined (immune to internal tagging-policy drift, unlike
-    # project/owner/etc.) and has the fewest docs of the non-undercounting
-    # dimensions. savings_plan=include (not exclude) matters beyond
-    # consistency: exclude drops Savings-Plan rows entirely, which were a
-    # real share of spend in 2022-23 and could be again.
     CANONICAL_TAG = 'purchasetype'
     CANONICAL_SAVINGS_PLAN = 'include'
     # AWS Cost Explorer re-fetches and upserts a rolling 31-day window on
     # every source-policy run, so the most recent few days are provisional
-    # and under-report until they settle - confirmed live (every account's
-    # reported cost roughly halves on the most recent day). Only roll up
+    # and under-report until they settle . Only roll up
     # through (today - LAG_DAYS) to avoid treating a provisional day as a
     # real drop.
     LAG_DAYS = 3
@@ -66,9 +42,6 @@ class OrionAwsCostMetricsRollup:
         self.__es_host = self.__environment_variables_dict.get('es_host', '')
         self.__es_port = self.__environment_variables_dict.get('es_port', '')
         self.__elastic_operations = ElasticSearchOperations(es_host=self.__es_host, es_port=self.__es_port) if self.__es_host else None
-        # Defaults to the same index OrionCostMetricsRollup writes to (see
-        # class docstring) but is independently overridable, so the two
-        # rollups' destinations can never be coupled by a shared env var.
         self.__destination_es_index = self.__environment_variables_dict.get('orion_aws_cost_es_index', 'cloud-governance-orion-cost-metrics-index')
         self.__custom_start_date = self.__environment_variables_dict.get('orion_aws_cost_rollup_start_date', '')
         self.__custom_end_date = self.__environment_variables_dict.get('orion_aws_cost_rollup_end_date', '')
