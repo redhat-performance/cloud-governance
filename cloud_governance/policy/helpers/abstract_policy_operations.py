@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Union
+from typing import Optional, Union
 
 from cloud_governance.common.elasticsearch.elastic_upload import ElasticUpload
 from cloud_governance.common.utils.configs import INSTANCE_IDLE_CPU_PERCENTAGE, INSTANCE_IDLE_NETWORK_IN_KILO_BYTES, \
@@ -27,16 +27,19 @@ class AbstractPolicyOperations(ABC):
         self._es_upload = ElasticUpload()
         self._shutdown_period = self._environment_variables_dict.get('SHUTDOWN_PERIOD')
 
-    def calculate_days(self, create_date: Union[datetime, str], start_date: Union[datetime, str] = datetime.now(tz=timezone.utc)):
+    def calculate_days(self, create_date: Union[datetime, str],
+                       start_date: Optional[Union[datetime, str]] = None):
         """
         This method returns the days
-        :param start_date:
+        :param start_date: defaults to the current utc time
         :type start_date:
         :param create_date:
         :type create_date:
         :return:
         :rtype:
         """
+        if start_date is None:
+            start_date = datetime.now(tz=timezone.utc)
         if isinstance(create_date, str):
             create_date = datetime.strptime(create_date.split('T')[0], "%Y-%m-%d")
         if isinstance(start_date, str):
@@ -46,22 +49,24 @@ class AbstractPolicyOperations(ABC):
         return days.days
 
     def calculate_hours(self, create_date: Union[datetime, str],
-                        start_date: Union[datetime, str] = datetime.now(timezone.utc)):
+                        start_date: Optional[Union[datetime, str]] = None):
         """
         This method returns the hours
-        :param start_date:
+        :param start_date: defaults to the current utc time
         :type start_date:
         :param create_date:
         :type create_date:
         :return:
         :rtype:
         """
+        if start_date is None:
+            start_date = datetime.now(tz=timezone.utc)
         if isinstance(create_date, str):
             create_date = datetime.strptime(create_date, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         days = start_date - create_date
-        return days.seconds / 3600
+        return days.total_seconds() / 3600
 
     def get_clean_up_days_count(self, tags: Union[list, dict]):
         """

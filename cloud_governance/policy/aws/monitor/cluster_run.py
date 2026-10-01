@@ -53,7 +53,10 @@ class ClusterRun(AWSPolicyOperations):
                         extract_data = re.search(r'\((\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', state_transition_reason)
                         if extract_data:
                             stopped_date_time = extract_data.group(1)
-                            running_days = self.calculate_days(stopped_date_time.split()[0], start_date=launch_time)
+                            # The instance is no longer running, so measure launch -> stopped
+                            # instead of launch -> now, which would bill the stopped period.
+                            running_days = self.calculate_days(launch_time, start_date=stopped_date_time.split()[0])
+                            running_hours = ceil(self.calculate_hours(launch_time, start_date=stopped_date_time))
                             instance_state += f"@{extract_data.group(1)}"
                 else:
                     running_instances = 1
@@ -107,7 +110,7 @@ class ClusterRun(AWSPolicyOperations):
             total_cost = 0
             graviton_instance_cost = 0
             cluster['GravitonInstanceTypes'] = []
-            running_hours = 1 if cluster['RunningHours'] == 0 else cluster['RunningHours']
+            running_hours = max(1, cluster['RunningHours'])
             for instance_type in set(instance_types):
                 instance_types_count = instance_types.count(instance_type)
                 unit_price = self._resource_pricing.get_ec2_price(region_name=self._region,

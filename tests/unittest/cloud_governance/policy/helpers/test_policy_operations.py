@@ -1,8 +1,10 @@
 import datetime
+import inspect
 
 import boto3
 from moto import mock_aws
 
+from cloud_governance.policy.helpers.abstract_policy_operations import AbstractPolicyOperations
 from cloud_governance.policy.helpers.aws.aws_policy_operations import AWSPolicyOperations
 from cloud_governance.main.environment_variables import environment_variables
 
@@ -83,6 +85,56 @@ def test_calculate_hours_string_create_date():
     aws_cleanup_operations = AWSPolicyOperations()
     start_date = datetime.datetime(2024, 6, 15, 15, 0, 0, tzinfo=datetime.timezone.utc)
     assert aws_cleanup_operations.calculate_hours('2024-06-15 10:00:00', start_date=start_date) == 5
+
+
+@mock_aws
+def test_calculate_hours_spans_multiple_days():
+    """
+    This method tests calculate_hours counts whole days.
+    Guards against timedelta.seconds, which drops the days component and caps the
+    result at 24 hours regardless of how old the resource is.
+    :return:
+    :rtype:
+    """
+    aws_cleanup_operations = AWSPolicyOperations()
+    create_date = datetime.datetime(2024, 6, 1, 10, 0, 0, tzinfo=datetime.timezone.utc)
+    # exactly 30 days later, no sub-day remainder: timedelta.seconds would report 0
+    assert aws_cleanup_operations.calculate_hours(
+        create_date, start_date=create_date + datetime.timedelta(days=30)) == 720
+    # 30 days and 7 hours: timedelta.seconds would report 7
+    assert aws_cleanup_operations.calculate_hours(
+        create_date, start_date=create_date + datetime.timedelta(days=30, hours=7)) == 727
+
+
+@mock_aws
+def test_calculate_hours_string_start_date():
+    """
+    This method tests calculate_hours accepts a string start_date, the form used
+    when measuring an instance from launch to the time it was stopped.
+    :return:
+    :rtype:
+    """
+    aws_cleanup_operations = AWSPolicyOperations()
+    create_date = datetime.datetime(2024, 6, 1, 10, 0, 0, tzinfo=datetime.timezone.utc)
+    assert aws_cleanup_operations.calculate_hours(create_date, start_date='2024-07-01 10:00:00') == 720
+
+
+@mock_aws
+def test_calculate_start_date_default_not_frozen_at_import():
+    """
+    This method tests the start_date default is resolved per call rather than
+    bound once at import. A datetime default is evaluated at function definition
+    time and would pin every later call to the process start time.
+    :return:
+    :rtype:
+    """
+    for method in (AbstractPolicyOperations.calculate_days, AbstractPolicyOperations.calculate_hours):
+        default = inspect.signature(method).parameters['start_date'].default
+        assert default is None, f"{method.__name__} start_date default is bound at import: {default}"
+    aws_cleanup_operations = AWSPolicyOperations()
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    assert aws_cleanup_operations.calculate_days(now - datetime.timedelta(days=5)) == 5
+    assert aws_cleanup_operations.calculate_hours(now - datetime.timedelta(hours=5)) >= 5
 
 
 @mock_aws
