@@ -2,11 +2,7 @@
 # cloud_governance/policy/common_policies/orion_metrics_rollup.py (cloud-governance-orion-metrics-index).
 #
 # Each metric gets its own top-level test entry, not multiple metrics under
-# one shared test: confirmed live (against real production data) that Orion
-# only resolves the "value" field correctly for the first metric in a given
-# test block - every metric after the first comes back null, even though it
-# is still analyzed. One metric per test avoids this entirely (same fix
-# already applied to cg-cost-regressions.yaml).
+# one shared test.
 #
 # Invoke once per account, e.g.:
 #   orion --es-server=<opensearch-url> \

@@ -163,12 +163,6 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     REPO_ROOT = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
     ORION_CONFIG_PATH = os.path.join(REPO_ROOT, 'orion-configs', 'cg-policy-regressions.yaml')
-    # Must stay in sync with the top-level test names in cg-policy-regressions.yaml.
-    # One metric per test block there (not multiple metrics sharing one block):
-    # Orion only resolves the "value" field correctly for the first metric in a
-    # given test block, silently nulling every metric after it - confirmed live
-    # against real data. So one Orion invocation now produces one output/data
-    # file pair per test name, which are merged below into a single alert.
     ORION_TEST_NAMES = [
         'zombieClusterResourceCountIncrease', 'zombieClusterResourceCountDecrease',
         's3InactiveCountIncrease', 's3InactiveCountDecrease',
