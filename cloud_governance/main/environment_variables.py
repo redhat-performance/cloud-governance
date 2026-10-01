@@ -314,7 +314,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
         self._environment_variables_dict['SKIP_POLICIES_ALERT'] = literal_eval(
             EnvironmentVariables.get_env('SKIP_POLICIES_ALERT', '[]'))
-        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_metrics_rollup', 'orion_alert_handler', 'orion_cost_metrics_rollup']:
+        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_metrics_rollup', 'orion_alert_handler', 'orion_cost_metrics_rollup', 'orion_aws_cost_metrics_rollup']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch
         self._environment_variables_dict[

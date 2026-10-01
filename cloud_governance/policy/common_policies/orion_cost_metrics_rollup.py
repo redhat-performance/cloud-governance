@@ -16,6 +16,14 @@ class OrionCostMetricsRollup:
 
     Source is the shared multi-cloud billing index, which stores one row per
     account per month per cloud, fed daily by the per-cloud cost-report jobs.
+
+    The destination index also holds a second, unrelated series: daily
+    per-AWS-account totals written by OrionAwsCostMetricsRollup. The two
+    series are distinguished purely by the 'account' field's naming
+    convention - 'CC<number>' is this rollup's cost-center-month entity,
+    a plain AWS account name (e.g. PERFSCALE) is the other rollup's
+    account-day entity. Any query against this index must filter by
+    account to avoid mixing the two.
     """
 
     # Read from explicitly, rather than the shared 'es_index' env var, so the
