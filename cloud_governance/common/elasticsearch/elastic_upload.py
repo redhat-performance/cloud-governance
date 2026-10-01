@@ -30,6 +30,9 @@ class ElasticUpload:
         try:
             if not es_index:
                 es_index = self.es_index
+            if not self.elastic_search_operations:
+                logger.warning(f'ElasticSearch/OpenSearch not configured, skipping upload of {len(items)} items to {es_index}')
+                return
             count = 0
             for item in items:
                 if not item.get('Account'):
