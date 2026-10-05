@@ -257,6 +257,9 @@ class OrionAwsCostMetricsRollup:
 
         if start_date and end_date:
             end_date = self.__clamp_end_date(end_date)
+            if start_date > end_date:
+                logger.warning(f'Requested backfill range is entirely inside the provisional window (start_date={start_date}, clamped end_date={end_date}); nothing to roll up yet.')
+                return {'status': 'skipped', 'message': 'backfill range is entirely inside the provisional window', 'start_date': start_date, 'end_date': end_date}
             logger.info(f'Backfilling Orion AWS cost metrics rollup from {start_date} to {end_date}')
             monthly_ranges = self.__split_date_range_by_month(start_date, end_date)
             total_documents = 0

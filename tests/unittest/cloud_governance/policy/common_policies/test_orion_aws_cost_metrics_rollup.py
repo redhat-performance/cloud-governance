@@ -169,6 +169,16 @@ class TestOrionAwsCostMetricsRollup:
         assert result['end_date'] == '2026-09-28'
         assert self.mock_es_instance.post_query.call_count == 1
 
+    @patch('cloud_governance.policy.common_policies.orion_aws_cost_metrics_rollup.OrionAwsCostMetricsRollup._OrionAwsCostMetricsRollup__today')
+    def test_run_backfill_entirely_inside_provisional_window_is_skipped_not_raised(self, mock_today):
+        """A short recent backfill that clamps to before start_date must skip cleanly, not raise"""
+        mock_today.return_value = datetime.date(2026, 10, 1)
+        self.mock_es_instance.post_query.return_value = self._agg([])
+        result = self.rollup.run(start_date='2026-09-30', end_date='2026-10-01')
+        assert result['status'] == 'skipped'
+        assert result['end_date'] == '2026-09-28'
+        self.mock_es_instance.post_query.assert_not_called()
+
     def test_run_backfill_mode(self):
         self.mock_es_instance.post_query.return_value = self._agg([])
         result = self.rollup.run(start_date='2024-01-01', end_date='2024-12-31')
