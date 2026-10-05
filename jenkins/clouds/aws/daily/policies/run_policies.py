@@ -1,4 +1,7 @@
+import json
 import os
+import shutil
+import tempfile
 from ast import literal_eval
 
 access_key = os.environ['access_key']
@@ -160,13 +163,19 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     REPO_ROOT = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
     ORION_CONFIG_PATH = os.path.join(REPO_ROOT, 'orion-configs', 'cg-policy-regressions.yaml')
-    ORION_TEST_NAME = 'cg-policy-regressions'
+    ORION_TEST_NAMES = [
+        'zombieClusterResourceCountIncrease', 'zombieClusterResourceCountDecrease',
+        's3InactiveCountIncrease', 's3InactiveCountDecrease',
+        'ec2StopCountIncrease', 'ec2StopCountDecrease',
+        'unusedAccessKeyCountIncrease', 'unusedAccessKeyCountDecrease',
+        'deleteAccessKeyCountIncrease', 'deleteAccessKeyCountDecrease',
+        'monitoredPoliciesSavingsIncrease', 'monitoredPoliciesSavingsDecrease',
+    ]
 
     es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
     es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
     es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
     orion_output_base = f'/tmp/orion-output-{account_name}.json'
-    orion_output_file = f'/tmp/orion-output-{account_name}_{ORION_TEST_NAME}.json'
     # Orion also always writes a CSV of the underlying data alongside the JSON
     # output; without an explicit path every account would overwrite the same
     # file. We never read this CSV, so it's just given an account-specific
@@ -174,11 +183,12 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     # written filename from the *first* dot in the given path (not the
     # extension), so the actual file is "<path-before-first-dot>-<test_name>.csv".
     orion_data_base = f'/tmp/orion-data-{account_name}.csv'
-    orion_data_file = f'/tmp/orion-data-{account_name}-{ORION_TEST_NAME}.csv'
+    orion_output_files = [f'/tmp/orion-output-{account_name}_{name}.json' for name in ORION_TEST_NAMES]
+    orion_data_files = [f'/tmp/orion-data-{account_name}-{name}.csv' for name in ORION_TEST_NAMES]
 
     # Clear any output left over from an earlier run so a failed analysis this
     # run cannot leave a stale file for the alert handler to re-read and re-alert.
-    run_cmd(f'rm -f "{orion_output_file}" "{orion_data_file}"')
+    run_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_output_files + orion_data_files))
 
     run_cmd("echo Running Orion metrics rollup")
     rollup_status = run_cmd(
@@ -190,18 +200,31 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
         try:
             run_cmd("echo Running Orion regression analysis")
             # Orion exits non-zero (2) when it detects regressions, so its exit
-            # status cannot gate the next step; the presence of the output file,
-            # which is written only when analysis completes, is used instead.
+            # status cannot gate the next step; presence of output files, which
+            # are written only when analysis completes, is used instead.
             run_cmd(
                 f"""podman run --rm --name orion --net="host" -v "{ORION_CONFIG_PATH}":"{ORION_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="cloud-governance-orion-metrics-index" --metadata-index="cloud-governance-orion-metrics-index" --hunter-analyze --input-vars='{{"account": "{account_name.upper()}"}}' --config "{ORION_CONFIG_PATH}" --output-format json --save-output-path "{orion_output_base}" --save-data-path "{orion_data_base}" """)
 
-            if os.path.exists(orion_output_file):
-                run_cmd("echo Running Orion Slack alert handler")
-                run_cmd(
-                    f"""podman run --rm --name cloud-governance --net="host" -v /tmp:/tmp -e account="{account_name}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_output_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+            merged_data_points = []
+            for output_file in orion_output_files:
+                if os.path.exists(output_file):
+                    with open(output_file, 'r', encoding='utf-8') as f:
+                        merged_data_points.extend(json.load(f))
+
+            if merged_data_points:
+                orion_merge_dir = tempfile.mkdtemp(prefix=f'orion-merge-{account_name}-')
+                try:
+                    orion_merged_file = os.path.join(orion_merge_dir, 'orion-output-merged.json')
+                    with open(orion_merged_file, 'w', encoding='utf-8') as f:
+                        json.dump(merged_data_points, f)
+                    run_cmd("echo Running Orion Slack alert handler")
+                    run_cmd(
+                        f"""podman run --rm --name cloud-governance --net="host" -v "{orion_merge_dir}":"{orion_merge_dir}" -e account="{account_name}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_merged_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                finally:
+                    shutil.rmtree(orion_merge_dir, ignore_errors=True)
             else:
                 run_cmd("echo Skipping Orion alert - analysis produced no output")
         finally:
-            run_cmd(f'rm -f "{orion_output_file}" "{orion_data_file}"')
+            run_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_output_files + orion_data_files))
 else:
     run_cmd("echo Skipping Orion regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME not configured")

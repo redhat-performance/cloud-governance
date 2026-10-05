@@ -4,10 +4,7 @@
 # cost center's synthetic id, e.g. "CC<cost_center>" - not a cloud account name.
 #
 # Each metric gets its own top-level test entry, not multiple metrics under
-# one shared test: confirmed live (against real backfilled data) that Orion
-# only resolves the "value" field correctly for the first metric in a given
-# test block - every metric after the first comes back null, even though it
-# is still analyzed. One metric per test avoids this entirely.
+# one shared test.
 #
 # Invoke once per cost center, e.g.:
 #   orion --es-server=<opensearch-url> \
