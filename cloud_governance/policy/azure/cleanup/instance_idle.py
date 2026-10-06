@@ -43,6 +43,7 @@ class InstanceIdle(AzurePolicyOperations):
                     resource_id=vm.get("name"),
                     skip_policy=self.get_skip_policy_value(tags=tags),
                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                    email=self.get_tag_name_from_tags(tags=tags, tag_name='Email'),
                     launch_time=vm.get("time_created"),
                     resource_type=vm.get("hardware_profile", {}).get("vm_size"),
                     resource_state=status if not cleanup_result else 'Vm Stopped',

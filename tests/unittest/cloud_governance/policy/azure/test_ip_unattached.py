@@ -134,6 +134,29 @@ def test_ip_unattached_dry_run_yes():
 
 @mock_compute
 @mock_network
+def test_ip_unattached_populates_email_in_es_data():
+    """
+    This method tests the Email tag is carried into the ES document on Azure, which is what
+    lets send_aggregated_alerts route the digest to a group address
+    :return:
+    :rtype:
+    """
+    environment_variables.environment_variables_dict['dry_run'] = 'yes'
+    network_client = NetworkManagementClient(subscription_id=SUBSCRIPTION_ID, credential=MockDefaultAzureCredential())
+    network_client.public_ip_addresses.begin_create_or_update(public_ip_address_name='test', location='useast',
+                                                              public_ip_address_version='IPv4',
+                                                              public_ip_allocation_method='Static',
+                                                              tags={'User': 'jdoe',
+                                                                    'Email': 'team-dl@redhat.com'})
+    ip_unattached = IpUnattached()
+    response = ip_unattached.run()
+    assert len(response) == 1
+    assert response[0]['Email'] == 'team-dl@redhat.com'
+    assert response[0]['User'] == 'jdoe'
+
+
+@mock_compute
+@mock_network
 def test_ip_unattached_dryrun_no():
     """
     This method tests ip_unattached, not attached to any instance or network interface

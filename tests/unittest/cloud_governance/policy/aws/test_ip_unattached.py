@@ -27,6 +27,29 @@ def test_ip_unattached__verify_count_zero_dry_run_yes():
 
 
 @mock_aws
+def test_ip_unattached__populates_email_in_es_data():
+    """
+    This method tests the Email tag is carried into the ES document on AWS, which is what
+    lets send_aggregated_alerts route the digest to a group address
+    @return:
+    """
+    environment_variables.environment_variables_dict['dry_run'] = DRY_RUN_YES
+    environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
+    environment_variables.environment_variables_dict['policy'] = 'ip_unattached'
+    ec2_client = boto3.client('ec2', region_name=AWS_DEFAULT_REGION)
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Email', 'Value': 'team-dl@redhat.com'},
+    ]
+    ec2_client.allocate_address(Domain='vpc', TagSpecifications=[{'ResourceType': 'elastic-ip', 'Tags': tags}])
+    ip_unattached = IpUnattached()
+    response = ip_unattached.run()
+    assert len(response) == 1
+    assert response[0]['Email'] == 'team-dl@redhat.com'
+    assert response[0]['User'] == 'jdoe'
+
+
+@mock_aws
 def test_ip_unattached__verify_count_increased_dry_run_no():
     """
     This method tests ip unattached, get the data and verify counter increased to 1
