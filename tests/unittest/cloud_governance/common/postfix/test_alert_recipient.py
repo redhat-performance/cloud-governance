@@ -71,12 +71,9 @@ def test_is_valid_alert_email_rejects_malformed_value():
 
 def test_is_valid_alert_email_rejects_comma_smuggled_second_recipient():
     """
-    This method tests a comma-containing value is rejected rather than treated as valid -
-    'other,team@redhat.com' has exactly one '@' so it matches the format regex and its
-    trailing segment is on an allowed domain, but Postfix.prettify_to/prettify_cc split on
-    commas, so this single Email tag would otherwise resolve to two recipients: the
-    intended 'team@redhat.com' plus an unvalidated 'other@redhat.com' smuggled in via the
-    tag value.
+    This method tests a comma-containing value is rejected even when the overall string
+    would otherwise pass the format and domain checks, since Postfix treats commas as a
+    recipient separator and a single Email tag must resolve to a single recipient.
     """
     _set_allowed_domains(['@redhat.com'])
     assert is_valid_alert_email('other,team@redhat.com') is False
@@ -118,8 +115,8 @@ def test_resolve_alert_recipient_falls_back_to_user_when_email_invalid():
 
 def test_resolve_alert_recipient_falls_back_to_user_when_email_has_smuggled_recipient():
     """
-    This method tests a comma-smuggled Email tag value falls back to the User tag rather
-    than being passed through to resolve into two recipients downstream in Postfix
+    This method tests a comma-containing Email tag value is treated as invalid and falls
+    back to the User tag
     """
     _set_allowed_domains(['@redhat.com'])
     assert resolve_alert_recipient(email_tag_value='other,team@redhat.com', user_tag_value='jdoe') == 'jdoe'

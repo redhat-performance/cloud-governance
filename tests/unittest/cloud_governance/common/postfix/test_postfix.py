@@ -145,7 +145,7 @@ def _sent_cc(mock_smtp):
 @patch('cloud_governance.common.mails.postfix.smtplib.SMTP')
 def test_send_email_postfix_skips_admin_cc_for_email_shaped_recipient(mock_smtp):
     """
-    This method tests a resolved Email-tag recipient (individual or Rover/team group) is not
+    This method tests a resolved Email-tag recipient (individual or team/group address) is not
     CC'd to the default admins just because it doesn't resolve as an LDAP username - that
     LDAP uid lookup was never a meaningful check for an already-qualified address, and firing
     it anyway would needlessly broadcast every Email-tag-routed alert to the default admins.
