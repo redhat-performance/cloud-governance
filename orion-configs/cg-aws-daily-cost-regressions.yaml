@@ -8,6 +8,15 @@
 # Each metric gets its own top-level test entry, not multiple metrics under
 # one shared test.
 #
+# Increase only - a decrease in AWS spend isn't something that needs a
+# Slack alert.
+#
+# threshold: 33 is a starting value from historical volatility analysis, not
+# yet validated against live Orion output (see the epic's backfill/tuning
+# step). Chosen because almost all statistically-significant change points in
+# the historical data already exceed 30% - very little happens between 0-30%,
+# so 33 catches close to everything real without much added noise.
+#
 # Invoke once per AWS account, e.g.:
 #   orion --es-server=<opensearch-url> \
 #         --benchmark-index=cloud-governance-orion-cost-metrics-index \
@@ -23,13 +32,4 @@ tests:
       - name: totalCostIncrease
         metric_of_interest: total_cost
         direction: 1
-        threshold: 50
-
-  - name: totalCostDecrease
-    metadata:
-      account.keyword: "{{ account }}"
-    metrics:
-      - name: totalCostDecrease
-        metric_of_interest: total_cost
-        direction: -1
-        threshold: 50
+        threshold: 33
