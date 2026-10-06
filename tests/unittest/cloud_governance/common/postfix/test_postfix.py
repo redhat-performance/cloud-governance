@@ -182,3 +182,25 @@ def test_send_email_postfix_no_admin_cc_for_resolvable_username(mock_smtp):
     postfix._Postfix__ldap_search.get_user_details.return_value = {'displayName': 'Jane Doe'}
     postfix.send_email_postfix(subject='subject', to='jdoe', cc=[], content='body')
     assert _sent_cc(mock_smtp) == ''
+
+
+@patch('cloud_governance.common.mails.postfix.smtplib.SMTP')
+def test_send_email_postfix_still_escalates_to_admins_for_list_recipient(mock_smtp):
+    """
+    This method tests a list `to` (the hardcoded admin-escalation recipients used by
+    ec2_stop.py and run_zombie_non_cluster_policies.py, e.g. ['admin1@redhat.com', ...]) still
+    goes through the LDAP check and still escalates to the default admins, exactly as before
+    the email-shaped-string guard was introduced. A list was never a valid LDAP lookup target
+    either, but that is this pre-existing, unrelated case - the guard must key off the type of
+    `to`, not merely whether its stringified form happens to contain '@', or this call pattern
+    would silently stop escalating to the default admins too.
+    """
+    postfix = _make_postfix()
+    postfix._Postfix__ldap_search.get_user_details.return_value = []
+    postfix.send_email_postfix(subject='subject', to=['admin1@redhat.com', 'admin2@redhat.com'], cc=[],
+                               content='body')
+    postfix._Postfix__ldap_search.get_user_details.assert_called_once_with(
+        user_name=['admin1@redhat.com', 'admin2@redhat.com'])
+    cc = _sent_cc(mock_smtp)
+    assert 'admin1@redhat.com' in cc
+    assert 'admin2@redhat.com' in cc

@@ -175,9 +175,14 @@ class Postfix:
             # meaningful once `to` is already a qualified email address - that includes a valid
             # Email tag (individual or Rover/team group, neither of which is `uid`-keyed in LDAP)
             # and also a plain user@domain address, whose LDAP `uid` is the bare username without
-            # the domain and so would never match anyway. Skip the check for those, or every
-            # Email-tag-routed alert would needlessly broadcast to the default admins.
-            if '@' not in str(to) and not self.__ldap_search.get_user_details(user_name=to):
+            # the domain and so would never match anyway. Skip the check only for that single-
+            # address-string case. A list `to` (e.g. the hardcoded admin-escalation recipients
+            # used elsewhere) was never a valid LDAP lookup target either, but that is a separate,
+            # pre-existing case this change must not alter - checking `isinstance` rather than
+            # testing the stringified value keeps that path going through the LDAP check (and
+            # therefore still always escalating to the default admins) exactly as before.
+            to_is_single_qualified_email = isinstance(to, str) and '@' in to
+            if not to_is_single_qualified_email and not self.__ldap_search.get_user_details(user_name=to):
                 cc.extend(self.__default_admins)
             response = {'ok': True}
             to = self.prettify_to(to)

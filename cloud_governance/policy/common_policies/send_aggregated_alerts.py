@@ -18,7 +18,10 @@ class SendAggregatedAlerts:
     """
 
     # Access-key alerts are personal credential notices tagged on the IAM user, so they are
-    # always routed to the individual and never to a resource's Email tag.
+    # always routed to the individual and never to a resource's Email tag. Also used by
+    # __remove_duplicates, which needs the same two policies for a different reason (one user
+    # can hold two keys, so those records aren't deduplicated by ResourceId like everyone
+    # else's) - kept as one shared constant so the two lists can't drift apart.
     PERSONAL_ALERT_POLICIES = ('unused_access_key', 'delete_access_key')
 
     def __init__(self):
@@ -98,8 +101,7 @@ class SendAggregatedAlerts:
         df.sort_values(inplace=True, by=[sort_col])
         # Avoid fillna(value='') on numeric columns (pandas 2.x+ raises LossySetitemError)
         df = df.astype(object).fillna('')
-        access_key_policies = ['unused_access_key', 'delete_access_key']
-        mask = df[policy_col].str.lower().isin(access_key_policies)
+        mask = df[policy_col].str.lower().isin(self.PERSONAL_ALERT_POLICIES)
         df_other = df[~mask].drop_duplicates(subset='ResourceId', keep='first')
         df_access_keys = df[mask]
         df = pandas.concat([df_other, df_access_keys], ignore_index=True)
@@ -133,9 +135,8 @@ class SendAggregatedAlerts:
         """
         user = record.get('User', '')
         policy = (record.get('policy') or record.get('Policy') or '').lower()
-        if policy in self.PERSONAL_ALERT_POLICIES:
-            return resolve_alert_recipient(email_tag_value='', user_tag_value=user)
-        return resolve_alert_recipient(email_tag_value=record.get('Email', ''), user_tag_value=user)
+        email = '' if policy in self.PERSONAL_ALERT_POLICIES else record.get('Email', '')
+        return resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
 
     def __group_by_user(self, policy_data: list):
         """
