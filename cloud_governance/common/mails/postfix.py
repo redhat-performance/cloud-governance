@@ -170,7 +170,14 @@ class Postfix:
                 to = self.__mail_to
             if self.__mail_cc:
                 cc = self.__mail_cc
-            if not self.__ldap_search.get_user_details(user_name=to):
+            # This LDAP check exists to catch a bare username that no longer resolves (e.g. a
+            # departed employee) and escalate to the default admins as a safety net. It is not
+            # meaningful once `to` is already a qualified email address - that includes a valid
+            # Email tag (individual or Rover/team group, neither of which is `uid`-keyed in LDAP)
+            # and also a plain user@domain address, whose LDAP `uid` is the bare username without
+            # the domain and so would never match anyway. Skip the check for those, or every
+            # Email-tag-routed alert would needlessly broadcast to the default admins.
+            if '@' not in str(to) and not self.__ldap_search.get_user_details(user_name=to):
                 cc.extend(self.__default_admins)
             response = {'ok': True}
             to = self.prettify_to(to)
