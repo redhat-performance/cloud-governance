@@ -8,14 +8,18 @@ EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 def is_valid_alert_email(email: str) -> bool:
     """
     This method validates a resource's Email tag value before it is used as an alert
-    recipient: well-formed, free of header-injection characters, and on an allowed domain.
+    recipient: well-formed, free of header-injection characters, on an allowed domain,
+    and a single address - a comma is rejected rather than treated as a list, since
+    Postfix.prettify_to/prettify_cc split on commas. Without this, a single Email tag
+    like 'other,team@redhat.com' would resolve to two recipients, smuggling in a second,
+    unvalidated address that the domain check never saw on its own.
     @param email:
     @return:
     """
     if not email:
         return False
     email = email.strip()
-    if not email or email.upper() == 'NA' or any(ord(character) < 32 for character in email):
+    if not email or email.upper() == 'NA' or ',' in email or any(ord(character) < 32 for character in email):
         return False
     if not EMAIL_REGEX.match(email):
         return False

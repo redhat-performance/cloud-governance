@@ -69,6 +69,20 @@ def test_is_valid_alert_email_rejects_malformed_value():
     assert is_valid_alert_email('not-an-email') is False
 
 
+def test_is_valid_alert_email_rejects_comma_smuggled_second_recipient():
+    """
+    This method tests a comma-containing value is rejected rather than treated as valid -
+    'other,team@redhat.com' has exactly one '@' so it matches the format regex and its
+    trailing segment is on an allowed domain, but Postfix.prettify_to/prettify_cc split on
+    commas, so this single Email tag would otherwise resolve to two recipients: the
+    intended 'team@redhat.com' plus an unvalidated 'other@redhat.com' smuggled in via the
+    tag value.
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert is_valid_alert_email('other,team@redhat.com') is False
+    assert is_valid_alert_email('team@redhat.com,other') is False
+
+
 def test_is_valid_alert_email_trims_and_normalizes_case():
     """
     This method tests surrounding whitespace and domain case are normalized
@@ -100,6 +114,15 @@ def test_resolve_alert_recipient_falls_back_to_user_when_email_invalid():
     """
     _set_allowed_domains(['@redhat.com'])
     assert resolve_alert_recipient(email_tag_value='team-dl@gmail.com', user_tag_value='jdoe') == 'jdoe'
+
+
+def test_resolve_alert_recipient_falls_back_to_user_when_email_has_smuggled_recipient():
+    """
+    This method tests a comma-smuggled Email tag value falls back to the User tag rather
+    than being passed through to resolve into two recipients downstream in Postfix
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert resolve_alert_recipient(email_tag_value='other,team@redhat.com', user_tag_value='jdoe') == 'jdoe'
 
 
 def test_resolve_alert_recipient_returns_empty_when_both_tags_invalid():
