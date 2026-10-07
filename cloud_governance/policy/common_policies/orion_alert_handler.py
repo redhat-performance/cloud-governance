@@ -17,6 +17,18 @@ class OrionAlertHandler:
         self.__slack_token = self.__env.get('SLACK_API_TOKEN', '')
         self.__slack_channel = self.__env.get('SLACK_CHANNEL_NAME', '')
         self.__orion_output_file = self.__env.get('ORION_OUTPUT_FILE', '')
+        self.__recency_window_days = self.__parse_recency_window_days(self.__env.get('ORION_RECENCY_WINDOW_DAYS', ''))
+
+    @staticmethod
+    def __parse_recency_window_days(raw_value: str):
+        """Parse ORION_RECENCY_WINDOW_DAYS env var; invalid values log a warning and return None."""
+        if not raw_value:
+            return None
+        try:
+            return int(raw_value)
+        except ValueError:
+            logger.warning(f'Ignoring invalid ORION_RECENCY_WINDOW_DAYS={raw_value!r}; using the default recency window instead.')
+            return None
 
     @logger_time_stamp
     def run(self):
@@ -35,6 +47,7 @@ class OrionAlertHandler:
         result = notifier.notify(
             file_path=self.__orion_output_file,
             account=self.__account,
+            recency_window_days=self.__recency_window_days,
         )
         logger.info('Orion alert handler result: %s', result)
         return result

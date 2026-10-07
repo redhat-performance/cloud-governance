@@ -71,6 +71,28 @@ class TestOrionAlertHandler:
         finally:
             os.unlink(f.name)
 
+    def test_recency_window_days_defaults_to_none_when_unset(self):
+        handler = self._make_handler()
+        assert handler._OrionAlertHandler__recency_window_days is None
+
+    def test_recency_window_days_parses_valid_override(self):
+        handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': '7'})
+        assert handler._OrionAlertHandler__recency_window_days == 7
+
+    def test_recency_window_days_falls_back_on_invalid_value(self):
+        """A non-numeric override must warn and fall back to the default, not crash the run"""
+        with patch('cloud_governance.policy.common_policies.orion_alert_handler.logger') as mock_logger:
+            handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': 'not-a-number'})
+        assert handler._OrionAlertHandler__recency_window_days is None
+        assert any('invalid' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
+
+    @patch('cloud_governance.common.orion.slack_notifier.OrionSlackNotifier.notify')
+    def test_run_passes_recency_window_days_to_notifier(self, mock_notify):
+        mock_notify.return_value = {'status': 'no_regressions', 'account': 'PERFSCALE'}
+        handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': '7'})
+        handler.run()
+        mock_notify.assert_called_once_with(file_path='/tmp/orion-output.json', account='PERFSCALE', recency_window_days=7)
+
     @patch('cloud_governance.common.orion.slack_notifier.requests.post')
     def test_run_no_regressions_does_not_post(self, mock_post):
         no_regression_data = [
