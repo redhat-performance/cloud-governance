@@ -86,6 +86,22 @@ class TestOrionAlertHandler:
         assert handler._OrionAlertHandler__recency_window_days is None
         assert any('invalid' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
 
+    def test_recency_window_days_falls_back_on_negative_value(self):
+        """A negative window moves the cutoff into the future and would suppress nearly every alert"""
+        with patch('cloud_governance.policy.common_policies.orion_alert_handler.logger') as mock_logger:
+            handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': '-1'})
+        assert handler._OrionAlertHandler__recency_window_days is None
+        assert any('out-of-range' in c.args[0].lower() for c in mock_logger.warning.call_args_list)
+
+    def test_recency_window_days_falls_back_on_zero(self):
+        handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': '0'})
+        assert handler._OrionAlertHandler__recency_window_days is None
+
+    def test_recency_window_days_falls_back_on_value_above_max(self):
+        """A value large enough overflows the datetime arithmetic in extract_regressions"""
+        handler = self._make_handler({'ORION_RECENCY_WINDOW_DAYS': '999999999'})
+        assert handler._OrionAlertHandler__recency_window_days is None
+
     @patch('cloud_governance.common.orion.slack_notifier.OrionSlackNotifier.notify')
     def test_run_passes_recency_window_days_to_notifier(self, mock_notify):
         mock_notify.return_value = {'status': 'no_regressions', 'account': 'PERFSCALE'}

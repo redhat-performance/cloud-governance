@@ -11,6 +11,9 @@ class OrionAlertHandler:
     container has written its analysis results to a shared path.
     """
 
+    MIN_RECENCY_WINDOW_DAYS = 1
+    MAX_RECENCY_WINDOW_DAYS = 3650
+
     def __init__(self):
         self.__env = environment_variables.environment_variables_dict
         self.__account = self.__env.get('account', '')
@@ -25,10 +28,14 @@ class OrionAlertHandler:
         if not raw_value:
             return None
         try:
-            return int(raw_value)
+            value = int(raw_value)
         except ValueError:
             logger.warning(f'Ignoring invalid ORION_RECENCY_WINDOW_DAYS={raw_value!r}; using the default recency window instead.')
             return None
+        if not (OrionAlertHandler.MIN_RECENCY_WINDOW_DAYS <= value <= OrionAlertHandler.MAX_RECENCY_WINDOW_DAYS):
+            logger.warning(f'Ignoring out-of-range ORION_RECENCY_WINDOW_DAYS={value}; using the default recency window instead.')
+            return None
+        return value
 
     @logger_time_stamp
     def run(self):
