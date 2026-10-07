@@ -3,7 +3,9 @@ import pandas
 from datetime import datetime, timedelta, timezone
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
+from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
+from cloud_governance.common.mails.alert_recipient import resolve_alert_recipient
 from cloud_governance.common.mails.mail_message import MailMessage
 from cloud_governance.common.mails.postfix import Postfix
 from cloud_governance.common.utils.utils import Utils
@@ -14,6 +16,13 @@ class SendAggregatedAlerts:
     """
     This class send alerts to users which conditions are not satisfied by the policies
     """
+
+    # Access-key alerts are personal credential notices tagged on the IAM user, so they are
+    # always routed to the individual and never to a resource's Email tag. Also used by
+    # __remove_duplicates, which needs the same two policies for a different reason (one user
+    # can hold two keys, so those records aren't deduplicated by ResourceId like everyone
+    # else's) - kept as one shared constant so the two lists can't drift apart.
+    PERSONAL_ALERT_POLICIES = ('unused_access_key', 'delete_access_key')
 
     def __init__(self):
         self.__environment_variables = environment_variables.environment_variables_dict
@@ -92,8 +101,7 @@ class SendAggregatedAlerts:
         df.sort_values(inplace=True, by=[sort_col])
         # Avoid fillna(value='') on numeric columns (pandas 2.x+ raises LossySetitemError)
         df = df.astype(object).fillna('')
-        access_key_policies = ['unused_access_key', 'delete_access_key']
-        mask = df[policy_col].str.lower().isin(access_key_policies)
+        mask = df[policy_col].str.lower().isin(self.PERSONAL_ALERT_POLICIES)
         df_other = df[~mask].drop_duplicates(subset='ResourceId', keep='first')
         df_access_keys = df[mask]
         df = pandas.concat([df_other, df_access_keys], ignore_index=True)
@@ -115,18 +123,59 @@ class SendAggregatedAlerts:
             policy_data_list.extend(values)
         return policy_data_list
 
+    def __get_alert_recipient(self, record: dict):
+        """
+        This method returns the alert recipient of a record, preferring the resource's Email
+        tag so a team can route its alerts to a group address that outlives any one member,
+        and falling back to the User tag as before when Email is unset or invalid.
+        :param record:
+        :type record:
+        :return:
+        :rtype:
+        """
+        user = record.get('User', '')
+        policy = (record.get('policy') or record.get('Policy') or '').lower()
+        email = '' if policy in self.PERSONAL_ALERT_POLICIES else record.get('Email', '')
+        return resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
+
     def __group_by_user(self, policy_data: list):
         """
-        This method returns the data grouped by user files
+        This method returns the data grouped by the resolved alert recipient.
+        Records with neither a usable Email tag nor a usable User tag are dropped, rather
+        than grouped under 'NA' and mailed to a placeholder address.
         :param policy_data:
         :type policy_data:
         :return:
         :rtype:
         """
         user_data = {}
+        unroutable = 0
         for record in policy_data:
-            user_data.setdefault(record.get('User', 'NA'), []).append(record)
+            recipient = self.__get_alert_recipient(record=record)
+            if not recipient:
+                unroutable += 1
+                continue
+            user_data.setdefault(recipient, []).append(record)
+        if unroutable:
+            logger.warning(f'Skipped {unroutable} policy alert record(s) with no Email or User tag to route to')
         return user_data
+
+    @staticmethod
+    def __get_greeting_user(user_records: list):
+        """
+        This method returns the User tag value to greet in the digest, so a group-routed mail
+        still addresses a person by name. When a group address covers more than one user's
+        resources there is no single person to greet, so an empty value is returned and the
+        template falls back to a generic greeting.
+        :param user_records:
+        :type user_records:
+        :return:
+        :rtype:
+        """
+        users = {(record.get('User') or '').strip() for record in user_records}
+        users.discard('')
+        users.discard('NA')
+        return users.pop() if len(users) == 1 else ''
 
     def __update_delete_days(self, policy_es_data: list):
         """
@@ -204,10 +253,12 @@ class SendAggregatedAlerts:
                 self.__postfix.send_email_postfix(subject=subject, content=body, to=to_mail_list, cc=[], mime_type='html')
         else:
             user_policy_data = self.__group_by_user(policy_data=policy_es_data)
-            for user, user_records in user_policy_data.items():
+            for recipient, user_records in user_policy_data.items():
                 if user_records:
-                    subject, body = self.__mail_message.get_policy_alert_message(policy_data=user_records, user=user)
-                    self.__postfix.send_email_postfix(subject=subject, content=body, to=user, cc=[],
+                    greeting_user = self.__get_greeting_user(user_records=user_records)
+                    subject, body = self.__mail_message.get_policy_alert_message(policy_data=user_records,
+                                                                                 user=greeting_user)
+                    self.__postfix.send_email_postfix(subject=subject, content=body, to=recipient, cc=[],
                                                       mime_type='html')
 
     @logger_time_stamp

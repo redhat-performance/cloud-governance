@@ -21,6 +21,7 @@ class PolicyEsMetaData(dict):
     public_cloud: str
     expire_days: int
 
+    email: str = ''
     unit_price: float = ''
     total_yearly_savings: float = ''
     resource_type: str = ''

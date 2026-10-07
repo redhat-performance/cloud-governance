@@ -8,14 +8,15 @@ EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 def is_valid_alert_email(email: str) -> bool:
     """
     This method validates a resource's Email tag value before it is used as an alert
-    recipient: well-formed, free of header-injection characters, and on an allowed domain.
+    recipient: well-formed, a single address (no comma-separated list), free of
+    header-injection characters, and on an allowed domain.
     @param email:
     @return:
     """
     if not email:
         return False
     email = email.strip()
-    if not email or email.upper() == 'NA' or any(ord(character) < 32 for character in email):
+    if not email or email.upper() == 'NA' or ',' in email or any(ord(character) < 32 for character in email):
         return False
     if not EMAIL_REGEX.match(email):
         return False

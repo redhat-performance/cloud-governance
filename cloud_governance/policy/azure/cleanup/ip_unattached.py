@@ -53,6 +53,7 @@ class IpUnattached(AzurePolicyOperations):
                                                                          clean_up_days=cleanup_days)
                         resource_data = self._get_es_schema(resource_id=ip_address.get('name'),
                                                             user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                                                            email=self.get_tag_name_from_tags(tags=tags, tag_name='Email'),
                                                             skip_policy=self.get_skip_policy_value(tags=tags),
                                                             cleanup_days=cleanup_days, dry_run=self._dry_run,
                                                             name=ip_address.get('name'), region=ip_address.get('location'),

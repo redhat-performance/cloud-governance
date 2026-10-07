@@ -69,6 +69,17 @@ def test_is_valid_alert_email_rejects_malformed_value():
     assert is_valid_alert_email('not-an-email') is False
 
 
+def test_is_valid_alert_email_rejects_comma_smuggled_second_recipient():
+    """
+    This method tests a comma-containing value is rejected even when the overall string
+    would otherwise pass the format and domain checks, since Postfix treats commas as a
+    recipient separator and a single Email tag must resolve to a single recipient.
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert is_valid_alert_email('other,team@redhat.com') is False
+    assert is_valid_alert_email('team@redhat.com,other') is False
+
+
 def test_is_valid_alert_email_trims_and_normalizes_case():
     """
     This method tests surrounding whitespace and domain case are normalized
@@ -100,6 +111,15 @@ def test_resolve_alert_recipient_falls_back_to_user_when_email_invalid():
     """
     _set_allowed_domains(['@redhat.com'])
     assert resolve_alert_recipient(email_tag_value='team-dl@gmail.com', user_tag_value='jdoe') == 'jdoe'
+
+
+def test_resolve_alert_recipient_falls_back_to_user_when_email_has_smuggled_recipient():
+    """
+    This method tests a comma-containing Email tag value is treated as invalid and falls
+    back to the User tag
+    """
+    _set_allowed_domains(['@redhat.com'])
+    assert resolve_alert_recipient(email_tag_value='other,team@redhat.com', user_tag_value='jdoe') == 'jdoe'
 
 
 def test_resolve_alert_recipient_returns_empty_when_both_tags_invalid():

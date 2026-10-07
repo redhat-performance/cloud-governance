@@ -170,7 +170,12 @@ class Postfix:
                 to = self.__mail_to
             if self.__mail_cc:
                 cc = self.__mail_cc
-            if not self.__ldap_search.get_user_details(user_name=to):
+            # This LDAP check is a safety net for a bare username that no longer resolves (e.g.
+            # a departed employee); it doesn't apply once `to` is already a qualified email
+            # address. A list `to` (used by admin-escalation call sites elsewhere) still goes
+            # through this check as before - only a single address string skips it.
+            to_is_single_qualified_email = isinstance(to, str) and '@' in to
+            if not to_is_single_qualified_email and not self.__ldap_search.get_user_details(user_name=to):
                 cc.extend(self.__default_admins)
             response = {'ok': True}
             to = self.prettify_to(to)

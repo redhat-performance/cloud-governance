@@ -46,6 +46,7 @@ class InstanceIdle(AWSPolicyOperations):
                     resource_id=instance_id,
                     skip_policy=self.get_skip_policy_value(tags=tags),
                     user=self.get_tag_name_from_tags(tags=tags, tag_name='User'),
+                    email=self.get_tag_name_from_tags(tags=tags, tag_name='Email'),
                     launch_time=instance['LaunchTime'].strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     resource_type=instance.get('InstanceType'),
                     resource_state=status if not cleanup_result else self.RESOURCE_ACTION,
