@@ -207,3 +207,61 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
             run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files))
 else:
     run_shell_cmd("echo Skipping Orion cost-regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME/ORION_COST_CENTER not configured")
+
+# AWS daily cost regression, per real account - rollup covers all 3 accounts
+# in one run, but Orion is invoked once per account (config is single-account).
+if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
+    ORION_AWS_COST_ACCOUNTS = ['PSAP', 'PERFSCALE', 'PERF-DEPT']
+    ORION_AWS_COST_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'orion-configs', 'cg-aws-daily-cost-regressions.yaml')
+    ORION_AWS_COST_TEST_NAMES = ['totalCostIncrease']
+    ORION_AWS_COST_INDEX = 'cloud-governance-orion-cost-metrics-index'
+    # Narrower than the 35-day default - this series alerts far more often.
+    ORION_AWS_COST_RECENCY_WINDOW_DAYS = '7'
+
+    es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
+    es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
+    es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
+
+    run_shell_cmd("echo Running Orion AWS daily cost metrics rollup")
+    rollup_status = run_shell_cmd(
+        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_aws_cost_metrics_rollup" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+
+    if rollup_status != 0:
+        run_shell_cmd("echo Skipping Orion AWS daily cost analysis and alert - metrics rollup failed")
+    else:
+        for aws_account in ORION_AWS_COST_ACCOUNTS:
+            orion_aws_cost_output_base = f'/tmp/orion-aws-cost-output-{aws_account}.json'
+            orion_aws_cost_data_base = f'/tmp/orion-aws-cost-data-{aws_account}.csv'
+            orion_aws_cost_output_files = [f'/tmp/orion-aws-cost-output-{aws_account}_{name}.json' for name in ORION_AWS_COST_TEST_NAMES]
+            orion_aws_cost_data_files = [f'/tmp/orion-aws-cost-data-{aws_account}-{name}.csv' for name in ORION_AWS_COST_TEST_NAMES]
+
+            run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_aws_cost_output_files + orion_aws_cost_data_files))
+
+            try:
+                run_shell_cmd(f"echo Running Orion AWS daily cost regression analysis for {aws_account}")
+                run_shell_cmd(
+                    f"""podman run --rm --name orion --net="host" -v "{ORION_AWS_COST_CONFIG_PATH}":"{ORION_AWS_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{ORION_AWS_COST_INDEX}" --metadata-index="{ORION_AWS_COST_INDEX}" --hunter-analyze --input-vars='{{"account": "{aws_account}"}}' --config "{ORION_AWS_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_aws_cost_output_base}" --save-data-path "{orion_aws_cost_data_base}" """)
+
+                merged_data_points = []
+                for output_file in orion_aws_cost_output_files:
+                    if os.path.exists(output_file):
+                        with open(output_file, 'r', encoding='utf-8') as f:
+                            merged_data_points.extend(json.load(f))
+
+                if merged_data_points:
+                    orion_aws_cost_merge_dir = tempfile.mkdtemp(prefix=f'orion-aws-cost-merge-{aws_account}-')
+                    try:
+                        orion_aws_cost_merged_file = os.path.join(orion_aws_cost_merge_dir, 'orion-aws-cost-output-merged.json')
+                        with open(orion_aws_cost_merged_file, 'w', encoding='utf-8') as f:
+                            json.dump(merged_data_points, f)
+                        run_shell_cmd(f"echo Running Orion AWS daily cost Slack alert handler for {aws_account}")
+                        run_shell_cmd(
+                            f"""podman run --rm --name cloud-governance --net="host" -v "{orion_aws_cost_merge_dir}":"{orion_aws_cost_merge_dir}" -e account="{aws_account}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_aws_cost_merged_file}" -e ORION_RECENCY_WINDOW_DAYS="{ORION_AWS_COST_RECENCY_WINDOW_DAYS}" -e SLACK_API_TOKEN -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                    finally:
+                        shutil.rmtree(orion_aws_cost_merge_dir, ignore_errors=True)
+                else:
+                    run_shell_cmd(f"echo Skipping Orion AWS daily cost alert for {aws_account} - analysis produced no output")
+            finally:
+                run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_aws_cost_output_files + orion_aws_cost_data_files))
+else:
+    run_shell_cmd("echo Skipping Orion AWS daily cost-regression detection - SLACK_API_TOKEN/SLACK_CHANNEL_NAME not configured")
