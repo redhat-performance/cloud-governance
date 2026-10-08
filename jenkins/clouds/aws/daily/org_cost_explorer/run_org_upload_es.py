@@ -224,7 +224,7 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
 
     run_shell_cmd("echo Running Orion AWS daily cost metrics rollup")
     rollup_status = run_shell_cmd(
-        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_aws_cost_metrics_rollup" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_aws_cost_metrics_rollup" -e orion_aws_cost_es_index="{ORION_AWS_COST_INDEX}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
     if rollup_status != 0:
         run_shell_cmd("echo Skipping Orion AWS daily cost analysis and alert - metrics rollup failed")
@@ -239,6 +239,8 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
 
             try:
                 run_shell_cmd(f"echo Running Orion AWS daily cost regression analysis for {aws_account}")
+                # Orion exits non-zero (2) when it detects regressions, so its exit
+                # status cannot gate the next step; presence of output files is used instead.
                 run_shell_cmd(
                     f"""podman run --rm --name orion --net="host" -v "{ORION_AWS_COST_CONFIG_PATH}":"{ORION_AWS_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{ORION_AWS_COST_INDEX}" --metadata-index="{ORION_AWS_COST_INDEX}" --hunter-analyze --input-vars='{{"account": "{aws_account}"}}' --config "{ORION_AWS_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_aws_cost_output_base}" --save-data-path "{orion_aws_cost_data_base}" """)
 
