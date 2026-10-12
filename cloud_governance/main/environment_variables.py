@@ -239,11 +239,8 @@ class EnvironmentVariables:
         # Mail alerts env vars
         # ldap env var
         self._environment_variables_dict['LDAP_HOST_NAME'] = EnvironmentVariables.get_env('LDAP_HOST_NAME', '')
-        # TEMPORARY, EXPIRES 2027-01-28: this legacy LDAP service is being decommissioned by
-        # IT-IAM; a bind-DN/password service account only survives until that date, then needs
-        # replacing with their IPA system. See LdapSearch for details. Left unset, LdapSearch
-        # falls back to its previous (anonymous) behavior so this stays backward compatible
-        # until credentials exist.
+        # Optional service-account credentials for an authenticated LDAP bind - see
+        # LdapSearch. Left unset, LdapSearch falls back to its previous (anonymous) behavior.
         self._environment_variables_dict['LDAP_BIND_DN'] = EnvironmentVariables.get_env('LDAP_BIND_DN', '')
         self._environment_variables_dict['LDAP_BIND_PASSWORD'] = EnvironmentVariables.get_env('LDAP_BIND_PASSWORD', '')
         self._environment_variables_dict['SENDER_MAIL'] = EnvironmentVariables.get_env('SENDER_MAIL', '')

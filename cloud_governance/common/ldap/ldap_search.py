@@ -14,17 +14,13 @@ class LdapSearch:
     def __init__(self, ldap_host_name: str):
         self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
-        # TEMPORARY, EXPIRES 2027-01-28: IT-IAM is decommissioning this legacy LDAP service in
-        # two phases - anonymous access was disabled 2026-08-20 (why this stopped working), and
-        # ALL remaining authenticated reads against this same service (this bind included) are
-        # disabled 2027-01-28. This bind only survives phase 1; it is not a fix for phase 2. The
-        # durable fix is migrating to IT-IAM's IPA system before that date - see their Migration
-        # & Testing Guide / #help-it-iam. Without an explicit bind, python-ldap defaults to an
-        # anonymous bind on the first operation, which this LDAP server now rejects. Bind with a
-        # service account when one is configured; left unset, this is a no-op so behavior is
-        # unchanged wherever anonymous access still works (e.g. tests). A bind failure must not
-        # raise here - this runs during Postfix/MailMessage construction, and an uncaught error
-        # would crash the whole policy run rather than just this lookup.
+        # Temporary measure: this LDAP server now rejects anonymous binds, which is what
+        # python-ldap defaults to without an explicit bind call. Bind with a service account
+        # when configured; left unset, this is a no-op so behavior is unchanged wherever
+        # anonymous access still works (e.g. tests). A bind failure must not raise here - this
+        # runs during Postfix/MailMessage construction, and an uncaught error would crash the
+        # whole policy run rather than just this lookup. This approach is expected to need
+        # replacing later; don't treat it as a permanent solution.
         bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN', '')
         bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD', '')
         if bind_dn and bind_password:
