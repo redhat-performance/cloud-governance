@@ -136,7 +136,7 @@ run_policies(policies=policies_in_action, dry_run='no')
 
 run_cmd(f"""echo "Running the tag_iam_user" """)
 run_cmd(
-    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
@@ -219,7 +219,7 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
                         json.dump(merged_data_points, f)
                     run_cmd("echo Running Orion Slack alert handler")
                     run_cmd(
-                        f"""podman run --rm --name cloud-governance --net="host" -v "{orion_merge_dir}":"{orion_merge_dir}" -e account="{account_name}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_merged_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+                        f"""podman run --rm --name cloud-governance --net="host" -v "{orion_merge_dir}":"{orion_merge_dir}" -e account="{account_name}" -e policy="orion_alert_handler" -e ORION_OUTPUT_FILE="{orion_merged_file}" -e SLACK_API_TOKEN="{SLACK_API_TOKEN}" -e SLACK_CHANNEL_NAME="{SLACK_CHANNEL_NAME}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
                 finally:
                     shutil.rmtree(orion_merge_dir, ignore_errors=True)
             else:
