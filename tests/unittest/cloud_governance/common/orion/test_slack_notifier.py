@@ -169,6 +169,36 @@ class TestOrionSlackNotifier:
         regressions = OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)
         assert len(regressions) == 1
 
+    def test_extract_regressions_recency_window_days_override_narrower_than_default(self):
+        """A custom, narrower window must suppress a change point the default 35-day window would keep"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        data = [
+            {
+                'timestamp': 1784073600,  # 2026-07-15, 17 days before reference_date
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        # Within the default window...
+        assert len(OrionSlackNotifier.extract_regressions(data, reference_date=reference_date)) == 1
+        # ...but outside a narrower, explicitly-passed window.
+        assert OrionSlackNotifier.extract_regressions(data, reference_date=reference_date, recency_window_days=7) == []
+
+    def test_extract_regressions_recency_window_days_override_wider_than_default(self):
+        """A custom, wider window must keep a change point the default 35-day window would drop"""
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)  # default cutoff = 2026-06-27
+        data = [
+            {
+                'timestamp': 1777852800,  # 2026-05-04, ~89 days before reference_date
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        # Outside the default window...
+        assert OrionSlackNotifier.extract_regressions(data, reference_date=reference_date) == []
+        # ...but kept with an explicitly wider window.
+        assert len(OrionSlackNotifier.extract_regressions(data, reference_date=reference_date, recency_window_days=120)) == 1
+
     def test_extract_regressions_fails_open_on_unparseable_timestamp(self):
         """A change point with a non-numeric timestamp must not be silently dropped"""
         reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
@@ -371,6 +401,30 @@ class TestOrionSlackNotifier:
             assert result['regressions_count'] == 2
             assert result['slack_ok'] is True
             mock_post.assert_called_once()
+        finally:
+            os.unlink(path)
+
+    @patch('cloud_governance.common.orion.slack_notifier.requests.post')
+    def test_notify_recency_window_days_passthrough(self, mock_post):
+        """notify() must forward recency_window_days to extract_regressions, not just reference_date"""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {'ok': True}
+        mock_post.return_value = mock_response
+
+        reference_date = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        data = [
+            {
+                'timestamp': 1784073600,  # 2026-07-15, 17 days before reference_date
+                'is_changepoint': True,
+                'metrics': {'someMetric_some_metric': {'value': 10, 'percentage_change': 50.0, 'labels': []}}
+            }
+        ]
+        path = self._write_json_file(data)
+        try:
+            notifier = OrionSlackNotifier(slack_token='xoxb-test', slack_channel='alerts')
+            result = notifier.notify(file_path=path, account='PSAP', reference_date=reference_date, recency_window_days=7)
+            assert result['status'] == 'no_regressions'
+            mock_post.assert_not_called()
         finally:
             os.unlink(path)
 
