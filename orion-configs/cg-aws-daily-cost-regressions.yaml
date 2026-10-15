@@ -1,12 +1,18 @@
-# Orion regression-detection config for the metrics produced by
-# cloud_governance/policy/common_policies/orion_aws_cost_metrics_rollup.py.
-# One document per AWS account per day; "account" here is a real AWS account
-# name (PSAP/PERFSCALE/PERF-DEPT), not a cost-center synthetic id - see
-# cg-cost-regressions.yaml for that series. Both share the same destination
-# index (cloud-governance-orion-cost-metrics-index).
+# Orion regression-detection config for AWS per-account daily cost, read
+# directly from cloud-governance-cost-explorer-perf-global-cost - no separate
+# rollup or destination index. "account" is a real AWS account name
+# (PSAP/PERFSCALE/PERF-DEPT), not a cost-center synthetic id - see
+# cg-cost-regressions.yaml for that series.
 #
-# Each metric gets its own top-level test entry, not multiple metrics under
-# one shared test.
+# The source index stores the same daily spend duplicated ~28 ways (14 tags x
+# 2 savings_plan values); cloud_governance/policy/aws/cost_explorer.py writes
+# orion_uuid = "<ACCOUNT>-<date>" only on the canonical (tag=purchasetype,
+# savings_plan=include) rows, so uuid_field below naturally groups and sums
+# only those rows per day - everything else has no orion_uuid and can't match.
+#
+# metadata must also filter on tag/savings_plan (not just account): Orion's
+# uuid-resolution step reads source[uuid_field] with no default, so any
+# metadata-matched doc without orion_uuid set would raise a KeyError.
 #
 # Increase only - a decrease in AWS spend isn't something that needs a
 # Slack alert.
@@ -19,17 +25,22 @@
 #
 # Invoke once per AWS account, e.g.:
 #   orion --es-server=<opensearch-url> \
-#         --benchmark-index=cloud-governance-orion-cost-metrics-index \
-#         --metadata-index=cloud-governance-orion-cost-metrics-index \
+#         --benchmark-index=cloud-governance-cost-explorer-perf-global-cost \
+#         --metadata-index=cloud-governance-cost-explorer-perf-global-cost \
 #         --hunter-analyze \
 #         --input-vars='{"account": "<PSAP|PERFSCALE|PERF-DEPT>"}' \
 #         --config cg-aws-daily-cost-regressions.yaml
 tests:
   - name: totalCostIncrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
+      tag.keyword: purchasetype
+      savings_plan.keyword: include
     metrics:
       - name: totalCostIncrease
-        metric_of_interest: total_cost
+        metric_of_interest: Cost
+        agg:
+          agg_type: sum
         direction: 1
         threshold: 33
