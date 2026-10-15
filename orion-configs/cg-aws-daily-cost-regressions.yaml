@@ -4,8 +4,10 @@
 # rows - metadata must filter on tag/savings_plan too, or Orion's uuid
 # resolution will KeyError on matched rows that lack orion_uuid.
 #
-# Increase only. threshold: 33 is a starting value, not yet tuned for this
-# lookback window.
+# Increase only. threshold: 50, re-derived via sliding-window analysis over
+# the 45d lookback (the full-history calibration that gave 33 doesn't
+# transfer directly to a windowed read) - still a starting point, pending
+# live tuning.
 #
 # Invoke once per AWS account, e.g.:
 #   orion --es-server=<opensearch-url> \
@@ -27,4 +29,4 @@ tests:
         agg:
           agg_type: sum
         direction: 1
-        threshold: 33
+        threshold: 50
