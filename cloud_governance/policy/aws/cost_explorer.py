@@ -77,6 +77,10 @@ class CostExplorer:
                     if 'global' in self._elastic_upload.es_index:
                         if 'Budget' not in upload_data:
                             upload_data['Budget'] = self._elastic_upload.account
+                        if tag.lower() == 'purchasetype' and savings_plan == self.INCLUDE:
+                            orion_account = 'PERFSCALE' if account == 'PERF-SCALE' else account
+                            upload_data['orion_uuid'] = f'{orion_account}-{start_time}'
+                            upload_data['account'] = orion_account
                     upload_data['tag'] = tag.lower()
                     data[index_id] = upload_data
                 else:
