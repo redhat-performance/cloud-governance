@@ -80,6 +80,7 @@ class CostExplorer:
                         if tag.lower() == 'purchasetype' and savings_plan == self.INCLUDE:
                             orion_account = 'PERFSCALE' if account == 'PERF-SCALE' else account
                             upload_data['orion_uuid'] = f'{orion_account}-{start_time}'
+                            upload_data['account'] = orion_account
                     upload_data['tag'] = tag.lower()
                     data[index_id] = upload_data
                 else:

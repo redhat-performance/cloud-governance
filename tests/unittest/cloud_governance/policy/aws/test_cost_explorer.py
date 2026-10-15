@@ -49,3 +49,13 @@ def test_orion_uuid_normalizes_perf_scale_account_name():
     ce = _make_cost_explorer(account='PERF-SCALE', es_index='cloud-governance-cost-explorer-perf-global-cost')
     data = ce.filter_data_by_tag(_groups('2026-09-01', 'On Demand Instances', '88.127'), tag='PURCHASETYPE', savings_plan=ce.INCLUDE)
     assert data[0]['orion_uuid'] == 'PERFSCALE-2026-09-01'
+    # account must match orion_uuid's normalized value, or Orion's account.keyword
+    # metadata filter (which expects PERFSCALE) will never match this document
+    assert data[0]['account'] == 'PERFSCALE'
+
+
+def test_account_field_not_overridden_for_non_canonical_rows():
+    """Only the canonical rows get the normalized account - everything else keeps the default injection path"""
+    ce = _make_cost_explorer(account='PERF-SCALE', es_index='cloud-governance-cost-explorer-perf-global-cost')
+    data = ce.filter_data_by_tag(_groups('2026-09-01', 'alice', '10.0'), tag='Owner', savings_plan=ce.INCLUDE)
+    assert 'account' not in data[0]
