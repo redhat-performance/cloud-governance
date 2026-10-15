@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+import urllib.parse
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
@@ -222,7 +223,9 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME:
     ORION_AWS_COST_RECENCY_WINDOW_DAYS = '7'
 
     es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
-    es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
+    # URL-encode credentials - they're interpolated into a double-quoted shell
+    # string via os.system, where unescaped $ would otherwise be shell-expanded.
+    es_auth = f'{urllib.parse.quote(ES_USER, safe="")}:{urllib.parse.quote(ES_PASSWORD, safe="")}@' if ES_USER else ''
     es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
 
     for aws_account in ORION_AWS_COST_ACCOUNTS:
