@@ -70,26 +70,19 @@ class OrionSlackNotifier:
         return str(ts)
 
     @staticmethod
-    def extract_regressions(data_points: list, reference_date: datetime = None) -> list:
+    def extract_regressions(data_points: list, reference_date: datetime = None, recency_window_days: int = None) -> list:
         """
-        Walk the Orion JSON array and pull out recent change points with
-        their regressed metrics.
-
-        Change points older than RECENCY_WINDOW_DAYS (relative to
-        reference_date, default now) are skipped - see RECENCY_WINDOW_DAYS
-        for why. Entries whose timestamp can't be parsed - missing, wrong
-        type, or numeric-but-malformed (NaN/+-inf/out-of-range) - are not
-        filtered out (fail open: a missed alert is worse than an extra one).
-
-        A metric's percentage_change can be NaN (0 -> 0, no real change -
-        skipped) or +/-inf (a zero baseline dividing into a nonzero value -
-        kept, but displayed without a misleading "inf%").
+        Extract recent change points with regressions from Orion JSON output.
+        Change points older than recency_window_days are filtered out.
         @param data_points: Orion's parsed JSON array
-        @param reference_date: reference point for the recency cutoff (for tests); defaults to now (UTC)
+        @param reference_date: reference point for recency cutoff (default: now UTC)
+        @param recency_window_days: override window in days (default: RECENCY_WINDOW_DAYS)
         """
         if reference_date is None:
             reference_date = datetime.now(timezone.utc)
-        cutoff = reference_date - timedelta(days=OrionSlackNotifier.RECENCY_WINDOW_DAYS)
+        if recency_window_days is None:
+            recency_window_days = OrionSlackNotifier.RECENCY_WINDOW_DAYS
+        cutoff = reference_date - timedelta(days=recency_window_days)
 
         regressions = []
         for entry in data_points:
@@ -283,14 +276,14 @@ class OrionSlackNotifier:
             logger.error('Slack API error: %s', response_data.get('error', 'unknown'))
         return response_data
 
-    def notify(self, file_path: str, account: str, reference_date: datetime = None) -> dict:
+    def notify(self, file_path: str, account: str, reference_date: datetime = None, recency_window_days: int = None) -> dict:
         """
-        End-to-end: parse Orion output, extract regressions, post to Slack.
-        @param reference_date: reference point for the recency cutoff (for tests); defaults to now (UTC)
-        Returns a summary dict.
+        Parse Orion output, extract regressions, post to Slack.
+        @param reference_date: reference point for recency cutoff (default: now UTC)
+        @param recency_window_days: override window in days (default: RECENCY_WINDOW_DAYS)
         """
         data_points = self.parse_orion_json(file_path)
-        regressions = self.extract_regressions(data_points, reference_date=reference_date)
+        regressions = self.extract_regressions(data_points, reference_date=reference_date, recency_window_days=recency_window_days)
 
         if not regressions:
             logger.info('No regressions found for account %s', account)
