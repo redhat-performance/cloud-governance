@@ -184,8 +184,12 @@ class NonClusterZombiePolicy:
                     resource_name = self._get_tag_name_from_tags(tags=tags, tag_name='cg-Name')
                 to = user if user not in special_user_mails else special_user_mails[user]
                 ldap_data = self._ldap.get_user_details(user_name=to)
-                cc = [self._account_admin,
-                      f'{ldap_data.get("managerId")}@redhat.com'] if self.__manager_email_alert else []
+                manager_email = f'{ldap_data.get("managerId")}@redhat.com' if ldap_data else None
+                cc = []
+                if self.__manager_email_alert:
+                    cc = [self._account_admin]
+                    if manager_email:
+                        cc.append(manager_email)
                 name = to
                 if ldap_data:
                     name = ldap_data.get('displayName')
@@ -202,8 +206,8 @@ class NonClusterZombiePolicy:
                                                   message_type=kwargs.get('message_type'),
                                                   extra_purse=kwargs.get('delta_cost', 0))
                 else:
-                    if self.__manager_email_alert:
-                        kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
+                    if self.__manager_email_alert and manager_email:
+                        kwargs['admins'].append(manager_email)
                     self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=[],
                                                   resource_id=resource_id, message_type=kwargs.get('message_type'),
                                                   extra_purse=kwargs.get('delta_cost', 0))
