@@ -143,6 +143,9 @@ cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY,
 run_shell_cmd(f"echo Running the {CLOUDABILITY_POLICY}")
 run_shell_cmd(cloudability_run_command)
 
+# Cost-center regression, across clouds - reads directly from the source
+# billing index via orion_uuid (see orion_cost_center_uuid_tagger.py), no
+# separate rollup or destination index.
 if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     ORION_COST_ACCOUNT = f'CC{ORION_COST_CENTER}'
     ORION_COST_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'orion-configs', 'cg-cost-regressions.yaml')
@@ -158,10 +161,11 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
         'azureCostIncrease', 'azureCostDecrease',
         'ibmCostIncrease', 'ibmCostDecrease',
     ]
-    ORION_COST_INDEX = 'cloud-governance-orion-cost-metrics-index'
 
     es_scheme = 'https' if str(ES_PORT) == '443' else 'http'
-    es_auth = f'{ES_USER}:{ES_PASSWORD}@' if ES_USER else ''
+    # URL-encode credentials - they're interpolated into a double-quoted shell
+    # string via os.system, where unescaped $ would otherwise be shell-expanded.
+    es_auth = f'{urllib.parse.quote(ES_USER, safe="")}:{urllib.parse.quote(ES_PASSWORD, safe="")}@' if ES_USER else ''
     es_server = f'{es_scheme}://{es_auth}{ES_HOST}:{ES_PORT}'
     orion_cost_output_base = f'/tmp/orion-cost-output-{ORION_COST_ACCOUNT}.json'
     orion_cost_data_base = f'/tmp/orion-cost-data-{ORION_COST_ACCOUNT}.csv'
@@ -170,12 +174,12 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
 
     run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files))
 
-    run_shell_cmd("echo Running Orion cost metrics rollup")
-    rollup_status = run_shell_cmd(
-        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_cost_metrics_rollup" -e orion_cost_center="{ORION_COST_CENTER}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    run_shell_cmd("echo Tagging cost-center billing rows with orion_uuid")
+    tagger_status = run_shell_cmd(
+        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_cost_center_uuid_tagger" -e orion_cost_center="{ORION_COST_CENTER}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
-    if rollup_status != 0:
-        run_shell_cmd("echo Skipping Orion cost analysis and alert - metrics rollup failed")
+    if tagger_status != 0:
+        run_shell_cmd("echo Skipping Orion cost analysis and alert - orion_uuid tagging failed")
     else:
         try:
             run_shell_cmd("echo Running Orion cost regression analysis")
@@ -183,7 +187,7 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
             # status cannot gate the next step; presence of output files, which
             # are written only when analysis completes, is used instead.
             run_shell_cmd(
-                f"""podman run --rm --name orion --net="host" -v "{ORION_COST_CONFIG_PATH}":"{ORION_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{ORION_COST_INDEX}" --metadata-index="{ORION_COST_INDEX}" --hunter-analyze --input-vars='{{"account": "{ORION_COST_ACCOUNT}"}}' --config "{ORION_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_cost_output_base}" --save-data-path "{orion_cost_data_base}" """)
+                f"""podman run --rm --name orion --net="host" -v "{ORION_COST_CONFIG_PATH}":"{ORION_COST_CONFIG_PATH}" -v /tmp:/tmp {QUAY_ORION_REPOSITORY} --es-server="{es_server}" --benchmark-index="{COST_ES_INDEX}" --metadata-index="{COST_ES_INDEX}" --hunter-analyze --input-vars='{{"account": "{ORION_COST_ACCOUNT}"}}' --config "{ORION_COST_CONFIG_PATH}" --output-format json --save-output-path "{orion_cost_output_base}" --save-data-path "{orion_cost_data_base}" """)
 
             merged_data_points = []
             for output_file in orion_cost_output_files:
