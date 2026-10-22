@@ -76,6 +76,14 @@ def test_run_backfill_with_explicit_args():
     assert call_kwargs['es_index'] == 'cloud-governance-clouds-billing-reports'
 
 
+def test_run_reports_partial_failure_on_version_conflicts():
+    tagger, mock_es = _make_tagger()
+    mock_es.update_by_query.return_value = {'updated': 2, 'version_conflicts': 1, 'failures': []}
+    result = tagger.run(start_date='2026-09-01', end_date='2026-09-30')
+    assert result['status'] == 'partial_failure'
+    assert result['version_conflicts'] == 1
+
+
 def test_run_falls_back_to_incremental_on_partial_date_args():
     tagger, mock_es = _make_tagger()
     mock_es.update_by_query.return_value = {'updated': 1}

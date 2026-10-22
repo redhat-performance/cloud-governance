@@ -119,6 +119,12 @@ class OrionCostCenterUuidTagger:
         query = self.__build_query(start_date=start_date, end_date=end_date)
         script = self.__build_script(self.__cost_center)
         result = self.__elastic_operations.update_by_query(es_index=self.SOURCE_ES_INDEX, query=query, script=script)
-        updated = result.get('updated', 0) if isinstance(result, dict) else 0
-        logger.info(f'Orion cost-center uuid tagging complete for CC{self.__cost_center} ({start_date} to {end_date}): {updated} documents tagged')
-        return {'status': 'success', 'documents_tagged': updated, 'start_date': start_date, 'end_date': end_date}
+        updated = result.get('updated', 0) if hasattr(result, 'get') else 0
+        failures = result.get('failures', []) if hasattr(result, 'get') else []
+        conflicts = result.get('version_conflicts', 0) if hasattr(result, 'get') else 0
+        if failures:
+            logger.error(f'Orion cost-center uuid tagging for CC{self.__cost_center} had {len(failures)} failures: {failures[:3]}')
+        status = 'partial_failure' if failures or conflicts else 'success'
+        logger.info(f'Orion cost-center uuid tagging complete for CC{self.__cost_center} ({start_date} to {end_date}): {updated} documents tagged, {conflicts} version conflicts')
+        return {'status': status, 'documents_tagged': updated, 'version_conflicts': conflicts,
+                'start_date': start_date, 'end_date': end_date}
