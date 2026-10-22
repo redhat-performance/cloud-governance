@@ -10,7 +10,7 @@ class OrionCostCenterUuidTagger:
     """
     Tags existing cost-center billing rows with orion_uuid/account in place on
     the shared multi-cloud billing index, so Orion can read monthly cost-center
-    regressions directly from it - no separate rollup or destination index.
+    regressions directly from it.
 
     orion_uuid is shared across all clouds for a (cost center, month); total
     metrics sum everything sharing it, per-cloud metrics add a CloudName
@@ -20,8 +20,6 @@ class OrionCostCenterUuidTagger:
     """
 
     SOURCE_ES_INDEX = 'cloud-governance-clouds-billing-reports'
-    # Only these policies carry real per-account monthly spend in the source
-    # index (AWS via payer billings, the other clouds via cost billing reports).
     SPEND_POLICIES = ['cost_explorer_payer_billings', 'cost_billing_reports']
 
     def __init__(self):
