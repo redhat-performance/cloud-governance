@@ -302,6 +302,18 @@ class ElasticSearchOperations:
                                 break
         return es_data
 
+    def update_by_query(self, es_index: str, query: dict, script: dict):
+        """
+        This method bulk-updates documents matching a query via a script
+        @param es_index:
+        @param query: ES query dict
+        @param script: ES script dict
+        @return:
+        """
+        if not self.__es:
+            return {'status': 'no_upload', 'message': 'ES not configured'}
+        return self.__es.update_by_query(index=es_index, body={'query': query, 'script': script}, conflicts='proceed')
+
     @typechecked()
     @logger_time_stamp
     def delete_data_in_between_in_es(self, es_index: str, start_datetime: datetime, end_datetime: datetime):
