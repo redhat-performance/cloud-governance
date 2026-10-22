@@ -143,9 +143,6 @@ cloudability_run_command = generate_shell_cmd(policy=CLOUDABILITY_POLICY,
 run_shell_cmd(f"echo Running the {CLOUDABILITY_POLICY}")
 run_shell_cmd(cloudability_run_command)
 
-# Cost-center regression, across clouds - reads directly from the source
-# billing index via orion_uuid (see orion_cost_center_uuid_tagger.py), no
-# separate rollup or destination index.
 if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     ORION_COST_ACCOUNT = f'CC{ORION_COST_CENTER}'
     ORION_COST_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))), 'orion-configs', 'cg-cost-regressions.yaml')
