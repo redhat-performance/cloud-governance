@@ -164,9 +164,6 @@ class EnvironmentVariables:
         self._environment_variables_dict['orion_rollup_start_date'] = EnvironmentVariables.get_env('orion_rollup_start_date', '')
         self._environment_variables_dict['orion_rollup_end_date'] = EnvironmentVariables.get_env('orion_rollup_end_date', '')
         self._environment_variables_dict['orion_metrics_es_index'] = EnvironmentVariables.get_env('orion_metrics_es_index', 'cloud-governance-orion-metrics-index')
-        self._environment_variables_dict['orion_cost_rollup_start_date'] = EnvironmentVariables.get_env('orion_cost_rollup_start_date', '')
-        self._environment_variables_dict['orion_cost_rollup_end_date'] = EnvironmentVariables.get_env('orion_cost_rollup_end_date', '')
-        self._environment_variables_dict['orion_cost_es_index'] = EnvironmentVariables.get_env('orion_cost_es_index', 'cloud-governance-orion-cost-metrics-index')
         self._environment_variables_dict['orion_cost_center'] = EnvironmentVariables.get_env('orion_cost_center', '')
         self._environment_variables_dict['ORION_OUTPUT_FILE'] = EnvironmentVariables.get_env('ORION_OUTPUT_FILE', '')
         self._environment_variables_dict['SLACK_API_TOKEN'] = EnvironmentVariables.get_env('SLACK_API_TOKEN', '')
@@ -314,7 +311,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['ADMIN_MAIL_LIST'] = EnvironmentVariables.get_env('ADMIN_MAIL_LIST', '')
         self._environment_variables_dict['SKIP_POLICIES_ALERT'] = literal_eval(
             EnvironmentVariables.get_env('SKIP_POLICIES_ALERT', '[]'))
-        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_metrics_rollup', 'orion_alert_handler', 'orion_cost_metrics_rollup']:
+        if self._environment_variables_dict.get('policy') in ['send_aggregated_alerts', 'cloudability_cost_reports', 'orion_metrics_rollup', 'orion_alert_handler', 'orion_cost_center_uuid_tagger']:
             self._environment_variables_dict['COMMON_POLICIES'] = True
         # CRO -- Cloud Resource Orch
         self._environment_variables_dict[
