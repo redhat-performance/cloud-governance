@@ -72,6 +72,9 @@ class OrionCostCenterUuidTagger:
         param, not read from the document) and the row's start_date.
         start_date's format isn't consistent across writers (some include a
         time component) - the first 7 chars ("YYYY-MM") are robust to both.
+        AWSCLOUD is a stray legacy CloudName label on some historical rows;
+        normalized to AWS here so awsCostIncrease/Decrease (which filter on
+        CloudName.keyword: AWS) don't silently miss them.
         @param cost_center: the configured cost center (int)
         @return: ES script dict
         """
@@ -79,7 +82,8 @@ class OrionCostCenterUuidTagger:
             "source": (
                 "ctx._source.account = 'CC' + params.cost_center; "
                 "ctx._source.orion_uuid = 'CC' + params.cost_center + '-' + "
-                "ctx._source.start_date.toString().substring(0, 7);"
+                "ctx._source.start_date.toString().substring(0, 7); "
+                "if (ctx._source.CloudName == 'AWSCLOUD') { ctx._source.CloudName = 'AWS'; }"
             ),
             "params": {"cost_center": cost_center}
         }

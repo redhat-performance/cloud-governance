@@ -51,6 +51,12 @@ def test_build_script_sets_account_and_orion_uuid_from_param():
     assert "substring(0, 7)" in script['source']
 
 
+def test_build_script_normalizes_legacy_awscloud_label():
+    script = OrionCostCenterUuidTagger._OrionCostCenterUuidTagger__build_script(9999)
+    assert "ctx._source.CloudName == 'AWSCLOUD'" in script['source']
+    assert "ctx._source.CloudName = 'AWS'" in script['source']
+
+
 def test_run_incremental_mode_uses_last_completed_month():
     tagger, mock_es = _make_tagger()
     mock_es.update_by_query.return_value = {'updated': 3}
