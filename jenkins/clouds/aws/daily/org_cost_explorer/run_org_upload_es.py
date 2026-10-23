@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import urllib.parse
 
@@ -172,8 +173,19 @@ if SLACK_API_TOKEN and SLACK_CHANNEL_NAME and ORION_COST_CENTER:
     run_shell_cmd('rm -f ' + ' '.join(f'"{f}"' for f in orion_cost_output_files + orion_cost_data_files))
 
     run_shell_cmd("echo Tagging cost-center billing rows with orion_uuid")
-    tagger_status = run_shell_cmd(
-        f"""podman run --rm --net="host" --name cloud-governance -e policy="orion_cost_center_uuid_tagger" -e orion_cost_center="{ORION_COST_CENTER}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    # Argument list, no shell - so a $ in ES_PASSWORD reaches the container
+    # unchanged instead of being shell-expanded (os.system runs via a shell).
+    tagger_status = subprocess.run([
+        'podman', 'run', '--rm', '--net=host', '--name', 'cloud-governance',
+        '-e', 'policy=orion_cost_center_uuid_tagger',
+        '-e', f'orion_cost_center={ORION_COST_CENTER}',
+        '-e', f'es_host={ES_HOST}',
+        '-e', f'es_port={ES_PORT}',
+        '-e', f'es_user={ES_USER}',
+        '-e', f'es_password={ES_PASSWORD}',
+        '-e', 'log_level=INFO',
+        QUAY_CLOUD_GOVERNANCE_REPOSITORY,
+    ]).returncode
 
     if tagger_status != 0:
         run_shell_cmd("echo Skipping Orion cost analysis and alert - orion_uuid tagging failed")
