@@ -76,12 +76,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Configure AWS credentials for creating EC2 instance
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.REGION }}
       - uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
@@ -90,6 +84,12 @@ jobs:
           pip3 install jinja2
           sudo wget -O /usr/local/bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
           sudo chmod 775 /usr/local/bin/terragrunt
+      - name: Configure AWS credentials for creating EC2 instance
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
       - name: Create Terraform AWS instance
         id: terraform_instance_id
         env:
@@ -204,12 +204,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Configure AWS credentials for pytest
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.REGION }}
       - name: Get Cache of the Terraform State File
         uses: actions/cache@v5
         with:
@@ -223,6 +217,12 @@ jobs:
           pip3 install jinja2
           sudo wget -O /usr/local/bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
           sudo chmod 775 /usr/local/bin/terragrunt
+      - name: Configure AWS credentials for pytest
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
       - name: Destroy AWS Terraform instance
         env:
           ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
