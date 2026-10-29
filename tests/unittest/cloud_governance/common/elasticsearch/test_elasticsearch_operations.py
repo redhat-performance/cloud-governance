@@ -56,3 +56,9 @@ def test_post_query():
         assert response
     except TypeError:
         assert TypeError
+
+
+def test_update_by_query_skips_when_es_not_configured():
+    es_operations = ElasticSearchOperations(es_host='', es_port='')
+    result = es_operations.update_by_query(es_index='one', query={}, script={})
+    assert result['status'] == 'no_upload'
