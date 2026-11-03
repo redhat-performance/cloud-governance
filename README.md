@@ -36,6 +36,7 @@ List of Policies:
 - unused_nat_gateway
 - s3_inactive
 - unused_access_key
+- rotate_access_key
 - empty_roles
 - tag_resources
 - tag_iam_user

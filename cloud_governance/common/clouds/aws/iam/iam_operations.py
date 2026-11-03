@@ -395,6 +395,56 @@ class IAMOperations:
 
         logger.info(f"Access key deactivation processed for user '{username}'.")
 
+    def get_inactive_access_keys(self, username: str) -> list:
+        """
+        Returns the inactive access keys of the given IAM user, oldest first.
+        :param username: IAM user name.
+        :return: list of AccessKeyMetadata dicts whose Status is 'Inactive'.
+        """
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return []
+        inactive_keys = [key for key in access_keys if key.get('Status') == 'Inactive']
+        return sorted(inactive_keys, key=lambda k: k['CreateDate'])
+
+    def rotate_user_access_key(self, username: str, dry_run: bool = False):
+        """
+        Replaces the oldest inactive access key of the given IAM user with a new one.
+        AWS allows at most two access keys per user, so the inactive key is deleted before
+        the new key is created.
+        :param username: IAM user name.
+        :param dry_run: When True, only logs the key that would be rotated.
+        :return: (AccessKeyId, SecretAccessKey) of the new key, or None if nothing was rotated.
+        """
+        inactive_keys = self.get_inactive_access_keys(username)
+        if not inactive_keys:
+            logger.info(f"No inactive access key found for user '{username}'")
+            return None
+
+        old_access_key_id = inactive_keys[0]['AccessKeyId']
+        if dry_run:
+            logger.info(f"Dry run: would rotate inactive access key '{old_access_key_id}' for user '{username}'")
+            return None
+
+        try:
+            self.iam_client.delete_access_key(UserName=username, AccessKeyId=old_access_key_id)
+            logger.info(f"Deleted inactive access key '{old_access_key_id}' for user '{username}'")
+        except Exception as e:
+            logger.error(f"Failed to delete inactive access key '{old_access_key_id}' for user '{username}': {e}")
+            return None
+
+        try:
+            response = self.iam_client.create_access_key(UserName=username)['AccessKey']
+            logger.info(f"Created access key '{response['AccessKeyId']}' for user '{username}'")
+            return response['AccessKeyId'], response['SecretAccessKey']
+        except Exception as e:
+            logger.error(f"Failed to create a new access key for user '{username}' after deleting "
+                         f"'{old_access_key_id}': {e}")
+            raise RuntimeError(f"Failed to create a new access key for user '{username}' after deleting "
+                               f"'{old_access_key_id}': {e}") from e
+
     def get_instance_profiles_for_role(self, role_name: str):
         """
         This method returns instance profiles associated with a given IAM role.
