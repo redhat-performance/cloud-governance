@@ -12,18 +12,13 @@ from cloud_governance.main.environment_variables import environment_variables
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
-        # ldap_host_name may be a bare hostname (legacy - wrapped as ldap://<host>) or a full
-        # URI (e.g. ldap:///dc=ipa,dc=redhat,dc=com for IPA's DNS-based server discovery, or
-        # ldaps://<specific-server> for a direct, encrypted connection) - used as-is when it
-        # already specifies a scheme.
+        # A bare hostname is wrapped as ldap://<host>; a full URI is used as-is.
         ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         self.__ldap_client = ldap.initialize(ldap_uri)
         self.__ldap_client.protocol_version = ldap.VERSION3
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
-        # ldaps:// is already encrypted at connect time; a plain ldap:// connection (including
-        # the bare-hostname fallback above) needs StartTLS before anything, including the bind
-        # password below, goes over the wire.
+        # StartTLS is needed on ldap://; ldaps:// is already encrypted.
         self.__tls_ready = ldap_uri.startswith('ldaps://')
         if not self.__tls_ready:
             try:
@@ -31,10 +26,8 @@ class LdapSearch:
                 self.__tls_ready = True
             except ldap.LDAPError as err:
                 logger.error(f'LDAP StartTLS failed: {err}')
-        # Bind with a service account when configured; a failure is logged, not raised, so a
-        # credential or connection issue doesn't crash the whole policy run.
-        bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN', '')
-        bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD', '')
+        bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN')
+        bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD')
         if bind_dn and bind_password and self.__tls_ready:
             try:
                 self.__ldap_client.simple_bind_s(bind_dn, bind_password)
@@ -83,7 +76,7 @@ class LdapSearch:
         try:
             self.__ldap_client.protocol_version = ldap.VERSION3
             self.__ldap_client.set_option(ldap.OPT_REFERRALS, 0)
-            base = environment_variables.environment_variables_dict.get('LDAP_BASE_DN', 'dc=redhat, dc=com')
+            base = environment_variables.environment_variables_dict.get('LDAP_BASE_DN')
             criteria = f'(&(uid={user_name}))'
             attributes = ['displayName', 'manager', 'cn']
             result = self.__ldap_client.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
