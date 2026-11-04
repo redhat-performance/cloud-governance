@@ -42,3 +42,13 @@ def test_start_tls_failure_does_not_raise(mock_start_tls):
     This method tests a StartTLS failure is logged rather than raised
     """
     LdapSearch(ldap_host_name='example.com')
+
+
+@patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
+@patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
+def test_lookup_blocked_when_tls_failed(mock_start_tls):
+    """
+    This method tests lookups are skipped, not run unencrypted, when StartTLS failed
+    """
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    assert ldap_object._LdapSearch__get_details(user_name='test') == []
