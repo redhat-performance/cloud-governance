@@ -12,15 +12,15 @@ from cloud_governance.main.environment_variables import environment_variables
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
-        self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
+        # ldap_host_name may be a bare hostname (legacy - wrapped as ldap://<host>) or a full
+        # URI (e.g. ldap:///dc=ipa,dc=redhat,dc=com for IPA's DNS-based server discovery, or
+        # ldaps://<specific-server> for a direct, encrypted connection) - used as-is when it
+        # already specifies a scheme.
+        ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
+        self.__ldap_client = ldap.initialize(ldap_uri)
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
-        # Temporary measure: this LDAP server now rejects anonymous binds, which is what
-        # python-ldap defaults to without an explicit bind call. Bind with a service account
-        # when configured; left unset, this is a no-op so behavior is unchanged wherever
-        # anonymous access still works (e.g. tests). A bind failure must not raise here - this
-        # runs during Postfix/MailMessage construction, and an uncaught error would crash the
-        # whole policy run rather than just this lookup. This approach is expected to need
-        # replacing later; don't treat it as a permanent solution.
+        # Bind with a service account when configured; a failure is logged, not raised, so a
+        # credential or connection issue doesn't crash the whole policy run.
         bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN', '')
         bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD', '')
         if bind_dn and bind_password:
@@ -69,14 +69,14 @@ class LdapSearch:
         try:
             self.__ldap_client.protocol_version = ldap.VERSION3
             self.__ldap_client.set_option(ldap.OPT_REFERRALS, 0)
-            base = 'dc=redhat, dc=com'
+            base = environment_variables.environment_variables_dict.get('LDAP_BASE_DN', 'dc=redhat, dc=com')
             criteria = f'(&(uid={user_name}))'
             attributes = ['displayName', 'manager', 'cn']
             result = self.__ldap_client.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
             if len(result) == 1:
                 response = result[0][1]
         except Exception as err:
-            logger.info(err)
+            logger.warning(err)
         return response
 
     def get_user_details(self, user_name):
