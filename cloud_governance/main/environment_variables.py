@@ -270,6 +270,14 @@ class EnvironmentVariables:
         self._environment_variables_dict['JIRA_QUEUE'] = EnvironmentVariables.get_env('JIRA_QUEUE', '')
         self._environment_variables_dict['JIRA_PASSWORD'] = EnvironmentVariables.get_env('JIRA_PASSWORD', '')
 
+        # Jenkins env parameters
+        self._environment_variables_dict['JENKINS_URL'] = EnvironmentVariables.get_env('JENKINS_URL', '')
+        self._environment_variables_dict['JENKINS_USERNAME'] = EnvironmentVariables.get_env('JENKINS_USERNAME', '')
+        self._environment_variables_dict['JENKINS_API_TOKEN'] = EnvironmentVariables.get_env('JENKINS_API_TOKEN', '')
+        self._environment_variables_dict['JENKINS_PASSWORD'] = EnvironmentVariables.get_env('JENKINS_PASSWORD', '')
+        self._environment_variables_dict['JENKINS_VERIFY_SSL'] = \
+            EnvironmentVariables.get_boolean_from_environment('JENKINS_VERIFY_SSL', True)
+
         # Cloud Resource Orchestration
         self._environment_variables_dict['CRO_PORTAL'] = EnvironmentVariables.get_env('CRO_PORTAL', '')
         self._environment_variables_dict['CLOUD_NAME'] = EnvironmentVariables.get_env('CLOUD_NAME', '')
