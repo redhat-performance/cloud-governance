@@ -14,6 +14,11 @@ class LdapSearch:
         # Enforce certificate validation explicitly rather than relying on the OS/library default.
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
+        self.__ldap_client.protocol_version = ldap.VERSION3
+        try:
+            self.__ldap_client.start_tls_s()
+        except ldap.LDAPError as err:
+            logger.error(f'LDAP StartTLS failed: {err}')
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
 
     def __get_manager_name(self, manager_data: str):
