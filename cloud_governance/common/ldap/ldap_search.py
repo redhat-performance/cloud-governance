@@ -17,22 +17,25 @@ class LdapSearch:
         # ldaps://<specific-server> for a direct, encrypted connection) - used as-is when it
         # already specifies a scheme.
         ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
-        # Enforce certificate validation explicitly rather than relying on the OS/library default.
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         self.__ldap_client = ldap.initialize(ldap_uri)
         self.__ldap_client.protocol_version = ldap.VERSION3
-        self.__tls_ready = False
-        try:
-            self.__ldap_client.start_tls_s()
-            self.__tls_ready = True
-        except ldap.LDAPError as err:
-            logger.error(f'LDAP StartTLS failed: {err}')
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
+        # ldaps:// is already encrypted at connect time; a plain ldap:// connection (including
+        # the bare-hostname fallback above) needs StartTLS before anything, including the bind
+        # password below, goes over the wire.
+        self.__tls_ready = ldap_uri.startswith('ldaps://')
+        if not self.__tls_ready:
+            try:
+                self.__ldap_client.start_tls_s()
+                self.__tls_ready = True
+            except ldap.LDAPError as err:
+                logger.error(f'LDAP StartTLS failed: {err}')
         # Bind with a service account when configured; a failure is logged, not raised, so a
         # credential or connection issue doesn't crash the whole policy run.
         bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN', '')
         bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD', '')
-        if bind_dn and bind_password:
+        if bind_dn and bind_password and self.__tls_ready:
             try:
                 self.__ldap_client.simple_bind_s(bind_dn, bind_password)
             except ldap.LDAPError as err:
