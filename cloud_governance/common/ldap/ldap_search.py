@@ -28,11 +28,13 @@ class LdapSearch:
                 logger.error(f'LDAP StartTLS failed: {err}')
         bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN')
         bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD')
+        self.__bind_failed = False
         if bind_dn and bind_password and self.__tls_ready:
             try:
                 self.__ldap_client.simple_bind_s(bind_dn, bind_password)
             except ldap.LDAPError as err:
                 logger.error(f'LDAP bind failed: {err}')
+                self.__bind_failed = True
 
     def __get_manager_name(self, manager_data: str):
         """
@@ -71,7 +73,7 @@ class LdapSearch:
         @return:
         """
         response = []
-        if not self.__tls_ready:
+        if not self.__tls_ready or self.__bind_failed:
             return response
         try:
             self.__ldap_client.protocol_version = ldap.VERSION3

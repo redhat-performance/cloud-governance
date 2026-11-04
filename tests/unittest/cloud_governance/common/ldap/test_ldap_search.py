@@ -94,6 +94,21 @@ def test_bind_failure_does_not_raise(mock_bind, mock_start_tls):
     environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = ''
 
 
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch.object(SimpleLDAPObject, 'simple_bind_s', side_effect=ldap.INVALID_CREDENTIALS())
+@patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
+def test_lookup_blocked_when_bind_failed(mock_bind, mock_start_tls):
+    """
+    This method tests lookups are skipped, not run unauthenticated, when the bind failed
+    """
+    environment_variables.environment_variables_dict['LDAP_BIND_DN'] = 'uid=svc-account,dc=example,dc=com'
+    environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = 'wrong'
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    assert ldap_object._LdapSearch__get_details(user_name='test') == []
+    environment_variables.environment_variables_dict['LDAP_BIND_DN'] = ''
+    environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = ''
+
+
 @patch.object(SimpleLDAPObject, 'simple_bind_s')
 @patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
 def test_bind_skipped_when_tls_failed(mock_start_tls, mock_bind):
