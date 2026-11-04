@@ -12,6 +12,10 @@ from cloud_governance.main.environment_variables import environment_variables
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
+        """
+        This method initializes the LDAP connection
+        @param ldap_host_name:
+        """
         # A bare hostname is wrapped as ldap://<host>; a full URI is used as-is.
         ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
