@@ -3,7 +3,6 @@ import pandas
 from datetime import datetime, timedelta, timezone
 
 from cloud_governance.common.elasticsearch.elasticsearch_operations import ElasticSearchOperations
-from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.logger.logger_time_stamp import logger_time_stamp
 from cloud_governance.common.mails.alert_recipient import resolve_alert_recipient
 from cloud_governance.common.mails.mail_message import MailMessage
@@ -140,24 +139,16 @@ class SendAggregatedAlerts:
 
     def __group_by_user(self, policy_data: list):
         """
-        This method returns the data grouped by the resolved alert recipient.
-        Records with neither a usable Email tag nor a usable User tag are dropped, rather
-        than grouped under 'NA' and mailed to a placeholder address.
+        This method returns the data grouped by user files
         :param policy_data:
         :type policy_data:
         :return:
         :rtype:
         """
         user_data = {}
-        unroutable = 0
         for record in policy_data:
-            recipient = self.__get_alert_recipient(record=record)
-            if not recipient:
-                unroutable += 1
-                continue
+            recipient = self.__get_alert_recipient(record=record) or record.get('User', 'NA')
             user_data.setdefault(recipient, []).append(record)
-        if unroutable:
-            logger.warning(f'Skipped {unroutable} policy alert record(s) with no Email or User tag to route to')
         return user_data
 
     @staticmethod

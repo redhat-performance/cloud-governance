@@ -175,15 +175,17 @@ def test_group_by_user_falls_back_to_user_when_email_invalid():
     assert list(grouped.keys()) == ['jdoe']
 
 
-def test_group_by_user_drops_records_with_no_routable_recipient():
+def test_group_by_user_groups_under_raw_user_value_when_no_routable_recipient():
     """
-    This method tests records with neither tag are dropped rather than grouped under 'NA'
-    and mailed to NA@redhat.com, which is what happens today for untagged S3 buckets.
+    This method tests records with neither a usable Email tag nor a usable User tag are
+    grouped under the raw User tag value (e.g. 'NA') rather than dropped - this matches the
+    original, pre-Email-tag behavior, so these alerts still go out instead of disappearing.
     """
     environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
     alert = _make_alert_instance()
-    grouped = _group_by_user(alert, [_record(User='NA'), _record(User=''), _record(User=None)])
-    assert grouped == {}
+    grouped = _group_by_user(alert, [_record(User='NA'), _record(User='NA')])
+    assert list(grouped.keys()) == ['NA']
+    assert len(grouped['NA']) == 2
 
 
 def test_group_by_user_routes_access_key_alerts_to_the_individual():

@@ -55,24 +55,20 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+      - name: Install terragrunt
+        run: |
+          pip3 install jinja2
+          sudo wget -O /usr/local/bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
+          sudo chmod 775 /usr/local/bin/terragrunt
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.REGION }}
-      - name: Install terraform and terragrunt
-        run: |
-          # Install Terrafrom
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get -y update && sudo apt-get install -y terraform
-          pip3 install jinja2
-          # install terragrunt
-          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
-          mv terragrunt_linux_amd64 terragrunt
-          mv terragrunt /usr/local/bin/terragrunt
-          chmod 775 /usr/local/bin/terragrunt
       - name: Create instance
         id: terraform_instance_id
         env:
@@ -180,29 +176,25 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Get Cache of the Terraform State File
+        uses: actions/cache@v5
+        with:
+          path: terraform/aws_instance
+          key: terraform-state-${{ needs.terraform_apply.outputs.INSTANCE_ID }}
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+      - name: Install terragrunt
+        run: |
+          pip3 install jinja2
+          sudo wget -O /usr/local/bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
+          sudo chmod 775 /usr/local/bin/terragrunt
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.REGION }}
-      - name: Get Cache of the Terraform State File
-        uses: actions/cache@v5
-        with:
-          path: terraform/aws_instance
-          key: terraform-state-${{ needs.terraform_apply.outputs.INSTANCE_ID }}
-      - name: Install terraform and terragrunt
-        run: |
-          # Install Terrafrom
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get -y update && sudo apt-get install -y terraform
-          pip3 install jinja2
-          # install terragrunt
-          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.6/terragrunt_linux_amd64
-          mv terragrunt_linux_amd64 terragrunt
-          mv terragrunt /usr/local/bin/terragrunt
-          chmod 775 /usr/local/bin/terragrunt
       - name: Destroy instance
         env:
           ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}

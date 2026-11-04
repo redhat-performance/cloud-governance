@@ -233,7 +233,9 @@ class ZombieClusterCommonMethods:
                 to = resolve_alert_recipient(email_tag_value=email, user_tag_value=user)
                 ldap_lookup_user = user
             ldap_data = self._ldap.get_user_details(user_name=ldap_lookup_user)
-            cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+            cc = [self._account_admin]
+            if ldap_data:
+                cc.append(f'{ldap_data.get("managerId")}@redhat.com')
             name = user
             if ldap_data:
                 name = ldap_data.get('displayName')

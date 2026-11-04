@@ -1,92 +1,126 @@
-# Orion regression-detection config for the metrics produced by
-# cloud_governance/policy/common_policies/orion_cost_metrics_rollup.py (cloud-governance-orion-cost-metrics-index).
-# One document per cost center per completed month; "account" here is the
-# cost center's synthetic id, e.g. "CC<cost_center>" - not a cloud account name.
+# Cost-center regression, read directly from cloud-governance-clouds-billing-
+# reports. orion_uuid/account are written by OrionCostCenterUuidTagger on
+# spend-bearing rows only, so account.keyword alone is enough to scope the
+# metadata match - no other row ever has orion_uuid set.
+#
+# orion_uuid is shared across all clouds for a (cost center, month); total
+# metrics sum everything sharing it, per-cloud metrics add a CloudName filter
+# on top of the same uuid.
 #
 # Each metric gets its own top-level test entry, not multiple metrics under
 # one shared test.
 #
+# gcp_cost intentionally omitted: if a cloud's cost-report feed for this
+# cost center has gone stale (flatlined), a change-point entry for it only
+# produces noise. Add gcpCostIncrease/gcpCostDecrease back once that feed is
+# confirmed reporting fresh data again.
+#
 # Invoke once per cost center, e.g.:
 #   orion --es-server=<opensearch-url> \
-#         --benchmark-index=cloud-governance-orion-cost-metrics-index \
-#         --metadata-index=cloud-governance-orion-cost-metrics-index \
+#         --benchmark-index=cloud-governance-clouds-billing-reports \
+#         --metadata-index=cloud-governance-clouds-billing-reports \
 #         --hunter-analyze \
 #         --input-vars='{"account": "CC<COST_CENTER>"}' \
 #         --config cg-cost-regressions.yaml
 tests:
   - name: totalCostIncrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: totalCostIncrease
-        metric_of_interest: total_cost
+        metric_of_interest: Actual
+        agg:
+          agg_type: sum
         direction: 1
         threshold: 20
 
   - name: totalCostDecrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: totalCostDecrease
-        metric_of_interest: total_cost
+        metric_of_interest: Actual
+        agg:
+          agg_type: sum
         direction: -1
         threshold: 20
 
   - name: awsCostIncrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: awsCostIncrease
-        metric_of_interest: aws_cost
+        metric_of_interest: Actual
+        CloudName.keyword: AWS
+        agg:
+          agg_type: sum
         direction: 1
         threshold: 20
 
   - name: awsCostDecrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: awsCostDecrease
-        metric_of_interest: aws_cost
+        metric_of_interest: Actual
+        CloudName.keyword: AWS
+        agg:
+          agg_type: sum
         direction: -1
         threshold: 20
 
   - name: azureCostIncrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: azureCostIncrease
-        metric_of_interest: azure_cost
+        metric_of_interest: Actual
+        CloudName.keyword: AZURE
+        agg:
+          agg_type: sum
         direction: 1
         threshold: 20
 
   - name: azureCostDecrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: azureCostDecrease
-        metric_of_interest: azure_cost
+        metric_of_interest: Actual
+        CloudName.keyword: AZURE
+        agg:
+          agg_type: sum
         direction: -1
         threshold: 20
 
-  # gcp_cost intentionally omitted: if a cloud's cost-report feed for this
-  # cost center has gone stale (flatlined), a change-point entry for it
-  # only produces noise. Add gcpCostIncrease/gcpCostDecrease back once
-  # that feed is confirmed reporting fresh data again.
-
   - name: ibmCostIncrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: ibmCostIncrease
-        metric_of_interest: ibm_cost
+        metric_of_interest: Actual
+        CloudName.keyword: "IBM Cloud"
+        agg:
+          agg_type: sum
         direction: 1
         threshold: 20
 
   - name: ibmCostDecrease
+    uuid_field: orion_uuid
     metadata:
       account.keyword: "{{ account }}"
     metrics:
       - name: ibmCostDecrease
-        metric_of_interest: ibm_cost
+        metric_of_interest: Actual
+        CloudName.keyword: "IBM Cloud"
+        agg:
+          agg_type: sum
         direction: -1
         threshold: 20

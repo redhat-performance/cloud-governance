@@ -200,3 +200,26 @@ def test_trigger_mail_falls_back_to_user_when_email_tag_missing():
     _, kwargs = zcm._mail.send_email_postfix.call_args
     assert kwargs['to'] == 'jdoe'
     zcm._ldap.get_user_details.assert_called_with(user_name='jdoe')
+
+
+def test_trigger_mail_sends_successfully_when_ldap_lookup_fails():
+    """
+    This method tests the mail still sends when the LDAP lookup fails (returns [], not a
+    dict) - previously this raised AttributeError ('list' object has no attribute 'get')
+    before ever reaching send_email_postfix, so no email sent at all
+    """
+    environment_variables.environment_variables_dict['ALLOWED_EMAIL_DOMAINS'] = ['@redhat.com']
+    zcm = _make_instance()
+    zcm._mail = MagicMock()
+    zcm._ldap = MagicMock()
+    zcm._ldap.get_user_details.return_value = []
+    tags = [
+        {'Key': 'User', 'Value': 'jdoe'},
+        {'Key': 'Name', 'Value': 'test-cluster'},
+    ]
+    zcm.trigger_mail(tags=tags, resource_id='test-cluster', days=4, resources=['i-123'],
+                     message_type='notification')
+    zcm._mail.send_email_postfix.assert_called_once()
+    _, kwargs = zcm._mail.send_email_postfix.call_args
+    assert kwargs['to'] == 'jdoe'
+    assert not any('None@redhat.com' in str(c) for c in kwargs['cc'])

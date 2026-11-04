@@ -143,25 +143,27 @@ def _sent_cc(mock_smtp):
 
 
 @patch('cloud_governance.common.mails.postfix.smtplib.SMTP')
-def test_send_email_postfix_skips_admin_cc_for_email_shaped_recipient(mock_smtp):
+def test_send_email_postfix_escalates_to_admins_for_unresolvable_email_shaped_recipient(mock_smtp):
     """
-    This method tests a resolved Email-tag recipient (individual or team/group address) is not
-    CC'd to the default admins just because it doesn't resolve as an LDAP username - that
-    LDAP uid lookup was never a meaningful check for an already-qualified address, and firing
-    it anyway would needlessly broadcast every Email-tag-routed alert to the default admins.
+    This method tests an Email-tag group address (or any other already-qualified email `to`)
+    still goes through the LDAP check and is escalated to the default admins when it does not
+    resolve - this is the original, unconditional form of this safety net: it never cared
+    what shape `to` was, only whether LDAP could resolve it.
     """
     postfix = _make_postfix()
     postfix._Postfix__ldap_search.get_user_details.return_value = []
     postfix.send_email_postfix(subject='subject', to='team-dl@redhat.com', cc=[], content='body')
-    postfix._Postfix__ldap_search.get_user_details.assert_not_called()
-    assert _sent_cc(mock_smtp) == ''
+    postfix._Postfix__ldap_search.get_user_details.assert_called_once_with(user_name='team-dl@redhat.com')
+    cc = _sent_cc(mock_smtp)
+    assert 'admin1@redhat.com' in cc
+    assert 'admin2@redhat.com' in cc
 
 
 @patch('cloud_governance.common.mails.postfix.smtplib.SMTP')
-def test_send_email_postfix_still_escalates_to_admins_for_unresolvable_username(mock_smtp):
+def test_send_email_postfix_escalates_to_admins_for_unresolvable_username(mock_smtp):
     """
-    This method tests the original safety net is preserved for a bare username that does not
-    resolve in LDAP (e.g. a departed employee referenced by the User tag)
+    This method tests a bare username that does not resolve in LDAP (e.g. a departed
+    employee referenced by the User tag) is escalated to the default admins
     """
     postfix = _make_postfix()
     postfix._Postfix__ldap_search.get_user_details.return_value = []
@@ -185,15 +187,11 @@ def test_send_email_postfix_no_admin_cc_for_resolvable_username(mock_smtp):
 
 
 @patch('cloud_governance.common.mails.postfix.smtplib.SMTP')
-def test_send_email_postfix_still_escalates_to_admins_for_list_recipient(mock_smtp):
+def test_send_email_postfix_escalates_to_admins_for_list_recipient(mock_smtp):
     """
     This method tests a list `to` (the hardcoded admin-escalation recipients used by
-    ec2_stop.py and run_zombie_non_cluster_policies.py, e.g. ['admin1@redhat.com', ...]) still
-    goes through the LDAP check and still escalates to the default admins, exactly as before
-    the email-shaped-string guard was introduced. A list was never a valid LDAP lookup target
-    either, but that is this pre-existing, unrelated case - the guard must key off the type of
-    `to`, not merely whether its stringified form happens to contain '@', or this call pattern
-    would silently stop escalating to the default admins too.
+    ec2_stop.py and run_zombie_non_cluster_policies.py, e.g. ['admin1@redhat.com', ...]) also
+    goes through the LDAP check and escalates to the default admins when it does not resolve
     """
     postfix = _make_postfix()
     postfix._Postfix__ldap_search.get_user_details.return_value = []

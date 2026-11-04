@@ -138,7 +138,9 @@ class EC2Stop(NonClusterZombiePolicy):
                 ldap_lookup_user = user
             ldap_data = self._ldap.get_user_details(user_name=ldap_lookup_user)
             cc = []
-            subject, body = self._mail_description.ec2_stop(name=ldap_data.get('displayName'), days=days,
+            name = ldap_data.get('displayName') if ldap_data else ldap_lookup_user
+            manager_email = f'{ldap_data.get("managerId")}@redhat.com' if ldap_data else None
+            subject, body = self._mail_description.ec2_stop(name=name, days=days,
                                                             image_id=image_id,
                                                             delete_instance_days=self.DELETE_INSTANCE_DAYS,
                                                             instance_name=instance_name, resource_id=resource_id,
@@ -146,9 +148,12 @@ class EC2Stop(NonClusterZombiePolicy):
                                                             extra_purse=kwargs.get('stop_cost'))
             if not kwargs.get('admins'):
                 kwargs['admins'] = to
-                cc = [self._account_admin, f'{ldap_data.get("managerId")}@redhat.com']
+                cc = [self._account_admin]
+                if manager_email:
+                    cc.append(manager_email)
             else:
-                kwargs['admins'].append(f'{ldap_data.get("managerId")}@redhat.com')
+                if manager_email:
+                    kwargs['admins'].append(manager_email)
             self._mail.send_email_postfix(to=kwargs.get('admins'), content=body, subject=subject, cc=cc,
                                           resource_id=instance_id, message_type=kwargs.get('message_type'),
                                           extra_purse=kwargs.get('delta_cost', 0))
