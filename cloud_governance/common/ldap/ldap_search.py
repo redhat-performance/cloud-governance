@@ -11,6 +11,8 @@ from cloud_governance.common.utils.api_requests import APIRequests
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
+        # Enforce certificate validation explicitly rather than relying on the OS/library default.
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
 
