@@ -40,8 +40,7 @@ def test_starts_tls_before_use(mock_start_tls):
 @patch.object(SimpleLDAPObject, 'start_tls_s')
 def test_ldaps_scheme_skips_start_tls(mock_start_tls):
     """
-    This method tests an ldaps:// URI, already encrypted at connect time, does not attempt
-    StartTLS - which would otherwise fail on a connection that's already TLS-wrapped
+    This method tests an ldaps:// URI does not attempt StartTLS
     """
     LdapSearch(ldap_host_name='ldaps://ipa.redhat.com')
     mock_start_tls.assert_not_called()
@@ -52,7 +51,7 @@ def test_ldaps_scheme_skips_start_tls(mock_start_tls):
 def test_no_bind_attempted_when_credentials_not_configured(mock_bind, mock_start_tls):
     """
     This method tests construction does not attempt a bind when no service-account
-    credentials are configured, preserving today's anonymous-bind behavior
+    credentials are configured
     """
     environment_variables.environment_variables_dict['LDAP_BIND_DN'] = ''
     environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = ''
@@ -65,7 +64,6 @@ def test_no_bind_attempted_when_credentials_not_configured(mock_bind, mock_start
 def test_binds_with_service_account_when_configured(mock_bind, mock_start_tls):
     """
     This method tests construction binds with the configured service-account credentials
-    rather than relying on an anonymous bind, which Red Hat's LDAP server rejects
     """
     environment_variables.environment_variables_dict['LDAP_BIND_DN'] = 'uid=svc-account,dc=redhat,dc=com'
     environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = 'secret'
@@ -79,9 +77,7 @@ def test_binds_with_service_account_when_configured(mock_bind, mock_start_tls):
 @patch.object(SimpleLDAPObject, 'simple_bind_s', side_effect=ldap.INVALID_CREDENTIALS())
 def test_bind_failure_does_not_raise(mock_bind, mock_start_tls):
     """
-    This method tests a bind failure (e.g. a stale or wrong service-account credential) is
-    logged rather than raised, since this runs during Postfix/MailMessage construction and
-    an uncaught error here would crash the whole policy run, not just one LDAP lookup
+    This method tests a bind failure is logged rather than raised
     """
     environment_variables.environment_variables_dict['LDAP_BIND_DN'] = 'uid=svc-account,dc=redhat,dc=com'
     environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = 'wrong'
@@ -94,8 +90,7 @@ def test_bind_failure_does_not_raise(mock_bind, mock_start_tls):
 @patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
 def test_bind_skipped_when_tls_failed(mock_start_tls, mock_bind):
     """
-    This method tests the bind password is never sent when StartTLS failed, rather than
-    falling back to an unencrypted bind
+    This method tests the bind is skipped when StartTLS failed
     """
     environment_variables.environment_variables_dict['LDAP_BIND_DN'] = 'uid=svc-account,dc=redhat,dc=com'
     environment_variables.environment_variables_dict['LDAP_BIND_PASSWORD'] = 'secret'
@@ -118,8 +113,7 @@ def test_lookup_blocked_when_tls_failed(mock_start_tls):
 @patch('cloud_governance.common.ldap.ldap_search.ldap.initialize')
 def test_bare_hostname_is_wrapped_as_ldap_uri(mock_initialize):
     """
-    This method tests a bare hostname (the legacy LDAP_HOST_NAME style) is wrapped as
-    ldap://<host>, preserving today's behavior
+    This method tests a bare hostname is wrapped as ldap://<host>
     """
     LdapSearch(ldap_host_name='ldap.corp.redhat.com')
     mock_initialize.assert_called_once_with('ldap://ldap.corp.redhat.com')
@@ -128,9 +122,7 @@ def test_bare_hostname_is_wrapped_as_ldap_uri(mock_initialize):
 @patch('cloud_governance.common.ldap.ldap_search.ldap.initialize')
 def test_full_uri_is_used_as_is(mock_initialize):
     """
-    This method tests a value that already specifies a scheme - e.g. IPA's DNS-based server
-    discovery URI, or a direct ldaps:// connection to a specific server - is passed through
-    unchanged rather than being double-wrapped
+    This method tests a value that already specifies a scheme is used as-is, not double-wrapped
     """
     LdapSearch(ldap_host_name='ldap:///dc=ipa,dc=redhat,dc=com')
     mock_initialize.assert_called_once_with('ldap:///dc=ipa,dc=redhat,dc=com')
@@ -140,8 +132,7 @@ def test_full_uri_is_used_as_is(mock_initialize):
 @patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
 def test_get_details_uses_configured_base_dn(mock_start_tls):
     """
-    This method tests __get_details searches the configured LDAP_BASE_DN (e.g. an IPA base
-    such as cn=accounts,dc=ipa,dc=redhat,dc=com) rather than the hardcoded legacy base
+    This method tests __get_details searches the configured LDAP_BASE_DN
     """
     environment_variables.environment_variables_dict['LDAP_BASE_DN'] = 'cn=accounts,dc=ipa,dc=redhat,dc=com'
     ldap_object = LdapSearch(ldap_host_name='example.com')
@@ -153,9 +144,7 @@ def test_get_details_uses_configured_base_dn(mock_start_tls):
 @patch.object(SimpleLDAPObject, 'start_tls_s')
 def test_get_details_logs_failure_as_warning(mock_start_tls, caplog):
     """
-    This method tests a failed lookup is logged at WARNING level, not INFO - this represents
-    a real, frequent operational failure that was previously easy to miss in logs filtered
-    on WARNING/ERROR
+    This method tests a failed lookup is logged at WARNING level, not INFO
     """
     with patch.object(SimpleLDAPObject, 'search_s', side_effect=Exception('boom')):
         ldap_object = LdapSearch(ldap_host_name='example.com')
