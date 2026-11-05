@@ -91,3 +91,94 @@ def test_rotate_user_access_key_dry_run_changes_nothing():
     keys = iam_client.list_access_keys(UserName=USER_NAME)['AccessKeyMetadata']
     assert [key['AccessKeyId'] for key in keys] == [inactive_key_id]
     assert keys[0]['Status'] == 'Inactive'
+
+
+NEW_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE'
+NEW_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+
+
+def _create_user_with_two_active_keys():
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=USER_NAME)
+    first = iam_client.create_access_key(UserName=USER_NAME)['AccessKey']['AccessKeyId']
+    second = iam_client.create_access_key(UserName=USER_NAME)['AccessKey']['AccessKeyId']
+    return iam_client, first, second
+
+
+def _key_statuses(iam_client):
+    return {key['AccessKeyId']: key['Status']
+            for key in iam_client.list_access_keys(UserName=USER_NAME)['AccessKeyMetadata']}
+
+
+@mock_aws
+def test_deactivate_access_key_with_credentials_inactivates_the_target_key():
+    iam_client, first, second = _create_user_with_two_active_keys()
+
+    IAMOperations(iam_client=iam_client).deactivate_access_key_with_credentials(
+        username=USER_NAME, access_key_id=first,
+        aws_access_key_id=NEW_ACCESS_KEY_ID, aws_secret_access_key=NEW_SECRET_ACCESS_KEY,
+        region_name=AWS_DEFAULT_REGION)
+
+    statuses = _key_statuses(iam_client)
+    assert statuses[first] == 'Inactive'
+    assert statuses[second] == 'Active'
+
+
+@mock_aws
+def test_deactivate_access_key_with_credentials_raises_when_the_key_was_deleted():
+    # A missing key means the rotation consumed the key stored in Jenkins instead of it being
+    # deactivated; that is a setup error, not success.
+    iam_client, first, second = _create_user_with_two_active_keys()
+
+    with pytest.raises(RuntimeError) as error:
+        IAMOperations(iam_client=iam_client).deactivate_access_key_with_credentials(
+            username=USER_NAME, access_key_id='AKIACONSUMEDEXAMPLE',
+            aws_access_key_id=NEW_ACCESS_KEY_ID, aws_secret_access_key=NEW_SECRET_ACCESS_KEY,
+            region_name=AWS_DEFAULT_REGION)
+
+    assert 'no longer exists' in str(error.value)
+    statuses = _key_statuses(iam_client)
+    assert statuses == {first: 'Active', second: 'Active'}
+
+
+@mock_aws
+def test_deactivate_stale_active_keys_keeps_only_the_published_key():
+    iam_client, keep_key, stale_key = _create_user_with_two_active_keys()
+
+    deactivated = IAMOperations(iam_client=iam_client).deactivate_stale_active_keys(
+        username=USER_NAME, keep_access_key_id=keep_key,
+        aws_access_key_id=NEW_ACCESS_KEY_ID, aws_secret_access_key=NEW_SECRET_ACCESS_KEY,
+        region_name=AWS_DEFAULT_REGION)
+
+    assert deactivated == 1
+    statuses = _key_statuses(iam_client)
+    assert statuses[keep_key] == 'Active'
+    assert statuses[stale_key] == 'Inactive'
+
+
+@mock_aws
+def test_deactivate_stale_active_keys_never_deactivates_the_caller_key(monkeypatch):
+    iam_client, keep_key, caller_key = _create_user_with_two_active_keys()
+    monkeypatch.setenv('AWS_ACCESS_KEY_ID', caller_key)
+
+    deactivated = IAMOperations(iam_client=iam_client).deactivate_stale_active_keys(
+        username=USER_NAME, keep_access_key_id=keep_key,
+        aws_access_key_id=NEW_ACCESS_KEY_ID, aws_secret_access_key=NEW_SECRET_ACCESS_KEY,
+        region_name=AWS_DEFAULT_REGION)
+
+    assert deactivated == 0
+    assert _key_statuses(iam_client)[caller_key] == 'Active'
+
+
+@mock_aws
+def test_deactivate_stale_active_keys_ignores_inactive_keys():
+    iam_client, inactive_key_id = _create_user_with_inactive_key()
+    keep_key = iam_client.create_access_key(UserName=USER_NAME)['AccessKey']['AccessKeyId']
+
+    deactivated = IAMOperations(iam_client=iam_client).deactivate_stale_active_keys(
+        username=USER_NAME, keep_access_key_id=keep_key,
+        aws_access_key_id=NEW_ACCESS_KEY_ID, aws_secret_access_key=NEW_SECRET_ACCESS_KEY,
+        region_name=AWS_DEFAULT_REGION)
+
+    assert deactivated == 0
+    assert _key_statuses(iam_client)[inactive_key_id] == 'Inactive'

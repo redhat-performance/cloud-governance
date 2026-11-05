@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 import pytest
 from moto import mock_aws
 
+from cloud_governance.common.jenkins.jenkins_exceptions import JenkinsOperationsError
 from cloud_governance.main.environment_variables import environment_variables
 from cloud_governance.policy.aws import rotate_access_key as rotate_access_key_module
 from cloud_governance.policy.aws.rotate_access_key import RotateAccessKey, _ROTATED_USERS
@@ -26,13 +27,15 @@ def reset_rotated_users():
     _ROTATED_USERS.clear()
 
 
-def _set_environment_variables(credentials_file, username=TEST_USER_NAME, dry_run=DRY_RUN_YES):
+def _set_environment_variables(credentials_file, username=TEST_USER_NAME, dry_run=DRY_RUN_YES,
+                               publish_to_jenkins=False):
     environment_variables.environment_variables_dict['policy'] = 'rotate_access_key'
     environment_variables.environment_variables_dict['username'] = username
     environment_variables.environment_variables_dict['dry_run'] = dry_run
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 7
     environment_variables.environment_variables_dict['IAM_CREDENTIALS_FILE'] = str(credentials_file)
+    environment_variables.environment_variables_dict['IAM_PUBLISH_TO_JENKINS'] = publish_to_jenkins
 
 
 def _create_user_with_inactive_key(tags: list = None):
@@ -124,6 +127,30 @@ def test_rotate_access_key_replaces_inactive_key_and_writes_credentials(tmp_path
 
 
 @mock_aws
+def test_rotate_access_key_refuses_to_rotate_without_a_destination():
+    iam_client, inactive_key_id = _create_user_with_inactive_key()
+    # No Jenkins publish and no explicit file: there is nowhere to deliver the new secret.
+    _set_environment_variables('', dry_run=DRY_RUN_NO)
+
+    assert RotateAccessKey().run_policy_operations() == []
+
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in keys] == [inactive_key_id]
+
+
+@mock_aws
+def test_rotate_access_key_dry_run_works_without_a_destination():
+    iam_client, inactive_key_id = _create_user_with_inactive_key()
+    _set_environment_variables('', dry_run=DRY_RUN_YES)
+
+    result = RotateAccessKey().run_policy_operations()
+
+    assert result[0]['ResourceAction'] == 'False'
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in keys] == [inactive_key_id]
+
+
+@mock_aws
 def test_rotate_access_key_logs_connection_with_new_key(tmp_path, caplog):
     _create_user_with_inactive_key()
     credentials_file = tmp_path / 'creds.json'
@@ -201,3 +228,104 @@ def test_rotate_access_key_rotates_only_once_per_process(tmp_path):
     assert policy.run_policy_operations() == []
     keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
     assert remaining_inactive_key_id in [key['AccessKeyId'] for key in keys]
+
+
+@mock_aws
+def test_rotate_access_key_publishes_to_jenkins_when_enabled(tmp_path, monkeypatch):
+    iam_client, _ = _create_user_with_inactive_key()
+    credentials_file = tmp_path / 'creds.json'
+    _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO, publish_to_jenkins=True)
+    calls = {}
+
+    class _FakeJenkins:
+        @staticmethod
+        def read_secret(credentials_id):
+            return 'AKIAOLDKEY'
+
+    def fake_preconditions(iam_operations, username, jenkins_access_key_id):
+        calls['preconditions'] = (iam_operations, username, jenkins_access_key_id)
+
+    def fake_publish(credentials, client, **kwargs):
+        calls['publish'] = (credentials, kwargs)
+        return {'username': TEST_USER_NAME, 'access_key_to_inactive': 'AKIAOLDKEY'}
+
+    monkeypatch.setattr(rotate_access_key_module, 'get_jenkins_client', lambda: _FakeJenkins())
+    monkeypatch.setattr(rotate_access_key_module, 'ensure_rotation_preconditions',
+                        fake_preconditions)
+    monkeypatch.setattr(rotate_access_key_module, 'rotate_and_publish_credentials', fake_publish)
+
+    policy = RotateAccessKey()
+    result = policy.run_policy_operations()
+
+    assert result[0]['ResourceAction'] == 'True'
+    assert calls['preconditions'] == (policy._iam_operations, TEST_USER_NAME, 'AKIAOLDKEY')
+    published = calls['publish'][0]
+    assert published['username'] == TEST_USER_NAME
+    assert published['secret_access_key']
+    assert published['access_key_id']
+    assert calls['publish'][1]['region_name'] == AWS_DEFAULT_REGION
+    assert calls['publish'][1]['iam_operations'] is policy._iam_operations
+    # The secret must go straight to Jenkins: no local credentials file is created.
+    assert not credentials_file.exists()
+    new_key = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata'][0]
+    assert published['access_key_id'] == new_key['AccessKeyId']
+
+
+@mock_aws
+def test_rotate_access_key_skips_when_jenkins_preconditions_fail(tmp_path, monkeypatch):
+    iam_client, inactive_key_id = _create_user_with_inactive_key()
+    credentials_file = tmp_path / 'creds.json'
+    _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO, publish_to_jenkins=True)
+
+    def fail_preconditions(*args, **kwargs):
+        raise JenkinsOperationsError('the key stored in Jenkins must be Active')
+
+    monkeypatch.setattr(rotate_access_key_module, 'get_jenkins_client',
+                        lambda: SimpleNamespace(read_secret=lambda credentials_id: 'AKIAOLDKEY'))
+    monkeypatch.setattr(rotate_access_key_module, 'ensure_rotation_preconditions',
+                        fail_preconditions)
+
+    assert RotateAccessKey().run_policy_operations() == []
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in keys] == [inactive_key_id]
+    assert not credentials_file.exists()
+
+
+@mock_aws
+def test_rotate_access_key_does_not_publish_in_dry_run(tmp_path, monkeypatch):
+    _create_user_with_inactive_key()
+    _set_environment_variables(tmp_path / 'creds.json', dry_run=DRY_RUN_YES,
+                               publish_to_jenkins=True)
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError('Jenkins must not be called in a dry run')
+
+    monkeypatch.setattr(rotate_access_key_module, 'get_jenkins_client', unexpected)
+    monkeypatch.setattr(rotate_access_key_module, 'ensure_rotation_preconditions', unexpected)
+    monkeypatch.setattr(rotate_access_key_module, 'rotate_and_publish_credentials', unexpected)
+
+    result = RotateAccessKey().run_policy_operations()
+
+    assert result[0]['ResourceAction'] == 'False'
+
+
+@mock_aws
+def test_rotate_access_key_propagates_a_publish_failure(tmp_path, monkeypatch):
+    _create_user_with_inactive_key()
+    credentials_file = tmp_path / 'creds.json'
+    _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO, publish_to_jenkins=True)
+
+    def fail_publish(*args, **kwargs):
+        raise JenkinsOperationsError('Jenkins write failed')
+
+    monkeypatch.setattr(rotate_access_key_module, 'get_jenkins_client',
+                        lambda: SimpleNamespace(read_secret=lambda credentials_id: 'AKIAOLDKEY'))
+    monkeypatch.setattr(rotate_access_key_module, 'ensure_rotation_preconditions',
+                        lambda *args, **kwargs: None)
+    monkeypatch.setattr(rotate_access_key_module, 'rotate_and_publish_credentials', fail_publish)
+
+    with pytest.raises(JenkinsOperationsError):
+        RotateAccessKey().run_policy_operations()
+
+    # Nothing was published, and the secret is never written to a local file on this path.
+    assert not credentials_file.exists()

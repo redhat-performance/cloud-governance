@@ -121,8 +121,14 @@ class EnvironmentVariables:
         self._environment_variables_dict['user_tags'] = EnvironmentVariables.get_env('user_tags', '')
         self._environment_variables_dict['user_tag_operation'] = EnvironmentVariables.get_env('user_tag_operation', '')
         self._environment_variables_dict['username'] = EnvironmentVariables.get_env('username', '')
+        # Optional path for a separate publish step. Empty means no file is written: with
+        # IAM_PUBLISH_TO_JENKINS the secret stays in memory, otherwise the rotation is skipped.
         self._environment_variables_dict['IAM_CREDENTIALS_FILE'] = EnvironmentVariables.get_env(
-            'IAM_CREDENTIALS_FILE', '/tmp/iam_credentials.json')
+            'IAM_CREDENTIALS_FILE', '')
+        # When true, rotate_access_key publishes the rotated key to Jenkins and deactivates the
+        # key Jenkins held before the switch, without writing the secret to a local file.
+        self._environment_variables_dict['IAM_PUBLISH_TO_JENKINS'] = \
+            EnvironmentVariables.get_boolean_from_environment('IAM_PUBLISH_TO_JENKINS', False)
         self._environment_variables_dict['DELETE_INACTIVE_KEYS_WITHOUT_TAG'] = EnvironmentVariables.get_env('DELETE_INACTIVE_KEYS_WITHOUT_TAG', 'true').lower() == 'true'
         self._environment_variables_dict['remove_tags'] = EnvironmentVariables.get_env('remove_tags', '')
         self._environment_variables_dict['resource'] = EnvironmentVariables.get_env('resource', '')
@@ -277,6 +283,10 @@ class EnvironmentVariables:
         self._environment_variables_dict['JENKINS_PASSWORD'] = EnvironmentVariables.get_env('JENKINS_PASSWORD', '')
         self._environment_variables_dict['JENKINS_VERIFY_SSL'] = \
             EnvironmentVariables.get_boolean_from_environment('JENKINS_VERIFY_SSL', True)
+        self._environment_variables_dict['JENKINS_ACCESS_KEY_CREDENTIAL_ID'] = \
+            EnvironmentVariables.get_env('JENKINS_ACCESS_KEY_CREDENTIAL_ID', '')
+        self._environment_variables_dict['JENKINS_SECRET_ACCESS_KEY_CREDENTIAL_ID'] = \
+            EnvironmentVariables.get_env('JENKINS_SECRET_ACCESS_KEY_CREDENTIAL_ID', '')
 
         # Cloud Resource Orchestration
         self._environment_variables_dict['CRO_PORTAL'] = EnvironmentVariables.get_env('CRO_PORTAL', '')

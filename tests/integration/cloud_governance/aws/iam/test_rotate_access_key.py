@@ -45,12 +45,16 @@ def _set_environment_variables(username: str, credentials_file, dry_run: str = '
     environment_variables.environment_variables_dict['AWS_DEFAULT_REGION'] = AWS_DEFAULT_REGION
     environment_variables.environment_variables_dict['DAYS_TO_TAKE_ACTION'] = 7
     environment_variables.environment_variables_dict['IAM_CREDENTIALS_FILE'] = str(credentials_file)
+    # These tests exercise the file-based path; never publish to Jenkins from here, even when
+    # the developer's shell exports IAM_PUBLISH_TO_JENKINS=yes.
+    environment_variables.environment_variables_dict['IAM_PUBLISH_TO_JENKINS'] = False
 
 
 def _reset_environment_variables():
     _ROTATED_USERS.clear()
     environment_variables.environment_variables_dict['username'] = ''
     environment_variables.environment_variables_dict['IAM_CREDENTIALS_FILE'] = ''
+    environment_variables.environment_variables_dict['IAM_PUBLISH_TO_JENKINS'] = False
 
 
 def _get_inactive_key_ids(iam_client, username: str) -> list:

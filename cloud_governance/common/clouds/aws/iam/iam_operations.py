@@ -1,6 +1,8 @@
 import os
+import time
 
 import boto3
+from botocore.exceptions import ClientError
 
 from cloud_governance.common.clouds.aws.utils.common_methods import get_boto3_client
 from cloud_governance.common.clouds.aws.utils.utils import Utils
@@ -12,6 +14,9 @@ class IAMOperations:
 
     ACCESS_KEY_LABEL_MAP = {"access key 1": 0, "access key 2": 1}
     EXCLUDED_PROPAGATION_TAGS = {'cost-center'}
+    # A freshly created access key is eventually consistent in IAM/STS.
+    DEACTIVATE_ATTEMPTS = 5
+    DEACTIVATE_DELAY_SECONDS = 3
 
     def __init__(self, iam_client=None):
         self.iam_client = iam_client if iam_client else get_boto3_client('iam')
@@ -442,6 +447,90 @@ class IAMOperations:
         except Exception as e:
             logger.error(f"Failed to create a new access key after deleting the inactive one: {e}")
             raise RuntimeError(f"Failed to create a new access key after deleting the inactive one: {e}") from e
+
+    def _iam_client_with_credentials(self, aws_access_key_id: str, aws_secret_access_key: str,
+                                     region_name: str = None):
+        """
+        Builds an IAM client authenticated with explicit keys. A Session is used rather than
+        boto3.client(aws_access_key_id=...), so a caller's AWS_SESSION_TOKEN cannot leak in.
+        """
+        session = boto3.Session(
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            region_name=region_name or self.iam_client.meta.region_name,
+        )
+        return session.client('iam')
+
+    def deactivate_access_key_with_credentials(self, username: str, access_key_id: str,
+                                               aws_access_key_id: str, aws_secret_access_key: str,
+                                               region_name: str = None):
+        """
+        Deactivates an access key, authenticating with a different (newly issued) key.
+        The key must still exist: the rotation only deletes inactive keys, so the key Jenkins
+        held before the switch must be Active at rotation time to be deactivated here.
+        :param username: IAM user that owns access_key_id.
+        :param access_key_id: The access key to deactivate.
+        :param aws_access_key_id: Access key id used to authenticate the call.
+        :param aws_secret_access_key: Secret access key used to authenticate the call.
+        :param region_name: IAM client region. Defaults to the caller client's region.
+        """
+        iam_client = self._iam_client_with_credentials(
+            aws_access_key_id, aws_secret_access_key, region_name)
+        for attempt in range(1, self.DEACTIVATE_ATTEMPTS + 1):
+            try:
+                iam_client.update_access_key(UserName=username, AccessKeyId=access_key_id,
+                                             Status='Inactive')
+                logger.info("Deactivated the previous access key")
+                return
+            except ClientError as err:
+                # Only the propagation error is retryable; the code is reported without the
+                # caller ARN or the key id.
+                code = err.response.get('Error', {}).get('Code', 'unknown')
+                if code == 'InvalidClientTokenId' and attempt < self.DEACTIVATE_ATTEMPTS:
+                    time.sleep(self.DEACTIVATE_DELAY_SECONDS)
+                    continue
+                if code == 'NoSuchEntity':
+                    # The rotation only deletes inactive keys. A missing previous key means the
+                    # key stored in Jenkins was inactive too, so the rotation consumed it instead
+                    # of deactivating it; surface that instead of reporting success.
+                    raise RuntimeError(
+                        "Failed to deactivate the previous access key: it no longer exists. The "
+                        "key stored in Jenkins must be Active before rotation and a different "
+                        "inactive key must be available for the rotation to consume") from None
+                raise RuntimeError(
+                    f"Failed to deactivate the previous access key ({code})") from None
+
+    def deactivate_stale_active_keys(self, username: str, keep_access_key_id: str,
+                                     aws_access_key_id: str, aws_secret_access_key: str,
+                                     region_name: str = None) -> int:
+        """
+        Deactivates every Active access key of the user except keep_access_key_id, so a rotation
+        run always leaves exactly one Active key: the one just published. The caller's own key
+        (AWS_ACCESS_KEY_ID) is never deactivated, even when it belongs to the same user.
+        :return: Number of keys deactivated.
+        """
+        iam_client = self._iam_client_with_credentials(
+            aws_access_key_id, aws_secret_access_key, region_name)
+        try:
+            keys = iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except ClientError as err:
+            code = err.response.get('Error', {}).get('Code', 'unknown')
+            raise RuntimeError(f"Failed to list access keys for cleanup ({code})") from None
+        caller_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
+        stale_keys = [key['AccessKeyId'] for key in keys
+                      if key['Status'] == 'Active'
+                      and key['AccessKeyId'] != keep_access_key_id
+                      and key['AccessKeyId'] != caller_key_id]
+        for key_id in stale_keys:
+            try:
+                iam_client.update_access_key(UserName=username, AccessKeyId=key_id,
+                                             Status='Inactive')
+            except ClientError as err:
+                code = err.response.get('Error', {}).get('Code', 'unknown')
+                raise RuntimeError(f"Failed to deactivate a stale access key ({code})") from None
+        if stale_keys:
+            logger.info(f"Deactivated {len(stale_keys)} stale access key(s)")
+        return len(stale_keys)
 
     def get_instance_profiles_for_role(self, role_name: str):
         """

@@ -152,6 +152,12 @@ JENKINS_USERNAME: ""
 JENKINS_API_TOKEN: ""
 JENKINS_PASSWORD: ""
 JENKINS_VERIFY_SSL: true
+# Credential ids updated by publish_rotated_credentials; empty uses the EBATTAT_* defaults.
+JENKINS_ACCESS_KEY_CREDENTIAL_ID: ""
+JENKINS_SECRET_ACCESS_KEY_CREDENTIAL_ID: ""
+# rotate_access_key: publish the rotated key to Jenkins and deactivate the key Jenkins held.
+# The secret goes from memory to Jenkins; IAM_CREDENTIALS_FILE is not written.
+IAM_PUBLISH_TO_JENKINS: false
 
 
 # CRO -- Cloud Resource Orch
