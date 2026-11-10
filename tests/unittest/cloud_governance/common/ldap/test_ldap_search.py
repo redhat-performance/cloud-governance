@@ -149,6 +149,52 @@ def test_lookup_blocked_when_tls_failed(mock_start_tls):
     assert ldap_object._LdapSearch__get_details(user_name='test') == []
 
 
+@patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=[ldap.LDAPError(), None])
+def test_falls_back_to_second_host_when_first_fails(mock_start_tls):
+    """
+    This method tests a fallback host is tried when the primary host fails
+    """
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = 'backup.example.com'
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    assert mock_start_tls.call_count == 2
+    assert ldap_object._LdapSearch__tls_ready is True
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+def test_primary_success_skips_fallback_hosts(mock_start_tls):
+    """
+    This method tests fallback hosts are not tried when the primary host succeeds
+    """
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = 'backup1.example.com, backup2.example.com'
+    LdapSearch(ldap_host_name='example.com')
+    mock_start_tls.assert_called_once()
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
+@patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
+def test_lookup_blocked_when_all_hosts_fail(mock_start_tls):
+    """
+    This method tests lookups stay blocked when every configured host fails
+    """
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = 'backup.example.com'
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    assert mock_start_tls.call_count == 2
+    assert ldap_object._LdapSearch__get_details(user_name='test') == []
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch.object(SimpleLDAPObject, 'set_option')
+def test_sets_network_timeout(mock_set_option, mock_start_tls):
+    """
+    This method tests a network timeout is set so a down host fails over quickly
+    """
+    LdapSearch(ldap_host_name='example.com')
+    mock_set_option.assert_any_call(ldap.OPT_NETWORK_TIMEOUT, 5)
+
+
 @patch('cloud_governance.common.ldap.ldap_search.ldap.initialize')
 def test_bare_hostname_is_wrapped_as_ldap_uri(mock_initialize):
     """
