@@ -92,6 +92,7 @@ ES_TIMEOUT: 2000
 # Mail alerts env vars
 # ldap env var
 LDAP_HOST_NAME: ""
+LDAP_FALLBACK_HOSTS: ""
 LDAP_BIND_DN: ""
 LDAP_BIND_PASSWORD: ""
 LDAP_BASE_DN: ""

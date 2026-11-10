@@ -10,6 +10,7 @@ AZURE_SUBSCRIPTION_ID = os.environ['subscription_id']
 GLOBAL_TAGS = os.environ['GLOBAL_TAGS']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 7)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
@@ -79,7 +80,7 @@ container_env_dict = {
     "account": account_name,
     "PUBLIC_CLOUD_NAME": "Azure",
     "dry_run": "yes",
-    "LDAP_HOST_NAME": LDAP_HOST_NAME,
+    "LDAP_HOST_NAME": LDAP_HOST_NAME, "LDAP_FALLBACK_HOSTS": LDAP_FALLBACK_HOSTS,
     "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",

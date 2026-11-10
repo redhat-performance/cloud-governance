@@ -236,6 +236,8 @@ class EnvironmentVariables:
         # Mail alerts env vars
         # ldap env var
         self._environment_variables_dict['LDAP_HOST_NAME'] = EnvironmentVariables.get_env('LDAP_HOST_NAME', '')
+        # Optional comma-separated backup servers, tried in order if LDAP_HOST_NAME fails.
+        self._environment_variables_dict['LDAP_FALLBACK_HOSTS'] = EnvironmentVariables.get_env('LDAP_FALLBACK_HOSTS', '')
         # Optional service-account credentials for an authenticated LDAP bind.
         self._environment_variables_dict['LDAP_BIND_DN'] = EnvironmentVariables.get_env('LDAP_BIND_DN', '')
         self._environment_variables_dict['LDAP_BIND_PASSWORD'] = EnvironmentVariables.get_env('LDAP_BIND_PASSWORD', '')

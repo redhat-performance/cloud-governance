@@ -24,6 +24,7 @@ s3_bucket = os.environ.get('s3_bucket')
 account_name = os.environ['account_name']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 14)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
 LOGS = os.environ.get('LOGS', 'logs')
 ALERT_DRY_RUN = os.environ.get('ALERT_DRY_RUN', False)
 ES_HOST = os.environ['ES_HOST']
@@ -64,7 +65,7 @@ es_doc_type = '_doc'
 container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
-    "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME,
+    "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "LDAP_FALLBACK_HOSTS": LDAP_FALLBACK_HOSTS,
     "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",

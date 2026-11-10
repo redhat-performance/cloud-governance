@@ -103,6 +103,7 @@ podman pull quay.io/rh_perfscale/cloud-governance
 | dry_run                        | optional | default set to "yes", supported only two: yes/ no                           |
 | log_level                      | optional | default set to INFO                                                         |
 | LDAP_HOST_NAME                 | optional | ldap hostname                                                               |
+| LDAP_FALLBACK_HOSTS            | optional | comma-separated backup ldap hostnames, tried in order if LDAP_HOST_NAME fails |
 | LDAP_BIND_DN                   | optional | ldap service-account bind DN, for an authenticated bind                     |
 | LDAP_BIND_PASSWORD             | optional | ldap service-account bind password                                         |
 | LDAP_BASE_DN                   | optional | ldap search base DN                                                        |

@@ -13,7 +13,21 @@ class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
         """
-        This method initializes the LDAP connection
+        This method initializes the LDAP connection, trying LDAP_FALLBACK_HOSTS in
+        order if ldap_host_name doesn't work
+        @param ldap_host_name:
+        """
+        self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
+        fallback_hosts = environment_variables.environment_variables_dict.get('LDAP_FALLBACK_HOSTS') or ''
+        candidates = [ldap_host_name] + [host.strip() for host in fallback_hosts.split(',') if host.strip()]
+        for host in candidates:
+            self.__connect(host)
+            if self.__tls_ready and not self.__bind_failed:
+                break
+
+    def __connect(self, ldap_host_name: str):
+        """
+        This method attempts a connection, TLS negotiation, and bind against a single host
         @param ldap_host_name:
         """
         # A bare hostname is wrapped as ldap://<host>; a full URI is used as-is.
@@ -21,7 +35,8 @@ class LdapSearch:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         self.__ldap_client = ldap.initialize(ldap_uri)
         self.__ldap_client.protocol_version = ldap.VERSION3
-        self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
+        # Fail over to the next host quickly rather than waiting on the OS-level TCP timeout.
+        self.__ldap_client.set_option(ldap.OPT_NETWORK_TIMEOUT, 5)
         # StartTLS is needed on ldap://; ldaps:// is already encrypted.
         self.__tls_ready = ldap_uri.startswith('ldaps://')
         if not self.__tls_ready:
