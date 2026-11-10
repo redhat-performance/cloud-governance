@@ -24,6 +24,7 @@ pipeline {
         GITHUB_TOKEN = credentials('cloud-governance-git-access-token')
         CLOUD_GOVERNANCE_SPECIAL_USER_MAILS = credentials('cloud-governance-special-user-mails')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_FALLBACK_HOSTS = credentials('cloud-governance-ldap-fallback-hosts')
         LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
         LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
         LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')

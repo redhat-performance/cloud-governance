@@ -13,6 +13,7 @@ pipeline {
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_FALLBACK_HOSTS = credentials('cloud-governance-ldap-fallback-hosts')
         LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
         LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
         LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')

@@ -1,6 +1,7 @@
 import os
 
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 IBM_API_KEY_PERFORMANCE_SCALE = os.environ['IBM_API_KEY_PERFORMANCE_SCALE']
 IBM_API_USERNAME_PERFORMANCE_SCALE = os.environ['IBM_API_USERNAME_PERFORMANCE_SCALE']
@@ -32,7 +33,7 @@ key_list = [{"account": "performance-scale", "IBM_API_USERNAME": IBM_API_USERNAM
 
 for keys in key_list:
     os.system(
-        f"""podman run --rm --net="host" --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --rm --net="host" --name cloud-governance -e account="{keys.get('account')}" -e COST_CENTER_OWNER="Shai" -e policy="cost_billing_reports" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_FALLBACK_HOSTS="{LDAP_FALLBACK_HOSTS}" -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e "IBM_API_USERNAME"="{keys.get('IBM_API_USERNAME')}" -e IBM_API_KEY="{keys.get('IBM_API_KEY')}" -e USAGE_REPORTS_APIKEY="{keys.get('USAGE_REPORTS_APIKEY')}" -e IBM_ACCOUNT_ID="{keys.get('IBM_ACCOUNT_ID')}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Cloudability reports
 # Cloudability env variables

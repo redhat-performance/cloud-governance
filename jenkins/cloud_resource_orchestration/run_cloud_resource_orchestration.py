@@ -11,6 +11,7 @@ ES_PORT = os.environ['ES_PORT']
 ES_USER = os.environ.get('ES_USER', '')
 ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
 JIRA_URL = os.environ['JIRA_URL']
 JIRA_USERNAME = os.environ['JIRA_USERNAME']
 JIRA_TOKEN = os.environ['JIRA_TOKEN']
@@ -34,7 +35,7 @@ es_index = CLOUD_RESOURCE_ORCHESTRATION_INDEX
 common_env_vars = {
     'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
     'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO',
-    'LDAP_HOST_NAME': LDAP_HOST_NAME,
+    'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_FALLBACK_HOSTS': LDAP_FALLBACK_HOSTS,
     'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME, 'JIRA_URL': JIRA_URL,
     'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL, 'CRO_DEFAULT_ADMINS': CRO_DEFAULT_ADMINS,
     'CRO_REPLACED_USERNAMES': CRO_REPLACED_USERNAMES,
@@ -53,7 +54,7 @@ os.system('echo Run CloudResourceOrchestration in pre active region')
 
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
                      'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO',
-                     'LDAP_HOST_NAME': LDAP_HOST_NAME,
+                     'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_FALLBACK_HOSTS': LDAP_FALLBACK_HOSTS,
                      'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME,
                      'JIRA_URL': JIRA_URL,
                      'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL,
