@@ -44,8 +44,9 @@ def get_container_cmd(env_dict: dict):
     create_container_envs = lambda item: f'-e {item[0]}="{item[1]}"'
     env_list = ' '.join(list(map(create_container_envs, env_dict.items())))
     container_name = "cloud-governance-poc-haim"
+    # Bare -e avoids shell re-interpretation of the password.
     container_run_cmd = f"""
-podman run --rm --name "{container_name}" --net="host" {env_list} {env_es_index} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
+podman run --rm --name "{container_name}" --net="host" {env_list} -e LDAP_BIND_PASSWORD {env_es_index} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
 """
     return container_run_cmd
 
@@ -67,7 +68,7 @@ container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "LDAP_BIND_DN": LDAP_BIND_DN,
-    "LDAP_BIND_PASSWORD": LDAP_BIND_PASSWORD, "LDAP_BASE_DN": LDAP_BASE_DN,
+    "LDAP_BASE_DN": LDAP_BASE_DN,
     "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",

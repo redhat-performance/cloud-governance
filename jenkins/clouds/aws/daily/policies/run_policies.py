@@ -78,8 +78,9 @@ def run_cmd(cmd: str):
 def get_container_cmd(env_dict: dict):
     env_list = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_dict.items())))
     container_name = "cloud-governance"
+    # Bare -e avoids shell re-interpretation of the password.
     container_run_cmd = f"""
-podman run --rm --name "{container_name}" --net="host" {env_list}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
+podman run --rm --name "{container_name}" --net="host" {env_list} -e LDAP_BIND_PASSWORD  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
 """
     return container_run_cmd
 
@@ -99,7 +100,7 @@ container_env_dict = {
     "account": account_name, "AWS_DEFAULT_REGION": "us-east-1", "PUBLIC_CLOUD_NAME": "AWS",
     "AWS_ACCESS_KEY_ID": access_key, "AWS_SECRET_ACCESS_KEY": secret_key,
     "dry_run": "yes", "LDAP_HOST_NAME": LDAP_HOST_NAME, "LDAP_BIND_DN": LDAP_BIND_DN,
-    "LDAP_BIND_PASSWORD": LDAP_BIND_PASSWORD, "LDAP_BASE_DN": LDAP_BASE_DN,
+    "LDAP_BASE_DN": LDAP_BASE_DN,
     "DAYS_TO_DELETE_RESOURCE": days_to_delete_resource,
     "es_host": ES_HOST, "es_port": ES_PORT, "es_user": ES_USER, "es_password": ES_PASSWORD,
     "MANAGER_EMAIL_ALERT": "False", "EMAIL_ALERT": "False", "log_level": "INFO",
@@ -141,7 +142,7 @@ run_policies(policies=policies_in_action, dry_run='no')
 
 run_cmd(f"""echo "Running the tag_iam_user" """)
 run_cmd(
-    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN="{LDAP_BIND_DN}" -e LDAP_BIND_PASSWORD="{LDAP_BIND_PASSWORD}" -e LDAP_BASE_DN="{LDAP_BASE_DN}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e EMAIL_ALERT="False" -e policy="tag_iam_user" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e user_tag_operation="update" -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v "{GOOGLE_APPLICATION_CREDENTIALS}":"{GOOGLE_APPLICATION_CREDENTIALS}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN="{LDAP_BIND_DN}" -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN="{LDAP_BASE_DN}" -e account_admin="{account_admin}" -e special_user_mails="{special_user_mails}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
@@ -158,7 +159,7 @@ run_cmd(
 
 run_cmd("echo Run Aggregated Email Alert")
 run_cmd(
-    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN="{LDAP_BIND_DN}" -e LDAP_BIND_PASSWORD="{LDAP_BIND_PASSWORD}" -e LDAP_BASE_DN="{LDAP_BASE_DN}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance --net="host" -e account="{account_name}" -e policy="send_aggregated_alerts" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN="{LDAP_BIND_DN}" -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN="{LDAP_BASE_DN}"  -e log_level="INFO" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ADMIN_MAIL_LIST="{ADMIN_MAIL_LIST}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Orion regression detection: roll up today's policy data, run Orion's
 # change-point analysis against it, and post any regressions to Slack.

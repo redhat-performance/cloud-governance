@@ -41,7 +41,9 @@ def get_podman_run_cmd(volume_mounts: list = None, **kwargs):
         volume_mounts = []
     if "/etc/localtime" not in volume_mounts:
         volume_mounts.append("/etc/localtime")
-    cmd = f"podman run --rm --net=\"host\" {container_name} {generate_env_vars(**kwargs)} {generate_volume_mounts(volume_mounts)} \
+    # Bare -e avoids shell re-interpretation; only added when LDAP is in use here.
+    ldap_bind_password_flag = '-e LDAP_BIND_PASSWORD' if 'LDAP_BIND_DN' in kwargs else ''
+    cmd = f"podman run --rm --net=\"host\" {container_name} {generate_env_vars(**kwargs)} {ldap_bind_password_flag} {generate_volume_mounts(volume_mounts)} \
     {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
     return cmd
 
@@ -63,7 +65,7 @@ run_cmd("echo Run IBM tag baremetal")
 volume_mounts_targets = [GOOGLE_APPLICATION_CREDENTIALS]
 tag_custom = [IBM_CUSTOM_TAGS_LIST]
 input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_BIND_DN': LDAP_BIND_DN,
-                  'LDAP_BIND_PASSWORD': LDAP_BIND_PASSWORD, 'LDAP_BASE_DN': LDAP_BASE_DN,
+                  'LDAP_BASE_DN': LDAP_BASE_DN,
                   'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS, 'SPREADSHEET_ID': SPREADSHEET_ID,
                   'IBM_API_USERNAME': IBM_API_USERNAME, 'IBM_API_KEY': IBM_API_KEY, 'tag_operation': "update",
                   'log_level': "INFO", 'policy': 'tag_baremetal', "PUBLIC_CLOUD_NAME": "IBM", "tag_custom": tag_custom}

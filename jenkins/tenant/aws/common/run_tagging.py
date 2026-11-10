@@ -4,9 +4,6 @@ access_key = os.environ['access_key']
 secret_key = os.environ['secret_key']
 account_name = os.environ['account_name']
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
-LDAP_BIND_DN = os.environ.get('LDAP_BIND_DN', '')
-LDAP_BIND_PASSWORD = os.environ.get('LDAP_BIND_PASSWORD', '')
-LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', '')
 QUAY_CLOUD_GOVERNANCE_REPOSITORY = os.environ['QUAY_CLOUD_GOVERNANCE_REPOSITORY']
 
 LOGS = os.environ.get('LOGS', 'logs')

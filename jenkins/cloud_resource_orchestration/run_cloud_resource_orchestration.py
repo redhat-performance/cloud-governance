@@ -38,7 +38,7 @@ common_env_vars = {
     'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
     'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO',
     'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_BIND_DN': LDAP_BIND_DN,
-    'LDAP_BIND_PASSWORD': LDAP_BIND_PASSWORD, 'LDAP_BASE_DN': LDAP_BASE_DN,
+    'LDAP_BASE_DN': LDAP_BASE_DN,
     'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME, 'JIRA_URL': JIRA_URL,
     'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL, 'CRO_DEFAULT_ADMINS': CRO_DEFAULT_ADMINS,
     'CRO_REPLACED_USERNAMES': CRO_REPLACED_USERNAMES,
@@ -58,7 +58,7 @@ os.system('echo Run CloudResourceOrchestration in pre active region')
 common_input_vars = {'es_host': ES_HOST, 'es_port': ES_PORT, 'es_user': ES_USER, 'es_password': ES_PASSWORD,
                      'CRO_ES_INDEX': CRO_ES_INDEX, 'log_level': 'INFO',
                      'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_BIND_DN': LDAP_BIND_DN,
-                     'LDAP_BIND_PASSWORD': LDAP_BIND_PASSWORD, 'LDAP_BASE_DN': LDAP_BASE_DN,
+                     'LDAP_BASE_DN': LDAP_BASE_DN,
                      'JIRA_QUEUE': JIRA_QUEUE, 'JIRA_TOKEN': JIRA_TOKEN, 'JIRA_USERNAME': JIRA_USERNAME,
                      'JIRA_URL': JIRA_URL,
                      'CRO_COST_OVER_USAGE': CRO_COST_OVER_USAGE, 'CRO_PORTAL': CRO_PORTAL,
@@ -79,8 +79,9 @@ common_envs = list(map(combine_vars, common_input_vars.items()))
 for input_vars in input_vars_to_container:
     os.system(f"""echo Running on Account {input_vars.get("account").upper()}""")
     envs = list(map(combine_vars, input_vars.items()))
+    # Bare -e avoids shell re-interpretation of the password.
     os.system(
-        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -e LDAP_BIND_PASSWORD {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
 AZURE_CLIENT_SECRET = os.environ['AZURE_CLIENT_SECRET']
@@ -99,5 +100,6 @@ azure_cro_env = {
 azure_cro_env.update(common_env_vars)
 envs = list(map(combine_vars, azure_cro_env.items()))
 azure_cro = """ podman run --net="host" --rm --name cloud_resource_orchestration """
-azure_cro += f" -e {' -e '.join(envs)}  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
+# Bare -e avoids shell re-interpretation of the password.
+azure_cro += f" -e {' -e '.join(envs)} -e LDAP_BIND_PASSWORD  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
 os.system(azure_cro)

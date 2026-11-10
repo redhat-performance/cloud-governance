@@ -32,8 +32,10 @@ class LdapSearch:
                 logger.error(f'LDAP StartTLS failed: {err}')
         bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN')
         bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD')
-        self.__bind_failed = False
-        if bind_dn and bind_password and self.__tls_ready:
+        self.__bind_failed = bool(bind_dn) != bool(bind_password)
+        if self.__bind_failed:
+            logger.error('LDAP_BIND_DN and LDAP_BIND_PASSWORD must be configured together')
+        elif bind_dn and bind_password and self.__tls_ready:
             try:
                 self.__ldap_client.simple_bind_s(bind_dn, bind_password)
             except ldap.LDAPError as err:
