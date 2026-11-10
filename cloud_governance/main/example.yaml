@@ -92,6 +92,9 @@ ES_TIMEOUT: 2000
 # Mail alerts env vars
 # ldap env var
 LDAP_HOST_NAME: ""
+LDAP_BIND_DN: ""
+LDAP_BIND_PASSWORD: ""
+LDAP_BASE_DN: ""
 SENDER_MAIL: ""
 SENDER_PASSWORD: ""
 REPLY_TO: dev-null@redhat.com

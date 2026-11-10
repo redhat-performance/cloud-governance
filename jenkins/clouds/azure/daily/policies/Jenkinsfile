@@ -19,6 +19,9 @@ pipeline {
         ES_USER = credentials('cloud-governance-es-user')
         ES_PASSWORD = credentials('cloud-governance-es-password')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
+        LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
+        LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')
         GLOBAL_TAGS = credentials('GLOBAL_TAGS')
         contact1 = "ebattat@redhat.com"
         contact2 = "yinsong@redhat.com"

@@ -102,7 +102,10 @@ podman pull quay.io/rh_perfscale/cloud-governance
 | policy                         | required | check [here](POLICIES.md) for policies list                                 |
 | dry_run                        | optional | default set to "yes", supported only two: yes/ no                           |
 | log_level                      | optional | default set to INFO                                                         |
-| LDAP_HOST_NAME                 | optional | ldap hostnames                                                              |
+| LDAP_HOST_NAME                 | optional | ldap hostname                                                               |
+| LDAP_BIND_DN                   | optional | ldap service-account bind DN, for an authenticated bind                     |
+| LDAP_BIND_PASSWORD             | optional | ldap service-account bind password                                         |
+| LDAP_BASE_DN                   | optional | ldap search base DN                                                        |
 | es_host                        | optional | Elasticsearch Host                                                          |
 | es_port                        | optional | Elasticsearch Port                                                          |
 | es_index                       | optional | Elasticsearch Index, to push the data. default to cloud-governance-es-index |

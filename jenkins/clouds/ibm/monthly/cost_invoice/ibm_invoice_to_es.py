@@ -1,6 +1,9 @@
 import os
 
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_BIND_DN = os.environ.get('LDAP_BIND_DN', '')
+LDAP_BIND_PASSWORD = os.environ.get('LDAP_BIND_PASSWORD', '')
+LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', '')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 IBM_API_KEY = os.environ['IBM_API_KEY']
 IBM_API_USERNAME = os.environ['IBM_API_USERNAME']
@@ -17,4 +20,4 @@ print('Run IBM Cost Invoice upload monthly')
 es_index = 'cloud-governance-ibm-invoice-cost'
 
 os.system(
-    f"""podman run --rm --net="host" --name cloud-governance -e account="IBM-PERF" -e policy="ibm_cost_report" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e IBM_API_USERNAME="{IBM_API_USERNAME}" -e IBM_API_KEY="{IBM_API_KEY}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --net="host" --name cloud-governance -e account="IBM-PERF" -e policy="ibm_cost_report" -e es_index="{es_index}" -e es_port="{ES_PORT}" -e es_host="{ES_HOST}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_BIND_DN="{LDAP_BIND_DN}" -e LDAP_BIND_PASSWORD="{LDAP_BIND_PASSWORD}" -e LDAP_BASE_DN="{LDAP_BASE_DN}" -e GOOGLE_APPLICATION_CREDENTIALS="{GOOGLE_APPLICATION_CREDENTIALS}" -v {GOOGLE_APPLICATION_CREDENTIALS}:{GOOGLE_APPLICATION_CREDENTIALS} -e SPREADSHEET_ID="{SPREADSHEET_ID}" -e IBM_API_USERNAME="{IBM_API_USERNAME}" -e IBM_API_KEY="{IBM_API_KEY}" -e log_level="INFO" -v "/etc/localtime":"/etc/localtime" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")

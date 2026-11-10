@@ -1,6 +1,9 @@
 import os
 
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_BIND_DN = os.environ.get('LDAP_BIND_DN', '')
+LDAP_BIND_PASSWORD = os.environ.get('LDAP_BIND_PASSWORD', '')
+LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', '')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 IBM_API_KEY = os.environ['IBM_API_KEY']
 IBM_API_USERNAME = os.environ['IBM_API_USERNAME']
@@ -59,7 +62,8 @@ run_cmd("echo Run IBM tagging on baremetal, vm")
 run_cmd("echo Run IBM tag baremetal")
 volume_mounts_targets = [GOOGLE_APPLICATION_CREDENTIALS]
 tag_custom = [IBM_CUSTOM_TAGS_LIST]
-input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME,
+input_env_keys = {'account': account, 'LDAP_HOST_NAME': LDAP_HOST_NAME, 'LDAP_BIND_DN': LDAP_BIND_DN,
+                  'LDAP_BIND_PASSWORD': LDAP_BIND_PASSWORD, 'LDAP_BASE_DN': LDAP_BASE_DN,
                   'GOOGLE_APPLICATION_CREDENTIALS': GOOGLE_APPLICATION_CREDENTIALS, 'SPREADSHEET_ID': SPREADSHEET_ID,
                   'IBM_API_USERNAME': IBM_API_USERNAME, 'IBM_API_KEY': IBM_API_KEY, 'tag_operation': "update",
                   'log_level': "INFO", 'policy': 'tag_baremetal', "PUBLIC_CLOUD_NAME": "IBM", "tag_custom": tag_custom}

@@ -18,6 +18,9 @@ pipeline {
         AWS_IAM_USER_SPREADSHEET_ID = credentials('cloud-governance-aws-iam-user-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
+        LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
+        LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')
         ES_HOST = credentials('haim-cloud-governance-elasticsearch-url')
         ES_PORT = credentials('haim-cloud-governance-elasticsearch-port')
         ES_SERVER_TYPE = 'elasticsearch'
