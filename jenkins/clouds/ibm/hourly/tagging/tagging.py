@@ -38,7 +38,9 @@ def get_podman_run_cmd(volume_mounts: list = None, **kwargs):
         volume_mounts = []
     if "/etc/localtime" not in volume_mounts:
         volume_mounts.append("/etc/localtime")
-    cmd = f"podman run --rm --net=\"host\" {container_name} {generate_env_vars(**kwargs)} {generate_volume_mounts(volume_mounts)} \
+    # Bare -e avoids shell re-interpretation; only added when LDAP is in use here.
+    ldap_flags = '-e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN' if 'LDAP_HOST_NAME' in kwargs else ''
+    cmd = f"podman run --rm --net=\"host\" {container_name} {generate_env_vars(**kwargs)} {ldap_flags} {generate_volume_mounts(volume_mounts)} \
     {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
     return cmd
 

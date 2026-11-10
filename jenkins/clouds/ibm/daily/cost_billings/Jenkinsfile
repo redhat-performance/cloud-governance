@@ -23,6 +23,9 @@ pipeline {
         COST_SPREADSHEET_ID = credentials('cloud-governance-cost-spreadsheet-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('cloud-governance-google-application-credentials')
         LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
+        LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
+        LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')
 
         CLOUDABILITY_API = credentials('cloudability_api')
         CLOUDABILITY_API_REPORTS_PATH = credentials('cloudability_api_reports_path')

@@ -6,22 +6,41 @@ import ldap
 
 from cloud_governance.common.logger.init_logger import logger
 from cloud_governance.common.utils.api_requests import APIRequests
+from cloud_governance.main.environment_variables import environment_variables
 
 
 class LdapSearch:
 
     def __init__(self, ldap_host_name: str):
-        # Enforce certificate validation explicitly rather than relying on the OS/library default.
+        """
+        This method initializes the LDAP connection
+        @param ldap_host_name:
+        """
+        # A bare hostname is wrapped as ldap://<host>; a full URI is used as-is.
+        ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
-        self.__ldap_client = ldap.initialize(f'ldap://{ldap_host_name}')
+        self.__ldap_client = ldap.initialize(ldap_uri)
         self.__ldap_client.protocol_version = ldap.VERSION3
-        self.__tls_ready = False
-        try:
-            self.__ldap_client.start_tls_s()
-            self.__tls_ready = True
-        except ldap.LDAPError as err:
-            logger.error(f'LDAP StartTLS failed: {err}')
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
+        # StartTLS is needed on ldap://; ldaps:// is already encrypted.
+        self.__tls_ready = ldap_uri.startswith('ldaps://')
+        if not self.__tls_ready:
+            try:
+                self.__ldap_client.start_tls_s()
+                self.__tls_ready = True
+            except ldap.LDAPError as err:
+                logger.error(f'LDAP StartTLS failed: {err}')
+        bind_dn = environment_variables.environment_variables_dict.get('LDAP_BIND_DN')
+        bind_password = environment_variables.environment_variables_dict.get('LDAP_BIND_PASSWORD')
+        self.__bind_failed = bool(bind_dn) != bool(bind_password)
+        if self.__bind_failed:
+            logger.error('LDAP_BIND_DN and LDAP_BIND_PASSWORD must be configured together')
+        elif bind_dn and bind_password and self.__tls_ready:
+            try:
+                self.__ldap_client.simple_bind_s(bind_dn, bind_password)
+            except ldap.LDAPError as err:
+                logger.error(f'LDAP bind failed: {err}')
+                self.__bind_failed = True
 
     def __get_manager_name(self, manager_data: str):
         """
@@ -60,19 +79,19 @@ class LdapSearch:
         @return:
         """
         response = []
-        if not self.__tls_ready:
+        if not self.__tls_ready or self.__bind_failed:
             return response
         try:
             self.__ldap_client.protocol_version = ldap.VERSION3
             self.__ldap_client.set_option(ldap.OPT_REFERRALS, 0)
-            base = 'dc=redhat, dc=com'
+            base = environment_variables.environment_variables_dict.get('LDAP_BASE_DN')
             criteria = f'(&(uid={user_name}))'
             attributes = ['displayName', 'manager', 'cn']
             result = self.__ldap_client.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
             if len(result) == 1:
                 response = result[0][1]
         except Exception as err:
-            logger.info(err)
+            logger.warning(err)
         return response
 
     def get_user_details(self, user_name):
