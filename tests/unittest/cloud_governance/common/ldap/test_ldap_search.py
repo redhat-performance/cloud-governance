@@ -227,6 +227,18 @@ def test_get_details_uses_configured_base_dn(mock_start_tls):
 
 
 @patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
+def test_warns_when_base_dn_not_configured(mock_start_tls, caplog):
+    """
+    This method tests a missing LDAP_BASE_DN is flagged, since searches with it would otherwise look fine but find nothing
+    """
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    with caplog.at_level('WARNING'):
+        ldap_object._LdapSearch__get_details(user_name='test')
+    assert any('LDAP_BASE_DN is not configured' in record.message for record in caplog.records)
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
 def test_get_details_logs_failure_as_warning(mock_start_tls, caplog):
     """
     This method tests a failed lookup is logged at WARNING level, not INFO

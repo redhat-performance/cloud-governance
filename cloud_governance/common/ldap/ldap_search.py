@@ -20,9 +20,11 @@ class LdapSearch:
         self.__perf_services_url = os.environ.get('PERF_SERVICES_URL')
         fallback_hosts = environment_variables.environment_variables_dict.get('LDAP_FALLBACK_HOSTS') or ''
         candidates = [ldap_host_name] + [host.strip() for host in fallback_hosts.split(',') if host.strip()]
-        for host in candidates:
+        for index, host in enumerate(candidates):
             self.__connect(host)
             if self.__tls_ready and not self.__bind_failed:
+                if index > 0:
+                    logger.warning(f'LDAP succeeded via fallback host {host}; primary {candidates[0]} is unavailable')
                 break
 
     def __connect(self, ldap_host_name: str):
@@ -111,6 +113,8 @@ class LdapSearch:
             self.__ldap_client.protocol_version = ldap.VERSION3
             self.__ldap_client.set_option(ldap.OPT_REFERRALS, 0)
             base = environment_variables.environment_variables_dict.get('LDAP_BASE_DN')
+            if not base:
+                logger.warning('LDAP_BASE_DN is not configured; searches are unlikely to return results')
             criteria = f'(&(uid={user_name}))'
             attributes = ['displayName', 'manager', 'cn']
             result = self.__ldap_client.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
