@@ -7,6 +7,9 @@ import urllib.parse
 
 AWS_ACCESS_KEY_ID_DELETE_PERF = os.environ['AWS_ACCESS_KEY_ID_DELETE_PERF']
 AWS_SECRET_ACCESS_KEY_DELETE_PERF = os.environ['AWS_SECRET_ACCESS_KEY_DELETE_PERF']
+LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 ES_USER = os.environ.get('ES_USER', '')
@@ -80,6 +83,10 @@ for account in accounts:
 -e es_user="{ES_USER}" \
 -e es_password="{ES_PASSWORD}" \
 -e es_index="cloud-governance-policy-es-index" \
+-e LDAP_HOST_NAME="{LDAP_HOST_NAME}" \
+-e LDAP_FALLBACK_HOSTS="{LDAP_FALLBACK_HOSTS}" \
+-e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN \
+-v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" \
 -e log_level="INFO" \
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
