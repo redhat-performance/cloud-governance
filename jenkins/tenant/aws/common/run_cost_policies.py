@@ -3,6 +3,9 @@ import os
 access_key = os.environ['access_key']
 secret_key = os.environ['secret_key']
 account_name = os.environ['account_name']
+LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
+LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
 ES_SERVER_TYPE = os.environ.get('ES_SERVER_TYPE', 'opensearch')
@@ -23,7 +26,7 @@ env_es_index = f'-e es_index="{ES_INDEX}"' if ES_INDEX else f'-e es_index="{cost
 
 os.system(f"""echo "Running the CloudGovernance CostExplorer Policies" """)
 os.system(
-    f"""podman run --rm --name cloud-governance --net="host" -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" {env_es_index} -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ES_SERVER_TYPE="{ES_SERVER_TYPE}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --name cloud-governance --net="host" -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="cost_explorer" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" {env_es_index} -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e ES_SERVER_TYPE="{ES_SERVER_TYPE}" -e cost_explorer_tags="{cost_tags}" -e granularity="{granularity}" -e cost_metric="{cost_metric}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_FALLBACK_HOSTS="{LDAP_FALLBACK_HOSTS}" -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 os.system(f"""echo "Running yearly savings report for account {account_name}" """)
 os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="yearly_savings_report" \
@@ -35,5 +38,9 @@ os.system(f"""podman run --rm --net="host" --name cloud-governance -e policy="ye
 -e es_password="{ES_PASSWORD}" \
 -e ES_SERVER_TYPE="{ES_SERVER_TYPE}" \
 -e es_index="cloud-governance-policy-es-index" \
+-e LDAP_HOST_NAME="{LDAP_HOST_NAME}" \
+-e LDAP_FALLBACK_HOSTS="{LDAP_FALLBACK_HOSTS}" \
+-e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN \
+-v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" \
 -e log_level="INFO" \
 {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")

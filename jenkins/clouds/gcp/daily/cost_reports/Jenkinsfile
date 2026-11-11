@@ -3,11 +3,16 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/rh_perfscale/fedora38-podman:latest'
-            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf -v /etc/cloud-governance/ldap-ca-bundle.pem:/etc/cloud-governance/ldap-ca-bundle.pem:ro --privileged'
         }
     }
     environment {
         QUAY_CLOUD_GOVERNANCE_REPOSITORY = credentials('QUAY_CLOUD_GOVERNANCE_REPOSITORY')
+        LDAP_HOST_NAME = credentials('cloud-governance-ldap-host-name')
+        LDAP_FALLBACK_HOSTS = credentials('cloud-governance-ldap-fallback-hosts')
+        LDAP_BIND_DN = credentials('cloud-governance-ldap-bind-dn')
+        LDAP_BIND_PASSWORD = credentials('cloud-governance-ldap-bind-password')
+        LDAP_BASE_DN = credentials('cloud-governance-ldap-base-dn')
         GCP_DATABASE_NAME = credentials('cloud-governance-gcp-database-name')
         GCP_DATABASE_TABLE_NAME = credentials('cloud-governance-gcp-database-table-name')
         ES_HOST = credentials('cloud-governance-es-host')
