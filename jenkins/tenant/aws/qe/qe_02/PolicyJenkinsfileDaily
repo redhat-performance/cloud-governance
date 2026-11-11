@@ -11,7 +11,7 @@ pipeline {
         docker {
             label 'cloud-governance-worker'
             image 'quay.io/rh_perfscale/fedora38-podman:latest'
-            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf --privileged'
+            args  '-u root -v /etc/postfix/main.cf:/etc/postfix/main.cf -v /etc/cloud-governance/ldap-ca-bundle.pem:/etc/cloud-governance/ldap-ca-bundle.pem:ro --privileged'
         }
     }
     environment {

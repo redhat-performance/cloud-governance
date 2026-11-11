@@ -12,6 +12,7 @@ ES_USER = os.environ.get('ES_USER', '')
 ES_PASSWORD = os.environ.get('ES_PASSWORD', '')
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 JIRA_URL = os.environ['JIRA_URL']
 JIRA_USERNAME = os.environ['JIRA_USERNAME']
 JIRA_TOKEN = os.environ['JIRA_TOKEN']
@@ -77,7 +78,7 @@ for input_vars in input_vars_to_container:
     envs = list(map(combine_vars, input_vars.items()))
     # Bare -e avoids shell re-interpretation of the password.
     os.system(
-        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+        f"""podman run --net="host" --rm --name  cloud_resource_orchestration -e CLOUD_RESOURCE_ORCHESTRATION="True" -e EMAIL_ALERT="True" -e {' -e '.join(envs)} -e {' -e '.join(common_envs)} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 AZURE_ACCOUNT_ID = os.environ['AZURE_ACCOUNT_ID']
 AZURE_CLIENT_SECRET = os.environ['AZURE_CLIENT_SECRET']
@@ -97,5 +98,5 @@ azure_cro_env.update(common_env_vars)
 envs = list(map(combine_vars, azure_cro_env.items()))
 azure_cro = """ podman run --net="host" --rm --name cloud_resource_orchestration """
 # Bare -e avoids shell re-interpretation of the password.
-azure_cro += f" -e {' -e '.join(envs)} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
+azure_cro += f' -e {" -e ".join(envs)} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}"  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}'
 os.system(azure_cro)
