@@ -281,3 +281,23 @@ def test_initialize_failure_falls_back_to_next_host(mock_initialize):
     assert mock_initialize.call_count == 2
     assert ldap_object._LdapSearch__tls_ready is True
     environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+def test_logs_success_when_connection_ready(mock_start_tls, caplog):
+    """
+    This method tests a successful connection is logged, distinguishing it from a lookup that was never attempted
+    """
+    with caplog.at_level('INFO'):
+        LdapSearch(ldap_host_name='example.com')
+    assert any('LDAP connection ready for example.com' in record.message for record in caplog.records)
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
+def test_does_not_log_success_when_tls_failed(mock_start_tls, caplog):
+    """
+    This method tests no success message is logged when the connection isn't actually ready
+    """
+    with caplog.at_level('INFO'):
+        LdapSearch(ldap_host_name='example.com')
+    assert not any('LDAP connection ready' in record.message for record in caplog.records)

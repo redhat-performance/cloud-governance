@@ -65,6 +65,8 @@ class LdapSearch:
             except ldap.LDAPError as err:
                 logger.error(f'LDAP bind failed: {err}')
                 self.__bind_failed = True
+        if self.__tls_ready and not self.__bind_failed:
+            logger.info(f'LDAP connection ready for {ldap_host_name}')
 
     def __get_manager_name(self, manager_data: str):
         """
