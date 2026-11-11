@@ -30,13 +30,22 @@ class LdapSearch:
         This method attempts a connection, TLS negotiation, and bind against a single host
         @param ldap_host_name:
         """
+        self.__tls_ready = False
+        self.__bind_failed = True
         # A bare hostname is wrapped as ldap://<host>; a full URI is used as-is.
         ldap_uri = ldap_host_name if '://' in ldap_host_name else f'ldap://{ldap_host_name}'
-        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
-        self.__ldap_client = ldap.initialize(ldap_uri)
-        self.__ldap_client.protocol_version = ldap.VERSION3
-        # Fail over to the next host quickly rather than waiting on the OS-level TCP timeout.
-        self.__ldap_client.set_option(ldap.OPT_NETWORK_TIMEOUT, 5)
+        try:
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+            ca_cert_file = environment_variables.environment_variables_dict.get('LDAP_CA_CERT_FILE')
+            if ca_cert_file:
+                ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+            self.__ldap_client = ldap.initialize(ldap_uri)
+            self.__ldap_client.protocol_version = ldap.VERSION3
+            # Fail over to the next host quickly rather than waiting on the OS-level TCP timeout.
+            self.__ldap_client.set_option(ldap.OPT_NETWORK_TIMEOUT, 5)
+        except ldap.LDAPError as err:
+            logger.error(f'LDAP connection failed for {ldap_host_name}: {err}')
+            return
         # StartTLS is needed on ldap://; ldaps:// is already encrypted.
         self.__tls_ready = ldap_uri.startswith('ldaps://')
         if not self.__tls_ready:

@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import ldap
 from ldap.ldapobject import SimpleLDAPObject
@@ -236,3 +236,48 @@ def test_get_details_logs_failure_as_warning(mock_start_tls, caplog):
         with caplog.at_level('WARNING'):
             ldap_object._LdapSearch__get_details(user_name='test')
     assert any('boom' in record.message for record in caplog.records)
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch('cloud_governance.common.ldap.ldap_search.ldap.set_option')
+def test_sets_ca_cert_file_when_configured(mock_set_option, mock_start_tls):
+    """
+    This method tests a configured CA bundle is set before connecting
+    """
+    environment_variables.environment_variables_dict['LDAP_CA_CERT_FILE'] = '/etc/pki/ca.pem'
+    LdapSearch(ldap_host_name='example.com')
+    mock_set_option.assert_any_call(ldap.OPT_X_TLS_CACERTFILE, '/etc/pki/ca.pem')
+    environment_variables.environment_variables_dict['LDAP_CA_CERT_FILE'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch('cloud_governance.common.ldap.ldap_search.ldap.set_option')
+def test_ca_cert_file_not_set_when_not_configured(mock_set_option, mock_start_tls):
+    """
+    This method tests the CA option is left alone when no bundle is configured
+    """
+    LdapSearch(ldap_host_name='example.com')
+    for call in mock_set_option.call_args_list:
+        assert call.args[0] != ldap.OPT_X_TLS_CACERTFILE
+
+
+@patch('cloud_governance.common.ldap.ldap_search.ldap.initialize', side_effect=ldap.LDAPError())
+def test_initialize_failure_does_not_raise(mock_initialize):
+    """
+    This method tests a malformed or unreachable URI at initialize time does not raise
+    """
+    LdapSearch(ldap_host_name='bad uri')
+
+
+@patch('cloud_governance.common.ldap.ldap_search.ldap.initialize')
+def test_initialize_failure_falls_back_to_next_host(mock_initialize):
+    """
+    This method tests initialize() failing on the primary host falls through to the next candidate
+    """
+    working_client = MagicMock()
+    mock_initialize.side_effect = [ldap.LDAPError(), working_client]
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = 'backup.example.com'
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    assert mock_initialize.call_count == 2
+    assert ldap_object._LdapSearch__tls_ready is True
+    environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''

@@ -107,6 +107,7 @@ podman pull quay.io/rh_perfscale/cloud-governance
 | LDAP_BIND_DN                   | optional | ldap service-account bind DN, for an authenticated bind                     |
 | LDAP_BIND_PASSWORD             | optional | ldap service-account bind password                                         |
 | LDAP_BASE_DN                   | optional | ldap search base DN                                                        |
+| LDAP_CA_CERT_FILE              | optional | path to a CA bundle for verifying the ldap server's TLS certificate         |
 | es_host                        | optional | Elasticsearch Host                                                          |
 | es_port                        | optional | Elasticsearch Port                                                          |
 | es_index                       | optional | Elasticsearch Index, to push the data. default to cloud-governance-es-index |

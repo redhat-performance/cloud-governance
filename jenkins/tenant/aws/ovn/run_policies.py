@@ -25,6 +25,7 @@ account_name = os.environ['account_name']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 14)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 LOGS = os.environ.get('LOGS', 'logs')
 ALERT_DRY_RUN = os.environ.get('ALERT_DRY_RUN', False)
 ES_HOST = os.environ['ES_HOST']
@@ -44,7 +45,7 @@ def get_container_cmd(env_dict: dict):
     container_name = "cloud-governance-poc-haim"
     # Bare -e avoids shell re-interpretation of these values.
     container_run_cmd = f"""
-podman run --rm --name "{container_name}" --net="host" {env_list} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN {env_es_index} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
+podman run --rm --name "{container_name}" --net="host" {env_list} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" {env_es_index} {QUAY_CLOUD_GOVERNANCE_REPOSITORY}
 """
     return container_run_cmd
 

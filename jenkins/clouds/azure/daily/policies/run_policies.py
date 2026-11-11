@@ -11,6 +11,7 @@ GLOBAL_TAGS = os.environ['GLOBAL_TAGS']
 days_to_delete_resource = os.environ.get('days_to_delete_resource', 7)
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 LOGS = os.environ.get('LOGS', 'logs')
 ES_HOST = os.environ['ES_HOST']
 ES_PORT = os.environ['ES_PORT']
@@ -62,7 +63,7 @@ def get_container_cmd(env_dict: dict):
     env_list = ' '.join(list(map(lambda item: f'-e {item[0]}="{item[1]}"', env_dict.items())))
     container_name = "cloud-governance"
     # Bare -e avoids shell re-interpretation of these values.
-    container_run_cmd = f"""podman run --rm --net="host" --name "{container_name}" {env_list} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"""
+    container_run_cmd = f"""podman run --rm --net="host" --name "{container_name}" {env_list} -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}"  {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"""
     return container_run_cmd
 
 

@@ -2,6 +2,7 @@ import os
 
 LDAP_HOST_NAME = os.environ['LDAP_HOST_NAME']
 LDAP_FALLBACK_HOSTS = os.environ.get('LDAP_FALLBACK_HOSTS', '')
+LDAP_CA_CERT_FILE = os.getenv('LDAP_CA_CERT_FILE', '/etc/cloud-governance/ldap-ca-bundle.pem')
 GOOGLE_APPLICATION_CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 IBM_API_KEY = os.environ['IBM_API_KEY']
 IBM_API_USERNAME = os.environ['IBM_API_USERNAME']
@@ -40,7 +41,7 @@ def get_podman_run_cmd(volume_mounts: list = None, **kwargs):
     if "/etc/localtime" not in volume_mounts:
         volume_mounts.append("/etc/localtime")
     # Bare -e avoids shell re-interpretation; only added when LDAP is in use here.
-    ldap_flags = '-e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN' if 'LDAP_HOST_NAME' in kwargs else ''
+    ldap_flags = f'-e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}"' if 'LDAP_HOST_NAME' in kwargs else ''
     cmd = f"podman run --rm --net=\"host\" {container_name} {generate_env_vars(**kwargs)} {ldap_flags} {generate_volume_mounts(volume_mounts)} \
     {QUAY_CLOUD_GOVERNANCE_REPOSITORY}"
     return cmd

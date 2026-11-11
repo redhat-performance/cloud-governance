@@ -242,6 +242,7 @@ class EnvironmentVariables:
         self._environment_variables_dict['LDAP_BIND_DN'] = EnvironmentVariables.get_env('LDAP_BIND_DN', '')
         self._environment_variables_dict['LDAP_BIND_PASSWORD'] = EnvironmentVariables.get_env('LDAP_BIND_PASSWORD', '')
         self._environment_variables_dict['LDAP_BASE_DN'] = EnvironmentVariables.get_env('LDAP_BASE_DN', '')
+        self._environment_variables_dict['LDAP_CA_CERT_FILE'] = EnvironmentVariables.get_env('LDAP_CA_CERT_FILE', '')
         self._environment_variables_dict['SENDER_MAIL'] = EnvironmentVariables.get_env('SENDER_MAIL', '')
         self._environment_variables_dict['SENDER_PASSWORD'] = EnvironmentVariables.get_env('SENDER_PASSWORD', '')
         self._environment_variables_dict['REPLY_TO'] = EnvironmentVariables.get_env('REPLY_TO', 'dev-null@redhat.com')
