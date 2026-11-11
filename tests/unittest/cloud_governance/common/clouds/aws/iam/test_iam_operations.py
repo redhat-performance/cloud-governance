@@ -93,6 +93,58 @@ def test_rotate_user_access_key_dry_run_changes_nothing():
     assert keys[0]['Status'] == 'Inactive'
 
 
+@mock_aws
+def test_has_free_access_key_slot_tracks_the_two_key_limit():
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=USER_NAME)
+    operations = IAMOperations(iam_client=iam_client)
+
+    assert operations.has_free_access_key_slot(USER_NAME) is True
+    iam_client.create_access_key(UserName=USER_NAME)
+    assert operations.has_free_access_key_slot(USER_NAME) is True
+    iam_client.create_access_key(UserName=USER_NAME)
+    assert operations.has_free_access_key_slot(USER_NAME) is False
+
+
+@mock_aws
+def test_has_free_access_key_slot_is_false_for_unknown_user():
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+
+    assert IAMOperations(iam_client=iam_client).has_free_access_key_slot('missing-user') is False
+
+
+@mock_aws
+def test_create_user_access_key_keeps_the_existing_key():
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=USER_NAME)
+    existing_key_id = iam_client.create_access_key(
+        UserName=USER_NAME)['AccessKey']['AccessKeyId']
+
+    credentials = IAMOperations(iam_client=iam_client).create_user_access_key(USER_NAME)
+
+    assert credentials is not None
+    new_key_id, new_secret = credentials
+    assert new_key_id != existing_key_id
+    assert new_secret
+    keys = iam_client.list_access_keys(UserName=USER_NAME)['AccessKeyMetadata']
+    assert {key['AccessKeyId']: key['Status'] for key in keys} == {
+        existing_key_id: 'Active', new_key_id: 'Active'}
+
+
+@mock_aws
+def test_create_user_access_key_dry_run_creates_nothing():
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=USER_NAME)
+    existing_key_id = iam_client.create_access_key(
+        UserName=USER_NAME)['AccessKey']['AccessKeyId']
+
+    assert IAMOperations(iam_client=iam_client).create_user_access_key(
+        USER_NAME, dry_run=True) is None
+
+    keys = iam_client.list_access_keys(UserName=USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in keys] == [existing_key_id]
+
+
 NEW_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE'
 NEW_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
 

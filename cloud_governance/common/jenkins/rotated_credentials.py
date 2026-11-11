@@ -11,8 +11,9 @@ deactivation can be retried after a restart, then disables it in AWS by authenti
 new key read back from Jenkins. Secrets, key ids, usernames and credential ids are never logged.
 
 The rotate_access_key policy runs this module itself when IAM_PUBLISH_TO_JENKINS is enabled:
-it prepares the IAM state (the Jenkins key stays Active, a different inactive key is consumed),
-rotates, publishes the new key and deactivates the previous one in a single process. That path
+it prepares the IAM state (the Jenkins key stays Active; a different inactive key is consumed,
+or a free slot is used to create the new key directly), rotates, publishes the new key and
+deactivates the previous one in a single process. That path
 uses ``rotate_and_publish_credentials`` and never writes the secret to disk.
 
 The file-based functions are for a publish that runs in a separate process, and only that
@@ -132,14 +133,14 @@ def ensure_jenkins_key_is_active(iam_operations, username: str, access_key_id: s
 
 def prepare_inactive_key(iam_operations, username: str, keep_access_key_id: str) -> bool:
     """
-    Makes the rotation runnable when no inactive key exists, mirroring the integration test.
-    Deactivates a stale Active key, or creates and immediately deactivates a new key when the
-    user has a free slot. Never touches the key stored in Jenkins or the caller's own key.
-    Key ids and the created secret are never logged.
+    Makes an inactive key available for the rotation to consume when one exists or can be made
+    one safely. Deactivates a stale Active key when every key is Active. Never creates a key and
+    never touches the key stored in Jenkins or the caller's own key: when only one key exists the
+    rotation itself uses the free slot to create the new key directly.
     :param iam_operations: IAMOperations instance.
     :param username: IAM user name.
     :param keep_access_key_id: The key stored in Jenkins; never deactivated here.
-    :return: True when an inactive key exists afterwards, False when no safe candidate exists.
+    :return: True when an inactive key exists afterwards, False when none can be prepared.
     """
     metadata = _list_access_key_metadata(iam_operations, username)
     if any(key['Status'] == 'Inactive' for key in metadata):
@@ -156,34 +157,40 @@ def prepare_inactive_key(iam_operations, username: str, keep_access_key_id: str)
             _update_access_key_status(iam_operations, username, key_id, 'Inactive')
         logger.info('Deactivated a stale access key to prepare the rotation')
         return True
-    if len(active_keys) == 1:
-        try:
-            new_key_id = iam_operations.get_iam_client.create_access_key(
-                UserName=username)['AccessKey']['AccessKeyId']
-        except ClientError as err:
-            code = err.response.get('Error', {}).get('Code', 'unknown')
-            raise JenkinsOperationsError(
-                f'Failed to create the access key needed by the rotation ({code})') from None
-        _update_access_key_status(iam_operations, username, new_key_id, 'Inactive')
-        logger.info('Created and deactivated a key to prepare the rotation')
-        return True
     return False
+
+
+def has_free_key_slot(iam_operations, username: str) -> bool:
+    """
+    Checks whether the rotation can create its new key directly, without consuming an inactive
+    one. This is the bootstrap case: the user has a single Active key and no second key.
+    :param iam_operations: IAMOperations instance.
+    :param username: IAM user name.
+    :return: True when fewer than the maximum number of access keys exist.
+    """
+    return len(_list_access_key_metadata(iam_operations, username)) < \
+        IAMOperations.MAX_ACCESS_KEYS
 
 
 def ensure_rotation_preconditions(iam_operations, username: str, jenkins_access_key_id: str):
     """
     Guarantees the starting state required by the full flow: the key stored in Jenkins is Active
-    and a different inactive key exists for the policy to consume.
+    and the rotation has something to work with, either a different inactive key to consume or a
+    free slot to create the new key in.
     :param iam_operations: IAMOperations instance.
     :param username: IAM user name.
     :param jenkins_access_key_id: Access key id currently stored in Jenkins.
     """
     ensure_jenkins_key_is_active(iam_operations, username, jenkins_access_key_id)
-    if not prepare_inactive_key(iam_operations, username, jenkins_access_key_id):
-        raise JenkinsOperationsError(
-            'The user has no inactive access key and no free slot to prepare one; the key stored '
-            'in Jenkins and the caller key occupy both slots. Run with credentials of another '
-            'identity so a different key can be consumed by the rotation')
+    if prepare_inactive_key(iam_operations, username, jenkins_access_key_id):
+        return
+    if has_free_key_slot(iam_operations, username):
+        logger.info('No inactive access key: the rotation will create a new key directly')
+        return
+    raise JenkinsOperationsError(
+        'The user has no inactive access key and no free slot; the key stored in Jenkins and '
+        'the caller key occupy both slots. Run with credentials of another identity so a '
+        'different key can be consumed by the rotation')
 
 
 def validate_rotated_credentials(credentials: dict) -> dict:

@@ -2,12 +2,15 @@
 Policy to rotate an inactive IAM access key for a single user.
 
 If the user has an access key with Status == 'Inactive', the key is deleted and a new
-one is created. The new credentials are written to IAM_CREDENTIALS_FILE.
+one is created. When there is no inactive key but a free key slot exists (the user has a
+single Active key), the new key is created directly and no existing key is deleted. The new
+credentials are written to IAM_CREDENTIALS_FILE.
 
 Set IAM_PUBLISH_TO_JENKINS=true to run the full flow in this process, as the integration test
 does: the key stored in Jenkins is kept Active (or reactivated) and never consumed, an inactive
-key is prepared when needed, the new key is published to Jenkins, and the key Jenkins held before
-the switch is deactivated. In that mode the credentials are handed from memory to Jenkins and
+key is prepared when one can be made safely (or the free slot is used directly), the new key is
+published to Jenkins, and the key Jenkins held before the switch is deactivated. In that mode the
+credentials are handed from memory to Jenkins and
 are never written to disk, so no local secret file exists. IAM_CREDENTIALS_FILE is ignored.
 
 Without IAM_PUBLISH_TO_JENKINS the new credentials are written to IAM_CREDENTIALS_FILE for a
@@ -227,6 +230,34 @@ class RotateAccessKey(AWSPolicyOperations):
             logger.error(f'rotate_access_key: failed to publish the rotated credentials: {err}')
             raise
 
+    def _select_rotation(self, username: str):
+        """
+        Picks how the key is rotated: consume the oldest inactive key, or, when no inactive key
+        exists but a slot is free, create the new key directly. Returns None when nothing can be
+        rotated safely.
+        :param username: IAM user name.
+        :return: (age_days, last_activity_days, rotate_callable) or None.
+        """
+        dry_run = self._dry_run != 'no'
+        inactive_keys = self._iam_operations.get_inactive_access_keys(username=username)
+        if inactive_keys:
+            oldest_inactive_key = inactive_keys[0]
+            age_days = self.calculate_days(create_date=oldest_inactive_key['CreateDate'])
+            last_activity_days = self._get_last_activity_days(
+                oldest_inactive_key['AccessKeyId'], age_days)
+            return (age_days, last_activity_days,
+                    lambda: self._iam_operations.rotate_user_access_key(
+                        username=username, dry_run=dry_run))
+        if self._iam_operations.has_free_access_key_slot(username=username):
+            # Bootstrap case: a single Active key and no second key. Create the replacement
+            # directly in the free slot instead of creating an inactive key just to delete it.
+            logger.info("rotate_access_key: no inactive access key; creating a new key directly")
+            return (0, None,
+                    lambda: self._iam_operations.create_user_access_key(
+                        username=username, dry_run=dry_run))
+        logger.info("rotate_access_key: no inactive access key found")
+        return None
+
     def run_policy_operations(self):
         """
         Rotates the oldest inactive access key of the user given by the `username` env var.
@@ -258,19 +289,13 @@ class RotateAccessKey(AWSPolicyOperations):
             if jenkins_publishing is None:
                 return []
 
-        inactive_keys = self._iam_operations.get_inactive_access_keys(username=username)
-        if not inactive_keys:
-            logger.info("rotate_access_key: no inactive access key found")
+        rotation = self._select_rotation(username)
+        if rotation is None:
             return []
-
-        oldest_inactive_key = inactive_keys[0]
-        access_key_id = oldest_inactive_key['AccessKeyId']
-        age_days = self.calculate_days(create_date=oldest_inactive_key['CreateDate'])
-        last_activity_days = self._get_last_activity_days(access_key_id, age_days)
+        age_days, last_activity_days, rotate = rotation
 
         _ROTATED_USERS.add(username)
-        credentials = self._iam_operations.rotate_user_access_key(username=username,
-                                                                  dry_run=self._dry_run != 'no')
+        credentials = rotate()
         if credentials:
             self._deliver_credentials(publish_to_jenkins, jenkins_publishing, username,
                                       credentials)

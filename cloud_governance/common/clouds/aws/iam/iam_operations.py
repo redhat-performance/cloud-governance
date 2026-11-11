@@ -17,6 +17,8 @@ class IAMOperations:
     # A freshly created access key is eventually consistent in IAM/STS.
     DEACTIVATE_ATTEMPTS = 5
     DEACTIVATE_DELAY_SECONDS = 3
+    # AWS allows at most two access keys per IAM user.
+    MAX_ACCESS_KEYS = 2
 
     def __init__(self, iam_client=None):
         self.iam_client = iam_client if iam_client else get_boto3_client('iam')
@@ -413,6 +415,44 @@ class IAMOperations:
             return []
         inactive_keys = [key for key in access_keys if key.get('Status') == 'Inactive']
         return sorted(inactive_keys, key=lambda k: k['CreateDate'])
+
+    def has_free_access_key_slot(self, username: str) -> bool:
+        """
+        Checks whether the user can have another access key created. AWS allows at most two
+        access keys per user, so a free slot lets the rotation create a new key directly instead
+        of consuming an inactive one.
+        :param username: IAM user name.
+        :return: True when fewer than MAX_ACCESS_KEYS keys exist.
+        """
+        try:
+            access_keys = self.iam_client.list_access_keys(UserName=username)['AccessKeyMetadata']
+        except Exception as e:
+            logger.error(f"Failed to list access keys for user '{username}': {e}")
+            return False
+        return len(access_keys) < self.MAX_ACCESS_KEYS
+
+    def create_user_access_key(self, username: str, dry_run: bool = False):
+        """
+        Creates a new access key for the user without deleting an existing one. Used when the
+        rotation can use a free slot, so no inactive key has to be removed first.
+        :param username: IAM user name.
+        :param dry_run: When True, only logs that a key would be created.
+        :return: (AccessKeyId, SecretAccessKey) of the new key, or None on a dry run.
+        """
+        if dry_run:
+            logger.info("Dry run: would create a new access key")
+            return None
+        try:
+            response = self.iam_client.create_access_key(UserName=username)['AccessKey']
+            logger.info("Created a new access key")
+            return response['AccessKeyId'], response['SecretAccessKey']
+        except ClientError as err:
+            # The error message contains the caller ARN, so report the code only.
+            code = err.response.get('Error', {}).get('Code', 'unknown')
+            raise RuntimeError(f"Failed to create a new access key ({code})") from None
+        except Exception as err:
+            raise RuntimeError(
+                f"Failed to create a new access key ({type(err).__name__})") from None
 
     def rotate_user_access_key(self, username: str, dry_run: bool = False):
         """

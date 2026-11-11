@@ -64,15 +64,44 @@ def test_rotate_access_key_skips_without_username(tmp_path):
 
 
 @mock_aws
-def test_rotate_access_key_skips_when_no_inactive_key(tmp_path):
+def test_rotate_access_key_creates_a_key_directly_when_a_slot_is_free(tmp_path):
     iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
     iam_client.create_user(UserName=TEST_USER_NAME)
-    iam_client.create_access_key(UserName=TEST_USER_NAME)
+    active_key_id = iam_client.create_access_key(
+        UserName=TEST_USER_NAME)['AccessKey']['AccessKeyId']
+    credentials_file = tmp_path / 'creds.json'
+    _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO)
+
+    result = RotateAccessKey().run_policy_operations()
+
+    assert len(result) == 1
+    assert result[0]['ResourceAction'] == 'True'
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    statuses = {key['AccessKeyId']: key['Status'] for key in keys}
+    # The existing key is untouched; the new key is created in the free slot.
+    assert len(keys) == 2
+    assert statuses[active_key_id] == 'Active'
+    new_key_ids = [key_id for key_id in statuses if key_id != active_key_id]
+    assert len(new_key_ids) == 1
+    assert statuses[new_key_ids[0]] == 'Active'
+    payload = json.loads(credentials_file.read_text())
+    assert payload['access_key_id'] == new_key_ids[0]
+    assert payload['secret_access_key']
+
+
+@mock_aws
+def test_rotate_access_key_skips_without_inactive_key_or_free_slot(tmp_path):
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=TEST_USER_NAME)
+    key_ids = [iam_client.create_access_key(
+        UserName=TEST_USER_NAME)['AccessKey']['AccessKeyId'] for _ in range(2)]
     credentials_file = tmp_path / 'creds.json'
     _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO)
 
     assert RotateAccessKey().run_policy_operations() == []
     assert not credentials_file.exists()
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in keys] == key_ids
 
 
 @mock_aws
@@ -269,6 +298,43 @@ def test_rotate_access_key_publishes_to_jenkins_when_enabled(tmp_path, monkeypat
     assert not credentials_file.exists()
     new_key = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata'][0]
     assert published['access_key_id'] == new_key['AccessKeyId']
+
+
+@mock_aws
+def test_rotate_access_key_creates_directly_when_jenkins_has_only_one_key(tmp_path, monkeypatch):
+    iam_client = boto3.client('iam', region_name=AWS_DEFAULT_REGION)
+    iam_client.create_user(UserName=TEST_USER_NAME)
+    jenkins_key_id = iam_client.create_access_key(
+        UserName=TEST_USER_NAME)['AccessKey']['AccessKeyId']
+    credentials_file = tmp_path / 'creds.json'
+    _set_environment_variables(credentials_file, dry_run=DRY_RUN_NO, publish_to_jenkins=True)
+    calls = {}
+
+    class _FakeJenkins:
+        @staticmethod
+        def read_secret(credentials_id):
+            return jenkins_key_id
+
+    def fake_publish(credentials, client, **kwargs):
+        calls['publish'] = credentials
+        return {'username': TEST_USER_NAME, 'access_key_to_inactive': jenkins_key_id}
+
+    monkeypatch.setattr(rotate_access_key_module, 'get_jenkins_client', lambda: _FakeJenkins())
+    monkeypatch.setattr(rotate_access_key_module, 'rotate_and_publish_credentials', fake_publish)
+
+    result = RotateAccessKey().run_policy_operations()
+
+    assert result[0]['ResourceAction'] == 'True'
+    published = calls['publish']
+    assert published['access_key_id'] != jenkins_key_id
+    assert published['secret_access_key']
+    # No throwaway key was created; the Jenkins key stays Active until the publish deactivates it.
+    keys = iam_client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    statuses = {key['AccessKeyId']: key['Status'] for key in keys}
+    assert len(keys) == 2
+    assert statuses[jenkins_key_id] == 'Active'
+    assert statuses[published['access_key_id']] == 'Active'
+    assert not credentials_file.exists()
 
 
 @mock_aws

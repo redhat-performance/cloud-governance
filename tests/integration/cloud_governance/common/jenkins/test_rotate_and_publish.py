@@ -22,18 +22,18 @@ default chain. Never put the values in the test or in its output; export them in
    JENKINS_ACCESS_KEY_CREDENTIAL_ID and JENKINS_SECRET_ACCESS_KEY_CREDENTIAL_ID (default
    EBATTAT_AWS_ACCESS_KEY_ID and EBATTAT_AWS_SECRET_ACCESS_KEY) with a newly rotated key of a
    real IAM user. The key stored in Jenkins must be Active, and the flow only ever deactivates
-   it: the policy consumes a different inactive key, deletes it, and creates a new one; the test
-   publishes the new values to Jenkins and then deactivates the previous Jenkins key (returned
-   as access_key_to_inactive) by authenticating with the new credentials just read back from
+   it: the policy consumes a different inactive key, deletes it, and creates a new one; when only
+   one key exists, it creates the new key directly in the free slot instead. The test publishes
+   the new values to Jenkins and then deactivates the previous Jenkins key (returned as
+   access_key_to_inactive) by authenticating with the new credentials just read back from
    Jenkins. Any other Active key of the user is deactivated too, except the caller's own key.
-   An Inactive Jenkins key is reactivated first, and when the account has no inactive key the
-   test prepares one (deactivating a stale Active key or creating and deactivating a new one
-   when there is a free slot) without touching the caller's key. The caller may be the key
-   stored in Jenkins (self-rotation): that key is deactivated at the end, so the caller must
-   switch to the newly published key afterwards, and the post-run checks use it. If the caller is
-   a different key of the target user and both key slots are Active, no separate key is available
-   for the rotation to consume and the test skips before rotating. It fails before rotating if
-   the Jenkins key does not belong to the requested user or no longer exists.
+   An Inactive Jenkins key is reactivated first. When the account has no inactive key, a stale
+   Active key is deactivated. The caller's key is never touched during preparation. The caller
+   may be the key stored in Jenkins (self-rotation): that key is deactivated at the end, so the
+   caller must switch to the newly published key afterwards, and the post-run checks use it. If
+   the caller is a different key of the target user and both key slots are Active, no separate
+   key is available for the rotation to consume and the test skips before rotating. It fails
+   before rotating if the Jenkins key does not belong to the requested user or no longer exists.
 
 2. test_rotation_to_jenkins_with_temp_user is optional and disabled by default: it also needs
    JENKINS_TEMP_USER_E2E=yes. It is self-contained: it creates a temporary IAM user with an
@@ -228,8 +228,9 @@ def _access_key_status(iam_client, username: str, access_key_id: str) -> str:
 def _ensure_rotation_preconditions(iam_client, previous_access_key: str):
     """
     Runs the production precondition helper so the test and the policy share the same logic:
-    the key stored in Jenkins must be Active and a different inactive key must exist for the
-    policy to consume. Skips when the state cannot be reached safely.
+    the key stored in Jenkins must be Active, and the rotation needs either a different inactive
+    key to consume or a free key slot to create the new key in. Skips when the state cannot be
+    reached safely.
     """
     try:
         ensure_rotation_preconditions(SimpleNamespace(get_iam_client=iam_client), REAL_USER,

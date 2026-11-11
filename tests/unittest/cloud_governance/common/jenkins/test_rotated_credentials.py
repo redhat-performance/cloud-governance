@@ -19,6 +19,7 @@ from cloud_governance.common.jenkins.rotated_credentials import (
     ensure_jenkins_key_is_active,
     ensure_rotation_preconditions,
     get_default_credential_ids,
+    has_free_key_slot,
     load_rotated_credentials,
     prepare_inactive_key,
     publish_rotated_credentials,
@@ -578,17 +579,33 @@ def test_prepare_inactive_key_deactivates_a_stale_active_key(monkeypatch):
 
 
 @mock_aws
-def test_prepare_inactive_key_creates_a_spare_when_one_slot_is_free(monkeypatch):
+def test_prepare_inactive_key_creates_no_key_when_one_slot_is_free(monkeypatch):
     monkeypatch.setenv('AWS_ACCESS_KEY_ID', 'AKIACALLEREXAMPLE')
     client = _iam_client()
     keys = _create_user_with_keys(client, active=1)
     jenkins_key = keys['active'][0]
 
-    assert prepare_inactive_key(_iam_operations(client), TEST_USER_NAME, jenkins_key) is True
+    # No inactive key exists and none is created: the rotation creates directly in the free slot.
+    assert prepare_inactive_key(_iam_operations(client), TEST_USER_NAME, jenkins_key) is False
     metadata = client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
-    assert len(metadata) == 2
+    assert [key['AccessKeyId'] for key in metadata] == [jenkins_key]
     assert _key_status(client, jenkins_key) == 'Active'
-    assert sum(1 for key in metadata if key['Status'] == 'Inactive') == 1
+
+
+@mock_aws
+def test_has_free_key_slot_is_true_with_a_single_key():
+    client = _iam_client()
+    _create_user_with_keys(client, active=1)
+
+    assert has_free_key_slot(_iam_operations(client), TEST_USER_NAME) is True
+
+
+@mock_aws
+def test_has_free_key_slot_is_false_with_two_keys():
+    client = _iam_client()
+    _create_user_with_keys(client, active=2)
+
+    assert has_free_key_slot(_iam_operations(client), TEST_USER_NAME) is False
 
 
 @mock_aws
@@ -613,6 +630,18 @@ def test_prepare_inactive_key_returns_false_when_both_keys_are_in_use(monkeypatc
     assert prepare_inactive_key(_iam_operations(client), TEST_USER_NAME, jenkins_key) is False
     assert _key_status(client, jenkins_key) == 'Active'
     assert _key_status(client, caller_key) == 'Active'
+
+
+@mock_aws
+def test_ensure_rotation_preconditions_allows_a_free_slot_without_creating_a_key():
+    client = _iam_client()
+    keys = _create_user_with_keys(client, active=1)
+    jenkins_key = keys['active'][0]
+
+    ensure_rotation_preconditions(_iam_operations(client), TEST_USER_NAME, jenkins_key)
+
+    metadata = client.list_access_keys(UserName=TEST_USER_NAME)['AccessKeyMetadata']
+    assert [key['AccessKeyId'] for key in metadata] == [jenkins_key]
 
 
 @mock_aws
