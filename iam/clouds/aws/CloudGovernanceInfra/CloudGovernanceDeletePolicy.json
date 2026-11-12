@@ -118,6 +118,7 @@
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [
+        "iam:CreateAccessKey",
         "iam:DeleteAccessKey",
         "iam:DeleteInstanceProfile",
         "iam:DeletePolicy",
