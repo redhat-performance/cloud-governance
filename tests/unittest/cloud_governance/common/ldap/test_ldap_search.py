@@ -227,6 +227,18 @@ def test_get_details_uses_configured_base_dn(mock_start_tls):
 
 
 @patch.object(SimpleLDAPObject, 'start_tls_s')
+@patch.object(SimpleLDAPObject, 'search_s', mock_search_s)
+def test_warns_when_base_dn_not_configured(mock_start_tls, caplog):
+    """
+    This method tests a missing LDAP_BASE_DN is flagged, since searches with it would otherwise look fine but find nothing
+    """
+    ldap_object = LdapSearch(ldap_host_name='example.com')
+    with caplog.at_level('WARNING'):
+        ldap_object._LdapSearch__get_details(user_name='test')
+    assert any('LDAP_BASE_DN is not configured' in record.message for record in caplog.records)
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
 def test_get_details_logs_failure_as_warning(mock_start_tls, caplog):
     """
     This method tests a failed lookup is logged at WARNING level, not INFO
@@ -281,3 +293,23 @@ def test_initialize_failure_falls_back_to_next_host(mock_initialize):
     assert mock_initialize.call_count == 2
     assert ldap_object._LdapSearch__tls_ready is True
     environment_variables.environment_variables_dict['LDAP_FALLBACK_HOSTS'] = ''
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s')
+def test_logs_success_when_connection_ready(mock_start_tls, caplog):
+    """
+    This method tests a successful connection is logged, distinguishing it from a lookup that was never attempted
+    """
+    with caplog.at_level('INFO'):
+        LdapSearch(ldap_host_name='example.com')
+    assert any('LDAP connection ready for example.com' in record.message for record in caplog.records)
+
+
+@patch.object(SimpleLDAPObject, 'start_tls_s', side_effect=ldap.LDAPError())
+def test_does_not_log_success_when_tls_failed(mock_start_tls, caplog):
+    """
+    This method tests no success message is logged when the connection isn't actually ready
+    """
+    with caplog.at_level('INFO'):
+        LdapSearch(ldap_host_name='example.com')
+    assert not any('LDAP connection ready' in record.message for record in caplog.records)
