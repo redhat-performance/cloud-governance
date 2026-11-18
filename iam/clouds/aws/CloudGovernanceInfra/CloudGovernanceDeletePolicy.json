@@ -145,6 +145,7 @@
         "iam:ListUsers",
         "iam:ListUserTags",
         "iam:RemoveRoleFromInstanceProfile",
+        "iam:RemoveUserFromGroup",
         "iam:TagRole",
         "iam:TagUser",
         "iam:UpdateAccessKey",
