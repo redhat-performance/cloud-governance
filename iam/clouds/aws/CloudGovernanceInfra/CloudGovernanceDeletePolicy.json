@@ -118,14 +118,20 @@
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [
+        "iam:CreateAccessKey",
+        "iam:CreateUser",
         "iam:DeleteAccessKey",
+        "iam:DeleteGroup",
         "iam:DeleteInstanceProfile",
+        "iam:DeleteLoginProfile",
         "iam:DeletePolicy",
         "iam:DeleteRole",
         "iam:DeleteRolePolicy",
+        "iam:DeleteUser",
         "iam:DeleteUserPolicy",
         "iam:DetachRolePolicy",
         "iam:GetAccessKeyLastUsed",
+        "iam:GetLoginProfile",
         "iam:GetRole",
         "iam:GetUser",
         "iam:GetUserPolicy",
@@ -200,6 +206,12 @@
         "rds:DescribeDBInstances"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "AssumeTerraformRole",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::account_id:role/TestTerrafomRole"
     }
   ]
 }
