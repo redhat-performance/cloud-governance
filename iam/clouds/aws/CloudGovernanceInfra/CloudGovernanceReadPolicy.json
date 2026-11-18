@@ -83,6 +83,7 @@
       "Sid": "IAM",
       "Effect": "Allow",
       "Action": [
+        "iam:CreateUser",
         "iam:GetAccessKeyLastUsed",
         "iam:GetRole",
         "iam:GetUser",
@@ -163,6 +164,12 @@
         "elasticfilesystem:DescribeMountTargets"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "AssumeTerraformRole",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::account_id:role/TestTerrafomRole"
     }
   ]
 }
