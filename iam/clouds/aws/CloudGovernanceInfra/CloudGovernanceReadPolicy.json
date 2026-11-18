@@ -84,7 +84,6 @@
       "Effect": "Allow",
       "Action": [
         "iam:GetAccessKeyLastUsed",
-        "iam:GetLoginProfile",
         "iam:GetRole",
         "iam:GetUser",
         "iam:GetUserPolicy",
@@ -92,7 +91,6 @@
         "iam:ListAccountAliases",
         "iam:ListAttachedRolePolicies",
         "iam:ListInstanceProfilesForRole",
-        "iam:ListMFADevices",
         "iam:ListRolePolicies",
         "iam:ListRoles",
         "iam:ListUserPolicies",

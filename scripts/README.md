@@ -6,6 +6,19 @@ Three standalone scripts that use only `boto3` and import nothing from
 
 In this repo use `.venv/bin/python` instead of `python`.
 
+## Permissions
+
+`iam-hygiene-policy.json` is the IAM policy for these three scripts: 41 actions
+covering users, access keys, login profiles, MFA devices, signing and SSH
+credentials, attached policies and group membership. The caller also needs
+`sts:GetCallerIdentity`, which every principal can call without an explicit
+grant.
+
+This is deliberately narrower than `CloudGovernanceDeletePolicy.json`, which is
+shared with the rest of cloud-governance and additionally grants EC2, S3, RDS,
+Auto Scaling and related permissions. Use this file only for a principal that
+runs these scripts.
+
 ## delete_access_keys.py
 
 Reports access keys older than N days (default 3).
@@ -15,7 +28,12 @@ python scripts/delete_access_keys.py            # report
 python scripts/delete_access_keys.py --days 30
 python scripts/delete_access_keys.py --deactivate --apply   # reversible
 python scripts/delete_access_keys.py --delete --apply       # permanent
+python scripts/delete_access_keys.py --days 4 --delete --include-active --force --apply
 ```
+
+`--include-active` is needed to select Active keys at all; `--force` then also
+allows a user's last Active key. Together they delete every matching key,
+including keys still in use.
 
 Options: `--days`, `--sort`, `--json`, `--show-key-ids`, `--output-file`,
 `--profile`, `--region`, `--exit-zero`.
@@ -23,6 +41,10 @@ Options: `--days`, `--sort`, `--json`, `--show-key-ids`, `--output-file`,
 Guards: the caller's own key is never touched; a user's last Active key needs
 `--force`; `--delete` only selects Inactive keys unless `--include-active`.
 Exclude keys with `EXCLUDE_ACCESS_KEY_IDS=id1,id2`.
+
+Eligibility is by key creation date, not last use. A key created six days ago
+and used daily is still selected once it passes `--days`; check
+`GetAccessKeyLastUsed` before running an action.
 
 ## delete_console_access.py
 
