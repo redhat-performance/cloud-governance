@@ -55,7 +55,9 @@ podman_run_cmd = get_podman_run_cmd(policy="tag_resources", account=account,
                                     PUBLIC_CLOUD_NAME="IBM",
                                     IBM_ACCOUNT_ID=IBM_ACCOUNT_ID_PERFORMANCE_SCALE,
                                     IBM_API_USERNAME=IBM_API_USERNAME,
-                                    IBM_API_KEY=IBM_API_KEY, )
+                                    IBM_API_KEY=IBM_API_KEY,
+                                    LDAP_HOST_NAME=LDAP_HOST_NAME,
+                                    LDAP_FALLBACK_HOSTS=LDAP_FALLBACK_HOSTS, )
 run_cmd(podman_run_cmd)
 
 run_cmd("echo Run IBM tagging on baremetal, vm")
