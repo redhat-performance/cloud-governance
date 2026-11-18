@@ -145,7 +145,7 @@ run_cmd(
 # Running the trust advisor reports, data dumped into default index - cloud-governance-policy-es-index
 
 run_cmd(
-    f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}"  -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
+    f"""podman run --rm --net="host" --name cloud-governance -e AWS_DEFAULT_REGION="us-east-1" -e account="{account_name}" -e policy="optimize_resources_report" -e AWS_ACCESS_KEY_ID="{access_key}" -e AWS_SECRET_ACCESS_KEY="{secret_key}" -e es_host="{ES_HOST}" -e es_port="{ES_PORT}" -e es_user="{ES_USER}" -e es_password="{ES_PASSWORD}" -e LDAP_HOST_NAME="{LDAP_HOST_NAME}" -e LDAP_FALLBACK_HOSTS="{LDAP_FALLBACK_HOSTS}" -e LDAP_BIND_DN -e LDAP_BIND_PASSWORD -e LDAP_BASE_DN -v {LDAP_CA_CERT_FILE}:{LDAP_CA_CERT_FILE}:ro -e LDAP_CA_CERT_FILE="{LDAP_CA_CERT_FILE}" -e log_level="INFO" {QUAY_CLOUD_GOVERNANCE_REPOSITORY}""")
 
 # Git-leaks run on GitHub not related to any aws account
 # run_cmd("echo Run Git-leaks")
