@@ -21,4 +21,11 @@ Accounts:
 - **fusionaccess**: "abeekhof@redhat.com,  hhalbfin@redhat.com",
 - **ecoeng-assistedci**: "alkaplan@redhat.com, dmanor@redhat.com, hhalbfin@redhat.com",
 - **medik8s-ci**: "ushkalim@redhat.com,  hhalbfin@redhat.com",
-- **ecoeng-buildSign**: "hhalbfin@redhat.com"
+- **ecoeng-buildSign**: "hhalbfin@redhat.com",
+- **ecoeng-nvidia**: "hhalbfin@redhat.com",
+- **qe-certification**: "hhalbfin@redhat.com",
+- **ecoeng-ai5**: "hhalbfin@redhat.com",
+- **ecoeng-osac-ci**: "hhalbfin@redhat.com",
+- **osac-enclave-ci**: "hhalbfin@redhat.com",
+- **fpath-x2a**: "hhalbfin@redhat.com",
+- **ecoeng-neuron**: "hhalbfin@redhat.com"
